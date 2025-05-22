@@ -1,16 +1,21 @@
 "use client";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useEffect } from "react";
 import Link from "next/link";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
 
 export default function BuilderHome() {
-  const { context } = useMiniKit();
+  const { context, setFrameReady, isFrameReady } = useMiniKit();
   const user = context?.user;
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
   const pfpUrl = user?.pfpUrl || placeholderAvatar;
+
+  useEffect(() => {
+    if (!isFrameReady) setFrameReady();
+  }, [setFrameReady, isFrameReady]);
 
   return (
     <div

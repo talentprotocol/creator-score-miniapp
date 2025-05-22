@@ -22,8 +22,8 @@ A mini app that shows your Builder Score with clear Builder Rewards eligibility 
 
 ### Step 1: User Profile Display
 
-- [ ] Get wallet address from Farcaster context automatically
-- [ ] Fetch and display Builder Score and level from Talent Protocol
+- [ ] Get wallet address from Farcaster context using Neynar API
+- [ ] Fetch and display Builder Score and level from Talent Protocol API
 - [ ] Create visual level indicator component
 - [ ] Add loading and error states
 
@@ -33,6 +33,7 @@ A mini app that shows your Builder Score with clear Builder Rewards eligibility 
 - [ ] Builder Score > 40 check with "Connect Wallet" button (using MiniKit)
 - [ ] Human checkmark check with "Verify Identity" link to Talent Protocol
 - [ ] GitHub account check with OAuth button
+- [ ] Check if user added the mini app (and include button if they haven't)
 - [ ] Style each checkbox with clear pass/fail indicators
 
 ### Step 3: Action Buttons
