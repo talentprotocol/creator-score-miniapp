@@ -22,7 +22,7 @@ A mini app that shows your Builder Score with clear Builder Rewards eligibility 
 
 ### Step 1: User Profile Display
 
-- [ ] Get wallet address from Farcaster context using Neynar API
+- [ ] Get all wallet addresses with the user FID using Neynar API
 - [ ] Fetch and display Builder Score and level from Talent Protocol API
 - [ ] Create visual level indicator component
 - [ ] Add loading and error states
