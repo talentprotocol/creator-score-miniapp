@@ -24,9 +24,9 @@ A mini app that shows your Builder Score with clear Builder Rewards eligibility 
 
 - [x] Get all wallet addresses with the user FID using Neynar API
 - [x] Fetch and display Builder Score and level from Talent Protocol API
-- [ ] Create visual level indicator component
-- [ ] Add loading and error states
-- [ ] Remove fallback to FID=3 (to test in localhost)
+- [x] Create visual level indicator component
+- [ ] "Add app" button
+- [ ] Send welcome notification with score
 
 ### Step 2: Eligibility Checklist
 

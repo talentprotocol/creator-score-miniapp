@@ -7,6 +7,7 @@ import {
   type UserWalletAddresses,
 } from "../services/neynarService";
 import { BuilderScore, CreatorScore } from "./BuilderScore";
+import { sdk } from "@farcaster/frame-sdk";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
@@ -42,6 +43,7 @@ function CopyButton({ address }: { address: string }) {
 
 export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
+  const [isMiniApp, setIsMiniApp] = useState(false);
   const user = context?.user;
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
@@ -53,6 +55,35 @@ export default function BuilderHome() {
     primarySolAddress: null,
   });
   const [walletError, setWalletError] = useState<string | undefined>();
+
+  useEffect(() => {
+    // Check if we're running in a Mini App
+    const checkMiniApp = async () => {
+      try {
+        // We can determine if we're in a frame by checking if the context exists
+        const inMiniApp = !!context?.user;
+        setIsMiniApp(inMiniApp);
+
+        // If we're in a Mini App, prompt to add it
+        if (inMiniApp) {
+          try {
+            await sdk.actions.addFrame();
+          } catch (error) {
+            // Handle cases where user rejects or frame is already added
+            console.log(
+              "Frame add request was rejected or already added:",
+              error,
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error checking Mini App status:", error);
+        setIsMiniApp(false);
+      }
+    };
+
+    checkMiniApp();
+  }, [context?.user]);
 
   useEffect(() => {
     if (!isFrameReady) setFrameReady();
@@ -77,8 +108,54 @@ export default function BuilderHome() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        position: "relative",
       }}
     >
+      {/* Add Button - Only show when not in Mini App */}
+      {!isMiniApp && (
+        <button
+          onClick={() => {
+            window.location.href =
+              "https://farcaster.xyz/?launchFrameUrl=https%3A%2F%2Fbuilder-score-miniapp.vercel.app";
+          }}
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "#f5f7fa",
+            border: "1px solid #e5e7eb",
+            color: "#666",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 6,
+            transition: "all 0.2s ease",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "#e5e7eb";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "#f5f7fa";
+          }}
+          title="Add to Farcaster"
+        >
+          <img
+            src="/fc.svg"
+            alt="Farcaster"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+            }}
+          />
+        </button>
+      )}
+
       <main
         style={{
           width: "100%",
@@ -200,19 +277,7 @@ export default function BuilderHome() {
         </div>
       </main>
       <footer style={{ padding: 16, marginTop: "auto" }}>
-        <Link
-          href="/demo"
-          style={{
-            fontSize: 13,
-            color: "#0052FF",
-            textDecoration: "underline",
-            padding: 8,
-            borderRadius: 6,
-            background: "#f5f7fa",
-          }}
-        >
-          Go to Demo App
-        </Link>
+        {/* Footer content can be added here */}
       </footer>
     </div>
   );
