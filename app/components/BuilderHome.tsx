@@ -16,6 +16,30 @@ function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+function CopyButton({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(address);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1000);
+      }}
+      style={{
+        marginLeft: 8,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: copied ? "#22c55e" : "#888",
+        fontSize: 16,
+      }}
+      title="Copy address"
+    >
+      {copied ? "✓" : "📋"}
+    </button>
+  );
+}
+
 export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
   const user = context?.user;
@@ -151,9 +175,12 @@ export default function BuilderHome() {
                         textOverflow: "ellipsis",
                         flex: 1,
                         minWidth: 0,
+                        display: "flex",
+                        alignItems: "center",
                       }}
                     >
                       {truncateAddress(address)}
+                      <CopyButton address={address} />
                     </span>
                     {isPrimary && (
                       <span

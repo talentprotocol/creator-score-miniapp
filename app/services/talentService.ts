@@ -17,67 +17,33 @@ const LEVEL_RANGES = [
 ] as const;
 
 /**
- * Fetches the Builder Score for a single wallet address
+ * Fetches the Builder Score for a single wallet address via the local API route
  */
 async function getBuilderScoreForAddress(
   address: string,
 ): Promise<BuilderScore> {
-  if (!process.env.TALENT_API_KEY) {
-    console.error("TALENT_API_KEY is not set in environment variables");
-    return {
-      score: 0,
-      level: 1,
-      levelName: "Level 1",
-      lastCalculatedAt: null,
-      walletAddress: null,
-      error: "Server configuration error",
-    };
-  }
-
   try {
-    const response = await fetch(`https://api.talentprotocol.com/v2/score`, {
-      headers: {
-        "X-API-KEY": process.env.TALENT_API_KEY,
-        "Content-Type": "application/json",
-      },
+    const response = await fetch("/api/talent-score", {
       method: "POST",
-      body: JSON.stringify({
-        address,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
     });
-
     const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        score: 0,
-        level: 1,
-        levelName: "Level 1",
-        lastCalculatedAt: null,
-        walletAddress: null,
-        error: data.error || "Failed to fetch Builder Score",
-      };
-    }
-
-    const score = data.score || 0;
-    const lastCalculatedAt = data.last_calculated_at || null;
-
-    // Find the appropriate level based on score
+    const points = data.score?.points ?? 0;
+    const lastCalculatedAt = data.score?.last_calculated_at ?? null;
     const levelInfo =
-      LEVEL_RANGES.find((range) => score >= range.min && score <= range.max) ||
-      LEVEL_RANGES[0];
-
+      LEVEL_RANGES.find(
+        (range) => points >= range.min && points <= range.max,
+      ) || LEVEL_RANGES[0];
     const level = LEVEL_RANGES.indexOf(levelInfo) + 1;
-
     return {
-      score,
+      score: points,
       level,
       levelName: levelInfo.name,
       lastCalculatedAt,
       walletAddress: address,
     };
   } catch (error) {
-    console.error("Error fetching Builder Score:", error);
     return {
       score: 0,
       level: 1,
@@ -110,14 +76,10 @@ export async function getBuilderScore(
       error: "No wallet addresses provided",
     };
   }
-
   try {
-    // Fetch scores for all addresses in parallel
     const scores = await Promise.all(
       addresses.map((addr) => getBuilderScoreForAddress(addr)),
     );
-
-    // Filter out errors and find the highest score
     const validScores = scores.filter((s) => !s.error);
     if (validScores.length === 0) {
       return {
@@ -129,13 +91,10 @@ export async function getBuilderScore(
         error: "No valid Builder Scores found",
       };
     }
-
-    // Return the score with the highest value
     return validScores.reduce((highest, current) =>
       current.score > highest.score ? current : highest,
     );
   } catch (error) {
-    console.error("Error fetching Builder Scores:", error);
     return {
       score: 0,
       level: 1,
