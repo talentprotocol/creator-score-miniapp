@@ -6,6 +6,8 @@ import { sendFrameNotification } from "@/lib/notification-client";
 import { http } from "viem";
 import { createPublicClient } from "viem";
 import { optimism } from "viem/chains";
+import { getUserWalletAddresses } from "@/app/services/neynarService";
+import { getBuilderScore } from "@/app/services/talentService";
 
 const appName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME;
 
@@ -58,6 +60,41 @@ function decode(encoded: string) {
   return JSON.parse(Buffer.from(encoded, "base64url").toString("utf-8"));
 }
 
+async function getWelcomeMessage(fid: number): Promise<string> {
+  try {
+    // Get user's wallet addresses
+    const walletData = await getUserWalletAddresses(fid);
+    if (walletData.error) {
+      return `Welcome to ${appName}!`;
+    }
+
+    // Get all addresses to check
+    const addresses = [
+      ...walletData.addresses,
+      walletData.primaryEthAddress,
+      walletData.primarySolAddress,
+    ].filter(
+      (addr): addr is string =>
+        typeof addr === "string" && addr.startsWith("0x"),
+    );
+
+    if (addresses.length === 0) {
+      return `Welcome to ${appName}!`;
+    }
+
+    // Get Builder Score
+    const scoreData = await getBuilderScore(addresses);
+    if (scoreData.error || !scoreData.score) {
+      return `Welcome to ${appName}!`;
+    }
+
+    return `Welcome to ${appName}! Your Builder Score is ${scoreData.score} (${scoreData.levelName})`;
+  } catch (error) {
+    console.error("Error getting welcome message:", error);
+    return `Welcome to ${appName}!`;
+  }
+}
+
 export async function POST(request: Request) {
   const requestJson = await request.json();
 
@@ -86,15 +123,15 @@ export async function POST(request: Request) {
       );
       if (event.notificationDetails) {
         await setUserNotificationDetails(fid, event.notificationDetails);
+        const welcomeMessage = await getWelcomeMessage(fid);
         await sendFrameNotification({
           fid,
           title: `Welcome to ${appName}`,
-          body: `Thank you for adding ${appName}`,
+          body: welcomeMessage,
         });
       } else {
         await deleteUserNotificationDetails(fid);
       }
-
       break;
     case "frame_removed": {
       console.log("frame_removed");
@@ -104,18 +141,17 @@ export async function POST(request: Request) {
     case "notifications_enabled": {
       console.log("notifications_enabled", event.notificationDetails);
       await setUserNotificationDetails(fid, event.notificationDetails);
+      const welcomeMessage = await getWelcomeMessage(fid);
       await sendFrameNotification({
         fid,
         title: `Welcome to ${appName}`,
-        body: `Thank you for enabling notifications for ${appName}`,
+        body: welcomeMessage,
       });
-
       break;
     }
     case "notifications_disabled": {
       console.log("notifications_disabled");
       await deleteUserNotificationDetails(fid);
-
       break;
     }
   }
