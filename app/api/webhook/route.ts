@@ -61,38 +61,52 @@ function decode(encoded: string) {
 }
 
 async function getWelcomeMessage(fid: number): Promise<string> {
-  try {
-    // Get user's wallet addresses
-    const walletData = await getUserWalletAddresses(fid);
-    if (walletData.error) {
-      return `Welcome to ${appName}!`;
+  const maxAttempts = 3;
+  const delayMs = 2000;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      // Get user's wallet addresses
+      const walletData = await getUserWalletAddresses(fid);
+      if (walletData.error) {
+        return `Welcome to ${appName}!`;
+      }
+
+      // Get all addresses to check
+      const addresses = [
+        ...walletData.addresses,
+        walletData.primaryEthAddress,
+        walletData.primarySolAddress,
+      ].filter(
+        (addr): addr is string =>
+          typeof addr === "string" && addr.startsWith("0x"),
+      );
+
+      if (addresses.length === 0) {
+        return `Welcome to ${appName}!`;
+      }
+
+      // Get Builder Score
+      const scoreData = await getBuilderScore(addresses);
+      if (!scoreData.error && scoreData.score) {
+        return `Welcome to ${appName}! Your Builder Score is ${scoreData.score} (${scoreData.levelName})`;
+      }
+      // If not last attempt, wait and retry
+      if (attempt < maxAttempts) {
+        await new Promise((res) => setTimeout(res, delayMs));
+      }
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        console.error("Error getting welcome message:", error);
+      }
+      // If not last attempt, wait and retry
+      if (attempt < maxAttempts) {
+        await new Promise((res) => setTimeout(res, delayMs));
+      }
     }
-
-    // Get all addresses to check
-    const addresses = [
-      ...walletData.addresses,
-      walletData.primaryEthAddress,
-      walletData.primarySolAddress,
-    ].filter(
-      (addr): addr is string =>
-        typeof addr === "string" && addr.startsWith("0x"),
-    );
-
-    if (addresses.length === 0) {
-      return `Welcome to ${appName}!`;
-    }
-
-    // Get Builder Score
-    const scoreData = await getBuilderScore(addresses);
-    if (scoreData.error || !scoreData.score) {
-      return `Welcome to ${appName}!`;
-    }
-
-    return `Welcome to ${appName}! Your Builder Score is ${scoreData.score} (${scoreData.levelName})`;
-  } catch (error) {
-    console.error("Error getting welcome message:", error);
-    return `Welcome to ${appName}!`;
   }
+  // Fallback message if all attempts fail
+  return `Welcome to ${appName}!`;
 }
 
 export async function POST(request: Request) {
