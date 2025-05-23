@@ -35,14 +35,14 @@ export default function BuilderHome() {
 
   useEffect(() => {
     async function fetchWalletAddresses() {
-      // Temporarily hardcode FID for testing
-      const testFid = 8446;
-      const data = await getUserWalletAddresses(testFid);
+      const fid = context?.user?.fid;
+      if (!fid) return;
+      const data = await getUserWalletAddresses(fid);
       setWalletAddresses(data);
       setWalletError(data.error);
     }
     fetchWalletAddresses();
-  }, []);
+  }, [context?.user?.fid]);
 
   return (
     <div
