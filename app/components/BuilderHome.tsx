@@ -42,6 +42,8 @@ function CopyButton({ address }: { address: string }) {
 
 export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
+  const fallbackFid = 3;
+  const effectiveFid = context?.user?.fid ?? fallbackFid;
   const user = context?.user;
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
@@ -60,14 +62,13 @@ export default function BuilderHome() {
 
   useEffect(() => {
     async function fetchWalletAddresses() {
-      const fid = context?.user?.fid;
-      if (!fid) return;
-      const data = await getUserWalletAddresses(fid);
+      if (!effectiveFid) return;
+      const data = await getUserWalletAddresses(effectiveFid);
       setWalletAddresses(data);
       setWalletError(data.error);
     }
     fetchWalletAddresses();
-  }, [context?.user?.fid]);
+  }, [effectiveFid]);
 
   return (
     <div
@@ -128,7 +129,7 @@ export default function BuilderHome() {
 
         {/* Builder Score Section */}
         <div style={{ width: "100%", marginBottom: 32 }}>
-          <BuilderScore fid={user?.fid} />
+          <BuilderScore fid={effectiveFid} />
         </div>
 
         {/* Wallet Addresses Section */}

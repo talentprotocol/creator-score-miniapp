@@ -29,13 +29,18 @@ async function getBuilderScoreForAddress(
       body: JSON.stringify({ address }),
     });
     const data = await response.json();
+    console.log("/api/talent-score client response:", data);
+
+    // Extract points and last_calculated_at from the nested score object
     const points = data.score?.points ?? 0;
     const lastCalculatedAt = data.score?.last_calculated_at ?? null;
+
     const levelInfo =
       LEVEL_RANGES.find(
         (range) => points >= range.min && points <= range.max,
       ) || LEVEL_RANGES[0];
     const level = LEVEL_RANGES.indexOf(levelInfo) + 1;
+
     return {
       score: points,
       level,
@@ -77,9 +82,11 @@ export async function getBuilderScore(
     };
   }
   try {
+    // Lowercase all addresses before querying
     const scores = await Promise.all(
-      addresses.map((addr) => getBuilderScoreForAddress(addr)),
+      addresses.map((addr) => getBuilderScoreForAddress(addr.toLowerCase())),
     );
+    // Filter out errors and find the highest score
     const validScores = scores.filter((s) => !s.error);
     if (validScores.length === 0) {
       return {
@@ -91,6 +98,7 @@ export async function getBuilderScore(
         error: "No valid Builder Scores found",
       };
     }
+    // Return the score with the highest value
     return validScores.reduce((highest, current) =>
       current.score > highest.score ? current : highest,
     );
