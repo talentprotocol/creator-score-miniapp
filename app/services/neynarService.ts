@@ -1,15 +1,8 @@
-import { NeynarAPIClient } from "@neynar/nodejs-sdk";
-
-if (!process.env.NEYNAR_API_KEY) {
-  throw new Error("NEYNAR_API_KEY is not set in environment variables");
-}
-
-const neynarClient = new NeynarAPIClient({
-  apiKey: process.env.NEYNAR_API_KEY,
-});
-
 export interface UserWalletAddresses {
   addresses: string[];
+  custodyAddress: string;
+  primaryEthAddress: string | null;
+  primarySolAddress: string | null;
   error?: string;
 }
 
@@ -22,26 +15,27 @@ export async function getUserWalletAddresses(
   fid: number,
 ): Promise<UserWalletAddresses> {
   try {
-    // @ts-ignore - SDK types are out of sync with implementation
-    const user = await neynarClient.fetchUserByFid(fid);
+    const response = await fetch(`/api/wallet-addresses?fid=${fid}`);
+    const data = await response.json();
 
-    if (!user?.result?.user) {
+    if (!response.ok) {
       return {
         addresses: [],
-        error: "User not found",
+        custodyAddress: "",
+        primaryEthAddress: null,
+        primarySolAddress: null,
+        error: data.error || "Failed to fetch wallet addresses",
       };
     }
 
-    // Get all verified addresses from the user's verifications
-    const addresses = user.result.user.verifications || [];
-
-    return {
-      addresses,
-    };
+    return data;
   } catch (error) {
     console.error("Error fetching user wallet addresses:", error);
     return {
       addresses: [],
+      custodyAddress: "",
+      primaryEthAddress: null,
+      primarySolAddress: null,
       error:
         error instanceof Error
           ? error.message

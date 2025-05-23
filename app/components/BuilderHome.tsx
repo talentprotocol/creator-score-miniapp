@@ -2,10 +2,18 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getUserWalletAddresses } from "../services/neynarService";
+import {
+  getUserWalletAddresses,
+  type UserWalletAddresses,
+} from "../services/neynarService";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
+
+function truncateAddress(address: string): string {
+  if (address.length <= 10) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
 
 export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
@@ -13,7 +21,12 @@ export default function BuilderHome() {
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
   const pfpUrl = user?.pfpUrl || placeholderAvatar;
-  const [walletAddresses, setWalletAddresses] = useState<string[]>([]);
+  const [walletAddresses, setWalletAddresses] = useState<UserWalletAddresses>({
+    addresses: [],
+    custodyAddress: "",
+    primaryEthAddress: null,
+    primarySolAddress: null,
+  });
   const [walletError, setWalletError] = useState<string | undefined>();
 
   useEffect(() => {
@@ -22,14 +35,14 @@ export default function BuilderHome() {
 
   useEffect(() => {
     async function fetchWalletAddresses() {
-      if (user?.fid) {
-        const { addresses, error } = await getUserWalletAddresses(user.fid);
-        setWalletAddresses(addresses);
-        setWalletError(error);
-      }
+      // Temporarily hardcode FID for testing
+      const testFid = 8446;
+      const data = await getUserWalletAddresses(testFid);
+      setWalletAddresses(data);
+      setWalletError(data.error);
     }
     fetchWalletAddresses();
-  }, [user?.fid]);
+  }, []);
 
   return (
     <div
@@ -95,23 +108,65 @@ export default function BuilderHome() {
           </h3>
           {walletError ? (
             <div style={{ color: "#dc2626", fontSize: 14 }}>{walletError}</div>
-          ) : walletAddresses.length > 0 ? (
+          ) : walletAddresses.addresses.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {walletAddresses.map((address) => (
-                <div
-                  key={address}
-                  style={{
-                    padding: 12,
-                    background: "#f5f7fa",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontFamily: "monospace",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {address}
-                </div>
-              ))}
+              {walletAddresses.addresses.map((address: string) => {
+                const isPrimaryEth =
+                  address === walletAddresses.primaryEthAddress;
+                const isPrimarySol =
+                  address === walletAddresses.primarySolAddress;
+                const isPrimary = isPrimaryEth || isPrimarySol;
+                const chainType = isPrimaryEth
+                  ? "ETH"
+                  : isPrimarySol
+                    ? "SOL"
+                    : "ETH";
+
+                return (
+                  <div
+                    key={address}
+                    style={{
+                      padding: 12,
+                      background: "#f5f7fa",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "monospace",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {truncateAddress(address)}
+                    </span>
+                    {isPrimary && (
+                      <span
+                        style={{
+                          background: "#0052FF",
+                          color: "white",
+                          padding: "2px 8px",
+                          borderRadius: 12,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          flexShrink: 0,
+                        }}
+                      >
+                        Primary {chainType}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div style={{ color: "#666", fontSize: 14 }}>
