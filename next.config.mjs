@@ -6,6 +6,9 @@ const nextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
+  images: {
+    domains: ["api.dicebear.com", "i.imgur.com"],
+  },
 };
 
 export default nextConfig;

@@ -7,7 +7,6 @@ import {
   type UserWalletAddresses,
 } from "../services/neynarService";
 import { BuilderScore, CreatorScore } from "./BuilderScore";
-import Image from "next/image";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
@@ -92,20 +91,9 @@ export default function BuilderHome() {
         }}
       >
         <div
-          style={{
-            fontSize: 18,
-            fontWeight: 500,
-            letterSpacing: 1,
-            color: "#888",
-            marginBottom: 16,
-          }}
-        >
-          Builder Score
-        </div>
-        <div
           style={{ display: "flex", alignItems: "center", marginBottom: 24 }}
         >
-          <Image
+          <img
             src={pfpUrl}
             alt="Profile picture"
             width={64}
@@ -117,7 +105,6 @@ export default function BuilderHome() {
               border: "1px solid #eee",
               background: "#f5f5f5",
             }}
-            priority
           />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: 20, fontWeight: 600, marginBottom: 2 }}>

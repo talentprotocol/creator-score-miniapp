@@ -25,15 +25,13 @@ async function getBuilderScoreForAddress(
 ): Promise<BuilderScore> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
-    const body: Record<string, unknown> = { address };
-    if (scorerSlug) body.scorer_slug = scorerSlug;
-    const response = await fetch(`${baseUrl}/api/talent-score`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const params = new URLSearchParams({ address });
+    if (scorerSlug) params.append("scorer_slug", scorerSlug);
+    const response = await fetch(
+      `${baseUrl}/api/talent-score?${params.toString()}`,
+      { method: "GET" },
+    );
     const data = await response.json();
-    console.log("/api/talent-score client response:", data);
 
     if (data.error) {
       return {
@@ -107,6 +105,7 @@ export async function getBuilderScore(
     // Filter out errors and find the highest score
     const validScores = scores.filter((s) => !s.error);
     if (validScores.length === 0) {
+      console.error("All addresses failed to fetch Builder Score.");
       return {
         score: 0,
         level: 1,
