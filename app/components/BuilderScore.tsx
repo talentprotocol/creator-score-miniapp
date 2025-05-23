@@ -26,9 +26,7 @@ function ScoreCard({
   const [score, setScore] = useState<number | null>(null);
   const [level, setLevel] = useState<number | null>(null);
   const [levelName, setLevelName] = useState<string | null>(null);
-  const [lastCalculatedAt, setLastCalculatedAt] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
   const [noWallet, setNoWallet] = useState(false);
 
@@ -36,14 +34,12 @@ function ScoreCard({
     async function fetchScore() {
       if (!fid) {
         setNoWallet(true);
-        setLoading(false);
         setLocalError(
           "Please connect your Farcaster account to view your Builder Score",
         );
         return;
       }
       try {
-        setLoading(true);
         setLocalError(null);
         setNoWallet(false);
 
@@ -62,7 +58,6 @@ function ScoreCard({
 
         if (addresses.length === 0) {
           setNoWallet(true);
-          setLoading(false);
           return;
         }
 
@@ -70,21 +65,17 @@ function ScoreCard({
         const scoreData = await getBuilderScore(addresses, scorerSlug);
         if (scoreData.error) {
           setLocalError(scoreData.error);
-          setLoading(false);
           return;
         }
 
         setScore(scoreData.score);
         setLevel(scoreData.level);
         setLevelName(scoreData.levelName);
-        setLastCalculatedAt(scoreData.lastCalculatedAt);
         setWalletAddress(scoreData.walletAddress);
       } catch (err) {
         setLocalError(
           err instanceof Error ? err.message : "Failed to fetch Builder Score",
         );
-      } finally {
-        setLoading(false);
       }
     }
 

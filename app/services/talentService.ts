@@ -25,7 +25,7 @@ async function getBuilderScoreForAddress(
 ): Promise<BuilderScore> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
-    const body: Record<string, any> = { address };
+    const body: Record<string, unknown> = { address };
     if (scorerSlug) body.scorer_slug = scorerSlug;
     const response = await fetch(`${baseUrl}/api/talent-score`, {
       method: "POST",
