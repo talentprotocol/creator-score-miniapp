@@ -1,7 +1,6 @@
 "use client";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   getUserWalletAddresses,
   type UserWalletAddresses,
