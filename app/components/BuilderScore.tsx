@@ -15,7 +15,7 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
   const [lastCalculatedAt, setLastCalculatedAt] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [noWallet, setNoWallet] = useState(false);
 
   useEffect(() => {
@@ -27,7 +27,6 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
       }
       try {
         setLoading(true);
-        setError(null);
         setNoWallet(false);
 
         // Get all wallet addresses from FID
