@@ -4,15 +4,25 @@ import { useEffect, useState } from "react";
 import { getBuilderScore } from "@/app/services/talentService";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
 
-interface BuilderScoreProps {
+interface ScoreProps {
   fid: number | undefined;
+  title: string;
 }
 
-export function BuilderScore({ fid }: BuilderScoreProps) {
-  // Use FID 1 as fallback if no FID is provided
-  const fallbackFid = 3;
-  const effectiveFid = fid ?? fallbackFid;
+const LEVEL_RANGES = [
+  { min: 0, max: 39, name: "Level 1" },
+  { min: 40, max: 79, name: "Level 2" },
+  { min: 80, max: 119, name: "Level 3" },
+  { min: 120, max: 169, name: "Level 4" },
+  { min: 170, max: 249, name: "Level 5" },
+  { min: 250, max: Infinity, name: "Level 6" },
+] as const;
 
+function ScoreCard({
+  fid,
+  title,
+  scorerSlug,
+}: ScoreProps & { scorerSlug?: string }) {
   const [score, setScore] = useState<number | null>(null);
   const [level, setLevel] = useState<number | null>(null);
   const [levelName, setLevelName] = useState<string | null>(null);
@@ -24,9 +34,12 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
 
   useEffect(() => {
     async function fetchScore() {
-      if (!effectiveFid) {
+      if (!fid) {
         setNoWallet(true);
         setLoading(false);
+        setLocalError(
+          "Please connect your Farcaster account to view your Builder Score",
+        );
         return;
       }
       try {
@@ -35,7 +48,7 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
         setNoWallet(false);
 
         // Get all wallet addresses from FID
-        const walletData = await getUserWalletAddresses(effectiveFid);
+        const walletData = await getUserWalletAddresses(fid);
         if (walletData.error) {
           throw new Error(walletData.error);
         }
@@ -54,7 +67,7 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
         }
 
         // Get Builder Score using all addresses
-        const scoreData = await getBuilderScore(addresses);
+        const scoreData = await getBuilderScore(addresses, scorerSlug);
         if (scoreData.error) {
           setLocalError(scoreData.error);
           setLoading(false);
@@ -76,19 +89,11 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
     }
 
     fetchScore();
-  }, [effectiveFid]);
+  }, [fid, scorerSlug]);
 
   // Calculate progress to next level
   const getProgressToNextLevel = () => {
     if (!score || !level) return 0;
-    const LEVEL_RANGES = [
-      { min: 0, max: 39 },
-      { min: 40, max: 79 },
-      { min: 80, max: 119 },
-      { min: 120, max: 169 },
-      { min: 170, max: 249 },
-      { min: 250, max: Infinity },
-    ];
     const currentLevel = LEVEL_RANGES[level - 1];
     const nextLevel = LEVEL_RANGES[level];
     if (!nextLevel || score >= nextLevel.min) return 100;
@@ -100,29 +105,12 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
   // Calculate points to next level
   const getPointsToNextLevel = () => {
     if (!score || !level) return null;
-    const LEVEL_RANGES = [
-      { min: 0, max: 39 },
-      { min: 40, max: 79 },
-      { min: 80, max: 119 },
-      { min: 120, max: 169 },
-      { min: 170, max: 249 },
-      { min: 250, max: Infinity },
-    ];
     const nextLevel = LEVEL_RANGES[level];
     if (!nextLevel || score >= nextLevel.min) return null;
     return nextLevel.min - score;
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-6 bg-gray-100 rounded-lg border border-gray-200 animate-pulse min-h-[140px] w-full">
-        <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
-        <div className="h-6 w-24 bg-gray-200 rounded"></div>
-      </div>
-    );
-  }
-
-  // Show placeholder if error, noWallet, or no score
+  // Empty state
   if (
     localError ||
     noWallet ||
@@ -131,38 +119,65 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
     levelName === null
   ) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg border border-gray-200 min-h-[140px] w-full">
-        <div className="text-gray-400 text-3xl mb-2">–</div>
-        <div className="text-gray-500 font-medium text-base mb-1">
-          No Builder Score found
+      <div className="flex flex-col items-start justify-center p-8 bg-[#f5f7fa] rounded-2xl border border-gray-200 w-full min-h-[140px]">
+        <div className="text-base font-medium text-black mb-3">{title}</div>
+        <div
+          className="text-5xl font-bold mb-2 text-gray-400"
+          style={{ textAlign: "left", alignSelf: "flex-start" }}
+        >
+          N/A
         </div>
-        <div className="text-gray-400 text-sm text-center max-w-xs">
-          Connect a wallet to see your Builder Score and profile details here.
+        <div className="flex flex-col items-start gap-2">
+          <div
+            className="text-base text-gray-700 font-medium"
+            style={{ textAlign: "left" }}
+          >
+            Level 0
+          </div>
         </div>
-        {localError && (
-          <div className="text-red-400 text-xs mt-2">{localError}</div>
-        )}
+        <div className="mt-4 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-black rounded-full transition-all duration-500"
+            style={{ width: `0%` }}
+          />
+        </div>
+        <div
+          className="mt-2 text-xs text-gray-500"
+          style={{ textAlign: "left", width: "100%" }}
+        >
+          {/* No message */}
+        </div>
       </div>
     );
   }
 
+  // Normal state
   const pointsToNext = getPointsToNextLevel();
   const progress = getProgressToNextLevel();
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg border border-gray-200 w-full">
-      <div className="text-5xl font-bold mb-2 text-black">{score}</div>
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex items-center gap-2">
-          <div className="text-base text-gray-700 font-medium">
-            Level {level}
-          </div>
+    <div className="flex flex-col items-start justify-center p-8 bg-[#f5f7fa] rounded-2xl border border-gray-200 w-full min-h-[140px]">
+      <div className="text-base font-medium text-black mb-3">{title}</div>
+      <a
+        href={
+          walletAddress
+            ? `https://app.talentprotocol.com/wallet/${walletAddress}`
+            : undefined
+        }
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-5xl font-bold mb-2 text-black hover:underline"
+        style={{ textAlign: "left", alignSelf: "flex-start" }}
+      >
+        {score}
+      </a>
+      <div className="flex flex-col items-start gap-2">
+        <div
+          className="text-base text-gray-700 font-medium"
+          style={{ textAlign: "left" }}
+        >
+          Level {level}
         </div>
-        {lastCalculatedAt && (
-          <div className="text-xs text-gray-400">
-            Last updated: {new Date(lastCalculatedAt).toLocaleDateString()}
-          </div>
-        )}
       </div>
       <div className="mt-4 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
         <div
@@ -170,23 +185,28 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="mt-2 text-xs text-gray-500">
+      <div
+        className="mt-2 text-xs text-gray-500"
+        style={{ textAlign: "left", width: "100%" }}
+      >
         {pointsToNext
           ? `${pointsToNext} points to next level`
           : level === 6
             ? "Master level reached!"
             : "Level up!"}
       </div>
-      {walletAddress && (
-        <a
-          href={`https://app.talentprotocol.com/wallet/${walletAddress}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-black border border-gray-300 transition-colors duration-200"
-        >
-          View Profile on Talent Protocol
-        </a>
-      )}
     </div>
+  );
+}
+
+export function BuilderScore({ fid }: { fid: number | undefined }) {
+  return (
+    <ScoreCard fid={fid} title="Builder Score" scorerSlug="builder_score" />
+  );
+}
+
+export function CreatorScore({ fid }: { fid: number | undefined }) {
+  return (
+    <ScoreCard fid={fid} title="Creator Score" scorerSlug="creator_score" />
   );
 }

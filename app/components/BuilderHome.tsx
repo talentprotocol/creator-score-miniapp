@@ -6,7 +6,7 @@ import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "../services/neynarService";
-import { BuilderScore } from "./BuilderScore";
+import { BuilderScore, CreatorScore } from "./BuilderScore";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
@@ -42,8 +42,6 @@ function CopyButton({ address }: { address: string }) {
 
 export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
-  const fallbackFid = 3;
-  const effectiveFid = context?.user?.fid ?? fallbackFid;
   const user = context?.user;
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
@@ -62,13 +60,13 @@ export default function BuilderHome() {
 
   useEffect(() => {
     async function fetchWalletAddresses() {
-      if (!effectiveFid) return;
-      const data = await getUserWalletAddresses(effectiveFid);
+      if (!user?.fid) return;
+      const data = await getUserWalletAddresses(user.fid);
       setWalletAddresses(data);
       setWalletError(data.error);
     }
     fetchWalletAddresses();
-  }, [effectiveFid]);
+  }, [user?.fid]);
 
   return (
     <div
@@ -129,7 +127,10 @@ export default function BuilderHome() {
 
         {/* Builder Score Section */}
         <div style={{ width: "100%", marginBottom: 32 }}>
-          <BuilderScore fid={effectiveFid} />
+          <BuilderScore fid={user?.fid} />
+        </div>
+        <div style={{ width: "100%", marginBottom: 32 }}>
+          <CreatorScore fid={user?.fid} />
         </div>
 
         {/* Wallet Addresses Section */}

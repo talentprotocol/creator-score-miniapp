@@ -21,15 +21,30 @@ const LEVEL_RANGES = [
  */
 async function getBuilderScoreForAddress(
   address: string,
+  scorerSlug?: string,
 ): Promise<BuilderScore> {
   try {
-    const response = await fetch("/api/talent-score", {
+    const baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
+    const body: Record<string, any> = { address };
+    if (scorerSlug) body.scorer_slug = scorerSlug;
+    const response = await fetch(`${baseUrl}/api/talent-score`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address }),
+      body: JSON.stringify(body),
     });
     const data = await response.json();
     console.log("/api/talent-score client response:", data);
+
+    if (data.error) {
+      return {
+        score: 0,
+        level: 1,
+        levelName: "Level 1",
+        lastCalculatedAt: null,
+        walletAddress: null,
+        error: data.error,
+      };
+    }
 
     // Extract points and last_calculated_at from the nested score object
     const points = data.score?.points ?? 0;
@@ -70,6 +85,7 @@ async function getBuilderScoreForAddress(
  */
 export async function getBuilderScore(
   addresses: string[],
+  scorerSlug?: string,
 ): Promise<BuilderScore> {
   if (!addresses.length) {
     return {
@@ -84,7 +100,9 @@ export async function getBuilderScore(
   try {
     // Lowercase all addresses before querying
     const scores = await Promise.all(
-      addresses.map((addr) => getBuilderScoreForAddress(addr.toLowerCase())),
+      addresses.map((addr) =>
+        getBuilderScoreForAddress(addr.toLowerCase(), scorerSlug),
+      ),
     );
     // Filter out errors and find the highest score
     const validScores = scores.filter((s) => !s.error);
