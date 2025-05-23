@@ -6,6 +6,7 @@ import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "../services/neynarService";
+import { BuilderScore } from "./BuilderScore";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
@@ -99,6 +100,11 @@ export default function BuilderHome() {
             </span>
             <span style={{ fontSize: 14, color: "#666" }}>@{handle}</span>
           </div>
+        </div>
+
+        {/* Builder Score Section */}
+        <div style={{ width: "100%", marginBottom: 32 }}>
+          <BuilderScore fid={user?.fid} />
         </div>
 
         {/* Wallet Addresses Section */}

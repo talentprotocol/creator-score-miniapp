@@ -5,7 +5,7 @@ import { getBuilderScore } from "@/app/services/talentService";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
 
 interface BuilderScoreProps {
-  fid: number;
+  fid: number | undefined;
 }
 
 export function BuilderScore({ fid }: BuilderScoreProps) {
@@ -16,12 +16,19 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [noWallet, setNoWallet] = useState(false);
 
   useEffect(() => {
     async function fetchScore() {
+      if (!fid) {
+        setNoWallet(true);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
+        setNoWallet(false);
 
         // Get all wallet addresses from FID
         const walletData = await getUserWalletAddresses(fid);
@@ -37,13 +44,17 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
         ].filter((addr): addr is string => addr !== null && addr !== "");
 
         if (addresses.length === 0) {
-          throw new Error("No wallet addresses found");
+          setNoWallet(true);
+          setLoading(false);
+          return;
         }
 
         // Get Builder Score using all addresses
         const scoreData = await getBuilderScore(addresses);
         if (scoreData.error) {
-          throw new Error(scoreData.error);
+          setError(scoreData.error);
+          setLoading(false);
+          return;
         }
 
         setScore(scoreData.score);
@@ -60,9 +71,7 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
       }
     }
 
-    if (fid) {
-      fetchScore();
-    }
+    fetchScore();
   }, [fid]);
 
   // Calculate progress to next level
@@ -109,30 +118,48 @@ export function BuilderScore({ fid }: BuilderScoreProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-lg border border-white/10 animate-pulse">
+      <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-lg border border-white/10 animate-pulse min-h-[140px] w-full">
         <div className="h-8 w-32 bg-white/10 rounded mb-4"></div>
         <div className="h-6 w-24 bg-white/10 rounded"></div>
       </div>
     );
   }
 
-  if (error) {
+  // Styled placeholder for no wallet or no score
+  if (noWallet || score === null || level === null || levelName === null) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 bg-red-500/10 rounded-lg border border-red-500/20">
-        <p className="text-red-500 text-sm">{error}</p>
+      <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg border border-gray-200 min-h-[140px] w-full">
+        <svg
+          width="40"
+          height="40"
+          fill="none"
+          viewBox="0 0 24 24"
+          className="mb-2 text-gray-400"
+        >
+          <circle cx="12" cy="12" r="10" fill="#e5e7eb" />
+          <path
+            d="M8 12h8M8 16h5"
+            stroke="#9ca3af"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <circle cx="9" cy="9" r="1" fill="#9ca3af" />
+        </svg>
+        <div className="text-gray-500 font-medium text-base mb-1">
+          No Builder Score found
+        </div>
+        <div className="text-gray-400 text-sm text-center max-w-xs">
+          Connect a wallet to see your Builder Score and profile details here.
+        </div>
       </div>
     );
-  }
-
-  if (score === null || level === null || levelName === null) {
-    return null;
   }
 
   const pointsToNext = getPointsToNextLevel();
   const progress = getProgressToNextLevel();
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg border border-white/10">
+    <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg border border-white/10 w-full">
       <div className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
         {score}
       </div>
