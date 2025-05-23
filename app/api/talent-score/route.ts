@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
 
     const apiKey = process.env.TALENT_API_KEY;
     if (!apiKey) {
-      console.error("TALENT_API_KEY is not set in environment variables");
       return NextResponse.json(
         { error: "Server configuration error" },
         { status: 500 },
@@ -47,13 +46,18 @@ export async function GET(req: NextRequest) {
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
     } else {
-      const text = await response.text();
-      console.error("Unexpected response from Talent API:", text);
+      // Only log unexpected response format as it's a critical error
+      console.error(
+        `[Talent API] Unexpected response format for address ${address}${scorerSlug ? ` (scorer: ${scorerSlug})` : ""}`,
+      );
       data = { error: "Invalid response from Talent API" };
     }
 
     if (!response.ok) {
-      console.error("Talent API error:", data);
+      // Log API errors with context for debugging
+      console.error(
+        `[Talent API] Error for address ${address}${scorerSlug ? ` (scorer: ${scorerSlug})` : ""}: ${data.error || response.statusText}`,
+      );
       return NextResponse.json(
         { error: data.error || "Failed to fetch talent score" },
         { status: response.status },
@@ -62,11 +66,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error in talent-score API:", error);
+    // Log unexpected errors with context
+    console.error(
+      `[Talent API] Unexpected error for address ${req.url}: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Internal server error",
-      },
+      { error: "Failed to process talent score request" },
       { status: 500 },
     );
   }
@@ -86,7 +91,6 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.TALENT_API_KEY;
     if (!apiKey) {
-      console.error("TALENT_API_KEY is not set in environment variables");
       return NextResponse.json(
         { error: "Server configuration error" },
         { status: 500 },
@@ -118,13 +122,18 @@ export async function POST(req: NextRequest) {
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
     } else {
-      const text = await response.text();
-      console.error("Unexpected response from Talent API:", text);
+      // Only log unexpected response format as it's a critical error
+      console.error(
+        `[Talent API] Unexpected response format for address ${address}${scorer_slug ? ` (scorer: ${scorer_slug})` : ""}`,
+      );
       data = { error: "Invalid response from Talent API" };
     }
 
     if (!response.ok) {
-      console.error("Talent API error:", data);
+      // Log API errors with context for debugging
+      console.error(
+        `[Talent API] Error for address ${address}${scorer_slug ? ` (scorer: ${scorer_slug})` : ""}: ${data.error || response.statusText}`,
+      );
       return NextResponse.json(
         { error: data.error || "Failed to fetch talent score" },
         { status: response.status },
@@ -133,11 +142,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error in talent-score API:", error);
+    // Log unexpected errors with context
+    console.error(
+      `[Talent API] Unexpected error for address ${req.url}: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Internal server error",
-      },
+      { error: "Failed to process talent score request" },
       { status: 500 },
     );
   }

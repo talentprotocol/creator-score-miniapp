@@ -54,7 +54,10 @@ function ScoreCard({
           ...walletData.addresses,
           walletData.primaryEthAddress,
           walletData.primarySolAddress,
-        ].filter((addr): addr is string => addr !== null && addr !== "");
+        ].filter(
+          (addr): addr is string =>
+            typeof addr === "string" && addr.startsWith("0x"),
+        );
 
         if (addresses.length === 0) {
           setNoWallet(true);
