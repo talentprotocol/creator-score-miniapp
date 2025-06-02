@@ -11,7 +11,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
-import { ChevronDown, Wallet, Copy } from "lucide-react";
+import { ChevronDown, Copy } from "lucide-react";
 import {
   getUserWalletAddresses,
   type UserWalletAddresses,

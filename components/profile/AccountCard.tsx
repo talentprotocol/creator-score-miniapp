@@ -4,9 +4,6 @@ import { cn } from "@/lib/utils";
 import {
   Twitter,
   Linkedin,
-  Wallet,
-  MessageCircle,
-  CircleDollarSign,
   CircleUserRound,
   Github,
   WalletMinimal,

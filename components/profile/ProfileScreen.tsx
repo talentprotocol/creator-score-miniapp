@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Card } from "@/components/ui/card";
 import { ProfileHeader } from "./ProfileHeader";
 import { StatCard } from "./StatCard";
-import { Trophy, BadgeDollarSign } from "lucide-react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
@@ -14,7 +12,6 @@ import {
   SocialAccount,
 } from "@/app/services/talentService";
 import { ProfileTabs } from "./ProfileTabs";
-import { AccountGrid } from "./AccountGrid";
 
 interface ProfileScreenProps {
   children?: React.ReactNode;
@@ -30,7 +27,6 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
   const [socialAccounts, setSocialAccounts] = React.useState<SocialAccount[]>(
     [],
   );
-  const [accountsLoading, setAccountsLoading] = React.useState(false);
 
   React.useEffect(() => {
     async function fetchScore() {
@@ -56,7 +52,6 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
   React.useEffect(() => {
     async function fetchAccounts() {
       if (!fid) return;
-      setAccountsLoading(true);
       try {
         const accounts = await getSocialAccountsForFarcaster(String(fid));
         accounts.sort(
@@ -65,8 +60,6 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
         setSocialAccounts(accounts);
       } catch {
         setSocialAccounts([]);
-      } finally {
-        setAccountsLoading(false);
       }
     }
     fetchAccounts();

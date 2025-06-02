@@ -1,6 +1,7 @@
 "use client";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   getUserWalletAddresses,
   type UserWalletAddresses,
@@ -144,12 +145,12 @@ export default function BuilderHome() {
           }}
           title="Add to Farcaster"
         >
-          <img
+          <Image
             src="/fc.svg"
             alt="Farcaster"
+            width={20}
+            height={20}
             style={{
-              width: "100%",
-              height: "100%",
               objectFit: "contain",
             }}
           />
@@ -170,7 +171,7 @@ export default function BuilderHome() {
         <div
           style={{ display: "flex", alignItems: "center", marginBottom: 24 }}
         >
-          <img
+          <Image
             src={pfpUrl}
             alt="Profile picture"
             width={64}

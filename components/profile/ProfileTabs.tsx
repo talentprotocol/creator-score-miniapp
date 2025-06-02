@@ -98,7 +98,6 @@ function ScoreProgressAccordion() {
   const [score, setScore] = React.useState<number | null>(null);
   const [level, setLevel] = React.useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const fid = user?.fid;
@@ -106,7 +105,6 @@ function ScoreProgressAccordion() {
   React.useEffect(() => {
     async function fetchScore() {
       if (!fid) return;
-      setIsLoading(true);
       try {
         const walletData = await getUserWalletAddresses(fid);
         if (walletData.error) {
@@ -143,8 +141,6 @@ function ScoreProgressAccordion() {
         );
       } catch (err) {
         console.error("Failed to fetch score:", err);
-      } finally {
-        setIsLoading(false);
       }
     }
 

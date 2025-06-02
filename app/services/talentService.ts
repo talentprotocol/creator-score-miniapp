@@ -289,6 +289,15 @@ function getDisplayName(source: string): string {
   return source.charAt(0).toUpperCase() + source.slice(1);
 }
 
+interface TalentSocialAccount {
+  source: string;
+  name: string | null;
+  followers_count: number | null;
+  owned_since: string | null;
+  profile_url: string | null;
+  image_url: string | null;
+}
+
 /**
  * Fetches social accounts for a Farcaster user (by FID) from the Talent Protocol API
  */
@@ -307,17 +316,21 @@ export async function getSocialAccountsForFarcaster(
     if (!Array.isArray(data.socials)) return [];
 
     // 1. Filter EFPs, keep only the one with the highest follower count
-    const efpAccounts = data.socials.filter((s: any) => s.source === "efp");
-    let mainEfp: any = null;
+    const efpAccounts = data.socials.filter(
+      (s: TalentSocialAccount) => s.source === "efp",
+    );
+    let mainEfp: TalentSocialAccount | null = null;
     if (efpAccounts.length > 0) {
       mainEfp = efpAccounts.reduce(
-        (max: any, curr: any) =>
+        (max: TalentSocialAccount, curr: TalentSocialAccount) =>
           (curr.followers_count ?? 0) > (max.followers_count ?? 0) ? curr : max,
         efpAccounts[0],
       );
     }
     // 2. Find ENS account
-    const ensAccount = data.socials.find((s: any) => s.source === "ens");
+    const ensAccount = data.socials.find(
+      (s: TalentSocialAccount) => s.source === "ens",
+    );
     // 3. Merge EFP and ENS into 'Ethereum' if either exists
     let ethereumAccount: SocialAccount | null = null;
     if (mainEfp || ensAccount) {
@@ -334,13 +347,13 @@ export async function getSocialAccountsForFarcaster(
     // 4. Map and filter other accounts
     const socials: SocialAccount[] = data.socials
       .filter(
-        (s: any) =>
+        (s: TalentSocialAccount) =>
           s.source !== "efp" &&
           s.source !== "ens" &&
           // Exclude all but the main EFP/ENS merged account
           s.source !== "ethereum",
       )
-      .map((s: any) => {
+      .map((s: TalentSocialAccount) => {
         let handle = s.name || null;
         if (s.source === "lens" && handle && handle.startsWith("lens/")) {
           handle = handle.replace(/^lens\//, "");
@@ -352,7 +365,7 @@ export async function getSocialAccountsForFarcaster(
         ) {
           handle = `@${handle}`;
         }
-        let displayName = getDisplayName(s.source);
+        const displayName = getDisplayName(s.source);
         if (s.source === "basename") {
           return {
             source: "base",
@@ -379,7 +392,7 @@ export async function getSocialAccountsForFarcaster(
       socials.unshift(ethereumAccount);
     }
     return socials;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
