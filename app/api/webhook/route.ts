@@ -7,7 +7,7 @@ import { http } from "viem";
 import { createPublicClient } from "viem";
 import { optimism } from "viem/chains";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
-import { getBuilderScore } from "@/app/services/talentService";
+import { getBuilderScore, getCreatorScore } from "@/app/services/talentService";
 
 const appName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME;
 
@@ -86,11 +86,30 @@ async function getWelcomeMessage(fid: number): Promise<string> {
         return `Welcome to ${appName}!`;
       }
 
-      // Get Builder Score
-      const scoreData = await getBuilderScore(addresses);
-      if (!scoreData.error && scoreData.score) {
-        return `Welcome to ${appName}! Your Builder Score is ${scoreData.score} (${scoreData.levelName})`;
+      // Get both scores
+      const [builderScore, creatorScore] = await Promise.all([
+        getBuilderScore(addresses),
+        getCreatorScore(addresses),
+      ]);
+
+      const scoreMessages = [];
+
+      if (!builderScore.error && builderScore.score) {
+        scoreMessages.push(
+          `Builder Score: ${builderScore.score} (${builderScore.levelName})`,
+        );
       }
+
+      if (!creatorScore.error && creatorScore.score) {
+        scoreMessages.push(
+          `Creator Score: ${creatorScore.score} (${creatorScore.levelName})`,
+        );
+      }
+
+      if (scoreMessages.length > 0) {
+        return `Welcome to ${appName}! Your ${scoreMessages.join(" | ")}`;
+      }
+
       // If not last attempt, wait and retry
       if (attempt < maxAttempts) {
         await new Promise((res) => setTimeout(res, delayMs));

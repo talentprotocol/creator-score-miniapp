@@ -1,0 +1,161 @@
+"use client";
+
+import * as React from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  Drawer,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import { ChevronDown, Wallet, Copy } from "lucide-react";
+import {
+  getUserWalletAddresses,
+  type UserWalletAddresses,
+} from "@/app/services/neynarService";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { getUserContext } from "@/lib/user-context";
+
+export function ProfileHeader({ followers }: { followers?: string }) {
+  const { context } = useMiniKit();
+  const user = getUserContext(context);
+  const displayName = user?.displayName || user?.username || "Unknown user";
+  const profileImage =
+    user?.pfpUrl || "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
+  const fid = user?.fid; // Only use real fid, no fallback
+
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [walletData, setWalletData] =
+    React.useState<UserWalletAddresses | null>(null);
+  const [walletError, setWalletError] = React.useState<string | undefined>();
+  const [loading, setLoading] = React.useState(false);
+
+  const handleOpenChange = async (open: boolean) => {
+    setDrawerOpen(open);
+    if (open && !walletData && !loading) {
+      if (!fid) return; // No context, do not fetch
+      setLoading(true);
+      try {
+        const data = await getUserWalletAddresses(fid);
+        setWalletData(data);
+        setWalletError(data.error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  function truncateAddress(addr: string) {
+    if (!addr) return "";
+    return addr.slice(0, 6) + "..." + addr.slice(-4);
+  }
+
+  return (
+    <div className="flex items-center justify-between w-full gap-4">
+      {/* Left: Name, dropdown, stats */}
+      <div className="flex-1 min-w-0">
+        <Drawer open={drawerOpen} onOpenChange={handleOpenChange}>
+          <DrawerTrigger asChild>
+            <button className="flex items-center gap-1 text-xl font-bold leading-tight focus:outline-none">
+              <span>{displayName}</span>
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </DrawerTrigger>
+          <DrawerContent className="max-w-sm mx-auto w-full p-4 rounded-t-2xl">
+            <DrawerHeader>
+              <DrawerTitle className="text-lg font-semibold mb-2">
+                Wallet Addresses
+              </DrawerTitle>
+              <DrawerDescription className="sr-only">
+                List of all wallet addresses and ENS names associated with your
+                account. Tap the copy icon to copy an address.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-2 pb-4 flex flex-col gap-3">
+              {!fid ? (
+                <div className="text-muted-foreground text-sm">
+                  No addresses found.
+                </div>
+              ) : loading ? (
+                <div className="text-muted-foreground text-sm">Loading...</div>
+              ) : walletError ? (
+                <div className="text-destructive text-sm">{walletError}</div>
+              ) : walletData && walletData.addresses.length > 0 ? (
+                walletData.addresses.map((address: string) => (
+                  <div
+                    key={address}
+                    className="flex items-center gap-3 h-14 px-3 bg-muted rounded-xl"
+                  >
+                    {/* Use ETH icon for now, could be improved with ENS/base detection */}
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M16 3L16.2 3.6V21.7L16 21.9L7.1 17.1L16 3Z"
+                        fill="#232323"
+                      />
+                      <path
+                        d="M16 3L24.9 17.1L16 21.9V12.2V3Z"
+                        fill="#232323"
+                      />
+                      <path
+                        d="M16 23.6L16.1 23.8V28.7L16 29L7.1 18.7L16 23.6Z"
+                        fill="#232323"
+                      />
+                      <path d="M16 29V23.6L24.9 18.7L16 29Z" fill="#232323" />
+                      <path
+                        d="M16 21.9L7.1 17.1L16 12.2V21.9Z"
+                        fill="#232323"
+                      />
+                      <path
+                        d="M24.9 17.1L16 21.9V12.2L24.9 17.1Z"
+                        fill="#232323"
+                      />
+                    </svg>
+                    <span className="flex-1 text-foreground font-mono text-sm truncate">
+                      {truncateAddress(address)}
+                    </span>
+                    <button
+                      type="button"
+                      className="p-1 rounded hover:bg-accent"
+                      onClick={() => navigator.clipboard.writeText(address)}
+                      aria-label="Copy address"
+                    >
+                      <Copy className="h-5 w-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  No addresses found.
+                </div>
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+        <div className="mt-1 flex flex-col gap-0.5">
+          <span className="text-muted-foreground text-sm">
+            {followers ?? "—"} followers
+          </span>
+        </div>
+      </div>
+      {/* Right: Profile picture with badge overlay */}
+      <div className="relative flex-shrink-0">
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={profileImage} alt={displayName} />
+          <AvatarFallback>{displayName[0]}</AvatarFallback>
+        </Avatar>
+        <Badge className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-0.5 text-xs shadow-md rounded-full border-2 border-background">
+          L3
+        </Badge>
+      </div>
+    </div>
+  );
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getBuilderScore } from "@/app/services/talentService";
+import { getBuilderScore, SCORER_SLUGS } from "@/app/services/talentService";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
 
 interface ScoreProps {
@@ -195,12 +195,20 @@ function ScoreCard({
 
 export function BuilderScore({ fid }: { fid: number | undefined }) {
   return (
-    <ScoreCard fid={fid} title="Builder Score" scorerSlug="builder_score" />
+    <ScoreCard
+      fid={fid}
+      title="Builder Score"
+      scorerSlug={SCORER_SLUGS.BUILDER}
+    />
   );
 }
 
 export function CreatorScore({ fid }: { fid: number | undefined }) {
   return (
-    <ScoreCard fid={fid} title="Creator Score" scorerSlug="creator_score" />
+    <ScoreCard
+      fid={fid}
+      title="Creator Score"
+      scorerSlug={SCORER_SLUGS.CREATOR}
+    />
   );
 }

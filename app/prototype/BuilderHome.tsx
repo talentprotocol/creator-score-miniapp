@@ -7,6 +7,7 @@ import {
 } from "../services/neynarService";
 import { BuilderScore, CreatorScore } from "./BuilderScore";
 import { sdk } from "@farcaster/frame-sdk";
+import { getUserContext } from "@/lib/user-context";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
@@ -43,7 +44,7 @@ function CopyButton({ address }: { address: string }) {
 export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
   const [isMiniApp, setIsMiniApp] = useState(false);
-  const user = context?.user;
+  const user = getUserContext(context);
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
   const pfpUrl = user?.pfpUrl || placeholderAvatar;
