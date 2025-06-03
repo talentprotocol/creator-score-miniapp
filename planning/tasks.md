@@ -41,11 +41,12 @@
 
 ## Phase 5: API Integration
 
-- [ ] **Task 5.1**: Create Creator Score API service that returns profile data with expected structure
-- [ ] **Task 5.2**: Connect real Creator Score and profile data to Profile screen display
+- [x] **Task 5.1**: Create Creator Score API service that returns profile data with expected structure
+- [x] **Task 5.2**: Connect real Creator Score and profile data to Profile screen display
 - [ ] **Task 5.3**: Create leaderboard API service that returns list of creators with scores
 - [ ] **Task 5.4**: Connect real leaderboard data to Leaderboard screen with accurate user position
 - [ ] **Task 5.5**: Build account connection status checker that shows real connection status in Settings
+- [ ] **Task 5.6** (optional): Use AI to generate a new bio/description based on bios from all platforms and existing data points.
 
 ## Phase 6: Interactive Features
 

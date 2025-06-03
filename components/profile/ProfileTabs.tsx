@@ -13,9 +13,19 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { getBuilderScore, SCORER_SLUGS } from "@/app/services/talentService";
+import {
+  getBuilderScore,
+  SCORER_SLUGS,
+  getCredentialsForFarcaster,
+  type IssuerCredentialGroup,
+} from "@/app/services/talentService";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
 import { getUserContext } from "@/lib/user-context";
+import {
+  filterEthAddresses,
+  calculateScoreProgress,
+  calculatePointsToNextLevel,
+} from "@/lib/utils";
 
 const LEVEL_RANGES = [
   { min: 0, max: 39, name: "Level 1" },
@@ -26,73 +36,16 @@ const LEVEL_RANGES = [
   { min: 250, max: Infinity, name: "Level 6" },
 ] as const;
 
-const mockScoreData = [
-  {
-    issuer: "Ethereum",
-    total: 120,
-    points: [
-      { label: "EFP Followers", value: 60 },
-      { label: "ENS Account Age", value: 60 },
-    ],
-  },
-  {
-    issuer: "Farcaster",
-    total: 180,
-    points: [
-      { label: "Farcaster Rewards USDC Earnings", value: 60 },
-      { label: "Farcaster Account Age", value: 60 },
-      { label: "Farcaster Followers", value: 60 },
-    ],
-  },
-  {
-    issuer: "Lens",
-    total: 80,
-    points: [
-      { label: "Lens Account Age", value: 40 },
-      { label: "Lens Followers", value: 40 },
-    ],
-  },
-  {
-    issuer: "LinkedIn",
-    total: 40,
-    points: [{ label: "LinkedIn Followers", value: 40 }],
-  },
-  {
-    issuer: "Onchain Activity",
-    total: 60,
-    points: [
-      { label: "First Transaction", value: 20 },
-      { label: "ETH Balance", value: 20 },
-      { label: "Outgoing Transactions", value: 20 },
-    ],
-  },
-  {
-    issuer: "Stack",
-    total: 30,
-    points: [{ label: "Stack Score", value: 30 }],
-  },
-  {
-    issuer: "Talent Protocol",
-    total: 20,
-    points: [{ label: "Human Checkmark", value: 20 }],
-  },
-  {
-    issuer: "X/Twitter",
-    total: 100,
-    points: [
-      { label: "X Account Age", value: 50 },
-      { label: "X Followers", value: 50 },
-    ],
-  },
-  {
-    issuer: "Zora",
-    total: 40,
-    points: [
-      { label: "Zora Followers", value: 20 },
-      { label: "Zora Rewards", value: 20 },
-    ],
-  },
-];
+function shouldShowUom(uom: string | null): boolean {
+  if (!uom) return false;
+  const hiddenUoms = [
+    "creation date",
+    "out transactions",
+    "followers",
+    "stack points",
+  ];
+  return !hiddenUoms.includes(uom);
+}
 
 function ScoreProgressAccordion() {
   const [score, setScore] = React.useState<number | null>(null);
@@ -111,14 +64,11 @@ function ScoreProgressAccordion() {
           throw new Error(walletData.error);
         }
 
-        const addresses = [
+        const addresses = filterEthAddresses([
           ...walletData.addresses,
           walletData.primaryEthAddress,
           walletData.primarySolAddress,
-        ].filter(
-          (addr): addr is string =>
-            typeof addr === "string" && addr.startsWith("0x"),
-        );
+        ]);
 
         if (addresses.length === 0) {
           throw new Error("No wallet addresses found");
@@ -147,27 +97,8 @@ function ScoreProgressAccordion() {
     fetchScore();
   }, [fid]);
 
-  // Calculate progress to next level
-  const getProgressToNextLevel = () => {
-    if (!score || !level) return 0;
-    const currentLevel = LEVEL_RANGES[level - 1];
-    const nextLevel = LEVEL_RANGES[level];
-    if (!nextLevel || score >= nextLevel.min) return 100;
-    const range = nextLevel.min - currentLevel.min;
-    const progress = score - currentLevel.min;
-    return (progress / range) * 100;
-  };
-
-  // Calculate points to next level
-  const getPointsToNextLevel = () => {
-    if (!score || !level) return null;
-    const nextLevel = LEVEL_RANGES[level];
-    if (!nextLevel || score >= nextLevel.min) return null;
-    return nextLevel.min - score;
-  };
-
-  const progress = getProgressToNextLevel();
-  const pointsToNext = getPointsToNextLevel();
+  const progress = calculateScoreProgress(score ?? 0, level ?? 1);
+  const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
 
   return (
     <Accordion
@@ -197,7 +128,7 @@ function ScoreProgressAccordion() {
           <div className="space-y-2">
             <div className="w-full text-xs text-muted-foreground text-right mb-1">
               {pointsToNext && level
-                ? `${pointsToNext} points to Level ${level + 1}`
+                ? `${pointsToNext.toString()} points to Level ${(level + 1).toString()}`
                 : level === 6
                   ? "Master level reached!"
                   : "Level up!"}
@@ -232,22 +163,89 @@ function ScoreProgressAccordion() {
   );
 }
 
+function formatReadableValue(value: string | null): string {
+  if (!value) return "";
+  if (/[a-zA-Z]/.test(value)) return value;
+  const num = parseFloat(value);
+  if (isNaN(num)) return value;
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+}
+
 function ScoreDataPoints() {
+  const [credentials, setCredentials] = React.useState<IssuerCredentialGroup[]>(
+    [],
+  );
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const { context } = useMiniKit();
+  const user = getUserContext(context);
+  const fid = user?.fid;
+
+  React.useEffect(() => {
+    async function fetchCredentials() {
+      if (!fid) return;
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await getCredentialsForFarcaster(fid.toString());
+        setCredentials(data);
+      } catch (err) {
+        console.error("Failed to fetch credentials:", err);
+        setError("Failed to load score breakdown");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchCredentials();
+  }, [fid]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-sm text-muted-foreground">
+          Loading score breakdown...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-sm text-destructive">{error}</div>
+      </div>
+    );
+  }
+
+  if (credentials.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-sm text-muted-foreground">
+          No score data available
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Accordion type="multiple" className="space-y-2">
-      {mockScoreData.map((issuer) => (
+      {credentials.map((issuer, index) => (
         <AccordionItem
           key={issuer.issuer}
-          value={issuer.issuer}
+          value={`issuer-${index}`}
           className="bg-white rounded-2xl shadow border p-0 mb-3"
         >
           <AccordionTrigger className="px-6 py-4 flex items-center justify-between">
             <div className="flex flex-col flex-1 gap-1">
-              <span className="font-medium text-base text-foreground">
+              <span className="text-base font-medium text-foreground">
                 {issuer.issuer}
               </span>
-              <span className="text-xs text-muted-foreground font-normal">
-                {issuer.points.length} data point
+              <span className="text-xs text-muted-foreground">
+                {issuer.points.length} credential
                 {issuer.points.length !== 1 ? "s" : ""}
               </span>
             </div>
@@ -256,14 +254,40 @@ function ScoreDataPoints() {
             </span>
           </AccordionTrigger>
           <AccordionContent className="px-6 pb-5">
-            <ul className="space-y-1">
+            <ul className="space-y-2">
               {issuer.points.map((pt) => (
                 <li
                   key={pt.label}
-                  className="flex items-center justify-between text-sm"
+                  className="flex items-center justify-between text-xs"
                 >
-                  <span>{pt.label}</span>
-                  <span className="font-medium">{pt.value}</span>
+                  <span
+                    className="truncate text-muted-foreground max-w-[60%]"
+                    title={pt.label}
+                  >
+                    {pt.label}
+                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {pt.readable_value && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        {pt.uom === "USDC" ? (
+                          `$${formatReadableValue(pt.readable_value)}`
+                        ) : (
+                          <>
+                            {formatReadableValue(pt.readable_value)}
+                            {shouldShowUom(pt.uom) && <span>{pt.uom}</span>}
+                          </>
+                        )}
+                      </span>
+                    )}
+                    {pt.readable_value && (
+                      <span className="mx-1 text-muted-foreground">
+                        &middot;
+                      </span>
+                    )}
+                    <span className="font-medium text-xs text-muted-foreground whitespace-nowrap">
+                      {pt.value}/{pt.max_score} {pt.value === 1 ? "pt" : "pts"}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -285,6 +309,30 @@ export function ProfileTabs({
   scoreValue,
   socialAccounts,
 }: ProfileTabsProps) {
+  const [credentialsCount, setCredentialsCount] = React.useState<number>(0);
+  const { context } = useMiniKit();
+  const user = getUserContext(context);
+  const fid = user?.fid;
+
+  React.useEffect(() => {
+    async function fetchCredentialsCount() {
+      if (!fid) return;
+      try {
+        const data = await getCredentialsForFarcaster(fid.toString());
+        // Sum up all credentials across all issuers
+        const total = data.reduce(
+          (sum, issuer) => sum + issuer.points.length,
+          0,
+        );
+        setCredentialsCount(total);
+      } catch (err) {
+        console.error("Failed to fetch credentials count:", err);
+      }
+    }
+
+    fetchCredentialsCount();
+  }, [fid]);
+
   return (
     <Tabs
       defaultValue="accounts"
@@ -326,7 +374,7 @@ export function ProfileTabs({
             variant="secondary"
             className="ml-2 bg-muted text-muted-foreground"
           >
-            {scoreValue}
+            {credentialsCount}
           </Badge>
         </TabsTrigger>
       </TabsList>

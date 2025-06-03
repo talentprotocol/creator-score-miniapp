@@ -1,3 +1,5 @@
+import { LEVEL_RANGES } from "@/lib/constants";
+
 export interface BuilderScore {
   score: number;
   level: number;
@@ -14,15 +16,6 @@ export const SCORER_SLUGS = {
   BUILDER: "builder_score", // default scorer
   CREATOR: "creator_score",
 } as const;
-
-const LEVEL_RANGES = [
-  { min: 0, max: 39, name: "Level 1" },
-  { min: 40, max: 79, name: "Level 2" },
-  { min: 80, max: 119, name: "Level 3" },
-  { min: 120, max: 169, name: "Level 4" },
-  { min: 170, max: 249, name: "Level 5" },
-  { min: 250, max: Infinity, name: "Level 6" },
-] as const;
 
 /**
  * Generic function to fetch a score for a single wallet address
@@ -395,4 +388,153 @@ export async function getSocialAccountsForFarcaster(
   } catch {
     return [];
   }
+}
+
+export interface Credential {
+  data_issuer_name: string;
+  name: string;
+  points: number;
+  max_score: number;
+  description: string;
+  external_url: string | null;
+  last_calculated_at: string | null;
+  category: string;
+  data_issuer_slug: string;
+  slug: string;
+  uom: string;
+  readable_value: string | null;
+  points_calculation_logic?: any;
+}
+
+export interface CredentialsResponse {
+  credentials: Credential[];
+}
+
+/**
+ * Groups credentials by issuer and calculates total points per issuer
+ */
+export interface IssuerCredentialGroup {
+  issuer: string;
+  total: number;
+  max_total: number;
+  points: Array<{
+    label: string;
+    value: number;
+    max_score: number | null;
+    readable_value: string | null;
+    uom: string | null;
+  }>;
+}
+
+/**
+ * Fetches credentials for a Farcaster user (by FID) from the Talent Protocol API
+ * and groups them by issuer for display in the UI
+ */
+export async function getCredentialsForFarcaster(
+  fid: string,
+): Promise<IssuerCredentialGroup[]> {
+  try {
+    const data = await fetchCredentials(fid);
+    if (!data?.credentials) {
+      return [];
+    }
+
+    const issuerGroups = new Map<string, IssuerCredentialGroup>();
+
+    data.credentials.forEach((cred: Credential) => {
+      // Skip credentials with no points
+      if (cred.points === 0) return;
+
+      const issuer = cred.data_issuer_name;
+      // Add type checking
+      if (typeof issuer !== "string") {
+        return;
+      }
+
+      const existingGroup = issuerGroups.get(issuer);
+
+      // Extract readable_value and uom from the data_point with is_maximum=true
+      let readableValue = null;
+      let uom = null;
+      if (Array.isArray(cred.points_calculation_logic?.data_points)) {
+        const maxDataPoint = cred.points_calculation_logic.data_points.find(
+          (dp: any) => dp.is_maximum,
+        );
+        readableValue = maxDataPoint?.readable_value ?? null;
+        uom = maxDataPoint?.uom ?? cred.uom ?? null;
+      } else {
+        uom = cred.uom ?? null;
+      }
+
+      // Extract max_score for each credential
+      const maxScore = cred.points_calculation_logic?.max_points ?? null;
+
+      if (existingGroup) {
+        existingGroup.total += cred.points;
+        existingGroup.max_total =
+          (existingGroup.max_total ?? 0) + (maxScore ?? 0);
+        existingGroup.points.push({
+          label: cred.name,
+          value: cred.points,
+          max_score: maxScore,
+          readable_value: readableValue,
+          uom: uom,
+        });
+      } else {
+        issuerGroups.set(issuer, {
+          issuer,
+          total: cred.points,
+          max_total: maxScore ?? 0,
+          points: [
+            {
+              label: cred.name,
+              value: cred.points,
+              max_score: maxScore,
+              readable_value: readableValue,
+              uom: uom,
+            },
+          ],
+        });
+      }
+    });
+
+    return Array.from(issuerGroups.values()).sort((a, b) => b.total - a.total);
+  } catch (error) {
+    return [];
+  }
+}
+
+async function fetchCredentials(fid: string) {
+  let baseUrl = "";
+  if (typeof window !== "undefined") {
+    if (window.location.hostname === "localhost") {
+      baseUrl = ""; // relative path
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
+    }
+  } else {
+    baseUrl = process.env.NEXT_PUBLIC_URL || "";
+  }
+
+  const params = new URLSearchParams({
+    fid,
+    account_source: "farcaster",
+    scorer_slug: SCORER_SLUGS.CREATOR,
+  });
+
+  const response = await fetch(
+    `${baseUrl}/api/talent-credentials?${params.toString()}`,
+    { method: "GET" },
+  );
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(data.error);
+  }
+
+  if (!Array.isArray(data.credentials)) {
+    throw new Error("Invalid response format from Talent API");
+  }
+
+  return data;
 }

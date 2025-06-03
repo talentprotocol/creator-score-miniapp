@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     if (accountSource === "wallet") {
       params.append("id", address!);
     } else if (accountSource === "farcaster") {
-      params.append("fids", fid!);
+      params.append("id", fid!);
     }
     params.append("account_source", accountSource);
 
@@ -47,10 +47,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Use different endpoints based on account source
-    const baseUrl =
-      accountSource === "farcaster"
-        ? "https://api.talentprotocol.com/farcaster/scores"
-        : "https://api.talentprotocol.com/score";
+    const baseUrl = "https://api.talentprotocol.com/score";
 
     const fullUrl = `${baseUrl}?${params.toString()}`;
 
@@ -146,7 +143,7 @@ export async function POST(req: NextRequest) {
     if (account_source === "wallet") {
       params.append("id", address);
     } else if (account_source === "farcaster") {
-      params.append("fids", fid);
+      params.append("id", fid);
     }
     params.append("account_source", account_source);
 
@@ -156,10 +153,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Use different endpoints based on account source
-    const baseUrl =
-      account_source === "farcaster"
-        ? "https://api.talentprotocol.com/farcaster/scores"
-        : "https://api.talentprotocol.com/score";
+    const baseUrl = "https://api.talentprotocol.com/score";
 
     const fullUrl = `${baseUrl}?${params.toString()}`;
 

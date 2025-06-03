@@ -6,6 +6,7 @@ import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "../services/neynarService";
+import { getBuilderScore } from "@/app/services/talentService";
 import { BuilderScore, CreatorScore } from "./BuilderScore";
 import { sdk } from "@farcaster/frame-sdk";
 import { getUserContext } from "@/lib/user-context";
@@ -46,6 +47,7 @@ export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
   const [isMiniApp, setIsMiniApp] = useState(false);
   const user = getUserContext(context);
+  const fid = user?.fid;
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
   const pfpUrl = user?.pfpUrl || placeholderAvatar;
@@ -56,6 +58,13 @@ export default function BuilderHome() {
     primarySolAddress: null,
   });
   const [walletError, setWalletError] = useState<string | undefined>();
+
+  const [score, setScore] = useState<number | null>(null);
+  const [level, setLevel] = useState<number | null>(null);
+  const [levelName, setLevelName] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [noWallet, setNoWallet] = useState(false);
 
   useEffect(() => {
     // Check if we're running in a Mini App
@@ -92,13 +101,60 @@ export default function BuilderHome() {
 
   useEffect(() => {
     async function fetchWalletAddresses() {
-      if (!user?.fid) return;
-      const data = await getUserWalletAddresses(user.fid);
+      if (!fid) return;
+      const data = await getUserWalletAddresses(fid);
       setWalletAddresses(data);
       setWalletError(data.error);
     }
     fetchWalletAddresses();
-  }, [user?.fid]);
+  }, [fid]);
+
+  useEffect(() => {
+    async function fetchScore() {
+      if (!fid) return;
+
+      try {
+        setError(null);
+        setNoWallet(false);
+
+        const walletData = await getUserWalletAddresses(fid);
+        if (walletData.error) {
+          throw new Error(walletData.error);
+        }
+
+        const addresses = [
+          ...walletData.addresses,
+          walletData.primaryEthAddress,
+          walletData.primarySolAddress,
+        ].filter(
+          (addr): addr is string =>
+            typeof addr === "string" && addr.startsWith("0x"),
+        );
+
+        if (addresses.length === 0) {
+          setNoWallet(true);
+          return;
+        }
+
+        const scoreData = await getBuilderScore(addresses);
+        if (scoreData.error) {
+          setError(scoreData.error);
+          return;
+        }
+
+        setScore(scoreData.score);
+        setLevel(scoreData.level);
+        setLevelName(scoreData.levelName);
+        setWalletAddress(scoreData.walletAddress);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch Builder Score",
+        );
+      }
+    }
+
+    fetchScore();
+  }, [fid]);
 
   return (
     <div
@@ -194,10 +250,10 @@ export default function BuilderHome() {
 
         {/* Builder Score Section */}
         <div style={{ width: "100%", marginBottom: 32 }}>
-          <BuilderScore fid={user?.fid} />
+          <BuilderScore fid={fid} />
         </div>
         <div style={{ width: "100%", marginBottom: 32 }}>
-          <CreatorScore fid={user?.fid} />
+          <CreatorScore fid={fid} />
         </div>
 
         {/* Wallet Addresses Section */}

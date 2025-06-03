@@ -8,6 +8,7 @@ import { createPublicClient } from "viem";
 import { optimism } from "viem/chains";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
 import { getBuilderScore, getCreatorScore } from "@/app/services/talentService";
+import { NextResponse } from "next/server";
 
 const appName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME;
 
@@ -129,65 +130,35 @@ async function getWelcomeMessage(fid: number): Promise<string> {
 }
 
 export async function POST(request: Request) {
-  const requestJson = await request.json();
+  try {
+    const body = await request.json();
+    const { type, data } = body;
 
-  const { header: encodedHeader, payload: encodedPayload } = requestJson;
+    switch (type) {
+      case "frame_removed":
+        await deleteUserNotificationDetails(data.fid);
+        break;
 
-  const headerData = decode(encodedHeader);
-  const event = decode(encodedPayload);
+      case "notifications_enabled":
+        await setUserNotificationDetails(data.fid, data.notificationDetails);
+        break;
 
-  const { fid, key } = headerData;
+      case "notifications_disabled":
+        await deleteUserNotificationDetails(data.fid);
+        break;
 
-  const valid = await verifyFidOwnership(fid, key);
+      default:
+        return NextResponse.json(
+          { error: "Unsupported event type" },
+          { status: 400 },
+        );
+    }
 
-  if (!valid) {
-    return Response.json(
-      { success: false, error: "Invalid FID ownership" },
-      { status: 401 },
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to process webhook" },
+      { status: 500 },
     );
   }
-
-  switch (event.event) {
-    case "frame_added":
-      console.log(
-        "frame_added",
-        "event.notificationDetails",
-        event.notificationDetails,
-      );
-      if (event.notificationDetails) {
-        await setUserNotificationDetails(fid, event.notificationDetails);
-        const welcomeMessage = await getWelcomeMessage(fid);
-        await sendFrameNotification({
-          fid,
-          title: `Welcome to ${appName}`,
-          body: welcomeMessage,
-        });
-      } else {
-        await deleteUserNotificationDetails(fid);
-      }
-      break;
-    case "frame_removed": {
-      console.log("frame_removed");
-      await deleteUserNotificationDetails(fid);
-      break;
-    }
-    case "notifications_enabled": {
-      console.log("notifications_enabled", event.notificationDetails);
-      await setUserNotificationDetails(fid, event.notificationDetails);
-      const welcomeMessage = await getWelcomeMessage(fid);
-      await sendFrameNotification({
-        fid,
-        title: `Welcome to ${appName}`,
-        body: welcomeMessage,
-      });
-      break;
-    }
-    case "notifications_disabled": {
-      console.log("notifications_disabled");
-      await deleteUserNotificationDetails(fid);
-      break;
-    }
-  }
-
-  return Response.json({ success: true });
 }
