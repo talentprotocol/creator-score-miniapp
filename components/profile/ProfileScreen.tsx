@@ -10,6 +10,7 @@ import {
   getCreatorScore,
   getSocialAccountsForFarcaster,
   SocialAccount,
+  getCredentialsForFarcaster,
 } from "@/app/services/talentService";
 import { ProfileTabs } from "./ProfileTabs";
 
@@ -27,6 +28,8 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
   const [socialAccounts, setSocialAccounts] = React.useState<SocialAccount[]>(
     [],
   );
+  const [totalUsdcRewards, setTotalUsdcRewards] = React.useState<number>(0);
+  const [rewardsLoading, setRewardsLoading] = React.useState(false);
 
   React.useEffect(() => {
     async function fetchScore() {
@@ -65,6 +68,34 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
     fetchAccounts();
   }, [fid]);
 
+  React.useEffect(() => {
+    async function fetchRewards() {
+      if (!fid) return;
+      setRewardsLoading(true);
+      try {
+        const credentials = await getCredentialsForFarcaster(fid.toString());
+        // Sum up all USDC values from credentials
+        const total = credentials.reduce((sum, issuer) => {
+          const usdcPoints = issuer.points.filter((pt) => pt.uom === "USDC");
+          const usdcSum = usdcPoints.reduce((acc, pt) => {
+            const value = parseFloat(
+              pt.readable_value?.replace(/[^0-9.-]+/g, "") ?? "0",
+            );
+            return acc + (isNaN(value) ? 0 : value);
+          }, 0);
+          return sum + usdcSum;
+        }, 0);
+        setTotalUsdcRewards(total);
+      } catch (err) {
+        console.error("Failed to fetch rewards:", err);
+        setTotalUsdcRewards(0);
+      } finally {
+        setRewardsLoading(false);
+      }
+    }
+    fetchRewards();
+  }, [fid]);
+
   // Calculate total followers
   const totalFollowers = socialAccounts.reduce(
     (sum, acc) => sum + (acc.followerCount ?? 0),
@@ -84,7 +115,14 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
             title="Creator Score"
             value={scoreLoading ? "—" : (creatorScore ?? "—")}
           />
-          <StatCard title="Total Rewards" value={"$2,340"} />
+          <StatCard
+            title="Total Rewards"
+            value={
+              rewardsLoading
+                ? "—"
+                : `$${totalUsdcRewards.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            }
+          />
         </div>
         <ProfileTabs
           accountsCount={socialAccounts.length}

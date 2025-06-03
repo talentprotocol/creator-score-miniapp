@@ -369,7 +369,7 @@ export function ProfileTabs({
             "data-[state=active]:after:bg-primary",
           )}
         >
-          Score
+          Credentials
           <Badge
             variant="secondary"
             className="ml-2 bg-muted text-muted-foreground"
