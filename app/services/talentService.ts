@@ -291,7 +291,7 @@ function getDisplayName(source: string): string {
 
 interface TalentSocialAccount {
   source: string;
-  name: string | null;
+  handle: string | null;
   followers_count: number | null;
   owned_since: string | null;
   profile_url: string | null;
@@ -336,7 +336,7 @@ export async function getSocialAccountsForFarcaster(
     if (mainEfp || ensAccount) {
       ethereumAccount = {
         source: "ethereum",
-        handle: ensAccount?.name || null,
+        handle: ensAccount?.handle || null,
         followerCount: mainEfp?.followers_count ?? null,
         accountAge: getAccountAge(ensAccount?.owned_since ?? null),
         profileUrl: ensAccount?.profile_url ?? mainEfp?.profile_url ?? null,
@@ -354,7 +354,7 @@ export async function getSocialAccountsForFarcaster(
           s.source !== "ethereum",
       )
       .map((s: TalentSocialAccount) => {
-        let handle = s.name || null;
+        let handle = s.handle || null;
         if (s.source === "lens" && handle && handle.startsWith("lens/")) {
           handle = handle.replace(/^lens\//, "");
         }
