@@ -131,7 +131,6 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
         <ProfileTabs
           accountsCount={socialAccounts.length}
           socialAccounts={socialAccounts}
-          level={level}
         />
         {children}
       </div>

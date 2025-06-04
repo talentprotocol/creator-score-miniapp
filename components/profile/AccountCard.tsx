@@ -73,8 +73,7 @@ export function AccountCard({
       e.preventDefault();
       try {
         // Use openUrl to open the profile in the main Farcaster UI
-        // The close: false parameter keeps the mini app open so user can return to it
-        await sdk.actions.openUrl({ url: profileUrl, close: false });
+        await sdk.actions.openUrl(profileUrl);
       } catch (error) {
         console.error("Failed to open Farcaster profile:", error);
         // Fallback to regular link if SDK fails
