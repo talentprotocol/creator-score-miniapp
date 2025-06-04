@@ -323,10 +323,7 @@ export function ProfileTabs({
   }, [fid]);
 
   return (
-    <Tabs
-      defaultValue="accounts"
-      className="w-full flex flex-col max-h-[500px] overflow-y-auto"
-    >
+    <Tabs defaultValue="accounts" className="w-full flex flex-col">
       <TabsList className="w-full justify-start bg-transparent p-0 h-auto gap-6">
         <TabsTrigger
           value="accounts"
@@ -367,16 +364,10 @@ export function ProfileTabs({
           </Badge>
         </TabsTrigger>
       </TabsList>
-      <TabsContent
-        value="accounts"
-        className="mt-6 overflow-y-auto max-h-[60vh] p-2"
-      >
+      <TabsContent value="accounts" className="mt-6 p-2">
         <AccountGrid socialAccounts={socialAccounts} />
       </TabsContent>
-      <TabsContent
-        value="score"
-        className="mt-6 space-y-6 overflow-y-auto max-h-[60vh]"
-      >
+      <TabsContent value="score" className="mt-6 space-y-6">
         <ScoreProgressAccordion />
         <ScoreDataPoints />
       </TabsContent>
