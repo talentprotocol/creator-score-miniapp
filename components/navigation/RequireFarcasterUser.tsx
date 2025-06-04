@@ -10,9 +10,16 @@ interface RequireFarcasterUserProps {
 }
 
 export function RequireFarcasterUser({ children }: RequireFarcasterUserProps) {
-  const { context } = useMiniKit();
+  const { context, setFrameReady, isFrameReady } = useMiniKit();
   const user = getUserContext(context);
   const isProduction = process.env.NODE_ENV === "production";
+
+  React.useEffect(() => {
+    // Only call setFrameReady if we have a user and haven't already called it
+    if (isProduction && user && !isFrameReady) {
+      setFrameReady();
+    }
+  }, [isProduction, user, setFrameReady, isFrameReady]);
 
   // In production, only render children if we have a user context
   // In development, always render children
