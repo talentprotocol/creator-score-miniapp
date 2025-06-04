@@ -6,7 +6,6 @@ import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "../services/neynarService";
-import { getBuilderScore } from "@/app/services/talentService";
 import { BuilderScore, CreatorScore } from "./BuilderScore";
 import { sdk } from "@farcaster/frame-sdk";
 import { getUserContext } from "@/lib/user-context";
