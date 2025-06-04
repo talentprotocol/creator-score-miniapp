@@ -1,12 +1,14 @@
 "use client";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "../services/neynarService";
 import { BuilderScore, CreatorScore } from "./BuilderScore";
 import { sdk } from "@farcaster/frame-sdk";
+import { getUserContext } from "@/lib/user-context";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
@@ -43,7 +45,8 @@ function CopyButton({ address }: { address: string }) {
 export default function BuilderHome() {
   const { context, setFrameReady, isFrameReady } = useMiniKit();
   const [isMiniApp, setIsMiniApp] = useState(false);
-  const user = context?.user;
+  const user = getUserContext(context);
+  const fid = user?.fid;
   const handle = user?.username || "Unknown user";
   const displayName = user?.displayName || handle;
   const pfpUrl = user?.pfpUrl || placeholderAvatar;
@@ -90,13 +93,13 @@ export default function BuilderHome() {
 
   useEffect(() => {
     async function fetchWalletAddresses() {
-      if (!user?.fid) return;
-      const data = await getUserWalletAddresses(user.fid);
+      if (!fid) return;
+      const data = await getUserWalletAddresses(fid);
       setWalletAddresses(data);
       setWalletError(data.error);
     }
     fetchWalletAddresses();
-  }, [user?.fid]);
+  }, [fid]);
 
   return (
     <div
@@ -143,12 +146,12 @@ export default function BuilderHome() {
           }}
           title="Add to Farcaster"
         >
-          <img
+          <Image
             src="/fc.svg"
             alt="Farcaster"
+            width={20}
+            height={20}
             style={{
-              width: "100%",
-              height: "100%",
               objectFit: "contain",
             }}
           />
@@ -169,7 +172,7 @@ export default function BuilderHome() {
         <div
           style={{ display: "flex", alignItems: "center", marginBottom: 24 }}
         >
-          <img
+          <Image
             src={pfpUrl}
             alt="Profile picture"
             width={64}
@@ -192,10 +195,10 @@ export default function BuilderHome() {
 
         {/* Builder Score Section */}
         <div style={{ width: "100%", marginBottom: 32 }}>
-          <BuilderScore fid={user?.fid} />
+          <BuilderScore fid={fid} />
         </div>
         <div style={{ width: "100%", marginBottom: 32 }}>
-          <CreatorScore fid={user?.fid} />
+          <CreatorScore fid={fid} />
         </div>
 
         {/* Wallet Addresses Section */}

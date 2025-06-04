@@ -1,5 +1,5 @@
-import BuilderHome from "./components/BuilderHome";
+import { redirect } from "next/navigation";
 
-export default function App() {
-  return <BuilderHome />;
+export default function Home() {
+  redirect("/profile");
 }
