@@ -26,7 +26,12 @@ export function FarcasterWarningModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-[280px] p-4 sm:p-6">
+      <DialogContent
+        className="max-w-[280px] p-4 sm:p-6"
+        hideCloseButton
+        disableOutsideClick
+        disableEscapeKey
+      >
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-lg">Open in Farcaster</DialogTitle>
           <DialogDescription className="text-sm">
