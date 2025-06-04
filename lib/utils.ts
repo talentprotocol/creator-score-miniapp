@@ -40,13 +40,13 @@ export function getLevelBadgeColor(level: number | null): string {
     case 2:
       return "bg-blue-500";
     case 3:
-      return "bg-gradient-to-r from-yellow-400 to-orange-500";
+      return "bg-yellow-500";
     case 4:
-      return "bg-gradient-to-r from-purple-500 to-pink-500";
+      return "bg-purple-500";
     case 5:
-      return "bg-gradient-to-r from-green-400 to-emerald-500";
+      return "bg-green-500";
     case 6:
-      return "bg-gradient-to-r from-red-500 to-orange-500";
+      return "bg-red-500";
     default:
       return "bg-gray-500";
   }

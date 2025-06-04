@@ -343,6 +343,7 @@ export async function getSocialAccountsForFarcaster(
         (s: TalentSocialAccount) =>
           s.source !== "efp" &&
           s.source !== "ens" &&
+          s.source !== "linkedin" && // Filter out LinkedIn accounts
           // Exclude all but the main EFP/ENS merged account
           s.source !== "ethereum",
       )

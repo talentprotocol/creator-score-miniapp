@@ -11,7 +11,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
-import { ChevronDown, Copy } from "lucide-react";
+import { ChevronDown, Copy, WalletMinimal } from "lucide-react";
 import {
   getUserWalletAddresses,
   type UserWalletAddresses,
@@ -69,7 +69,7 @@ export function ProfileHeader({
           <DrawerTrigger asChild>
             <button className="flex items-center gap-1 text-xl font-bold leading-tight focus:outline-none">
               <span>{displayName}</span>
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              <WalletMinimal className="h-4 w-4 text-muted-foreground" />
             </button>
           </DrawerTrigger>
           <DrawerContent className="max-w-sm mx-auto w-full p-4 rounded-t-2xl">
@@ -150,7 +150,7 @@ export function ProfileHeader({
         </Drawer>
         <div className="mt-1 flex flex-col gap-0.5">
           <span className="text-muted-foreground text-sm">
-            {followers ?? "—"} followers
+            {followers ?? "—"} total followers
           </span>
         </div>
       </div>
@@ -160,14 +160,6 @@ export function ProfileHeader({
           <AvatarImage src={profileImage} alt={displayName} />
           <AvatarFallback>{displayName[0]}</AvatarFallback>
         </Avatar>
-        <Badge
-          className={cn(
-            "absolute -bottom-1 -right-1 text-white px-2 py-0.5 text-xs shadow-md rounded-full border-2 border-background",
-            getLevelBadgeColor(level ?? null),
-          )}
-        >
-          L{level ?? "—"}
-        </Badge>
       </div>
     </div>
   );
