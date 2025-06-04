@@ -1,0 +1,50 @@
+"use client";
+
+import * as React from "react";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { getUserContext } from "@/lib/user-context";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+export function FarcasterWarningModal() {
+  const { context } = useMiniKit();
+  const user = getUserContext(context);
+  const [open, setOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only show warning in production and when not in Farcaster
+    if (process.env.NODE_ENV === "production" && !user) {
+      setOpen(true);
+    }
+  }, [user]);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Open in Farcaster</DialogTitle>
+          <DialogDescription>
+            This mini app is designed to be used within Farcaster. Please open
+            it in the Farcaster app to access all features.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end">
+          <Button
+            onClick={() => {
+              window.location.href =
+                "https://farcaster.xyz/miniapps/A_uWJrE7l5YT/builder-score-miniapp";
+            }}
+          >
+            Open in Farcaster
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

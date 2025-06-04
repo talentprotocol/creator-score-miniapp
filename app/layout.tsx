@@ -5,6 +5,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
+import { RequireFarcasterUser } from "@/components/navigation/RequireFarcasterUser";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -82,11 +83,13 @@ export default function RootLayout({
       <body className="min-h-full bg-muted flex flex-col">
         <div className="relative flex flex-col h-[852px] w-full max-w-[393px] mx-auto bg-background rounded-2xl shadow-2xl overflow-hidden my-0 md:my-6">
           <Providers>
-            <Header />
-            <main className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
-              {children}
-            </main>
-            <BottomNav />
+            <RequireFarcasterUser>
+              <Header />
+              <main className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
+                {children}
+              </main>
+              <BottomNav />
+            </RequireFarcasterUser>
           </Providers>
         </div>
       </body>
