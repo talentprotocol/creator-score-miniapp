@@ -26,20 +26,21 @@ export function FarcasterWarningModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Open in Farcaster</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-[280px] p-4 sm:p-6">
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-lg">Open in Farcaster</DialogTitle>
+          <DialogDescription className="text-sm">
             This mini app is designed to be used within Farcaster. Please open
             it in the Farcaster app to access all features.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-4">
           <Button
             onClick={() => {
               window.location.href =
                 "https://farcaster.xyz/miniapps/A_uWJrE7l5YT/builder-score-miniapp";
             }}
+            className="w-full sm:w-auto"
           >
             Open in Farcaster
           </Button>
