@@ -25,7 +25,6 @@ function ScoreCard({
 }: ScoreProps & { scorerSlug?: string }) {
   const [score, setScore] = useState<number | null>(null);
   const [level, setLevel] = useState<number | null>(null);
-  const [levelName, setLevelName] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [noWallet, setNoWallet] = useState(false);
@@ -62,7 +61,6 @@ function ScoreCard({
 
         setScore(scoreData.score);
         setLevel(scoreData.level);
-        setLevelName(scoreData.levelName);
         setWalletAddress(scoreData.walletAddress);
       } catch (err) {
         setError(

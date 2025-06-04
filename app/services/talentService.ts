@@ -403,7 +403,14 @@ export interface Credential {
   slug: string;
   uom: string;
   readable_value: string | null;
-  points_calculation_logic?: any;
+  points_calculation_logic?: {
+    data_points?: Array<{
+      is_maximum: boolean;
+      readable_value: string | null;
+      uom: string | null;
+    }>;
+    max_points: number | null;
+  };
 }
 
 export interface CredentialsResponse {
@@ -456,9 +463,9 @@ export async function getCredentialsForFarcaster(
       // Extract readable_value and uom from the data_point with is_maximum=true
       let readableValue = null;
       let uom = null;
-      if (Array.isArray(cred.points_calculation_logic?.data_points)) {
+      if (cred.points_calculation_logic?.data_points) {
         const maxDataPoint = cred.points_calculation_logic.data_points.find(
-          (dp: any) => dp.is_maximum,
+          (dp) => dp.is_maximum,
         );
         readableValue = maxDataPoint?.readable_value ?? null;
         uom = maxDataPoint?.uom ?? cred.uom ?? null;
@@ -499,7 +506,7 @@ export async function getCredentialsForFarcaster(
     });
 
     return Array.from(issuerGroups.values()).sort((a, b) => b.total - a.total);
-  } catch (error) {
+  } catch {
     return [];
   }
 }

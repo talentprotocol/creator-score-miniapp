@@ -2,7 +2,6 @@ import {
   setUserNotificationDetails,
   deleteUserNotificationDetails,
 } from "@/lib/notification";
-import { sendFrameNotification } from "@/lib/notification-client";
 import { http } from "viem";
 import { createPublicClient } from "viem";
 import { optimism } from "viem/chains";
@@ -155,7 +154,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to process webhook" },
       { status: 500 },

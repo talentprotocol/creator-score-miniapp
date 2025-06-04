@@ -59,13 +59,6 @@ export default function BuilderHome() {
   });
   const [walletError, setWalletError] = useState<string | undefined>();
 
-  const [score, setScore] = useState<number | null>(null);
-  const [level, setLevel] = useState<number | null>(null);
-  const [levelName, setLevelName] = useState<string | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [noWallet, setNoWallet] = useState(false);
-
   useEffect(() => {
     // Check if we're running in a Mini App
     const checkMiniApp = async () => {
@@ -107,53 +100,6 @@ export default function BuilderHome() {
       setWalletError(data.error);
     }
     fetchWalletAddresses();
-  }, [fid]);
-
-  useEffect(() => {
-    async function fetchScore() {
-      if (!fid) return;
-
-      try {
-        setError(null);
-        setNoWallet(false);
-
-        const walletData = await getUserWalletAddresses(fid);
-        if (walletData.error) {
-          throw new Error(walletData.error);
-        }
-
-        const addresses = [
-          ...walletData.addresses,
-          walletData.primaryEthAddress,
-          walletData.primarySolAddress,
-        ].filter(
-          (addr): addr is string =>
-            typeof addr === "string" && addr.startsWith("0x"),
-        );
-
-        if (addresses.length === 0) {
-          setNoWallet(true);
-          return;
-        }
-
-        const scoreData = await getBuilderScore(addresses);
-        if (scoreData.error) {
-          setError(scoreData.error);
-          return;
-        }
-
-        setScore(scoreData.score);
-        setLevel(scoreData.level);
-        setLevelName(scoreData.levelName);
-        setWalletAddress(scoreData.walletAddress);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch Builder Score",
-        );
-      }
-    }
-
-    fetchScore();
   }, [fid]);
 
   return (
