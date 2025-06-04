@@ -69,16 +69,28 @@ export function AccountCard({
       : "—";
 
   const handleClick = async (e: React.MouseEvent) => {
-    if (platform === "farcaster" && profileUrl) {
-      e.preventDefault();
-      try {
-        // Use openUrl to open the profile in the main Farcaster UI
-        await sdk.actions.openUrl(profileUrl);
-      } catch (error) {
-        console.error("Failed to open Farcaster profile:", error);
-        // Fallback to regular link if SDK fails
-        window.open(profileUrl, "_blank", "noopener,noreferrer");
-      }
+    if (!profileUrl) return;
+
+    e.preventDefault();
+
+    // Check if we're in the Farcaster client (Warpcast)
+    const isWarpcast =
+      typeof window !== "undefined" &&
+      window.navigator.userAgent.includes("Warpcast");
+
+    if (!isWarpcast) {
+      // Outside Farcaster client (web browser), use window.open for all links
+      window.open(profileUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // Inside Farcaster client, use sdk.actions.openUrl for all links
+    try {
+      await sdk.actions.openUrl(profileUrl);
+    } catch (error) {
+      console.error("Failed to open URL:", error);
+      // Fallback to regular link if SDK fails
+      window.open(profileUrl, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -114,10 +126,8 @@ export function AccountCard({
   return profileUrl ? (
     <a
       href={profileUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ textDecoration: "none" }}
       onClick={handleClick}
+      style={{ textDecoration: "none" }}
     >
       {cardContent}
     </a>
