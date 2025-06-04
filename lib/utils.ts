@@ -30,3 +30,24 @@ export function calculatePointsToNextLevel(score: number, level: number) {
   if (!nextLevel || score >= nextLevel.min) return null;
   return nextLevel.min - score;
 }
+
+export function getLevelBadgeColor(level: number | null): string {
+  if (!level) return "bg-gray-500";
+
+  switch (level) {
+    case 1:
+      return "bg-gray-500";
+    case 2:
+      return "bg-blue-500";
+    case 3:
+      return "bg-gradient-to-r from-yellow-400 to-orange-500";
+    case 4:
+      return "bg-gradient-to-r from-purple-500 to-pink-500";
+    case 5:
+      return "bg-gradient-to-r from-green-400 to-emerald-500";
+    case 6:
+      return "bg-gradient-to-r from-red-500 to-orange-500";
+    default:
+      return "bg-gray-500";
+  }
+}

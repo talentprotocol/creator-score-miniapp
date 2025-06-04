@@ -18,8 +18,16 @@ import {
 } from "@/app/services/neynarService";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
+import { getLevelBadgeColor } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
-export function ProfileHeader({ followers }: { followers?: string }) {
+export function ProfileHeader({
+  followers,
+  level,
+}: {
+  followers?: string;
+  level?: number | null;
+}) {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const displayName = user?.displayName || user?.username || "Unknown user";
@@ -152,8 +160,13 @@ export function ProfileHeader({ followers }: { followers?: string }) {
           <AvatarImage src={profileImage} alt={displayName} />
           <AvatarFallback>{displayName[0]}</AvatarFallback>
         </Avatar>
-        <Badge className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-0.5 text-xs shadow-md rounded-full border-2 border-background">
-          L3
+        <Badge
+          className={cn(
+            "absolute -bottom-1 -right-1 text-white px-2 py-0.5 text-xs shadow-md rounded-full border-2 border-background",
+            getLevelBadgeColor(level ?? null),
+          )}
+        >
+          L{level ?? "—"}
         </Badge>
       </div>
     </div>

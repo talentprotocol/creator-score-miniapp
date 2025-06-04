@@ -10,6 +10,7 @@ import {
   Sprout,
   BadgeCheck,
 } from "lucide-react";
+import { sdk } from "@farcaster/frame-sdk";
 
 interface AccountCardProps {
   platform: string;
@@ -67,6 +68,21 @@ export function AccountCard({
       ? formatK(followers)
       : "—";
 
+  const handleClick = async (e: React.MouseEvent) => {
+    if (platform === "farcaster" && profileUrl) {
+      e.preventDefault();
+      try {
+        // Use openUrl to open the profile in the main Farcaster UI
+        // The close: false parameter keeps the mini app open so user can return to it
+        await sdk.actions.openUrl({ url: profileUrl, close: false });
+      } catch (error) {
+        console.error("Failed to open Farcaster profile:", error);
+        // Fallback to regular link if SDK fails
+        window.open(profileUrl, "_blank", "noopener,noreferrer");
+      }
+    }
+  };
+
   const cardContent = (
     <Card
       className={cn(
@@ -102,6 +118,7 @@ export function AccountCard({
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: "none" }}
+      onClick={handleClick}
     >
       {cardContent}
     </a>

@@ -25,6 +25,7 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
 
   const [creatorScore, setCreatorScore] = React.useState<string | null>(null);
   const [scoreLoading, setScoreLoading] = React.useState(false);
+  const [level, setLevel] = React.useState<number | null>(null);
   const [socialAccounts, setSocialAccounts] = React.useState<SocialAccount[]>(
     [],
   );
@@ -40,11 +41,14 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
         if (walletData.addresses.length > 0) {
           const scoreData = await getCreatorScore(walletData.addresses);
           setCreatorScore(scoreData.score?.toLocaleString() ?? "0");
+          setLevel(scoreData.level ?? null);
         } else {
           setCreatorScore("0");
+          setLevel(null);
         }
       } catch {
         setCreatorScore(null);
+        setLevel(null);
       } finally {
         setScoreLoading(false);
       }
@@ -109,7 +113,7 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
   return (
     <main className="flex-1 overflow-y-auto">
       <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
-        <ProfileHeader followers={formatK(totalFollowers)} />
+        <ProfileHeader followers={formatK(totalFollowers)} level={level} />
         <div className="flex flex-row gap-4 w-full">
           <StatCard
             title="Creator Score"
@@ -127,6 +131,7 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
         <ProfileTabs
           accountsCount={socialAccounts.length}
           socialAccounts={socialAccounts}
+          level={level}
         />
         {children}
       </div>

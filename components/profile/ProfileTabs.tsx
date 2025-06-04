@@ -292,11 +292,13 @@ function ScoreDataPoints() {
 interface ProfileTabsProps {
   accountsCount: number;
   socialAccounts: import("@/app/services/talentService").SocialAccount[];
+  level?: number | null;
 }
 
 export function ProfileTabs({
   accountsCount,
   socialAccounts,
+  level,
 }: ProfileTabsProps) {
   const [credentialsCount, setCredentialsCount] = React.useState<number>(0);
   const { context } = useMiniKit();
