@@ -126,7 +126,6 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
         </div>
         <ProfileTabs
           accountsCount={socialAccounts.length}
-          scoreValue={scoreLoading ? "—" : (creatorScore ?? "—")}
           socialAccounts={socialAccounts}
         />
         {children}
