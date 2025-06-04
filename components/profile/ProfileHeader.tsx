@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Drawer,
   DrawerTrigger,
@@ -11,23 +10,15 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
-import { ChevronDown, Copy, WalletMinimal } from "lucide-react";
+import { Copy, WalletMinimal } from "lucide-react";
 import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "@/app/services/neynarService";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { getLevelBadgeColor } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 
-export function ProfileHeader({
-  followers,
-  level,
-}: {
-  followers?: string;
-  level?: number | null;
-}) {
+export function ProfileHeader({ followers }: { followers?: string }) {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const displayName = user?.displayName || user?.username || "Unknown user";
