@@ -51,3 +51,52 @@ export function getLevelBadgeColor(level: number | null): string {
       return "bg-gray-500";
   }
 }
+
+interface CachedPrice {
+  price: number;
+  timestamp: number;
+}
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const CACHE_KEY = "eth_usdc_price";
+
+export async function getEthUsdcPrice(): Promise<number> {
+  // Check cache first
+  if (typeof window !== "undefined") {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { price, timestamp }: CachedPrice = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        return price;
+      }
+    }
+  }
+
+  try {
+    const response = await fetch(
+      "https://api.coinbase.com/v2/prices/ETH-USD/spot",
+    );
+    const data = await response.json();
+    const price = parseFloat(data.data.amount);
+
+    // Cache the price
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          price,
+          timestamp: Date.now(),
+        }),
+      );
+    }
+
+    return price;
+  } catch (error) {
+    console.error("Failed to fetch ETH price:", error);
+    return 3000; // Conservative fallback price
+  }
+}
+
+export function convertEthToUsdc(ethAmount: number, ethPrice: number): number {
+  return ethAmount * ethPrice;
+}

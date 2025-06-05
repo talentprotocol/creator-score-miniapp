@@ -13,6 +13,7 @@ import {
   getCredentialsForFarcaster,
 } from "@/app/services/talentService";
 import { ProfileTabs } from "./ProfileTabs";
+import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
 
 interface ProfileScreenProps {
   children?: React.ReactNode;
@@ -74,17 +75,35 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
       setRewardsLoading(true);
       try {
         const credentials = await getCredentialsForFarcaster(fid.toString());
-        // Sum up all USDC values from credentials
+        const ethPrice = await getEthUsdcPrice();
+
+        // Sum up all rewards, converting ETH to USDC
         const total = credentials.reduce((sum, issuer) => {
-          const usdcPoints = issuer.points.filter((pt) => pt.uom === "USDC");
-          const usdcSum = usdcPoints.reduce((acc, pt) => {
+          const issuerTotal = issuer.points.reduce((acc, pt) => {
+            // Skip ETH Balance credential
+            if (pt.label === "ETH Balance") {
+              return acc;
+            }
+
+            if (!pt.readable_value) return acc;
+
             const value = parseFloat(
-              pt.readable_value?.replace(/[^0-9.-]+/g, "") ?? "0",
+              pt.readable_value.replace(/[^0-9.-]+/g, ""),
             );
-            return acc + (isNaN(value) ? 0 : value);
+            if (isNaN(value)) return acc;
+
+            let contribution = 0;
+            if (pt.uom === "ETH") {
+              contribution = convertEthToUsdc(value, ethPrice);
+            } else if (pt.uom === "USDC") {
+              contribution = value;
+            }
+            return acc + contribution;
           }, 0);
-          return sum + usdcSum;
+
+          return sum + issuerTotal;
         }, 0);
+
         setTotalUsdcRewards(total);
       } catch (err) {
         console.error("Failed to fetch rewards:", err);
