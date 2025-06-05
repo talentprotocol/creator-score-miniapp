@@ -80,7 +80,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full bg-muted md:bg-white flex flex-col">
+      <body className="min-h-full bg-white flex flex-col">
         <div className="relative flex flex-col w-full max-w-lg mx-auto bg-background overflow-hidden my-0 md:my-0 md:max-w-none md:mx-0 md:bg-white md:shadow-none md:rounded-none">
           <Providers>
             <RequireFarcasterUser>
