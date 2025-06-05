@@ -431,6 +431,7 @@ export interface IssuerCredentialGroup {
     max_score: number | null;
     readable_value: string | null;
     uom: string | null;
+    external_url: string | null;
   }>;
 }
 
@@ -487,6 +488,7 @@ export async function getCredentialsForFarcaster(
           max_score: maxScore,
           readable_value: readableValue,
           uom: uom,
+          external_url: cred.external_url,
         });
       } else {
         issuerGroups.set(issuer, {
@@ -500,6 +502,7 @@ export async function getCredentialsForFarcaster(
               max_score: maxScore,
               readable_value: readableValue,
               uom: uom,
+              external_url: cred.external_url,
             },
           ],
         });

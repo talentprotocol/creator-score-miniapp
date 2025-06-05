@@ -13,7 +13,11 @@ import {
   getCredentialsForFarcaster,
 } from "@/app/services/talentService";
 import { ProfileTabs } from "./ProfileTabs";
-import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
+import {
+  getEthUsdcPrice,
+  convertEthToUsdc,
+  formatNumberWithSuffix,
+} from "@/lib/utils";
 
 interface ProfileScreenProps {
   children?: React.ReactNode;
@@ -137,9 +141,7 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
           <StatCard
             title="Total Rewards"
             value={
-              rewardsLoading
-                ? "—"
-                : `$${totalUsdcRewards.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+              rewardsLoading ? "—" : formatNumberWithSuffix(totalUsdcRewards)
             }
           />
         </div>

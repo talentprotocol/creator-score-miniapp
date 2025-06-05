@@ -24,6 +24,8 @@ import {
   calculateScoreProgress,
   calculatePointsToNextLevel,
 } from "@/lib/utils";
+import { sdk } from "@farcaster/frame-sdk";
+import { ExternalLink } from "lucide-react";
 
 function shouldShowUom(uom: string | null): boolean {
   if (!uom) return false;
@@ -170,6 +172,141 @@ function formatReadableValue(
   return num.toString();
 }
 
+function cleanCredentialLabel(label: string, issuer: string): string {
+  // Remove the issuer name from the beginning of the label if it exists
+  const issuerPrefix = `${issuer} `;
+  return label.startsWith(issuerPrefix)
+    ? label.slice(issuerPrefix.length)
+    : label;
+}
+
+// Add this constant before the ScoreDataPoints component
+const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
+  {
+    issuer: "Base",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "NFT Collections: Total Created",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "NFT Collections: Unique Holders",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "NFT Collections: Market Cap",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Cookie",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Twitter Mindshare",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Hypersub",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Total Earnings",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Total Subscribers",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Mirror",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Total Collectors",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Total Posts",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Zora",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Total Coin Earnings",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Total Posts",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Followers",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+];
+
 function ScoreDataPoints() {
   const [credentials, setCredentials] = React.useState<IssuerCredentialGroup[]>(
     [],
@@ -217,7 +354,27 @@ function ScoreDataPoints() {
     );
   }
 
-  if (credentials.length === 0) {
+  // Merge real credentials with coming soon ones, combining data points for existing issuers
+  const existingIssuers = new Map(credentials.map((c) => [c.issuer, c]));
+  const comingSoonMap = new Map(
+    COMING_SOON_CREDENTIALS.map((c) => [c.issuer, c]),
+  );
+
+  // Combine existing and coming soon credentials
+  const allCredentials = Array.from(
+    new Set([
+      ...credentials.map((c) => c.issuer),
+      ...COMING_SOON_CREDENTIALS.map((c) => c.issuer),
+    ]),
+  )
+    .map((issuer) => {
+      const existing = existingIssuers.get(issuer);
+      const comingSoon = comingSoonMap.get(issuer);
+      return existing || comingSoon;
+    })
+    .filter((issuer): issuer is IssuerCredentialGroup => issuer !== undefined);
+
+  if (allCredentials.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-sm text-muted-foreground">
@@ -227,9 +384,20 @@ function ScoreDataPoints() {
     );
   }
 
+  const handleCredentialClick = async (e: React.MouseEvent, url: string) => {
+    e.preventDefault();
+    try {
+      const externalUrl = `${url}${url.includes("?") ? "&" : "?"}_external=true`;
+      await sdk.actions.openUrl(externalUrl);
+    } catch {
+      // Fallback to regular link if SDK fails
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <Accordion type="multiple" className="space-y-2">
-      {credentials.map((issuer, index) => (
+      {allCredentials.map((issuer, index) => (
         <AccordionItem
           key={issuer.issuer}
           value={`issuer-${index}`}
@@ -260,29 +428,46 @@ function ScoreDataPoints() {
                     className="truncate text-muted-foreground max-w-[60%]"
                     title={pt.label}
                   >
-                    {pt.label}
+                    {pt.external_url ? (
+                      <a
+                        href={pt.external_url}
+                        onClick={(e) =>
+                          handleCredentialClick(e, pt.external_url!)
+                        }
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {cleanCredentialLabel(pt.label, issuer.issuer)}
+                      </a>
+                    ) : (
+                      cleanCredentialLabel(pt.label, issuer.issuer)
+                    )}
                   </span>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {pt.readable_value && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        {pt.uom === "USDC" ? (
+                    {pt.value > 0 ? (
+                      <>
+                        {pt.readable_value && pt.uom === "USDC" ? (
                           `$${formatReadableValue(pt.readable_value)}`
-                        ) : (
+                        ) : pt.readable_value ? (
                           <>
                             {formatReadableValue(pt.readable_value, pt.uom)}
                             {shouldShowUom(pt.uom) && <span>{pt.uom}</span>}
                           </>
+                        ) : null}
+                        {pt.readable_value && (
+                          <span className="mx-1 text-muted-foreground">
+                            &middot;
+                          </span>
                         )}
+                        <span className="font-medium text-xs text-muted-foreground whitespace-nowrap">
+                          {pt.value}/{pt.max_score}{" "}
+                          {pt.value === 1 ? "pt" : "pts"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">
+                        Coming soon
                       </span>
                     )}
-                    {pt.readable_value && (
-                      <span className="mx-1 text-muted-foreground">
-                        &middot;
-                      </span>
-                    )}
-                    <span className="font-medium text-xs text-muted-foreground whitespace-nowrap">
-                      {pt.value}/{pt.max_score} {pt.value === 1 ? "pt" : "pts"}
-                    </span>
                   </div>
                 </li>
               ))}
@@ -291,6 +476,35 @@ function ScoreDataPoints() {
         </AccordionItem>
       ))}
     </Accordion>
+  );
+}
+
+function CredentialIdeasCallout() {
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const url = "https://farcaster.xyz/juampi";
+    try {
+      await sdk.actions.openUrl(url + "?_external=true");
+    } catch {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+  return (
+    <div className="border border-purple-200 bg-purple-50 rounded-xl px-6 py-4 my-1 flex items-center text-purple-700 text-xs">
+      <span className="font-semibold mr-0.5">New credential ideas?</span>
+      <span className="ml-0.5">Reach out to </span>
+      <a
+        href="https://farcaster.xyz/juampi"
+        onClick={handleClick}
+        className="ml-1 text-purple-700 hover:text-purple-800 flex items-center font-normal"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: "none" }}
+      >
+        @juampi
+        <ExternalLink className="w-3 h-3 ml-[2px] stroke-[1.2] opacity-70" />
+      </a>
+    </div>
   );
 }
 
@@ -374,6 +588,7 @@ export function ProfileTabs({
       </TabsContent>
       <TabsContent value="score" className="mt-6 space-y-6">
         <ScoreProgressAccordion />
+        <CredentialIdeasCallout />
         <ScoreDataPoints />
       </TabsContent>
     </Tabs>

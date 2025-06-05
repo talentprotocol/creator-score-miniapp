@@ -100,3 +100,19 @@ export async function getEthUsdcPrice(): Promise<number> {
 export function convertEthToUsdc(ethAmount: number, ethPrice: number): number {
   return ethAmount * ethPrice;
 }
+
+export function formatNumberWithSuffix(num: number): string {
+  if (num >= 1_000_000_000) {
+    return `$${(num / 1_000_000_000).toFixed(2)}B`;
+  }
+  if (num >= 1_000_000) {
+    return `$${(num / 1_000_000).toFixed(2)}M`;
+  }
+  if (num >= 10_000) {
+    return `$${(num / 1_000).toFixed(2)}K`;
+  }
+  // For numbers under 10,000, round to nearest integer
+  const rounded = Math.round(num);
+  // Add comma only for 4-digit numbers
+  return `$${rounded >= 1000 ? rounded.toLocaleString() : rounded}`;
+}
