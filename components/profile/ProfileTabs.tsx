@@ -4,8 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { AccountGrid } from "./AccountGrid";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
 import {
   Accordion,
   AccordionItem,
@@ -151,11 +149,21 @@ function ScoreProgressAccordion() {
   );
 }
 
-function formatReadableValue(value: string | null): string {
+function formatReadableValue(
+  value: string | null,
+  uom: string | null = null,
+): string {
   if (!value) return "";
   if (/[a-zA-Z]/.test(value)) return value;
   const num = parseFloat(value);
   if (isNaN(num)) return value;
+
+  // Special handling for ETH values
+  if (uom === "ETH") {
+    return num.toFixed(3);
+  }
+
+  // Existing handling for other values
   if (num >= 1000) {
     return `${(num / 1000).toFixed(1)}K`;
   }
@@ -261,7 +269,7 @@ function ScoreDataPoints() {
                           `$${formatReadableValue(pt.readable_value)}`
                         ) : (
                           <>
-                            {formatReadableValue(pt.readable_value)}
+                            {formatReadableValue(pt.readable_value, pt.uom)}
                             {shouldShowUom(pt.uom) && <span>{pt.uom}</span>}
                           </>
                         )}
