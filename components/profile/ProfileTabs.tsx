@@ -117,13 +117,6 @@ function ScoreProgressAccordion() {
         </AccordionTrigger>
         <AccordionContent className="px-6 pb-5 bg-gray-100 rounded-b-xl">
           <div className="space-y-2">
-            <div className="w-full text-xs text-muted-foreground text-right mb-1">
-              {pointsToNext && level
-                ? `${pointsToNext.toString()} points to Level ${(level + 1).toString()}`
-                : level === 6
-                  ? "Master level reached!"
-                  : "Level up!"}
-            </div>
             <div className="relative w-full flex items-center justify-center mb-0">
               <Progress
                 value={progress}
@@ -133,11 +126,15 @@ function ScoreProgressAccordion() {
                 {progress.toFixed(0)}%
               </span>
             </div>
-            <div className="flex items-center justify-between pt-2">
-              <Button size="sm" variant="outline" className="gap-1">
-                <RefreshCw className="h-4 w-4" /> Refresh Score
-              </Button>
-              <span className="text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+              <span>
+                {pointsToNext && level
+                  ? `${pointsToNext.toString()} points to Level ${(level + 1).toString()}`
+                  : level === 6
+                    ? "Master level reached!"
+                    : "Level up!"}
+              </span>
+              <span>
                 Last updated:{" "}
                 {lastUpdated
                   ? new Date(lastUpdated).toLocaleDateString(undefined, {

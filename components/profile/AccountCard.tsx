@@ -85,12 +85,6 @@ export function AccountCard({
       }
     }
 
-    // Twitter links will open the app directly, so we can use regular links
-    if (platform === "twitter") {
-      window.open(profileUrl, "_blank", "noopener,noreferrer");
-      return;
-    }
-
     // For all other platforms, force opening in external browser
     try {
       // Add a special parameter to force external browser
