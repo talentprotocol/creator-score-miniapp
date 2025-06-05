@@ -70,19 +70,34 @@ export function AccountCard({
 
   const handleClick = async (e: React.MouseEvent) => {
     if (!profileUrl) return;
-
     e.preventDefault();
-    try {
-      // Check if we're in the Farcaster client by checking if sdk.context exists
-      if (typeof window !== "undefined" && "sdk" in window) {
-        // Use Farcaster SDK to open URL when in the client
+
+    // Handle Farcaster profiles
+    if (platform === "farcaster") {
+      try {
         await sdk.actions.openUrl(profileUrl);
-      } else {
-        // Fallback to regular link opening when not in Farcaster client
+        return;
+      } catch (error) {
+        console.error("Failed to open Farcaster profile:", error);
+        // Fallback to regular link if SDK fails
         window.open(profileUrl, "_blank", "noopener,noreferrer");
+        return;
       }
+    }
+
+    // Twitter links will open the app directly, so we can use regular links
+    if (platform === "twitter") {
+      window.open(profileUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // For all other platforms, force opening in external browser
+    try {
+      // Add a special parameter to force external browser
+      const externalUrl = `${profileUrl}${profileUrl.includes("?") ? "&" : "?"}_external=true`;
+      await sdk.actions.openUrl(externalUrl);
     } catch (error) {
-      console.error("Failed to open profile:", error);
+      console.error("Failed to open external link:", error);
       // Fallback to regular link if SDK fails
       window.open(profileUrl, "_blank", "noopener,noreferrer");
     }
@@ -120,8 +135,10 @@ export function AccountCard({
   return profileUrl ? (
     <a
       href={profileUrl}
-      onClick={handleClick}
+      target="_blank"
+      rel="noopener noreferrer"
       style={{ textDecoration: "none" }}
+      onClick={handleClick}
     >
       {cardContent}
     </a>
