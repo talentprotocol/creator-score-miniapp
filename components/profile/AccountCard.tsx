@@ -68,25 +68,33 @@ export function AccountCard({
       ? formatK(followers)
       : "—";
 
+  const isInFarcasterClient = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    // Check user agent for Farcaster client
+    return window.navigator.userAgent.includes("Farcaster");
+  }, []);
+
   const handleClick = async (e: React.MouseEvent) => {
     if (!profileUrl) return;
 
     e.preventDefault();
 
-    // Check if we're in the Farcaster client (Warpcast)
-    const isWarpcast =
-      typeof window !== "undefined" &&
-      window.navigator.userAgent.includes("Warpcast");
-
-    if (!isWarpcast) {
+    if (!isInFarcasterClient) {
       // Outside Farcaster client (web browser), use window.open for all links
       window.open(profileUrl, "_blank", "noopener,noreferrer");
       return;
     }
 
-    // Inside Farcaster client, use sdk.actions.openUrl for all links
+    // Inside Farcaster client
     try {
-      await sdk.actions.openUrl(profileUrl);
+      // For Farcaster profiles, we want to close the mini app
+      // For all other links, we want to keep it open
+      const shouldClose = platform === "farcaster";
+      // @ts-expect-error - The SDK types are incorrect, but the API accepts an object
+      await sdk.actions.openUrl({
+        url: profileUrl,
+        close: shouldClose,
+      });
     } catch (error) {
       console.error("Failed to open URL:", error);
       // Fallback to regular link if SDK fails
