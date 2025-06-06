@@ -258,6 +258,13 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
     return num.toString();
   }
 
+  // Dismiss Farcaster splash screen when ready
+  React.useEffect(() => {
+    if (isInFarcaster) {
+      sdk.actions.ready();
+    }
+  }, [isInFarcaster]);
+
   return (
     <main className="flex-1 overflow-y-auto relative">
       {showOpenInFarcaster && (
