@@ -574,3 +574,12 @@ export async function getLeaderboardCreators({
   const json = await res.json();
   return json.entries || [];
 }
+
+export type LeaderboardEntry = {
+  rank: number;
+  name: string;
+  pfp?: string;
+  score: number;
+  rewards: string;
+  id: string;
+};

@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
+interface TalentProfile {
+  id: string;
+  display_name?: string;
+  name?: string;
+  image_url?: string;
+  builder_score?: { points?: number };
+}
+
 export async function GET(req: NextRequest) {
   const apiKey = process.env.TALENT_API_KEY;
   if (!apiKey) {
@@ -40,18 +48,20 @@ export async function GET(req: NextRequest) {
   const json = await res.json();
 
   // Sort by score desc, then id for stability
-  const sorted = (json.profiles || []).sort((a: any, b: any) => {
-    if ((b.builder_score?.points ?? 0) !== (a.builder_score?.points ?? 0)) {
-      return (b.builder_score?.points ?? 0) - (a.builder_score?.points ?? 0);
-    }
-    return (a.id || "").localeCompare(b.id || "");
-  });
+  const sorted = (json.profiles || []).sort(
+    (a: TalentProfile, b: TalentProfile) => {
+      if ((b.builder_score?.points ?? 0) !== (a.builder_score?.points ?? 0)) {
+        return (b.builder_score?.points ?? 0) - (a.builder_score?.points ?? 0);
+      }
+      return (a.id || "").localeCompare(b.id || "");
+    },
+  );
 
   // Assign competition ranks
   let lastScore: number | null = null;
   let lastRank = 0;
   let ties = 0;
-  const mapped = sorted.map((profile: any, idx: number) => {
+  const mapped = sorted.map((profile: TalentProfile, idx: number) => {
     const score = profile.builder_score?.points ?? 0;
     let rank;
     if (score === lastScore) {

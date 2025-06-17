@@ -11,13 +11,14 @@ import {
   getLeaderboardCreators,
 } from "@/app/services/talentService";
 import { filterEthAddresses } from "@/lib/utils";
+import type { LeaderboardEntry } from "@/app/services/talentService";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
   const targetUTC = target.getTime();
-  let diff = targetUTC - nowUTC;
+  const diff = targetUTC - nowUTC;
   if (diff <= 0) return { days: 0, hours: 0 };
   const totalHours = Math.floor(diff / (1000 * 60 * 60));
   const days = Math.floor(totalHours / 24);
@@ -40,10 +41,9 @@ export default function LeaderboardPage() {
 
   // Real Creator Score state
   const [creatorScore, setCreatorScore] = useState<number | null>(null);
-  const [scoreLoading, setScoreLoading] = useState(false);
 
   // Leaderboard state
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,8 +63,11 @@ export default function LeaderboardPage() {
       try {
         const data = await getLeaderboardCreators({ page: 1, perPage });
         if (!cancelled) setEntries(data);
-      } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to load leaderboard");
+      } catch (err) {
+        if (!cancelled)
+          setError(
+            err instanceof Error ? err.message : "Failed to load leaderboard",
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -84,8 +87,10 @@ export default function LeaderboardPage() {
       const data = await getLeaderboardCreators({ page: nextPage, perPage });
       setEntries((prev) => [...prev, ...data]);
       setPage(nextPage);
-    } catch (err: any) {
-      setError(err.message || "Failed to load leaderboard");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load leaderboard",
+      );
     } finally {
       setLoading(false);
     }
@@ -95,7 +100,6 @@ export default function LeaderboardPage() {
   useEffect(() => {
     async function fetchScore() {
       if (!user?.fid) return;
-      setScoreLoading(true);
       try {
         const walletData = await getUserWalletAddresses(user.fid);
         const addresses = filterEthAddresses([
@@ -111,8 +115,6 @@ export default function LeaderboardPage() {
         }
       } catch {
         setCreatorScore(null);
-      } finally {
-        setScoreLoading(false);
       }
     }
     fetchScore();
