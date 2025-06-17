@@ -1,6 +1,6 @@
 ## TASK
 
-- Design and implement the frontend for "Builder Rewards," a mobile-first Farcaster Frame v2 application. 
+- Design and implement the frontend for "Builder Rewards," a mobile-first Farcaster mini app. 
 - The application must feature a clean, minimalist UI, allowing users to track their onchain development rewards, view leaderboards, manage their public profile, and configure personal settings.
 
 ## CONTEXT & CONSTRAINTS

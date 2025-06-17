@@ -28,10 +28,11 @@
 
 ## Phase 3: Leaderboard Screen
 
-- [ ] **Task 3.1**: Create leaderboard screen container with scrollable list layout
-- [ ] **Task 3.2**: Build leaderboard entry component (rank + avatar + name + score)
-- [ ] **Task 3.3**: Create highlighted user position component with distinct styling
-- [ ] **Task 3.4**: Render complete leaderboard with user position at top, separated from others
+- [x] **Task 3.1**: Build a list-style leaderboard: rank + avatar + name + creator score + creator rewards
+- [x] **Task 3.2**: Rewards campaign; add two stat cards above the leaderboard: "Round Ends" + "Rewards Pool"
+- [ ] **Task 3.3**: Use the Talent API to get real leaderboard data for top 100 creators by creator score
+- [ ] **Task 3.3**: calculate an estimation of how much each user will receive in creator rewards as part of the Creator Score Launch campaign (we're distributing 10 ETH to the top 100 creators by creator score)
+
 
 ## Phase 4: Settings Screen
 

@@ -1,9 +1,255 @@
-export default function LeaderboardPage() {
+"use client";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { getUserContext } from "@/lib/user-context";
+import { getUserWalletAddresses } from "@/app/services/neynarService";
+import {
+  getCreatorScore,
+  getLeaderboardCreators,
+} from "@/app/services/talentService";
+import { filterEthAddresses } from "@/lib/utils";
+
+const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
+
+function getCountdownParts(target: Date) {
+  const nowUTC = Date.now();
+  const targetUTC = target.getTime();
+  let diff = targetUTC - nowUTC;
+  if (diff <= 0) return { days: 0, hours: 0 };
+  const totalHours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  return { days, hours };
+}
+
+// Minimal spinner component
+function Spinner() {
   return (
-    <div className="flex-1 flex flex-col">
-      <h1 className="sr-only">Leaderboard</h1>
-      {/* LeaderboardScreen component will go here */}
-      <div className="p-4">Leaderboard Screen</div>
+    <div className="flex justify-center items-center py-4">
+      <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"></span>
+    </div>
+  );
+}
+
+export default function LeaderboardPage() {
+  const { context } = useMiniKit();
+  const user = getUserContext(context);
+
+  // Real Creator Score state
+  const [creatorScore, setCreatorScore] = useState<number | null>(null);
+  const [scoreLoading, setScoreLoading] = useState(false);
+
+  // Leaderboard state
+  const [entries, setEntries] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const perPage = 10;
+
+  // Countdown state
+  const [countdown, setCountdown] = useState(() =>
+    getCountdownParts(ROUND_ENDS_AT),
+  );
+
+  // Fetch leaderboard data
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchLeaderboard() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getLeaderboardCreators({ page: 1, perPage });
+        if (!cancelled) setEntries(data);
+      } catch (err: any) {
+        if (!cancelled) setError(err.message || "Failed to load leaderboard");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchLeaderboard();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Load more handler
+  const handleLoadMore = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const nextPage = page + 1;
+      const data = await getLeaderboardCreators({ page: nextPage, perPage });
+      setEntries((prev) => [...prev, ...data]);
+      setPage(nextPage);
+    } catch (err: any) {
+      setError(err.message || "Failed to load leaderboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch real Creator Score
+  useEffect(() => {
+    async function fetchScore() {
+      if (!user?.fid) return;
+      setScoreLoading(true);
+      try {
+        const walletData = await getUserWalletAddresses(user.fid);
+        const addresses = filterEthAddresses([
+          ...walletData.addresses,
+          walletData.primaryEthAddress,
+          walletData.primarySolAddress,
+        ]);
+        if (addresses.length > 0) {
+          const scoreData = await getCreatorScore(addresses);
+          setCreatorScore(scoreData.score ?? 0);
+        } else {
+          setCreatorScore(0);
+        }
+      } catch {
+        setCreatorScore(null);
+      } finally {
+        setScoreLoading(false);
+      }
+    }
+    fetchScore();
+  }, [user?.fid]);
+
+  // Live countdown effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown(getCountdownParts(ROUND_ENDS_AT));
+    }, 60000); // update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  // Find user entry in leaderboard data (if present)
+  const userLeaderboardEntry =
+    user && entries.find((e) => e.name === (user.displayName || user.username));
+
+  // Always show the user pinned at the top
+  const pinnedUserEntry = user && {
+    rank: userLeaderboardEntry ? userLeaderboardEntry.rank : "—",
+    name: user.displayName || user.username || "Unknown user",
+    pfp: user.pfpUrl || undefined,
+    rewards: "-", // To be calculated later
+    score: creatorScore ?? 0,
+    id: userLeaderboardEntry ? userLeaderboardEntry.id : "user-pinned",
+  };
+
+  // Helper to calculate rewards
+  function getEthRewards(score: number) {
+    const multiplier = 0.00005588184343025108;
+    return (score * multiplier).toFixed(3) + " ETH";
+  }
+
+  return (
+    <div className="max-w-md mx-auto w-full p-4 space-y-6 pb-24">
+      {/* Page Title */}
+      <div className="flex items-center px-1 mb-2">
+        <span className="text-xl font-bold leading-tight">
+          Rewards Leaderboard
+        </span>
+      </div>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="relative">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">Round Ends</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {countdown.days}d {countdown.hours}h
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">
+              Total Rewards
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">10 ETH</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Leaderboard */}
+      <div className="space-y-2">
+        {error && <div className="text-destructive text-sm px-2">{error}</div>}
+        {/* User pinned entry always on top */}
+        {pinnedUserEntry && (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 cursor-pointer hover:bg-purple-100 transition-colors mb-2">
+            <span className="text-sm font-medium w-6">
+              #{pinnedUserEntry.rank}
+            </span>
+            <Avatar className="h-8 w-8">
+              {pinnedUserEntry.pfp ? (
+                <AvatarImage src={pinnedUserEntry.pfp} />
+              ) : (
+                <AvatarFallback>{pinnedUserEntry.name[0]}</AvatarFallback>
+              )}
+            </Avatar>
+            <div className="flex-1">
+              <p className="font-medium text-sm">{pinnedUserEntry.name}</p>
+              <p className="text-xs text-gray-600">
+                Builder Score: {pinnedUserEntry.score}
+              </p>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-sm font-medium">
+                {getEthRewards(pinnedUserEntry.score)}
+              </span>
+            </div>
+          </div>
+        )}
+        {/* Minimal spinner below pinned entry, above leaderboard list */}
+        {loading && <Spinner />}
+        {/* Leaderboard list (user may appear again in their real position) */}
+        <div className="overflow-hidden rounded-lg bg-gray-50">
+          {entries.map((user, index, array) => (
+            <div key={user.id}>
+              <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors">
+                <span className="text-sm font-medium w-6">#{user.rank}</span>
+                <Avatar className="h-8 w-8">
+                  {user.pfp ? (
+                    <AvatarImage src={user.pfp} />
+                  ) : (
+                    <AvatarFallback>{user.name[0]}</AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{user.name}</p>
+                  <p className="text-xs text-gray-600">
+                    Builder Score: {user.score}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-medium">
+                    {getEthRewards(user.score)}
+                  </span>
+                </div>
+              </div>
+              {index < array.length - 1 && <div className="h-px bg-gray-200" />}
+            </div>
+          ))}
+        </div>
+        {/* Only show Load More if at least 10 entries are loaded */}
+        {entries.length >= 10 && (
+          <Button
+            variant="outline"
+            className="w-full mt-2"
+            onClick={handleLoadMore}
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Load More"}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
