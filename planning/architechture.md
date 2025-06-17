@@ -65,16 +65,16 @@ A Farcaster mini app with three main screens, bottom navigation, and external AP
 ## Layout
 
 - Mobile-first
-- On desktop the app emulates an iPhone Pro (393x852px) "phone frame", the main content area is scrollable if content overflows the frame.
+- On desktop 
 
 ## Design System
 
-- Components: shadcn/ui components only
-- Icons: Lucide React icons
-- Colors: White background, neutral grays, dark text
-- Layout: Card-based with rounded corners and subtle shadows
-- Spacing: Generous padding for mobile touch targets
-- Typography: Clean sans-serif hierarchy
+- **Minimalist, mobile-first layout**: optimized for mobile viewing with appropriate touch targets and plenty of white space; on desktop, the app centers its mobile-style content in a fixed-width column, hides the bottom navigation bar, and relies on the top header for navigation.
+- **Neutral colors**: White background, dark text, soft shadows and subtle borders
+- **Modular components**: use shadcn/ui components and Lucide React icons as default; all UI elements are modular, reusable, and follow a consistent visual hierarchy; 
+- **Clean typography**: Clear hierarchy with bold names, subtle secondary text in modern sans-serif font
+- **Interactive elements**: Hover states, smooth transitions, expandable sections
+- **Loading & Error States**: skeleton screens for loading + graceful error messages and retry options
 
 ## Performance Considerations
 

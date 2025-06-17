@@ -549,3 +549,37 @@ async function fetchCredentials(fid: string) {
 
   return data;
 }
+
+/**
+ * Fetches leaderboard data (top creators by Creator Score) from Talent Protocol API
+ */
+export async function getLeaderboardCreators({
+  page = 1,
+  perPage = 10,
+}: { page?: number; perPage?: number } = {}): Promise<
+  Array<{
+    rank: number;
+    name: string;
+    pfp?: string;
+    score: number;
+    rewards: string;
+    id: string;
+  }>
+> {
+  const res = await fetch(`/api/leaderboard?page=${page}&perPage=${perPage}`);
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Failed to fetch leaderboard data");
+  }
+  const json = await res.json();
+  return json.entries || [];
+}
+
+export type LeaderboardEntry = {
+  rank: number;
+  name: string;
+  pfp?: string;
+  score: number;
+  rewards: string;
+  id: string;
+};
