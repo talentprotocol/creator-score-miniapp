@@ -310,7 +310,7 @@ export async function getSocialAccountsForFarcaster(
 
     // 1. Filter EFPs, keep only the one with the highest follower count
     const efpAccounts = data.socials.filter(
-      (s: TalentSocialAccount) => s.source === "efp",
+      (s: TalentSocialAccount) => (s as TalentSocialAccount).source === "efp",
     );
     let mainEfp: TalentSocialAccount | null = null;
     if (efpAccounts.length > 0) {
@@ -322,62 +322,90 @@ export async function getSocialAccountsForFarcaster(
     }
     // 2. Find ENS account
     const ensAccount = data.socials.find(
-      (s: TalentSocialAccount) => s.source === "ens",
+      (s: TalentSocialAccount) => (s as TalentSocialAccount).source === "ens",
     );
     // 3. Merge EFP and ENS into 'Ethereum' if either exists
     let ethereumAccount: SocialAccount | null = null;
     if (mainEfp || ensAccount) {
       ethereumAccount = {
         source: "ethereum",
-        handle: ensAccount?.handle || null,
-        followerCount: mainEfp?.followers_count ?? null,
-        accountAge: getAccountAge(ensAccount?.owned_since ?? null),
-        profileUrl: ensAccount?.profile_url ?? mainEfp?.profile_url ?? null,
-        imageUrl: ensAccount?.image_url ?? mainEfp?.image_url ?? null,
+        handle: ensAccount
+          ? (ensAccount as TalentSocialAccount).handle || null
+          : null,
+        followerCount: mainEfp
+          ? ((mainEfp as TalentSocialAccount).followers_count ?? null)
+          : null,
+        accountAge: getAccountAge(
+          ensAccount
+            ? ((ensAccount as TalentSocialAccount).owned_since ?? null)
+            : null,
+        ),
+        profileUrl: ensAccount
+          ? (ensAccount as TalentSocialAccount).profile_url
+          : mainEfp
+            ? (mainEfp as TalentSocialAccount).profile_url
+            : null,
+        imageUrl: ensAccount
+          ? (ensAccount as TalentSocialAccount).image_url
+          : mainEfp
+            ? (mainEfp as TalentSocialAccount).image_url
+            : null,
         displayName: "Ethereum",
       };
     }
     // 4. Map and filter other accounts
     const socials: SocialAccount[] = data.socials
-      .filter(
-        (s: TalentSocialAccount) =>
-          s.source !== "efp" &&
-          s.source !== "ens" &&
-          s.source !== "linkedin" && // Filter out LinkedIn accounts
-          // Exclude all but the main EFP/ENS merged account
-          s.source !== "ethereum",
-      )
+      .filter((s: TalentSocialAccount) => {
+        const src = (s as TalentSocialAccount).source;
+        return (
+          src !== "efp" &&
+          src !== "ens" &&
+          src !== "linkedin" &&
+          src !== "ethereum"
+        );
+      })
       .map((s: TalentSocialAccount) => {
-        let handle = s.handle || null;
-        if (s.source === "lens" && handle && handle.startsWith("lens/")) {
+        let handle = (s as TalentSocialAccount).handle || null;
+        const src = (s as TalentSocialAccount).source;
+        if (
+          src === "lens" &&
+          handle &&
+          typeof handle === "string" &&
+          handle.startsWith("lens/")
+        ) {
           handle = handle.replace(/^lens\//, "");
         }
         if (
-          (s.source === "farcaster" || s.source === "twitter") &&
+          (src === "farcaster" || src === "twitter") &&
           handle &&
+          typeof handle === "string" &&
           !handle.startsWith("@")
         ) {
           handle = `@${handle}`;
         }
-        const displayName = getDisplayName(s.source);
-        if (s.source === "basename") {
+        const displayName = getDisplayName(src as string);
+        if (src === "basename") {
           return {
             source: "base",
             handle,
             followerCount: null,
-            accountAge: getAccountAge(s.owned_since ?? null),
-            profileUrl: s.profile_url ?? null,
-            imageUrl: s.image_url ?? null,
+            accountAge: getAccountAge(
+              (s as TalentSocialAccount).owned_since ?? null,
+            ),
+            profileUrl: (s as TalentSocialAccount).profile_url ?? null,
+            imageUrl: (s as TalentSocialAccount).image_url ?? null,
             displayName: "Base",
           };
         }
         return {
-          source: s.source,
+          source: src as string,
           handle,
-          followerCount: s.followers_count ?? null,
-          accountAge: getAccountAge(s.owned_since ?? null),
-          profileUrl: s.profile_url ?? null,
-          imageUrl: s.image_url ?? null,
+          followerCount: (s as TalentSocialAccount).followers_count ?? null,
+          accountAge: getAccountAge(
+            (s as TalentSocialAccount).owned_since ?? null,
+          ),
+          profileUrl: (s as TalentSocialAccount).profile_url ?? null,
+          imageUrl: (s as TalentSocialAccount).image_url ?? null,
           displayName,
         };
       });
@@ -739,67 +767,100 @@ export async function getSocialAccountsForTalentId(
     const data = await response.json();
     if (!Array.isArray(data.socials)) return [];
     // Reuse the mapping logic from getSocialAccountsForFarcaster
-    const efpAccounts = data.socials.filter((s: any) => s.source === "efp");
-    let mainEfp: any | null = null;
+    const efpAccounts = data.socials.filter(
+      (s: TalentSocialAccount) => (s as TalentSocialAccount).source === "efp",
+    );
+    let mainEfp: TalentSocialAccount | null = null;
     if (efpAccounts.length > 0) {
       mainEfp = efpAccounts.reduce(
-        (max: any, curr: any) =>
+        (max: TalentSocialAccount, curr: TalentSocialAccount) =>
           (curr.followers_count ?? 0) > (max.followers_count ?? 0) ? curr : max,
         efpAccounts[0],
       );
     }
-    const ensAccount = data.socials.find((s: any) => s.source === "ens");
+    const ensAccount = data.socials.find(
+      (s: TalentSocialAccount) => (s as TalentSocialAccount).source === "ens",
+    );
     let ethereumAccount: SocialAccount | null = null;
     if (mainEfp || ensAccount) {
       ethereumAccount = {
         source: "ethereum",
-        handle: ensAccount?.handle || null,
-        followerCount: mainEfp?.followers_count ?? null,
-        accountAge: getAccountAge(ensAccount?.owned_since ?? null),
-        profileUrl: ensAccount?.profile_url ?? mainEfp?.profile_url ?? null,
-        imageUrl: ensAccount?.image_url ?? mainEfp?.image_url ?? null,
+        handle: ensAccount
+          ? (ensAccount as TalentSocialAccount).handle || null
+          : null,
+        followerCount: mainEfp
+          ? ((mainEfp as TalentSocialAccount).followers_count ?? null)
+          : null,
+        accountAge: getAccountAge(
+          ensAccount
+            ? ((ensAccount as TalentSocialAccount).owned_since ?? null)
+            : null,
+        ),
+        profileUrl: ensAccount
+          ? (ensAccount as TalentSocialAccount).profile_url
+          : mainEfp
+            ? (mainEfp as TalentSocialAccount).profile_url
+            : null,
+        imageUrl: ensAccount
+          ? (ensAccount as TalentSocialAccount).image_url
+          : mainEfp
+            ? (mainEfp as TalentSocialAccount).image_url
+            : null,
         displayName: "Ethereum",
       };
     }
     const socials: SocialAccount[] = data.socials
-      .filter(
-        (s: any) =>
-          s.source !== "efp" &&
-          s.source !== "ens" &&
-          s.source !== "linkedin" &&
-          s.source !== "ethereum",
-      )
-      .map((s: any) => {
-        let handle = s.handle || null;
-        if (s.source === "lens" && handle && handle.startsWith("lens/")) {
+      .filter((s: TalentSocialAccount) => {
+        const src = (s as TalentSocialAccount).source;
+        return (
+          src !== "efp" &&
+          src !== "ens" &&
+          src !== "linkedin" &&
+          src !== "ethereum"
+        );
+      })
+      .map((s: TalentSocialAccount) => {
+        let handle = (s as TalentSocialAccount).handle || null;
+        const src = (s as TalentSocialAccount).source;
+        if (
+          src === "lens" &&
+          handle &&
+          typeof handle === "string" &&
+          handle.startsWith("lens/")
+        ) {
           handle = handle.replace(/^lens\//, "");
         }
         if (
-          (s.source === "farcaster" || s.source === "twitter") &&
+          (src === "farcaster" || src === "twitter") &&
           handle &&
+          typeof handle === "string" &&
           !handle.startsWith("@")
         ) {
           handle = `@${handle}`;
         }
-        const displayName = getDisplayName(s.source);
-        if (s.source === "basename") {
+        const displayName = getDisplayName(src as string);
+        if (src === "basename") {
           return {
             source: "base",
             handle,
             followerCount: null,
-            accountAge: getAccountAge(s.owned_since ?? null),
-            profileUrl: s.profile_url ?? null,
-            imageUrl: s.image_url ?? null,
+            accountAge: getAccountAge(
+              (s as TalentSocialAccount).owned_since ?? null,
+            ),
+            profileUrl: (s as TalentSocialAccount).profile_url ?? null,
+            imageUrl: (s as TalentSocialAccount).image_url ?? null,
             displayName: "Base",
           };
         }
         return {
-          source: s.source,
+          source: src as string,
           handle,
-          followerCount: s.followers_count ?? null,
-          accountAge: getAccountAge(s.owned_since ?? null),
-          profileUrl: s.profile_url ?? null,
-          imageUrl: s.image_url ?? null,
+          followerCount: (s as TalentSocialAccount).followers_count ?? null,
+          accountAge: getAccountAge(
+            (s as TalentSocialAccount).owned_since ?? null,
+          ),
+          profileUrl: (s as TalentSocialAccount).profile_url ?? null,
+          imageUrl: (s as TalentSocialAccount).image_url ?? null,
           displayName,
         };
       });

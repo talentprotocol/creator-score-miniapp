@@ -128,7 +128,7 @@ export async function calculateTotalRewards(
   getEthUsdcPriceFn: () => Promise<number>,
 ): Promise<number> {
   const ethPrice = await getEthUsdcPriceFn();
-  let debugBreakdown: Array<{
+  const debugBreakdown: Array<{
     label: string;
     uom: string | null;
     value: number;

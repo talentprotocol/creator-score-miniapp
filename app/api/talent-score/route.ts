@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
           Accept: "application/json",
         },
       });
-      let data = await response.json();
+      const data = await response.json();
       if (!response.ok) {
         return NextResponse.json(
           { error: data.error || "Failed to fetch talent score" },
