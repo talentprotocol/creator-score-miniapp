@@ -3,9 +3,41 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const apiKey = process.env.TALENT_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 },
+      );
+    }
+    const scorerSlug = searchParams.get("scorer_slug");
+    // Handle talent_protocol_id or id at the very top
+    const talentId =
+      searchParams.get("talent_protocol_id") || searchParams.get("id");
+    if (talentId) {
+      // Fetch by talent_protocol_id (or fallback to id), no account_source
+      const params = new URLSearchParams({ id: talentId });
+      if (scorerSlug) params.append("scorer_slug", scorerSlug);
+      const baseUrl = "https://api.talentprotocol.com/score";
+      const response = await fetch(`${baseUrl}?${params.toString()}`, {
+        method: "GET",
+        headers: {
+          "X-API-KEY": apiKey,
+          Accept: "application/json",
+        },
+      });
+      let data = await response.json();
+      if (!response.ok) {
+        return NextResponse.json(
+          { error: data.error || "Failed to fetch talent score" },
+          { status: response.status },
+        );
+      }
+      return NextResponse.json(data);
+    }
+
     const address = searchParams.get("address");
     const fid = searchParams.get("fid");
-    const scorerSlug = searchParams.get("scorer_slug");
     const accountSource = searchParams.get("account_source") || "wallet";
 
     // Validate required parameters based on account source
@@ -20,14 +52,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         { error: "Farcaster ID (fid) is required for Farcaster-based lookup" },
         { status: 400 },
-      );
-    }
-
-    const apiKey = process.env.TALENT_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 },
       );
     }
 

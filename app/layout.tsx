@@ -42,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
         title: "Check Score",
         action: {
           type: "launch_frame",
-          name: "Builder Score",
+          name: "Creator Score",
           url: URL || "http://localhost:3000",
           splashImageUrl: process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE,
           splashBackgroundColor:
@@ -53,21 +53,21 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Builder Score",
+    title: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Creator Score",
     description:
-      "Check your Builder Score and track your onchain activity across Base and other networks",
+      "Check your Creator Score and track your onchain content across Base and other networks",
     other: {
       "fc:frame": frameMetadata,
       "og:title": (process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ||
-        "Builder Score") as string,
+        "Creator Score") as string,
       "og:description":
-        "Check your Builder Score and track your onchain activity across Base and other networks",
+        "Check your Creator Score and track your onchain content across Base and other networks",
       "og:image": (process.env.NEXT_PUBLIC_APP_HERO_IMAGE || "") as string,
       "twitter:card": "summary_large_image",
       "twitter:title": (process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ||
-        "Builder Score") as string,
+        "Creator Score") as string,
       "twitter:description":
-        "Check your Builder Score and track your onchain activity across Base and other networks",
+        "Check your Creator Score and track your onchain content across Base and other networks",
       "twitter:image": (process.env.NEXT_PUBLIC_APP_HERO_IMAGE || "") as string,
     },
   };

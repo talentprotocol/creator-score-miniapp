@@ -214,12 +214,20 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
     ],
   },
   {
-    issuer: "Cookie",
+    issuer: "X/Twitter",
     total: 0,
     max_total: 0,
     points: [
       {
-        label: "Twitter Mindshare",
+        label: "Cookie Mindshare",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Kaito Mindshare",
         value: 0,
         max_score: null,
         readable_value: null,
@@ -229,12 +237,27 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
     ],
   },
   {
-    issuer: "Hypersub",
+    issuer: "Flaunch",
     total: 0,
     max_total: 0,
     points: [
       {
-        label: "Total Earnings",
+        label: "Coin Earnings",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Coop Records",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Music Earnings",
         value: 0,
         max_score: null,
         readable_value: null,
@@ -242,7 +265,38 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
         external_url: null,
       },
       {
-        label: "Total Subscribers",
+        label: "Unique Collectors",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Paragraph",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Creator Rewards",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Unique Collectors",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Total Posts",
         value: 0,
         max_score: null,
         readable_value: null,
@@ -272,6 +326,59 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
         uom: null,
         external_url: null,
       },
+      {
+        label: "Unique Collectors",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Phi",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Artist Score",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Noice",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Tip Earnings",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Pods",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Creator Earnings",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
     ],
   },
   {
@@ -280,7 +387,7 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
     max_total: 0,
     points: [
       {
-        label: "Total Coin Earnings",
+        label: "Coin Earnings",
         value: 0,
         max_score: null,
         readable_value: null,
@@ -289,14 +396,6 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
       },
       {
         label: "Total Posts",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Followers",
         value: 0,
         max_score: null,
         readable_value: null,
@@ -395,9 +494,16 @@ function ScoreDataPoints() {
     }
   };
 
+  const sortedCredentials = [
+    ...allCredentials.filter((c) => c.total > 0),
+    ...allCredentials
+      .filter((c) => c.total === 0)
+      .sort((a, b) => a.issuer.localeCompare(b.issuer)),
+  ];
+
   return (
     <Accordion type="multiple" className="space-y-2">
-      {allCredentials.map((issuer, index) => (
+      {sortedCredentials.map((issuer, index) => (
         <AccordionItem
           key={issuer.issuer}
           value={`issuer-${index}`}

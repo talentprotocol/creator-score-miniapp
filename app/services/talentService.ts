@@ -564,6 +564,7 @@ export async function getLeaderboardCreators({
     score: number;
     rewards: string;
     id: string;
+    talent_protocol_id: string | number;
   }>
 > {
   const res = await fetch(`/api/leaderboard?page=${page}&perPage=${perPage}`);
@@ -582,4 +583,231 @@ export type LeaderboardEntry = {
   score: number;
   rewards: string;
   id: string;
+  talent_protocol_id: string | number;
 };
+
+export async function getCreatorScoreForTalentId(
+  talentId: string | number,
+): Promise<CreatorScore> {
+  try {
+    let baseUrl = "";
+    if (typeof window !== "undefined") {
+      if (window.location.hostname === "localhost") {
+        baseUrl = ""; // relative path
+      } else {
+        baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
+      }
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_URL || "";
+    }
+    const params = new URLSearchParams({
+      talent_protocol_id: String(talentId),
+      scorer_slug: SCORER_SLUGS.CREATOR,
+    });
+    const response = await fetch(
+      `${baseUrl}/api/talent-score?${params.toString()}`,
+      { method: "GET" },
+    );
+    const data = await response.json();
+    if (data.error) {
+      return {
+        score: 0,
+        level: 1,
+        levelName: "Level 1",
+        lastCalculatedAt: null,
+        walletAddress: null,
+        error: data.error,
+      };
+    }
+    const points = data.score?.points ?? 0;
+    const lastCalculatedAt = data.score?.last_calculated_at ?? null;
+    const levelInfo =
+      LEVEL_RANGES.find(
+        (range) => points >= range.min && points <= range.max,
+      ) || LEVEL_RANGES[0];
+    const level = LEVEL_RANGES.indexOf(levelInfo) + 1;
+    return {
+      score: points,
+      level,
+      levelName: levelInfo.name,
+      lastCalculatedAt,
+      walletAddress: null,
+    };
+  } catch (error) {
+    return {
+      score: 0,
+      level: 1,
+      levelName: "Level 1",
+      lastCalculatedAt: null,
+      walletAddress: null,
+      error: error instanceof Error ? error.message : "Failed to fetch score",
+    };
+  }
+}
+
+export async function getCredentialsForTalentId(
+  talentId: string | number,
+): Promise<IssuerCredentialGroup[]> {
+  try {
+    let baseUrl = "";
+    if (typeof window !== "undefined") {
+      if (window.location.hostname === "localhost") {
+        baseUrl = ""; // relative path
+      } else {
+        baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
+      }
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_URL || "";
+    }
+    const params = new URLSearchParams({
+      talent_protocol_id: String(talentId),
+      scorer_slug: SCORER_SLUGS.CREATOR,
+    });
+    const response = await fetch(
+      `${baseUrl}/api/talent-credentials?${params.toString()}`,
+      { method: "GET" },
+    );
+    const data = await response.json();
+    if (data.error || !Array.isArray(data.credentials)) {
+      return [];
+    }
+    // Grouping logic as in getCredentialsForFarcaster
+    const issuerGroups = new Map<string, IssuerCredentialGroup>();
+    data.credentials.forEach((cred: Credential) => {
+      if (cred.points === 0) return;
+      const issuer = cred.data_issuer_name;
+      if (typeof issuer !== "string") return;
+      const existingGroup = issuerGroups.get(issuer);
+      let readableValue = null;
+      let uom = null;
+      if (cred.points_calculation_logic?.data_points) {
+        const maxDataPoint = cred.points_calculation_logic.data_points.find(
+          (dp) => dp.is_maximum,
+        );
+        readableValue = maxDataPoint?.readable_value ?? null;
+        uom = maxDataPoint?.uom ?? cred.uom ?? null;
+      } else {
+        uom = cred.uom ?? null;
+      }
+      const maxScore = cred.points_calculation_logic?.max_points ?? null;
+      if (existingGroup) {
+        existingGroup.total += cred.points;
+        existingGroup.max_total =
+          (existingGroup.max_total ?? 0) + (maxScore ?? 0);
+        existingGroup.points.push({
+          label: cred.name,
+          value: cred.points,
+          max_score: maxScore,
+          readable_value: readableValue,
+          uom: uom,
+          external_url: cred.external_url,
+        });
+      } else {
+        issuerGroups.set(issuer, {
+          issuer,
+          total: cred.points,
+          max_total: maxScore ?? 0,
+          points: [
+            {
+              label: cred.name,
+              value: cred.points,
+              max_score: maxScore,
+              readable_value: readableValue,
+              uom: uom,
+              external_url: cred.external_url,
+            },
+          ],
+        });
+      }
+    });
+    return Array.from(issuerGroups.values()).sort((a, b) => b.total - a.total);
+  } catch {
+    return [];
+  }
+}
+
+export async function getSocialAccountsForTalentId(
+  talentId: string | number,
+): Promise<SocialAccount[]> {
+  try {
+    const baseUrl = "/api/talent-socials";
+    const params = new URLSearchParams({
+      talent_protocol_id: String(talentId),
+    });
+    const response = await fetch(`${baseUrl}?${params.toString()}`);
+    if (!response.ok) throw new Error(`Talent API error: ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data.socials)) return [];
+    // Reuse the mapping logic from getSocialAccountsForFarcaster
+    const efpAccounts = data.socials.filter((s: any) => s.source === "efp");
+    let mainEfp: any | null = null;
+    if (efpAccounts.length > 0) {
+      mainEfp = efpAccounts.reduce(
+        (max: any, curr: any) =>
+          (curr.followers_count ?? 0) > (max.followers_count ?? 0) ? curr : max,
+        efpAccounts[0],
+      );
+    }
+    const ensAccount = data.socials.find((s: any) => s.source === "ens");
+    let ethereumAccount: SocialAccount | null = null;
+    if (mainEfp || ensAccount) {
+      ethereumAccount = {
+        source: "ethereum",
+        handle: ensAccount?.handle || null,
+        followerCount: mainEfp?.followers_count ?? null,
+        accountAge: getAccountAge(ensAccount?.owned_since ?? null),
+        profileUrl: ensAccount?.profile_url ?? mainEfp?.profile_url ?? null,
+        imageUrl: ensAccount?.image_url ?? mainEfp?.image_url ?? null,
+        displayName: "Ethereum",
+      };
+    }
+    const socials: SocialAccount[] = data.socials
+      .filter(
+        (s: any) =>
+          s.source !== "efp" &&
+          s.source !== "ens" &&
+          s.source !== "linkedin" &&
+          s.source !== "ethereum",
+      )
+      .map((s: any) => {
+        let handle = s.handle || null;
+        if (s.source === "lens" && handle && handle.startsWith("lens/")) {
+          handle = handle.replace(/^lens\//, "");
+        }
+        if (
+          (s.source === "farcaster" || s.source === "twitter") &&
+          handle &&
+          !handle.startsWith("@")
+        ) {
+          handle = `@${handle}`;
+        }
+        const displayName = getDisplayName(s.source);
+        if (s.source === "basename") {
+          return {
+            source: "base",
+            handle,
+            followerCount: null,
+            accountAge: getAccountAge(s.owned_since ?? null),
+            profileUrl: s.profile_url ?? null,
+            imageUrl: s.image_url ?? null,
+            displayName: "Base",
+          };
+        }
+        return {
+          source: s.source,
+          handle,
+          followerCount: s.followers_count ?? null,
+          accountAge: getAccountAge(s.owned_since ?? null),
+          profileUrl: s.profile_url ?? null,
+          imageUrl: s.image_url ?? null,
+          displayName,
+        };
+      });
+    if (ethereumAccount) {
+      socials.unshift(ethereumAccount);
+    }
+    return socials;
+  } catch {
+    return [];
+  }
+}

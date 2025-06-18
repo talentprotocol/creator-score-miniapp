@@ -25,7 +25,6 @@ import "dotenv/config";
       } as Record<string, string>,
     });
     const json = await res.json();
-    console.log("RAW API RESPONSE:", JSON.stringify(json, null, 2));
   } catch (err) {
     console.error("Error fetching leaderboard:", err);
   }

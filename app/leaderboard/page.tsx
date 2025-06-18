@@ -12,6 +12,7 @@ import {
 } from "@/app/services/talentService";
 import { filterEthAddresses } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/app/services/talentService";
+import { MinimalProfileDrawer } from "@/components/leaderboard/MinimalProfileDrawer";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
 
@@ -53,6 +54,15 @@ export default function LeaderboardPage() {
   const [countdown, setCountdown] = useState(() =>
     getCountdownParts(ROUND_ENDS_AT),
   );
+
+  // Drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<{
+    talent_protocol_id?: string | number;
+    id: string;
+    name: string;
+    pfp?: string;
+  } | null>(null);
 
   // Fetch leaderboard data
   useEffect(() => {
@@ -148,8 +158,42 @@ export default function LeaderboardPage() {
     return (score * multiplier).toFixed(3) + " ETH";
   }
 
+  // Handler to open drawer for a leaderboard entry
+  function handleEntryClick(entry: LeaderboardEntry) {
+    setSelectedProfile({
+      talent_protocol_id: entry.talent_protocol_id,
+      id: entry.id,
+      name: entry.name,
+      pfp: entry.pfp,
+    });
+    setDrawerOpen(true);
+  }
+
+  // Handler to open drawer for pinned user
+  function handlePinnedUserClick() {
+    if (!user) return;
+    const entry = entries.find(
+      (e) => e.name === (user.displayName || user.username),
+    );
+    setSelectedProfile({
+      talent_protocol_id: entry?.talent_protocol_id,
+      id: entry?.id || "user-pinned",
+      name: user.displayName || user.username || "Unknown user",
+      pfp: user.pfpUrl || undefined,
+    });
+    setDrawerOpen(true);
+  }
+
   return (
     <div className="max-w-md mx-auto w-full p-4 space-y-6 pb-24">
+      {/* MinimalProfileDrawer */}
+      <MinimalProfileDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        talentId={selectedProfile?.talent_protocol_id || selectedProfile?.id}
+        name={selectedProfile?.name || ""}
+        avatarUrl={selectedProfile?.pfp}
+      />
       {/* Page Title */}
       <div className="flex items-center px-1 mb-2">
         <span className="text-xl font-bold leading-tight">
@@ -185,7 +229,10 @@ export default function LeaderboardPage() {
         {error && <div className="text-destructive text-sm px-2">{error}</div>}
         {/* User pinned entry always on top */}
         {pinnedUserEntry && (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 cursor-pointer hover:bg-purple-100 transition-colors mb-2">
+          <div
+            className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 cursor-pointer hover:bg-purple-100 transition-colors mb-2"
+            onClick={handlePinnedUserClick}
+          >
             <span className="text-sm font-medium w-6">
               #{pinnedUserEntry.rank}
             </span>
@@ -199,7 +246,7 @@ export default function LeaderboardPage() {
             <div className="flex-1">
               <p className="font-medium text-sm">{pinnedUserEntry.name}</p>
               <p className="text-xs text-gray-600">
-                Builder Score: {pinnedUserEntry.score}
+                Creator Score: {pinnedUserEntry.score}
               </p>
             </div>
             <div className="flex flex-col items-end">
@@ -215,7 +262,10 @@ export default function LeaderboardPage() {
         <div className="overflow-hidden rounded-lg bg-gray-50">
           {entries.map((user, index, array) => (
             <div key={user.id}>
-              <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors">
+              <div
+                className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleEntryClick(user)}
+              >
                 <span className="text-sm font-medium w-6">#{user.rank}</span>
                 <Avatar className="h-8 w-8">
                   {user.pfp ? (
@@ -227,7 +277,7 @@ export default function LeaderboardPage() {
                 <div className="flex-1">
                   <p className="font-medium text-sm">{user.name}</p>
                   <p className="text-xs text-gray-600">
-                    Builder Score: {user.score}
+                    Creator Score: {user.score}
                   </p>
                 </div>
                 <div className="flex flex-col items-end">

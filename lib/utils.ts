@@ -116,3 +116,53 @@ export function formatNumberWithSuffix(num: number): string {
   // Add comma only for 4-digit numbers
   return `$${rounded >= 1000 ? rounded.toLocaleString() : rounded}`;
 }
+
+export async function calculateTotalRewards(
+  credentials: Array<{
+    points: Array<{
+      label: string;
+      uom: string | null;
+      readable_value: string | null;
+    }>;
+  }>,
+  getEthUsdcPriceFn: () => Promise<number>,
+): Promise<number> {
+  const ethPrice = await getEthUsdcPriceFn();
+  let debugBreakdown: Array<{
+    label: string;
+    uom: string | null;
+    value: number;
+    contribution: number;
+  }> = [];
+  // Sum up all rewards, converting ETH to USDC
+  const total = credentials.reduce((sum, issuer) => {
+    const issuerTotal = issuer.points.reduce((acc, pt) => {
+      // Skip ETH Balance credential
+      if (pt.label === "ETH Balance") {
+        return acc;
+      }
+      if (!pt.readable_value) return acc;
+      const value = parseFloat(pt.readable_value.replace(/[^0-9.-]+/g, ""));
+      if (isNaN(value)) return acc;
+      let contribution = 0;
+      if (pt.uom === "ETH") {
+        contribution = convertEthToUsdc(value, ethPrice);
+      } else if (pt.uom === "USDC") {
+        contribution = value;
+      }
+      debugBreakdown.push({
+        label: pt.label,
+        uom: pt.uom,
+        value,
+        contribution,
+      });
+      return acc + contribution;
+    }, 0);
+    return sum + issuerTotal;
+  }, 0);
+  return total;
+}
+
+export function formatRewardValue(num: number): string {
+  return formatNumberWithSuffix(num);
+}

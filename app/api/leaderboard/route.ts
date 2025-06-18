@@ -5,7 +5,8 @@ interface TalentProfile {
   display_name?: string;
   name?: string;
   image_url?: string;
-  builder_score?: { points?: number };
+  creator_score?: { points?: number };
+  talent_protocol_id?: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
   const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
   const data = {
     sort: {
-      score: { order: "desc", scorer: "Builder Score" },
+      score: { order: "desc", scorer: "Creator Score" },
       id: { order: "desc" },
     },
     page,
@@ -50,8 +51,8 @@ export async function GET(req: NextRequest) {
   // Sort by score desc, then id for stability
   const sorted = (json.profiles || []).sort(
     (a: TalentProfile, b: TalentProfile) => {
-      if ((b.builder_score?.points ?? 0) !== (a.builder_score?.points ?? 0)) {
-        return (b.builder_score?.points ?? 0) - (a.builder_score?.points ?? 0);
+      if ((b.creator_score?.points ?? 0) !== (a.creator_score?.points ?? 0)) {
+        return (b.creator_score?.points ?? 0) - (a.creator_score?.points ?? 0);
       }
       return (a.id || "").localeCompare(b.id || "");
     },
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
   let lastRank = 0;
   let ties = 0;
   const mapped = sorted.map((profile: TalentProfile, idx: number) => {
-    const score = profile.builder_score?.points ?? 0;
+    const score = profile.creator_score?.points ?? 0;
     let rank;
     if (score === lastScore) {
       rank = lastRank;
@@ -81,6 +82,7 @@ export async function GET(req: NextRequest) {
       score,
       rewards: "-", // To be calculated later
       id: profile.id,
+      talent_protocol_id: profile.talent_protocol_id || profile.id,
     };
   });
   return NextResponse.json({ entries: mapped });

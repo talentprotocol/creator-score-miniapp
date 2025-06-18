@@ -3,6 +3,38 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const apiKey = process.env.TALENT_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 },
+      );
+    }
+    // Handle talent_protocol_id or id at the very top
+    const talentId =
+      searchParams.get("talent_protocol_id") || searchParams.get("id");
+    if (talentId) {
+      // Fetch by talent_protocol_id (or fallback to id), forward scorer_slug if present
+      const params = new URLSearchParams({ id: talentId });
+      const scorerSlug = searchParams.get("scorer_slug");
+      if (scorerSlug) params.append("scorer_slug", scorerSlug);
+      const baseUrl = "https://api.talentprotocol.com/credentials";
+      const headers = {
+        "X-API-KEY": apiKey,
+        Accept: "application/json",
+      };
+      const fullUrl = `${baseUrl}?${params.toString()}`;
+      const response = await fetch(fullUrl, { headers });
+      if (!response.ok) {
+        return NextResponse.json(
+          { error: "Failed to fetch credentials" },
+          { status: response.status },
+        );
+      }
+      const data = await response.json();
+      return NextResponse.json(data);
+    }
+
     const address = searchParams.get("address");
     const fid = searchParams.get("fid");
     const scorerSlug = searchParams.get("scorer_slug");
@@ -20,14 +52,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         { error: "Farcaster ID (fid) is required for Farcaster-based lookup" },
         { status: 400 },
-      );
-    }
-
-    const apiKey = process.env.TALENT_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 },
       );
     }
 
