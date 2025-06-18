@@ -10,7 +10,11 @@ export function filterEthAddresses(
   addresses: (string | undefined | null)[],
 ): string[] {
   return addresses.filter(
-    (addr): addr is string => typeof addr === "string" && addr.startsWith("0x"),
+    (addr): addr is string =>
+      typeof addr === "string" &&
+      addr.startsWith("0x") &&
+      addr.length === 42 &&
+      /^0x[a-fA-F0-9]{40}$/.test(addr),
   );
 }
 

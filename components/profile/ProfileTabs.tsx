@@ -311,7 +311,7 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
     max_total: 0,
     points: [
       {
-        label: "Total Collectors",
+        label: "Total Mints",
         value: 0,
         max_score: null,
         readable_value: null,
@@ -402,6 +402,53 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
         uom: null,
         external_url: null,
       },
+      {
+        label: "Unique Holders",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Coin Volume",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Market Cap",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+    ],
+  },
+  {
+    issuer: "Lens",
+    total: 0,
+    max_total: 0,
+    points: [
+      {
+        label: "Bonsai Airdrop",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
+      {
+        label: "Total Earnings",
+        value: 0,
+        max_score: null,
+        readable_value: null,
+        uom: null,
+        external_url: null,
+      },
     ],
   },
 ];
@@ -469,6 +516,18 @@ function ScoreDataPoints() {
     .map((issuer) => {
       const existing = existingIssuers.get(issuer);
       const comingSoon = comingSoonMap.get(issuer);
+      if (existing && comingSoon) {
+        // Merge points: real credentials first, then coming soon points not already present
+        const realLabels = new Set(existing.points.map((pt) => pt.label));
+        const mergedPoints = [
+          ...existing.points,
+          ...comingSoon.points.filter((pt) => !realLabels.has(pt.label)),
+        ];
+        return {
+          ...existing,
+          points: mergedPoints,
+        };
+      }
       return existing || comingSoon;
     })
     .filter((issuer): issuer is IssuerCredentialGroup => issuer !== undefined);

@@ -30,8 +30,8 @@
 
 - [x] **Task 3.1**: Build a list-style leaderboard: rank + avatar + name + creator score + creator rewards
 - [x] **Task 3.2**: Rewards campaign; add two stat cards above the leaderboard: "Round Ends" + "Rewards Pool"
-- [ ] **Task 3.3**: Use the Talent API to get real leaderboard data for top 100 creators by creator score
-- [ ] **Task 3.3**: calculate an estimation of how much each user will receive in creator rewards as part of the Creator Score Launch campaign (we're distributing 10 ETH to the top 100 creators by creator score)
+- [x] **Task 3.3**: Use the Talent API to get real leaderboard data for top 100 creators by creator score
+- [x] **Task 3.3**: calculate an estimation of how much each user will receive in creator rewards as part of the Creator Score Launch campaign (we're distributing 10 ETH to the top 1000 creators by creator score); for now let’s multiply their score with the following multiplier: 0.00005588184343025108
 
 
 ## Phase 4: Settings Screen
