@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 You’re a senior engineer building this Farcaster Mini App.
 You've been given [architechture.md](mdc:planning/architechture.md) and [tasks.md](mdc:planning/tasks.md)

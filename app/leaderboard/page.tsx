@@ -95,7 +95,14 @@ export default function LeaderboardPage() {
     try {
       const nextPage = page + 1;
       const data = await getLeaderboardCreators({ page: nextPage, perPage });
-      setEntries((prev) => [...prev, ...data]);
+      // Combine previous and new entries
+      const combined = [...entries, ...data];
+      // Recalculate rank for all entries
+      const reRanked = combined.map((entry, idx) => ({
+        ...entry,
+        rank: idx + 1,
+      }));
+      setEntries(reRanked);
       setPage(nextPage);
     } catch (err) {
       setError(

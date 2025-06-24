@@ -92,12 +92,7 @@ function ScoreProgressAccordion() {
   const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
 
   return (
-    <Accordion
-      type="single"
-      collapsible
-      defaultValue="score-progress"
-      className="space-y-2"
-    >
+    <Accordion type="single" collapsible className="space-y-2">
       <AccordionItem
         value="score-progress"
         className="bg-gray-100 rounded-xl p-0 mb-3 border-0 shadow-none"
@@ -120,11 +115,8 @@ function ScoreProgressAccordion() {
             <div className="relative w-full flex items-center justify-center mb-0">
               <Progress
                 value={progress}
-                className="h-4 bg-gray-200 [&>div]:bg-gray-800"
+                className="h-2 bg-gray-200 [&>div]:bg-gray-800"
               />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-medium text-foreground">
-                {progress.toFixed(0)}%
-              </span>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
               <span>
@@ -218,22 +210,7 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
     total: 0,
     max_total: 0,
     points: [
-      {
-        label: "Cookie Mindshare",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Kaito Mindshare",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
+      // Removed 'Cookie Mindshare' and 'Kaito Mindshare'
     ],
   },
   {
@@ -326,14 +303,7 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
         uom: null,
         external_url: null,
       },
-      {
-        label: "Unique Collectors",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
+      // Removed 'Unique Collectors' from Mirror
     ],
   },
   {
