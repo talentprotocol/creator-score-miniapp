@@ -19,6 +19,7 @@ import {
   formatRewardValue,
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
+import { Button } from "@/components/ui/button";
 
 interface MinimalProfileDrawerProps {
   open: boolean;
@@ -138,6 +139,27 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
             title="Total Rewards"
             value={loading ? "—" : totalRewards}
           />
+        </div>
+        <div className="mt-8 flex justify-center">
+          <Button
+            variant="default"
+            className="w-full"
+            onClick={() => {
+              let url = "/profile/";
+              if (farcasterHandle) {
+                url += farcasterHandle;
+              } else if (talentId) {
+                url += talentId;
+              } else {
+                return;
+              }
+              if (typeof window !== "undefined") {
+                window.location.href = url;
+              }
+            }}
+          >
+            See Profile
+          </Button>
         </div>
       </DrawerContent>
     </Drawer>

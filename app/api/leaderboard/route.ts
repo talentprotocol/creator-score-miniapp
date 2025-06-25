@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-interface TalentProfile {
+type Profile = {
   id: string;
   display_name?: string;
   name?: string;
   image_url?: string;
-  creator_score?: { points?: number };
-  talent_protocol_id?: string;
-}
+  scores?: { slug: string; points?: number }[];
+};
 
 export async function GET(req: NextRequest) {
   const apiKey = process.env.TALENT_API_KEY;
@@ -49,46 +48,48 @@ export async function GET(req: NextRequest) {
   const json = await res.json();
 
   // TEMP: Log the first 10 creator scores for inspection
-  if (Array.isArray(json.profiles)) {
-    const creatorScores = json.profiles.slice(0, 10).map((profile: any) => {
-      const creatorScoreObj = Array.isArray(profile.scores)
-        ? profile.scores.find((s: any) => s.slug === "creator_score")
-        : null;
-      return {
-        name: profile.display_name || profile.name,
-        creator_score: creatorScoreObj?.points ?? 0,
-      };
-    });
-    console.log("First 10 creator scores:", creatorScores);
-  }
-
-  console.log("Talent Protocol API response:", JSON.stringify(json, null, 2)); // TEMP DEBUG
+  // if (Array.isArray(json.profiles)) {
+  //   const creatorScores = json.profiles.slice(0, 10).map((profile: Profile) => {
+  //     const p = profile;
+  //     const creatorScoreObj = Array.isArray(p.scores)
+  //       ? p.scores.find((s) => s.slug === "creator_score")
+  //       : null;
+  //     return {
+  //       name: p.display_name || p.name,
+  //       creator_score: creatorScoreObj?.points ?? 0,
+  //     };
+  //   });
+  //   console.log("First 10 creator scores:", creatorScores);
+  // }
 
   // Step 1: Map each profile to its highest Creator Score
-  const mapped = (json.profiles || []).map((profile: any) => {
-    const creatorScores = Array.isArray(profile.scores)
-      ? profile.scores
-          .filter((s: any) => s.slug === "creator_score")
-          .map((s: any) => s.points ?? 0)
+  const mapped = (json.profiles || []).map((profile: Profile) => {
+    const p = profile;
+    const creatorScores = Array.isArray(p.scores)
+      ? p.scores
+          .filter((s) => s.slug === "creator_score")
+          .map((s) => s.points ?? 0)
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
     return {
-      name: profile.display_name || profile.name || "Unknown",
-      pfp: profile.image_url || undefined,
+      name: p.display_name || p.name || "Unknown",
+      pfp: p.image_url || undefined,
       score,
       rewards: "-", // To be calculated later
-      id: profile.id,
+      id: p.id,
     };
   });
 
   // Step 2: Sort by score descending
-  mapped.sort((a: any, b: any) => b.score - a.score);
+  mapped.sort(
+    (a: { score: number }, b: { score: number }) => b.score - a.score,
+  );
 
   // Step 3: Assign ranks
   let lastScore: number | null = null;
   let lastRank = 0;
   let ties = 0;
-  const ranked = mapped.map((entry: any, idx: number) => {
+  const ranked = mapped.map((entry: { score: number }, idx: number) => {
     let rank;
     if (entry.score === lastScore) {
       rank = lastRank;

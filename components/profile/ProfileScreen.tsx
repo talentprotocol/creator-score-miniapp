@@ -5,7 +5,10 @@ import { ProfileHeader } from "./ProfileHeader";
 import { StatCard } from "./StatCard";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { getUserWalletAddresses } from "@/app/services/neynarService";
+import {
+  getUserWalletAddresses,
+  getUserWalletAddressesByWallet,
+} from "@/app/services/neynarService";
 import {
   getCreatorScore,
   getSocialAccountsForFarcaster,
@@ -21,9 +24,13 @@ import {
 import { sdk } from "@farcaster/frame-sdk";
 import { Button } from "@/components/ui/button";
 import { Lock, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ProfileScreenProps {
   children?: React.ReactNode;
+  fid?: number | string;
+  wallet?: string;
+  github?: string;
 }
 
 function FrameGateOverlay({ onAddFrame }: { onAddFrame: () => void }) {
@@ -85,10 +92,19 @@ function OpenInFarcasterOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function ProfileScreen({ children }: ProfileScreenProps) {
+export function ProfileScreen({
+  children,
+  fid: fidProp,
+  wallet: walletProp,
+  github: githubProp,
+}: ProfileScreenProps) {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const fid = user?.fid;
+  const hasIdentifier = !!(fidProp || walletProp || githubProp);
+  // Only use current user if no identifier is provided
+  const identifier = hasIdentifier
+    ? (fidProp ?? walletProp ?? githubProp)
+    : user?.fid;
 
   const [isFrameAdded, setIsFrameAdded] = React.useState(false);
   const [hasNotifications, setHasNotifications] = React.useState(false);
@@ -165,12 +181,48 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
     };
   }, [isInFarcaster]);
 
+  // New: state for real profile data
+  const [profile, setProfile] = useState<{
+    display_name?: string;
+    image_url?: string;
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!identifier) return;
+    setProfileLoading(true);
+    setProfileError(null);
+    fetch(`/api/talent-user?id=${identifier}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) setProfileError("Profile not found");
+        setProfile(data);
+      })
+      .catch(() => setProfileError("Profile not found"))
+      .finally(() => setProfileLoading(false));
+  }, [identifier]);
+
   React.useEffect(() => {
     async function fetchScore() {
-      if (!fid) return;
+      if (!identifier) return;
       setScoreLoading(true);
       try {
-        const walletData = await getUserWalletAddresses(fid);
+        let walletData;
+        if (fidProp) {
+          walletData = await getUserWalletAddresses(Number(fidProp));
+        } else if (walletProp) {
+          walletData = await getUserWalletAddressesByWallet(walletProp);
+        } else {
+          setCreatorScore(null);
+          setScoreLoading(false);
+          return;
+        }
+        if (walletData.error) {
+          setCreatorScore(null);
+          setScoreLoading(false);
+          return;
+        }
         if (walletData.addresses.length > 0) {
           const scoreData = await getCreatorScore(walletData.addresses);
           setCreatorScore(scoreData.score?.toLocaleString() ?? "0");
@@ -184,13 +236,15 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
       }
     }
     fetchScore();
-  }, [fid]);
+  }, [identifier, fidProp, walletProp]);
 
   React.useEffect(() => {
     async function fetchAccounts() {
-      if (!fid) return;
+      if (!identifier) return;
       try {
-        const accounts = await getSocialAccountsForFarcaster(String(fid));
+        const accounts = await getSocialAccountsForFarcaster(
+          String(identifier),
+        );
         accounts.sort(
           (a, b) => (b.followerCount ?? 0) - (a.followerCount ?? 0),
         );
@@ -200,14 +254,16 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
       }
     }
     fetchAccounts();
-  }, [fid]);
+  }, [identifier]);
 
   React.useEffect(() => {
     async function fetchRewards() {
-      if (!fid) return;
+      if (!identifier) return;
       setRewardsLoading(true);
       try {
-        const credentials = await getCredentialsForFarcaster(fid.toString());
+        const credentials = await getCredentialsForFarcaster(
+          String(identifier),
+        );
         const ethPrice = await getEthUsdcPrice();
 
         // Sum up all rewards, converting ETH to USDC
@@ -246,7 +302,7 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
       }
     }
     fetchRewards();
-  }, [fid]);
+  }, [identifier]);
 
   // Calculate total followers
   const totalFollowers = socialAccounts.reduce(
@@ -265,6 +321,23 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
     }
   }, [isInFarcaster]);
 
+  // Render loading or error state if identifier is provided and profile is loading or errored
+  if (profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="mt-4 text-base text-muted-foreground">
+          Loading profile...
+        </span>
+      </div>
+    );
+  }
+  if (hasIdentifier && profileError) {
+    return (
+      <div className="p-8 text-center text-destructive">{profileError}</div>
+    );
+  }
+
   return (
     <main className="flex-1 overflow-y-auto relative">
       {showOpenInFarcaster && (
@@ -272,7 +345,11 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
       )}
       {showGate && <FrameGateOverlay onAddFrame={() => {}} />}
       <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
-        <ProfileHeader followers={formatK(totalFollowers)} />
+        <ProfileHeader
+          followers={formatK(totalFollowers)}
+          displayName={profile?.display_name}
+          profileImage={profile?.image_url}
+        />
         <div className="flex flex-row gap-4 w-full">
           <StatCard
             title="Creator Score"
@@ -288,6 +365,9 @@ export function ProfileScreen({ children }: ProfileScreenProps) {
         <ProfileTabs
           accountsCount={socialAccounts.length}
           socialAccounts={socialAccounts}
+          fid={fidProp}
+          wallet={walletProp}
+          github={githubProp}
         />
         {children}
       </div>

@@ -16,10 +16,10 @@ export function AccountGrid({ socialAccounts }: AccountGridProps) {
   }
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-4">
-      {socialAccounts.map((account) => {
+      {socialAccounts.map((account, idx) => {
         return (
           <AccountCard
-            key={account.source}
+            key={`${account.source}-${account.handle || idx}`}
             platform={account.source}
             handle={account.handle || "—"}
             accountAge={account.accountAge || "—"}

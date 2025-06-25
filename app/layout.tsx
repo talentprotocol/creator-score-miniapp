@@ -32,8 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
         },
       },
     });
-  } catch (error) {
-    console.error("Error stringifying frame metadata:", error);
+  } catch {
     // Fallback to a minimal valid frame metadata
     frameMetadata = JSON.stringify({
       version: "next",

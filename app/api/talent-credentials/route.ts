@@ -111,10 +111,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error(
-      `[Talent API] Unexpected error for request ${req.url}: ${error instanceof Error ? error.message : "Unknown error"}`,
-    );
+  } catch {
     return NextResponse.json(
       { error: "Failed to process credentials request" },
       { status: 500 },

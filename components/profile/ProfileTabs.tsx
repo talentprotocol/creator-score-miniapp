@@ -10,7 +10,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import {
   getBuilderScore,
   SCORER_SLUGS,
@@ -18,7 +17,6 @@ import {
   type IssuerCredentialGroup,
 } from "@/app/services/talentService";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
-import { getUserContext } from "@/lib/user-context";
 import {
   filterEthAddresses,
   calculateScoreProgress,
@@ -38,19 +36,35 @@ function shouldShowUom(uom: string | null): boolean {
   return !hiddenUoms.includes(uom);
 }
 
-function ScoreProgressAccordion() {
+function ScoreProgressAccordion({
+  fid,
+  wallet,
+  github,
+}: {
+  fid?: number | string;
+  wallet?: string;
+  github?: string;
+}) {
   const [score, setScore] = React.useState<number | null>(null);
   const [level, setLevel] = React.useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = React.useState<string | null>(null);
-  const { context } = useMiniKit();
-  const user = getUserContext(context);
-  const fid = user?.fid;
 
   React.useEffect(() => {
     async function fetchScore() {
-      if (!fid) return;
+      const identifier = fid ?? wallet ?? github;
+      if (!identifier) return;
       try {
-        const walletData = await getUserWalletAddresses(fid);
+        let walletData;
+        if (fid && typeof fid === "number") {
+          walletData = await getUserWalletAddresses(fid);
+        } else if (fid && typeof fid === "string" && !isNaN(Number(fid))) {
+          walletData = await getUserWalletAddresses(Number(fid));
+        } else {
+          setScore(null);
+          setLevel(null);
+          setLastUpdated(null);
+          return;
+        }
         if (walletData.error) {
           throw new Error(walletData.error);
         }
@@ -86,7 +100,7 @@ function ScoreProgressAccordion() {
     }
 
     fetchScore();
-  }, [fid]);
+  }, [fid, wallet, github]);
 
   const progress = calculateScoreProgress(score ?? 0, level ?? 1);
   const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
@@ -423,23 +437,29 @@ const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
   },
 ];
 
-function ScoreDataPoints() {
+function ScoreDataPoints({
+  fid,
+  wallet,
+  github,
+}: {
+  fid?: number | string;
+  wallet?: string;
+  github?: string;
+}) {
   const [credentials, setCredentials] = React.useState<IssuerCredentialGroup[]>(
     [],
   );
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const { context } = useMiniKit();
-  const user = getUserContext(context);
-  const fid = user?.fid;
 
   React.useEffect(() => {
     async function fetchCredentials() {
-      if (!fid) return;
+      const identifier = fid ?? wallet ?? github;
+      if (!identifier) return;
       try {
         setIsLoading(true);
         setError(null);
-        const data = await getCredentialsForFarcaster(fid.toString());
+        const data = await getCredentialsForFarcaster(identifier.toString());
         setCredentials(data);
       } catch (err) {
         console.error("Failed to fetch credentials:", err);
@@ -450,14 +470,15 @@ function ScoreDataPoints() {
     }
 
     fetchCredentials();
-  }, [fid]);
+  }, [fid, wallet, github]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-sm text-muted-foreground">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="ml-3 text-sm text-muted-foreground">
           Loading score breakdown...
-        </div>
+        </span>
       </div>
     );
   }
@@ -646,22 +667,26 @@ function CredentialIdeasCallout() {
 interface ProfileTabsProps {
   accountsCount: number;
   socialAccounts: import("@/app/services/talentService").SocialAccount[];
+  fid?: number | string;
+  wallet?: string;
+  github?: string;
 }
 
 export function ProfileTabs({
   accountsCount,
   socialAccounts,
+  fid,
+  wallet,
+  github,
 }: ProfileTabsProps) {
   const [credentialsCount, setCredentialsCount] = React.useState<number>(0);
-  const { context } = useMiniKit();
-  const user = getUserContext(context);
-  const fid = user?.fid;
 
   React.useEffect(() => {
     async function fetchCredentialsCount() {
-      if (!fid) return;
+      const identifier = fid ?? wallet ?? github;
+      if (!identifier) return;
       try {
-        const data = await getCredentialsForFarcaster(fid.toString());
+        const data = await getCredentialsForFarcaster(identifier.toString());
         // Sum up all credentials across all issuers
         const total = data.reduce(
           (sum, issuer) => sum + issuer.points.length,
@@ -674,7 +699,7 @@ export function ProfileTabs({
     }
 
     fetchCredentialsCount();
-  }, [fid]);
+  }, [fid, wallet, github]);
 
   return (
     <Tabs defaultValue="accounts" className="w-full flex flex-col">
@@ -722,9 +747,9 @@ export function ProfileTabs({
         <AccountGrid socialAccounts={socialAccounts} />
       </TabsContent>
       <TabsContent value="score" className="mt-6 space-y-6">
-        <ScoreProgressAccordion />
+        <ScoreProgressAccordion fid={fid} wallet={wallet} github={github} />
         <CredentialIdeasCallout />
-        <ScoreDataPoints />
+        <ScoreDataPoints fid={fid} wallet={wallet} github={github} />
       </TabsContent>
     </Tabs>
   );

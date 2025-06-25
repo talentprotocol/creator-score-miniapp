@@ -170,3 +170,30 @@ export async function calculateTotalRewards(
 export function formatRewardValue(num: number): string {
   return formatNumberWithSuffix(num);
 }
+
+/**
+ * Resolves a Talent Protocol user identifier (fname, FID, or wallet address) to a user object.
+ * Always calls /api/talent-user?id=identifier and lets the API route determine account_source.
+ * Returns { fid, fname, ... } or null if not found.
+ */
+export async function resolveTalentUser(identifier: string): Promise<{
+  fid: number | null;
+  wallet: string | null;
+  github: string | null;
+  fname: string | null;
+  display_name: string | null;
+  image_url: string | null;
+  [key: string]: unknown;
+} | null> {
+  let baseUrl = "";
+  if (typeof window === "undefined") {
+    baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+  }
+  const res = await fetch(`${baseUrl}/api/talent-user?id=${identifier}`);
+  if (res.ok) {
+    const user = await res.json();
+    // Accept if any identifier is present
+    if (user && (user.fid || user.wallet || user.github)) return user;
+  }
+  return null;
+}

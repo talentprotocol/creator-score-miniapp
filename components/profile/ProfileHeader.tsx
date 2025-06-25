@@ -18,12 +18,23 @@ import {
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 
-export function ProfileHeader({ followers }: { followers?: string }) {
+export function ProfileHeader({
+  followers,
+  displayName,
+  profileImage,
+}: {
+  followers?: string;
+  displayName?: string;
+  profileImage?: string;
+}) {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const displayName = user?.displayName || user?.username || "Unknown user";
-  const profileImage =
-    user?.pfpUrl || "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
+  const name =
+    displayName || user?.displayName || user?.username || "Unknown user";
+  const image =
+    profileImage ||
+    user?.pfpUrl ||
+    "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
   const fid = user?.fid; // Only use real fid, no fallback
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -59,7 +70,7 @@ export function ProfileHeader({ followers }: { followers?: string }) {
         <Drawer open={drawerOpen} onOpenChange={handleOpenChange}>
           <DrawerTrigger asChild>
             <button className="flex items-center gap-1 text-xl font-bold leading-tight focus:outline-none">
-              <span>{displayName}</span>
+              <span>{name}</span>
               <WalletMinimal className="h-4 w-4 text-muted-foreground" />
             </button>
           </DrawerTrigger>
@@ -148,8 +159,8 @@ export function ProfileHeader({ followers }: { followers?: string }) {
       {/* Right: Profile picture with badge overlay */}
       <div className="relative flex-shrink-0">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={profileImage} alt={displayName} />
-          <AvatarFallback>{displayName[0]}</AvatarFallback>
+          <AvatarImage src={image} alt={name} />
+          <AvatarFallback>{name[0]}</AvatarFallback>
         </Avatar>
       </div>
     </div>
