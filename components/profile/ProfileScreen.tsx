@@ -78,27 +78,31 @@ export function ProfileScreen({
   // Detect if we're inside Farcaster (context?.user exists)
   const isInFarcaster = !!context?.user;
 
+  // --- NEW: State for frame and notifications ---
+  const [isFrameAdded, setIsFrameAdded] = React.useState(false);
+  const [hasNotifications, setHasNotifications] = React.useState(false);
+
   // Only run SDK logic if inside Farcaster
   React.useEffect(() => {
     if (!isInFarcaster) return;
 
     // Listen to frame events
     const handleFrameAdded = () => {
-      // setIsFrameAdded(true);
-      // setHasNotifications(true);
+      setIsFrameAdded(true);
+      setHasNotifications(true); // Assume notifications enabled when frame added
     };
 
     const handleFrameRemoved = () => {
-      // setIsFrameAdded(false);
-      // setHasNotifications(false);
+      setIsFrameAdded(false);
+      setHasNotifications(false);
     };
 
     const handleNotificationsEnabled = () => {
-      // setHasNotifications(true);
+      setHasNotifications(true);
     };
 
     const handleNotificationsDisabled = () => {
-      // setHasNotifications(false);
+      setHasNotifications(false);
     };
 
     sdk.on("frameAdded", handleFrameAdded);
@@ -114,12 +118,12 @@ export function ProfileScreen({
           added: boolean;
           notificationDetails?: { url: string; token: string };
         };
-        if (frameResult.added) {
-          // setIsFrameAdded(true);
-          // setHasNotifications(!!frameResult.notificationDetails);
-        }
-      } catch (error) {
-        console.log("Frame add request was rejected or already added:", error);
+        setIsFrameAdded(!!frameResult.added);
+        setHasNotifications(!!frameResult.notificationDetails);
+      } catch {
+        setIsFrameAdded(false);
+        setHasNotifications(false);
+        // Optionally log error
       }
     }
     checkFrameState();
@@ -302,9 +306,31 @@ export function ProfileScreen({
     );
   }
 
+  // --- NEW: Show overlay only if inside Farcaster and not added/enabled ---
+  const shouldShowFrameGate =
+    isInFarcaster && (!isFrameAdded || !hasNotifications);
+
   return (
     <main className="flex-1 overflow-y-auto relative">
-      {isInFarcaster && <FrameGateOverlay onAddFrame={() => {}} />}
+      {shouldShowFrameGate && (
+        <FrameGateOverlay
+          onAddFrame={async () => {
+            try {
+              const result = await sdk.actions.addFrame();
+              const frameResult = result as {
+                added: boolean;
+                notificationDetails?: { url: string; token: string };
+              };
+              setIsFrameAdded(!!frameResult.added);
+              setHasNotifications(!!frameResult.notificationDetails);
+            } catch {
+              setIsFrameAdded(false);
+              setHasNotifications(false);
+              // Optionally show error to user
+            }
+          }}
+        />
+      )}
       <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
         <ProfileHeader
           followers={formatK(totalFollowers)}
