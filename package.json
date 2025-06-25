@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@coinbase/onchainkit": "latest",
@@ -35,18 +38,30 @@
     "wagmi": "^2.14.11"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/addon-interactions": "^8.6.14",
+    "@storybook/addon-links": "^8.0.0",
+    "@storybook/nextjs": "^8.0.0",
+    "@storybook/react": "^9.0.13",
+    "@storybook/testing-react": "^2.0.0",
     "@types/node": "^20",
     "@types/node-fetch": "^2.6.12",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.15",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-storybook": "^9.0.13",
+    "patch-package": "^8.0.0",
     "postcss": "^8",
+    "postinstall-postinstall": "^2.1.0",
     "prettier": "^3.5.3",
+    "storybook": "^8.0.0",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5"

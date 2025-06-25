@@ -1,0 +1,11 @@
+diff --git a/node_modules/@coinbase/wallet-sdk/dist/sign/walletlink/relay/connection/HeartbeatWorker.js b/node_modules/@coinbase/wallet-sdk/dist/sign/walletlink/relay/connection/HeartbeatWorker.js
+index 2a4bce6..47c3b44 100644
+--- a/node_modules/@coinbase/wallet-sdk/dist/sign/walletlink/relay/connection/HeartbeatWorker.js
++++ b/node_modules/@coinbase/wallet-sdk/dist/sign/walletlink/relay/connection/HeartbeatWorker.js
+@@ -48,5 +48,4 @@ function stopHeartbeat() {
+ self.addEventListener('beforeunload', () => {
+     stopHeartbeat();
+ });
+-export {};
+ //# sourceMappingURL=HeartbeatWorker.js.map
+\ No newline at end of file
