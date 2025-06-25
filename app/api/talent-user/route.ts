@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 const TALENT_API_URL = "https://api.talentprotocol.com/profile";
 
-function getAccountSource(id: string): "wallet" | "farcaster" {
+function getAccountSource(id: string): "wallet" | "farcaster" | null {
   if (id.startsWith("0x") && id.length === 42) return "wallet";
-  // FID or username (Farcaster)
-  return "farcaster";
+  if (/^\d+$/.test(id)) return "farcaster";
+  // Farcaster usernames: 1-16 chars, lowercase, alphanumeric, may include . or -
+  if (/^[a-z0-9][a-z0-9\-\.]{0,15}$/.test(id)) return "farcaster";
+  // UUID or unknown: return null to omit account_source
+  return null;
 }
 
 export async function GET(req: NextRequest) {
@@ -20,7 +23,7 @@ export async function GET(req: NextRequest) {
   const account_source = getAccountSource(id);
 
   try {
-    const talentApiUrl = `${TALENT_API_URL}?id=${encodeURIComponent(id)}&account_source=${account_source}`;
+    const talentApiUrl = `${TALENT_API_URL}?id=${encodeURIComponent(id)}${account_source ? `&account_source=${account_source}` : ""}`;
     console.log("Calling Talent Protocol API:", talentApiUrl);
     const res = await fetch(talentApiUrl, {
       headers: {
@@ -37,8 +40,8 @@ export async function GET(req: NextRequest) {
       ? data.profile.accounts
       : [];
     const farcasterAccount = accounts.find(
-      (acc: { identifier: string; source: string }) =>
-        acc.source === "farcaster" && /^\d+$/.test(acc.identifier),
+      (acc: { source: string; username?: string }) =>
+        acc.source === "farcaster" && acc.username,
     );
     const fid = farcasterAccount ? Number(farcasterAccount.identifier) : null;
     const walletAccount = accounts.find(
@@ -55,12 +58,14 @@ export async function GET(req: NextRequest) {
         acc.source === "github" && acc.username,
     );
     const github = githubAccount ? githubAccount.username : null;
+    // Set fname ONLY to the Farcaster account username
+    const fname = farcasterAccount?.username || null;
     // Return a normalized user object
     return NextResponse.json({
       fid,
       wallet,
       github,
-      fname: data.profile.username || null,
+      fname,
       display_name: data.profile.display_name || data.profile.name || null,
       image_url: data.profile.image_url || null,
       ...data.profile,
