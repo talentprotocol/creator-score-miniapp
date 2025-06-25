@@ -17,11 +17,11 @@ import {
   getEthUsdcPrice,
   calculateTotalRewards,
   formatRewardValue,
-  resolveTalentUser,
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { resolveTalentUser } from "@/lib/user-resolver";
 
 interface MinimalProfileDrawerProps {
   open: boolean;
@@ -161,7 +161,7 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
             variant="default"
             className="w-full"
             onClick={() => {
-              let url = "/profile/";
+              let url = "/";
               if (farcasterHandle) {
                 url += farcasterHandle;
               } else if (github) {

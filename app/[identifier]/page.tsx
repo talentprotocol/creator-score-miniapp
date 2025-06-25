@@ -2,13 +2,55 @@ import { ProfileScreen } from "@/components/profile/ProfileScreen";
 import { resolveTalentUser } from "@/lib/user-resolver";
 import { redirect } from "next/navigation";
 
+// List of reserved words that cannot be used as profile identifiers
+const RESERVED_WORDS = [
+  "api",
+  "settings",
+  "leaderboard",
+  "profile",
+  "old-prototype",
+  "services",
+  ".well-known",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+  // Recommended additions
+  "login",
+  "logout",
+  "register",
+  "signup",
+  "signin",
+  "auth",
+  "admin",
+  "dashboard",
+  "home",
+  "explore",
+  "notifications",
+  "messages",
+  "search",
+  "help",
+  "support",
+  "terms",
+  "privacy",
+  "about",
+  "contact",
+  "static",
+  "public",
+  "assets",
+  // Add more as needed
+];
+
 export default async function PublicProfilePage({
   params,
 }: {
   params: { identifier: string };
 }) {
-  // Try to resolve by Farcaster, then Github, then UUID
-  const user = await resolveTalentUser(params.identifier);
+  if (RESERVED_WORDS.includes(params.identifier)) {
+    return null;
+  }
+  // Show loading spinner while resolving user
+  const userPromise = resolveTalentUser(params.identifier);
+  const user = await userPromise;
   if (!user) {
     return (
       <div className="p-8 text-center text-destructive">User not found</div>
@@ -21,7 +63,7 @@ export default async function PublicProfilePage({
     params.identifier !== canonical &&
     params.identifier !== undefined
   ) {
-    redirect(`/profile/${canonical}`);
+    redirect(`/${canonical}`);
   }
   return (
     <ProfileScreen

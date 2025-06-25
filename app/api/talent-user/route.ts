@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAccountSource } from "@/lib/user-resolver";
 
 const TALENT_API_URL = "https://api.talentprotocol.com/profile";
-
-function getAccountSource(id: string): "wallet" | "farcaster" | null {
-  if (id.startsWith("0x") && id.length === 42) return "wallet";
-  if (/^\d+$/.test(id)) return "farcaster";
-  // Farcaster usernames: 1-16 chars, lowercase, alphanumeric, may include . or -
-  if (/^[a-z0-9][a-z0-9\-\.]{0,15}$/.test(id)) return "farcaster";
-  // UUID or unknown: return null to omit account_source
-  return null;
-}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;

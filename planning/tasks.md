@@ -10,6 +10,16 @@
 - **Avoid custom components as much as possible; prioritize default shadcn components and reuse as many components as possible**
 - **If I need to do anything (e.g. Supabase/AWS config), tell me clearly**
 
+
+## task-manager (cursor rule)
+You’re a senior engineer building this Farcaster Mini App.
+You've been given @architechture.md and @tasks.md
+- Read both carefully. There should be no ambiguity about what we’re building.
+- Follow @tasks.md and complete one task at a time.
+- After each task, stop. I’ll test it. 
+- If it works, commit to GitHub, mark the task as completed on @tasks.md and move to the next.
+
+
 ## Phase 1: Basic Structure & Navigation
 
 - [x] **Task 1.1**: Set up main app file with routing between three screens (Profile, Leaderboard, Settings)
@@ -39,15 +49,8 @@
 - [ ] **Task 4.1**: Create settings screen with two distinct sections and proper spacing
 - [ ] **Task 4.2**: Build connect accounts section with three options (Wallet, Twitter, LinkedIn) showing status and buttons
 - [ ] **Task 4.3**: Create human verification section with three verification options and status indicators
+- [ ] **Task 4.4**: Build account connection status checker that shows real connection status in Settings
 
-## Phase 5: API Integration
-
-- [x] **Task 5.1**: Create Creator Score API service that returns profile data with expected structure
-- [x] **Task 5.2**: Connect real Creator Score and profile data to Profile screen display
-- [ ] **Task 5.3**: Create leaderboard API service that returns list of creators with scores
-- [ ] **Task 5.4**: Connect real leaderboard data to Leaderboard screen with accurate user position
-- [ ] **Task 5.5**: Build account connection status checker that shows real connection status in Settings
-- [ ] **Task 5.6** (optional): Use AI to generate a new bio/description based on bios from all platforms and existing data points.
 
 ## Phase 6: Interactive Features
 

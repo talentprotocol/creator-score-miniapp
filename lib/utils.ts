@@ -171,41 +171,4 @@ export function formatRewardValue(num: number): string {
   return formatNumberWithSuffix(num);
 }
 
-/**
- * Resolves a Talent Protocol user identifier (Farcaster username, Github username, or UUID) to a user object.
- * Always calls /api/talent-user?id=identifier and lets the API route determine account_source.
- * Returns { id, fid, fname, github, ... } or null if not found.
- */
-export async function resolveTalentUser(identifier: string): Promise<{
-  id: string | null;
-  fid: number | null;
-  wallet: string | null;
-  github: string | null;
-  fname: string | null;
-  display_name: string | null;
-  image_url: string | null;
-  [key: string]: unknown;
-} | null> {
-  let baseUrl = "";
-  if (typeof window === "undefined") {
-    baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
-  }
-  const res = await fetch(`${baseUrl}/api/talent-user?id=${identifier}`);
-  if (res.ok) {
-    const user = await res.json();
-    // Accept if any identifier is present
-    if (user && (user.fid || user.wallet || user.github || user.id)) {
-      return {
-        id: user.id || null,
-        fid: user.fid ?? null,
-        wallet: user.wallet ?? null,
-        github: user.github ?? null,
-        fname: user.fname ?? null,
-        display_name: user.display_name ?? null,
-        image_url: user.image_url ?? null,
-        ...user,
-      };
-    }
-  }
-  return null;
-}
+export { resolveTalentUser } from "./user-resolver";
