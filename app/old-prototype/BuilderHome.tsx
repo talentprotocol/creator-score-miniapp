@@ -9,6 +9,7 @@ import {
 import { BuilderScore, CreatorScore } from "./BuilderScore";
 import { sdk } from "@farcaster/frame-sdk";
 import { getUserContext } from "@/lib/user-context";
+import { useRouter } from "next/navigation";
 
 const placeholderAvatar =
   "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
@@ -57,6 +58,7 @@ export default function BuilderHome() {
     primarySolAddress: null,
   });
   const [walletError, setWalletError] = useState<string | undefined>();
+  const router = useRouter();
 
   useEffect(() => {
     // Check if we're running in a Mini App
@@ -117,8 +119,9 @@ export default function BuilderHome() {
       {!isMiniApp && (
         <button
           onClick={() => {
-            window.location.href =
-              "https://farcaster.xyz/?launchFrameUrl=https%3A%2F%2Fbuilder-score-miniapp.vercel.app";
+            router.push(
+              "https://farcaster.xyz/?launchFrameUrl=https%3A%2F%2Fbuilder-score-miniapp.vercel.app",
+            );
           }}
           style={{
             position: "absolute",

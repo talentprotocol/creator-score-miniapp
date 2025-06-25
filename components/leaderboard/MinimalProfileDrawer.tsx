@@ -17,9 +17,11 @@ import {
   getEthUsdcPrice,
   calculateTotalRewards,
   formatRewardValue,
+  resolveTalentUser,
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface MinimalProfileDrawerProps {
   open: boolean;
@@ -41,6 +43,10 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
   const [totalRewards, setTotalRewards] = useState<string>("—");
   const [loading, setLoading] = useState(false);
   const [farcasterHandle, setFarcasterHandle] = useState<string | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [github, setGithub] = useState<string | null>(null);
+  const [uuid, setUuid] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (!open || !talentId) return;
@@ -49,6 +55,8 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
     setCreatorScore("—");
     setTotalRewards("—");
     setFarcasterHandle(null);
+    setGithub(null);
+    setUuid(null);
     (async () => {
       try {
         // Fetch Creator Score
@@ -76,11 +84,19 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
         if (farcaster && farcaster.handle) {
           setFarcasterHandle(farcaster.handle.replace(/^@/, ""));
         }
+        // Fetch canonical Github and UUID
+        const user = await resolveTalentUser(String(talentId));
+        if (user) {
+          setGithub(user.github || null);
+          setUuid(user.id || null);
+        }
       } catch {
         setFollowers("—");
         setCreatorScore("—");
         setTotalRewards("—");
         setFarcasterHandle(null);
+        setGithub(null);
+        setUuid(null);
       } finally {
         setLoading(false);
       }
@@ -148,17 +164,28 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
               let url = "/profile/";
               if (farcasterHandle) {
                 url += farcasterHandle;
+              } else if (github) {
+                url += github;
+              } else if (uuid) {
+                url += uuid;
               } else if (talentId) {
                 url += talentId;
               } else {
                 return;
               }
-              if (typeof window !== "undefined") {
-                window.location.href = url;
-              }
+              setLoadingProfile(true);
+              router.push(url);
             }}
+            disabled={loadingProfile}
           >
-            See Profile
+            {loadingProfile ? (
+              <span className="flex items-center justify-center">
+                <span className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Loading...
+              </span>
+            ) : (
+              "See Profile"
+            )}
           </Button>
         </div>
       </DrawerContent>

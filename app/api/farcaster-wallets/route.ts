@@ -26,7 +26,18 @@ export async function GET(request: Request) {
 
   if (fid) {
     try {
-      const user = await neynarClient.fetchBulkUsers({ fids: [Number(fid)] });
+      let user;
+      let attempts = 0;
+      let lastError;
+      while (attempts < 2) {
+        try {
+          user = await neynarClient.fetchBulkUsers({ fids: [Number(fid)] });
+          break;
+        } catch (err) {
+          lastError = err;
+          attempts++;
+        }
+      }
       if (!user?.users?.[0]) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
@@ -41,7 +52,8 @@ export async function GET(request: Request) {
         primaryEthAddress,
         primarySolAddress,
       });
-    } catch {
+    } catch (err) {
+      console.error("Failed to fetch user data from Neynar:", err);
       return NextResponse.json(
         { error: "Failed to fetch user data" },
         { status: 500 },

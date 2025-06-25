@@ -53,45 +53,6 @@ function FrameGateOverlay({ onAddFrame }: { onAddFrame: () => void }) {
   );
 }
 
-function OpenInFarcasterOverlay({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-xl border text-center relative">
-        <button
-          aria-label="Close"
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-          onClick={onClose}
-          style={{ background: "none", border: "none", padding: 0 }}
-        >
-          <X className="h-5 w-5" />
-        </button>
-        <h2 className="text-lg font-semibold mb-2 mt-2 tracking-tight">
-          Creator Score Mini App
-        </h2>
-        <p
-          className="text-muted-foreground text-sm mb-6 mt-2 leading-relaxed"
-          style={{ fontWeight: 400 }}
-        >
-          This mini app is designed to be used within Farcaster.
-        </p>
-        <a
-          href="https://farcaster.xyz/miniapps/WSqcbI1uxFJo/creator-score-mini-app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full"
-        >
-          <Button
-            className="w-full text-sm font-medium py-2.5 rounded-lg text-white shadow-none transition-all"
-            style={{ background: "#8A63D2", boxShadow: "none" }}
-          >
-            Open in Farcaster
-          </Button>
-        </a>
-      </div>
-    </div>
-  );
-}
-
 export function ProfileScreen({
   children,
   fid: fidProp,
@@ -119,15 +80,6 @@ export function ProfileScreen({
 
   // Detect if we're inside Farcaster (context?.user exists)
   const isInFarcaster = !!context?.user;
-  const [showOpenInFarcaster, setShowOpenInFarcaster] =
-    React.useState(!isInFarcaster);
-
-  React.useEffect(() => {
-    setShowOpenInFarcaster(!isInFarcaster);
-  }, [isInFarcaster]);
-
-  // Only show the add+notifications gate if inside Farcaster
-  const showGate = isInFarcaster && (!isFrameAdded || !hasNotifications);
 
   // Only run SDK logic if inside Farcaster
   React.useEffect(() => {
@@ -185,6 +137,9 @@ export function ProfileScreen({
   const [profile, setProfile] = useState<{
     display_name?: string;
     image_url?: string;
+    fid?: number;
+    wallet?: string;
+    github?: string;
   } | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -205,14 +160,21 @@ export function ProfileScreen({
 
   React.useEffect(() => {
     async function fetchScore() {
-      if (!identifier) return;
+      // Use props if provided, otherwise use identifiers from loaded profile
+      const effectiveFid = fidProp || profile?.fid;
+      const effectiveWallet = walletProp || profile?.wallet;
+      if (!effectiveFid && !effectiveWallet) {
+        setCreatorScore(null);
+        setScoreLoading(false);
+        return;
+      }
       setScoreLoading(true);
       try {
         let walletData;
-        if (fidProp) {
-          walletData = await getUserWalletAddresses(Number(fidProp));
-        } else if (walletProp) {
-          walletData = await getUserWalletAddressesByWallet(walletProp);
+        if (effectiveFid) {
+          walletData = await getUserWalletAddresses(Number(effectiveFid));
+        } else if (effectiveWallet) {
+          walletData = await getUserWalletAddressesByWallet(effectiveWallet);
         } else {
           setCreatorScore(null);
           setScoreLoading(false);
@@ -236,7 +198,7 @@ export function ProfileScreen({
       }
     }
     fetchScore();
-  }, [identifier, fidProp, walletProp]);
+  }, [identifier, fidProp, walletProp, profile?.fid, profile?.wallet]);
 
   React.useEffect(() => {
     async function fetchAccounts() {
@@ -321,6 +283,11 @@ export function ProfileScreen({
     }
   }, [isInFarcaster]);
 
+  // Extract identifiers from loaded profile if present
+  const profileFid = profile?.fid;
+  const profileWallet = profile?.wallet;
+  const profileGithub = profile?.github;
+
   // Render loading or error state if identifier is provided and profile is loading or errored
   if (profileLoading) {
     return (
@@ -340,10 +307,7 @@ export function ProfileScreen({
 
   return (
     <main className="flex-1 overflow-y-auto relative">
-      {showOpenInFarcaster && (
-        <OpenInFarcasterOverlay onClose={() => setShowOpenInFarcaster(false)} />
-      )}
-      {showGate && <FrameGateOverlay onAddFrame={() => {}} />}
+      {isInFarcaster && <FrameGateOverlay onAddFrame={() => {}} />}
       <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
         <ProfileHeader
           followers={formatK(totalFollowers)}
@@ -365,9 +329,9 @@ export function ProfileScreen({
         <ProfileTabs
           accountsCount={socialAccounts.length}
           socialAccounts={socialAccounts}
-          fid={fidProp}
-          wallet={walletProp}
-          github={githubProp}
+          fid={fidProp || profileFid}
+          wallet={walletProp || profileWallet}
+          github={githubProp || profileGithub}
         />
         {children}
       </div>

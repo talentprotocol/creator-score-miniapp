@@ -57,11 +57,15 @@ export async function GET(req: NextRequest) {
       (acc: { username?: string; source: string }) =>
         acc.source === "github" && acc.username,
     );
-    const github = githubAccount ? githubAccount.username : null;
     // Set fname ONLY to the Farcaster account username
     const fname = farcasterAccount?.username || null;
+    // Get Github username if available
+    const github = githubAccount ? githubAccount.username : null;
+    // Get Talent UUID (avoid shadowing 'id' param)
+    const talentUuid: string | null = data.profile.id || null;
     // Return a normalized user object
     return NextResponse.json({
+      id: talentUuid,
       fid,
       wallet,
       github,

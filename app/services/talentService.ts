@@ -471,7 +471,9 @@ export async function getCredentialsForFarcaster(
   fid: string,
 ): Promise<IssuerCredentialGroup[]> {
   try {
+    // console.log("[getCredentialsForFarcaster] Called with fid:", fid);
     const data = await fetchCredentials(fid);
+    // console.log("[getCredentialsForFarcaster] API response:", data);
     if (!data?.credentials) {
       return [];
     }
@@ -479,18 +481,16 @@ export async function getCredentialsForFarcaster(
     const issuerGroups = new Map<string, IssuerCredentialGroup>();
 
     data.credentials.forEach((cred: Credential) => {
-      // Skip credentials with no points
       if (cred.points === 0) return;
-
-      const issuer = cred.data_issuer_name;
-      // Add type checking
-      if (typeof issuer !== "string") {
-        return;
+      // Move Kaito credential under X/Twitter and rename
+      let issuer = cred.data_issuer_name;
+      let name = cred.name;
+      if (issuer.toLowerCase().includes("kaito")) {
+        issuer = "X/Twitter";
+        name = "Kaito Yaps Airdrop";
       }
-
+      if (typeof issuer !== "string") return;
       const existingGroup = issuerGroups.get(issuer);
-
-      // Extract readable_value and uom from the data_point with is_maximum=true
       let readableValue = null;
       let uom = null;
       if (cred.points_calculation_logic?.data_points) {
@@ -502,16 +502,13 @@ export async function getCredentialsForFarcaster(
       } else {
         uom = cred.uom ?? null;
       }
-
-      // Extract max_score for each credential
       const maxScore = cred.points_calculation_logic?.max_points ?? null;
-
       if (existingGroup) {
         existingGroup.total += cred.points;
         existingGroup.max_total =
           (existingGroup.max_total ?? 0) + (maxScore ?? 0);
         existingGroup.points.push({
-          label: cred.name,
+          label: name,
           value: cred.points,
           max_score: maxScore,
           readable_value: readableValue,
@@ -525,7 +522,7 @@ export async function getCredentialsForFarcaster(
           max_total: maxScore ?? 0,
           points: [
             {
-              label: cred.name,
+              label: name,
               value: cred.points,
               max_score: maxScore,
               readable_value: readableValue,
@@ -538,7 +535,8 @@ export async function getCredentialsForFarcaster(
     });
 
     return Array.from(issuerGroups.values()).sort((a, b) => b.total - a.total);
-  } catch {
+  } catch (err) {
+    // console.error("[getCredentialsForFarcaster] Error:", err);
     return [];
   }
 }
@@ -561,11 +559,13 @@ async function fetchCredentials(fid: string) {
     scorer_slug: SCORER_SLUGS.CREATOR,
   });
 
+  // console.log("[fetchCredentials] Fetching /api/talent-credentials with params:", params.toString());
   const response = await fetch(
     `${baseUrl}/api/talent-credentials?${params.toString()}`,
     { method: "GET" },
   );
   const data = await response.json();
+  // console.log("[fetchCredentials] Response:", data);
 
   if (data.error) {
     throw new Error(data.error);
@@ -703,7 +703,13 @@ export async function getCredentialsForTalentId(
     const issuerGroups = new Map<string, IssuerCredentialGroup>();
     data.credentials.forEach((cred: Credential) => {
       if (cred.points === 0) return;
-      const issuer = cred.data_issuer_name;
+      // Move Kaito credential under X/Twitter and rename
+      let issuer = cred.data_issuer_name;
+      let name = cred.name;
+      if (issuer.toLowerCase().includes("kaito")) {
+        issuer = "X/Twitter";
+        name = "Kaito Yaps Airdrop";
+      }
       if (typeof issuer !== "string") return;
       const existingGroup = issuerGroups.get(issuer);
       let readableValue = null;
@@ -723,7 +729,7 @@ export async function getCredentialsForTalentId(
         existingGroup.max_total =
           (existingGroup.max_total ?? 0) + (maxScore ?? 0);
         existingGroup.points.push({
-          label: cred.name,
+          label: name,
           value: cred.points,
           max_score: maxScore,
           readable_value: readableValue,
@@ -737,7 +743,7 @@ export async function getCredentialsForTalentId(
           max_total: maxScore ?? 0,
           points: [
             {
-              label: cred.name,
+              label: name,
               value: cred.points,
               max_score: maxScore,
               readable_value: readableValue,
