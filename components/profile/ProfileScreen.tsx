@@ -77,6 +77,7 @@ export function ProfileScreen({
 
   // Detect if we're inside Farcaster (context?.user exists)
   const isInFarcaster = !!context?.user;
+  console.log("Farcaster context:", context);
 
   // --- NEW: State for frame and notifications ---
   const [isFrameAdded, setIsFrameAdded] = React.useState(false);
@@ -88,20 +89,24 @@ export function ProfileScreen({
 
     // Listen to frame events
     const handleFrameAdded = () => {
+      console.log("Frame added event fired");
       setIsFrameAdded(true);
       setHasNotifications(true); // Assume notifications enabled when frame added
     };
 
     const handleFrameRemoved = () => {
+      console.log("Frame removed event fired");
       setIsFrameAdded(false);
       setHasNotifications(false);
     };
 
     const handleNotificationsEnabled = () => {
+      console.log("Notifications enabled event fired");
       setHasNotifications(true);
     };
 
     const handleNotificationsDisabled = () => {
+      console.log("Notifications disabled event fired");
       setHasNotifications(false);
     };
 
@@ -114,6 +119,7 @@ export function ProfileScreen({
     async function checkFrameState() {
       try {
         const result = await sdk.actions.addFrame();
+        console.log("addFrame result:", result);
         const frameResult = result as {
           added: boolean;
           notificationDetails?: { url: string; token: string };
@@ -309,6 +315,14 @@ export function ProfileScreen({
   // --- NEW: Show overlay only if inside Farcaster and not added/enabled ---
   const shouldShowFrameGate =
     isInFarcaster && (!isFrameAdded || !hasNotifications);
+  console.log(
+    "isFrameAdded:",
+    isFrameAdded,
+    "hasNotifications:",
+    hasNotifications,
+    "shouldShowFrameGate:",
+    shouldShowFrameGate,
+  );
 
   return (
     <main className="flex-1 overflow-y-auto relative">
@@ -317,6 +331,7 @@ export function ProfileScreen({
           onAddFrame={async () => {
             try {
               const result = await sdk.actions.addFrame();
+              console.log("addFrame result (button):", result);
               const frameResult = result as {
                 added: boolean;
                 notificationDetails?: { url: string; token: string };
