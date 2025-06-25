@@ -121,10 +121,12 @@ export function ProfileScreen({
         const result = await sdk.actions.addFrame();
         console.log("addFrame result:", result);
         const frameResult = result as {
-          added: boolean;
+          added?: boolean;
           notificationDetails?: { url: string; token: string };
         };
-        setIsFrameAdded(!!frameResult.added);
+        setIsFrameAdded(
+          !!(frameResult.added || frameResult.notificationDetails),
+        );
         setHasNotifications(!!frameResult.notificationDetails);
       } catch {
         setIsFrameAdded(false);
@@ -333,10 +335,12 @@ export function ProfileScreen({
               const result = await sdk.actions.addFrame();
               console.log("addFrame result (button):", result);
               const frameResult = result as {
-                added: boolean;
+                added?: boolean;
                 notificationDetails?: { url: string; token: string };
               };
-              setIsFrameAdded(!!frameResult.added);
+              setIsFrameAdded(
+                !!(frameResult.added || frameResult.notificationDetails),
+              );
               setHasNotifications(!!frameResult.notificationDetails);
             } catch {
               setIsFrameAdded(false);
