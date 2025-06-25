@@ -23,7 +23,7 @@ import {
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
 import { Button } from "@/components/ui/button";
-import { Lock, X } from "lucide-react";
+import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface ProfileScreenProps {
@@ -67,9 +67,6 @@ export function ProfileScreen({
     ? (fidProp ?? walletProp ?? githubProp)
     : user?.fid;
 
-  const [isFrameAdded, setIsFrameAdded] = React.useState(false);
-  const [hasNotifications, setHasNotifications] = React.useState(false);
-
   const [creatorScore, setCreatorScore] = React.useState<string | null>(null);
   const [scoreLoading, setScoreLoading] = React.useState(false);
   const [socialAccounts, setSocialAccounts] = React.useState<SocialAccount[]>(
@@ -87,21 +84,21 @@ export function ProfileScreen({
 
     // Listen to frame events
     const handleFrameAdded = () => {
-      setIsFrameAdded(true);
-      setHasNotifications(true);
+      // setIsFrameAdded(true);
+      // setHasNotifications(true);
     };
 
     const handleFrameRemoved = () => {
-      setIsFrameAdded(false);
-      setHasNotifications(false);
+      // setIsFrameAdded(false);
+      // setHasNotifications(false);
     };
 
     const handleNotificationsEnabled = () => {
-      setHasNotifications(true);
+      // setHasNotifications(true);
     };
 
     const handleNotificationsDisabled = () => {
-      setHasNotifications(false);
+      // setHasNotifications(false);
     };
 
     sdk.on("frameAdded", handleFrameAdded);
@@ -118,8 +115,8 @@ export function ProfileScreen({
           notificationDetails?: { url: string; token: string };
         };
         if (frameResult.added) {
-          setIsFrameAdded(true);
-          setHasNotifications(!!frameResult.notificationDetails);
+          // setIsFrameAdded(true);
+          // setHasNotifications(!!frameResult.notificationDetails);
         }
       } catch (error) {
         console.log("Frame add request was rejected or already added:", error);

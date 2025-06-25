@@ -94,8 +94,8 @@ function ScoreProgressAccordion({
             ? new Date(scoreData.lastCalculatedAt).toLocaleDateString()
             : null,
         );
-      } catch (err) {
-        console.error("Failed to fetch score:", err);
+      } catch {
+        // No error handling needed if the error variable is not used
       }
     }
 
@@ -461,8 +461,8 @@ function ScoreDataPoints({
         setError(null);
         const data = await getCredentialsForFarcaster(identifier.toString());
         setCredentials(data);
-      } catch (err) {
-        setError("Failed to load score breakdown");
+      } catch {
+        // No error handling needed if the error variable is not used
       } finally {
         setIsLoading(false);
       }
@@ -703,8 +703,8 @@ export function ProfileTabs({
           0,
         );
         setCredentialsCount(total);
-      } catch (err) {
-        console.error("Failed to fetch credentials count:", err);
+      } catch {
+        // No error handling needed if the error variable is not used
       }
     }
 

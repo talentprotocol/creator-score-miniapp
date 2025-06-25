@@ -535,8 +535,7 @@ export async function getCredentialsForFarcaster(
     });
 
     return Array.from(issuerGroups.values()).sort((a, b) => b.total - a.total);
-  } catch (err) {
-    // console.error("[getCredentialsForFarcaster] Error:", err);
+  } catch {
     return [];
   }
 }
