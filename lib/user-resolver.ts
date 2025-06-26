@@ -1,7 +1,5 @@
 // Shared user/account resolver logic for Talent Protocol users
 
-const TALENT_API_URL = "https://api.talentprotocol.com/profile";
-
 export function getAccountSource(id: string): "wallet" | "farcaster" | null {
   if (id.startsWith("0x") && id.length === 42) return "wallet";
   if (/^\d+$/.test(id)) return "farcaster";
