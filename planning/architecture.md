@@ -1,7 +1,7 @@
 # Creator Score Mini App – Core Principles
 
 
-## Product
+## PRODUCT
 
 - **Principle:** Our apps are optimized for fast, consistent building by "vibe coders"-reusability over customization.
 - **User Identification:** Users are identified by a canonical Talent UUID, but can log in or be found via Farcaster, GitHub, or wallet.
@@ -11,19 +11,19 @@
 - **Profile Modal:** Viewing another user's profile (from Search or Leaderboard) opens a modal overlay (draggable bottom sheet on mobile, side sheet on desktop) rather than navigating away from the current context.
 - **Documentation:** All unique or opinionated decisions are documented for clarity; best practices are referenced but not over-explained.
 
-## Design
+## DESIGN
 
 - **Navigation:** Mobile-first with a fixed top header and bottom navigation bar. 
 - **Modals:** All secondary flows (menus, about, eligibility, score breakdown, profile overlays, etc.) are implemented as draggable bottom sheets on mobile, always featuring a small horizontal drag handle at the top center. On desktop, these become side sheets or modal dialogs.
-- **Design System:** Minimalist, mobile-first—white backgrounds, a single accent color, fixed-width column, clear touch targets, and generous spacing.
+- **Color System:** We use a minimal, neutral palette with a single accent color, applied sparingly and strategically for clarity and focus.
+- **Typographic Hierarchy:** Typography follows a clear, documented scale for all text elements, ensuring visual consistency and fast building.
 - **Modals:** All modals are draggable bottom sheets on mobile, with a visual drag handle. On desktop, they become side sheets or dialogs.
-- **Typography:** Geist font, clear hierarchy, bold names, and subtle secondary text.
 - **Mobile:** The mobile experience is the primary focus, with all layouts and interactions optimized for touch and small screens.
 - **Desktop:** The desktop experience is a minimal adaptation: content is centered with max width, bottom nav is hidden, and modals become dialogs or side sheets.
 - **Show More/Less:** Long text (e.g., AI summaries) is truncated with a toggle for expanding/collapsing content.
 - **Progress Bars:** Progress bars are used throughout the app to visualize activity, scores, and reward progress, and are always minimal and thin.
 
-## Tech
+## TECH
 
 - **Stack:** Built with Next.js (App Router, not SPA), React, shadcn/ui, Tailwind CSS, and Lucide icons.
 - **Profile Routing:** Public profiles are accessible at `/[identifier]` (Farcaster, GitHub, or UUID). Reserved words are used to avoid route conflicts (see list at the bottom).

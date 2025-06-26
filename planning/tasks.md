@@ -12,8 +12,7 @@
 
 
 ## task-manager (cursor rule)
-You’re a senior engineer building this Farcaster Mini App.
-You've been given @architechture.md and @tasks.md
+Consider @architechture.md and @tasks.md
 - Read both carefully. There should be no ambiguity about what we’re building.
 - Follow @tasks.md and complete one task at a time.
 - After each task, stop. I’ll test it. 
