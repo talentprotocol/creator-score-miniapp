@@ -13,6 +13,7 @@ import {
 import { filterEthAddresses } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/app/services/talentService";
 import { MinimalProfileDrawer } from "@/components/leaderboard/MinimalProfileDrawer";
+import { sdk } from "@farcaster/frame-sdk";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
 
@@ -63,6 +64,11 @@ export default function LeaderboardPage() {
     name: string;
     pfp?: string;
   } | null>(null);
+
+  // Hide Farcaster Mini App splash screen when ready
+  useEffect(() => {
+    sdk.actions.ready(); // Notifies Farcaster host to hide splash
+  }, []);
 
   // Fetch leaderboard data
   useEffect(() => {
