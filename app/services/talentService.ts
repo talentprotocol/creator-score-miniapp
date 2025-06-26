@@ -455,6 +455,7 @@ export interface IssuerCredentialGroup {
   max_total: number;
   points: Array<{
     label: string;
+    slug?: string; // Optional slug for matching with API
     value: number;
     max_score: number | null;
     readable_value: string | null;

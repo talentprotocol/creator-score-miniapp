@@ -24,6 +24,7 @@ import {
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
 import { ExternalLink } from "lucide-react";
+import { COMING_SOON_CREDENTIALS } from "./comingSoonCredentials";
 
 function shouldShowUom(uom: string | null): boolean {
   if (!uom) return false;
@@ -186,257 +187,6 @@ function cleanCredentialLabel(label: string, issuer: string): string {
     : label;
 }
 
-// Add this constant before the ScoreDataPoints component
-const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
-  {
-    issuer: "Base",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "NFT Collections: Total Created",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "NFT Collections: Unique Holders",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "NFT Collections: Market Cap",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "X/Twitter",
-    total: 0,
-    max_total: 0,
-    points: [
-      // Removed 'Cookie Mindshare' and 'Kaito Mindshare'
-    ],
-  },
-  {
-    issuer: "Flaunch",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Coin Earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Coop Records",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Music Earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Unique Collectors",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Paragraph",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Creator Rewards",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Unique Collectors",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Total Posts",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Mirror",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Total Mints",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Total Posts",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      // Removed 'Unique Collectors' from Mirror
-    ],
-  },
-  {
-    issuer: "Phi",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Artist Score",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Noice",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Tip Earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Pods",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Creator Earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Zora",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Coin Earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Total Posts",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Unique Holders",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Coin Volume",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Market Cap",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Lens",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Bonsai Airdrop",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Total Earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-];
-
 function ScoreDataPoints({
   fid,
   wallet,
@@ -470,6 +220,47 @@ function ScoreDataPoints({
     fetchCredentials();
   }, [fid, wallet, github]);
 
+  // Filter out coming soon credentials if they already exist in the API response (by slug)
+  const apiCredentialSlugs = new Set(
+    credentials.flatMap((c) => c.points.map((pt) => pt.slug).filter(Boolean)),
+  );
+  const filteredComingSoon = COMING_SOON_CREDENTIALS.map((issuer) => ({
+    ...issuer,
+    points: issuer.points.filter(
+      (pt) => !pt.slug || !apiCredentialSlugs.has(pt.slug),
+    ),
+  })).filter((issuer) => issuer.points.length > 0);
+
+  // Merge real credentials with coming soon ones, combining data points for existing issuers
+  const existingIssuers = new Map(credentials.map((c) => [c.issuer, c]));
+  const comingSoonMap = new Map(filteredComingSoon.map((c) => [c.issuer, c]));
+
+  // Combine existing and coming soon credentials
+  const allCredentials = Array.from(
+    new Set([
+      ...credentials.map((c) => c.issuer),
+      ...filteredComingSoon.map((c) => c.issuer),
+    ]),
+  )
+    .map((issuer) => {
+      const existing = existingIssuers.get(issuer);
+      const comingSoon = comingSoonMap.get(issuer);
+      if (existing && comingSoon) {
+        // Merge points: real credentials first, then coming soon points not already present
+        const realLabels = new Set(existing.points.map((pt) => pt.label));
+        const mergedPoints = [
+          ...existing.points,
+          ...comingSoon.points.filter((pt) => !realLabels.has(pt.label)),
+        ];
+        return {
+          ...existing,
+          points: mergedPoints,
+        };
+      }
+      return existing || comingSoon;
+    })
+    .filter((issuer): issuer is IssuerCredentialGroup => issuer !== undefined);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -498,38 +289,6 @@ function ScoreDataPoints({
       </div>
     );
   }
-
-  // Merge real credentials with coming soon ones, combining data points for existing issuers
-  const existingIssuers = new Map(credentials.map((c) => [c.issuer, c]));
-  const comingSoonMap = new Map(
-    COMING_SOON_CREDENTIALS.map((c) => [c.issuer, c]),
-  );
-
-  // Combine existing and coming soon credentials
-  const allCredentials = Array.from(
-    new Set([
-      ...credentials.map((c) => c.issuer),
-      ...COMING_SOON_CREDENTIALS.map((c) => c.issuer),
-    ]),
-  )
-    .map((issuer) => {
-      const existing = existingIssuers.get(issuer);
-      const comingSoon = comingSoonMap.get(issuer);
-      if (existing && comingSoon) {
-        // Merge points: real credentials first, then coming soon points not already present
-        const realLabels = new Set(existing.points.map((pt) => pt.label));
-        const mergedPoints = [
-          ...existing.points,
-          ...comingSoon.points.filter((pt) => !realLabels.has(pt.label)),
-        ];
-        return {
-          ...existing,
-          points: mergedPoints,
-        };
-      }
-      return existing || comingSoon;
-    })
-    .filter((issuer): issuer is IssuerCredentialGroup => issuer !== undefined);
 
   if (allCredentials.length === 0) {
     return (

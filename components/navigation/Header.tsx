@@ -6,15 +6,22 @@ import { InfoDrawer } from "./InfoModal";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { getUserContext } from "@/lib/user-context";
 
 export function Header() {
   const [infoOpen, setInfoOpen] = React.useState(false);
   const pathname = usePathname();
+  const { context } = useMiniKit();
+  const user = getUserContext(context);
+  const canonical = user?.username || user?.fid;
+
   const navItems = [
     {
-      href: "/profile",
+      href: canonical ? `/${canonical}` : undefined,
       icon: User,
       label: "Profile",
+      disabled: !canonical,
     },
     {
       href: "/leaderboard",
@@ -36,22 +43,38 @@ export function Header() {
         <nav className="hidden md:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={
-                  "flex items-center justify-center h-10 w-12 rounded-full transition-colors " +
-                  (isActive
-                    ? "bg-muted text-primary"
-                    : "text-muted-foreground hover:bg-muted/50")
-                }
-                aria-label={item.label}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <item.icon className="h-6 w-6" />
-              </Link>
-            );
+            if (item.disabled) {
+              return (
+                <span
+                  key={item.label}
+                  className={
+                    "flex items-center justify-center h-10 w-12 rounded-full text-muted-foreground opacity-50 cursor-not-allowed"
+                  }
+                  aria-label={item.label}
+                >
+                  <item.icon className="h-6 w-6" />
+                </span>
+              );
+            }
+            if (item.href) {
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={
+                    "flex items-center justify-center h-10 w-12 rounded-full transition-colors " +
+                    (isActive
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground hover:bg-muted/50")
+                  }
+                  aria-label={item.label}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <item.icon className="h-6 w-6" />
+                </Link>
+              );
+            }
+            return null;
           })}
         </nav>
         <Button

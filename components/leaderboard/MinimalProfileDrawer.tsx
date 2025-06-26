@@ -158,8 +158,8 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
         </div>
         <div className="mt-8 flex justify-center">
           <Button
-            variant="default"
-            className="w-full"
+            variant="outline"
+            className="w-full flex items-center justify-center"
             onClick={() => {
               let url = "/";
               if (farcasterHandle) {
@@ -179,10 +179,10 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
             disabled={loadingProfile}
           >
             {loadingProfile ? (
-              <span className="flex items-center justify-center">
-                <span className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <>
+                <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></span>
                 Loading...
-              </span>
+              </>
             ) : (
               "See Profile"
             )}

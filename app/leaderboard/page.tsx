@@ -28,15 +28,6 @@ function getCountdownParts(target: Date) {
   return { days, hours };
 }
 
-// Minimal spinner component
-function Spinner() {
-  return (
-    <div className="flex justify-center items-center py-4">
-      <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"></span>
-    </div>
-  );
-}
-
 export default function LeaderboardPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
@@ -269,8 +260,6 @@ export default function LeaderboardPage() {
             </div>
           </div>
         )}
-        {/* Minimal spinner below pinned entry, above leaderboard list */}
-        {loading && <Spinner />}
         {/* Leaderboard list (user may appear again in their real position) */}
         <div className="overflow-hidden rounded-lg bg-gray-50">
           {entries.map((user, index, array) => (
@@ -307,11 +296,18 @@ export default function LeaderboardPage() {
         {entries.length >= 10 && (
           <Button
             variant="outline"
-            className="w-full mt-2"
+            className="w-full mt-2 flex items-center justify-center"
             onClick={handleLoadMore}
             disabled={loading}
           >
-            {loading ? "Loading..." : "Load More"}
+            {loading ? (
+              <>
+                <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></span>
+                Loading...
+              </>
+            ) : (
+              "Load More"
+            )}
           </Button>
         )}
       </div>
