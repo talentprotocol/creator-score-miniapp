@@ -35,44 +35,6 @@ interface ProfileScreenProps {
   github?: string;
 }
 
-// FrameGateDrawer: bottom sheet for Farcaster gate
-function FrameGateDrawer({
-  open,
-  onClose,
-  onAddFrame,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onAddFrame: () => void;
-}) {
-  return (
-    <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent className="max-w-md mx-auto w-full p-6 rounded-t-2xl relative">
-        <button
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted focus:outline-none"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <X className="h-5 w-5 text-muted-foreground" />
-        </button>
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-2">
-          <Lock className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <h2 className="text-xl font-semibold text-center">
-          Creator Score Mini App
-        </h2>
-        <p className="text-muted-foreground text-sm text-center mb-4">
-          To use Creator Score, you need to add the mini app on Farcaster and
-          enable notifications.
-        </p>
-        <Button onClick={onAddFrame} className="w-full">
-          Add to Farcaster
-        </Button>
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
 export function ProfileScreen({
   children,
   fid: fidProp,
@@ -97,47 +59,6 @@ export function ProfileScreen({
 
   // Detect if we're inside Farcaster (context?.user exists)
   const isInFarcaster = !!context?.user;
-
-  // --- NEW: State for frame and notifications ---
-  const [isFrameAdded, setIsFrameAdded] = React.useState(false);
-  const [hasNotifications, setHasNotifications] = React.useState(false);
-  const [showFrameGate, setShowFrameGate] = React.useState(false);
-
-  // Only run SDK logic if inside Farcaster
-  React.useEffect(() => {
-    if (!isInFarcaster) return;
-
-    // Listen to frame events
-    const handleFrameAdded = () => {
-      setIsFrameAdded(true);
-      setHasNotifications(true); // Assume notifications enabled when frame added
-      setShowFrameGate(false);
-    };
-    const handleFrameRemoved = () => {
-      setIsFrameAdded(false);
-      setHasNotifications(false);
-      setShowFrameGate(true);
-    };
-    const handleNotificationsEnabled = () => {
-      setHasNotifications(true);
-      setShowFrameGate(false);
-    };
-    const handleNotificationsDisabled = () => {
-      setHasNotifications(false);
-      setShowFrameGate(true);
-    };
-    sdk.on("frameAdded", handleFrameAdded);
-    sdk.on("frameRemoved", handleFrameRemoved);
-    sdk.on("notificationsEnabled", handleNotificationsEnabled);
-    sdk.on("notificationsDisabled", handleNotificationsDisabled);
-
-    // On mount, show the gate if not added/enabled (conservative default)
-    setShowFrameGate(!(isFrameAdded && hasNotifications));
-
-    return () => {
-      sdk.removeAllListeners();
-    };
-  }, [isInFarcaster]);
 
   // New: state for real profile data
   const [profile, setProfile] = useState<{
@@ -310,34 +231,8 @@ export function ProfileScreen({
     );
   }
 
-  // --- NEW: Show overlay only if inside Farcaster and not added/enabled ---
-  const shouldShowFrameGate = isInFarcaster && showFrameGate;
-
-  // DEBUG: Add a test button to force open the Drawer (remove after validation)
-  // const [forceOpen, setForceOpen] = React.useState(false);
-
   return (
     <main className="flex-1 overflow-y-auto relative">
-      {/* Only render Drawer when it should be open */}
-      {shouldShowFrameGate && (
-        <FrameGateDrawer
-          open={true}
-          onClose={() => setShowFrameGate(false)}
-          onAddFrame={async () => {
-            try {
-              const result = await sdk.actions.addFrame();
-              setIsFrameAdded(!!result.notificationDetails);
-              setHasNotifications(!!result.notificationDetails);
-              if (result.notificationDetails) setShowFrameGate(false);
-            } catch {
-              setIsFrameAdded(false);
-              setHasNotifications(false);
-              setShowFrameGate(true); // fallback: keep open if error
-            }
-          }}
-        />
-      )}
-      {/* <button onClick={() => setShowFrameGate(true)}>Test Drawer</button> */}
       <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
         <ProfileHeader
           followers={formatK(totalFollowers)}
