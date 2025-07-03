@@ -107,5 +107,16 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({ entries: ranked });
+  // New: Calculate minScore (100th creator) and totalCreators
+  let minScore = null;
+  if (ranked.length >= 100) {
+    minScore = ranked[99].score;
+  } else if (ranked.length > 0) {
+    minScore = ranked[ranked.length - 1].score;
+  }
+  // Use json.total if available, otherwise fallback to ranked.length
+  const totalCreators =
+    typeof json.total === "number" ? json.total : ranked.length;
+
+  return NextResponse.json({ entries: ranked, minScore, totalCreators });
 }

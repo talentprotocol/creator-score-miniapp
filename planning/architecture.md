@@ -15,7 +15,7 @@
 
 - **Navigation:** Mobile-first with a fixed top header and bottom navigation bar. 
 - **Modals:** All secondary flows (menus, about, eligibility, score breakdown, profile overlays, etc.) are implemented as draggable bottom sheets on mobile, always featuring a small horizontal drag handle at the top center. On desktop, these become side sheets or modal dialogs.
-- **Color System:** We use a minimal, neutral palette with a single accent color, applied sparingly and strategically for clarity and focus.
+- **Color System:** We use a minimal, neutral palette with a single vibrant accent color, applied sparingly and strategically for clarity and focus.
 - **Typographic Hierarchy:** Typography follows a clear, documented scale for all text elements, ensuring visual consistency and fast building.
 - **Modals:** All modals are draggable bottom sheets on mobile, with a visual drag handle. On desktop, they become side sheets or dialogs.
 - **Mobile:** The mobile experience is the primary focus, with all layouts and interactions optimized for touch and small screens.
@@ -36,7 +36,7 @@
 `api`, `settings`, `leaderboard`, `old-prototype`, `services`, `.well-known`, `favicon.ico`, `robots.txt`, `sitemap.xml`, `login`, `logout`, `register`, `signup`, `signin`, `auth`, `admin`, `dashboard`, `home`, `explore`, `notifications`, `messages`, `search`, `help`, `support`, `terms`, `privacy`, `about`, `contact`, `static`, `public`, `assets` 
 
 
-## Taxonomy
+## TAXONOMY
 
 - **User**: An authenticated individual using the app, identified by a Talent UUID.
 - **Talent UUID**: The proprietary, canonical unique identifier for a user, created by Talent Protocol.

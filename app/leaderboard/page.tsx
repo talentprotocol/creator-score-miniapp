@@ -9,11 +9,13 @@ import { getUserWalletAddresses } from "@/app/services/neynarService";
 import {
   getCreatorScore,
   getLeaderboardCreators,
+  getLeaderboardStats,
 } from "@/app/services/talentService";
 import { filterEthAddresses } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/app/services/talentService";
 import { MinimalProfileDrawer } from "@/components/leaderboard/MinimalProfileDrawer";
 import { sdk } from "@farcaster/frame-sdk";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
 
@@ -55,6 +57,11 @@ export default function LeaderboardPage() {
     name: string;
     pfp?: string;
   } | null>(null);
+
+  // Leaderboard stats state
+  const [minScore, setMinScore] = useState<number | null>(null);
+  const [totalCreators, setTotalCreators] = useState<number | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -142,6 +149,32 @@ export default function LeaderboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch leaderboard stats (minScore and totalCreators)
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchStats() {
+      setStatsLoading(true);
+      try {
+        const stats = await getLeaderboardStats();
+        if (!cancelled) {
+          setMinScore(stats.minScore);
+          setTotalCreators(stats.totalCreators);
+        }
+      } catch {
+        if (!cancelled) {
+          setMinScore(null);
+          setTotalCreators(null);
+        }
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    }
+    fetchStats();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Find user entry in leaderboard data (if present)
   const userLeaderboardEntry =
     user && entries.find((e) => e.name === (user.displayName || user.username));
@@ -224,6 +257,40 @@ export default function LeaderboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">10 ETH</p>
+          </CardContent>
+        </Card>
+        {/* New: Min. Creator Score */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">
+              Min. Creator Score
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {statsLoading ? (
+              <Skeleton className="h-8 w-20 rounded" />
+            ) : (
+              <p className="text-2xl font-bold">
+                {minScore !== null ? minScore : "-"}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        {/* New: Total Creators */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">
+              Total Creators
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {statsLoading ? (
+              <Skeleton className="h-8 w-20 rounded" />
+            ) : (
+              <p className="text-2xl font-bold">
+                {totalCreators !== null ? totalCreators : "-"}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -878,3 +878,21 @@ export async function getSocialAccountsForTalentId(
     return [];
   }
 }
+
+/**
+ * Fetches leaderboard stats (minScore for #100 and totalCreators) from the API
+ */
+export async function getLeaderboardStats(): Promise<{
+  minScore: number | null;
+  totalCreators: number;
+}> {
+  const res = await fetch(`/api/leaderboard?page=1&perPage=100`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch leaderboard stats");
+  }
+  const json = await res.json();
+  return {
+    minScore: json.minScore ?? null,
+    totalCreators: json.totalCreators ?? 0,
+  };
+}
