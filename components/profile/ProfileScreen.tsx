@@ -22,11 +22,7 @@ import {
   formatNumberWithSuffix,
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
-import { Button } from "@/components/ui/button";
-import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { X } from "lucide-react";
 
 interface ProfileScreenProps {
   children?: React.ReactNode;

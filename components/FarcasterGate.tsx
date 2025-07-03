@@ -86,7 +86,7 @@ export function FarcasterGate() {
     return () => {
       sdk.removeAllListeners();
     };
-  }, [isInFarcaster]);
+  }, [isInFarcaster, hasNotifications, isFrameAdded]);
 
   // Only show the gate if in Farcaster and not added/enabled, or if forced open for debug
   const shouldShowFrameGate = (isInFarcaster && showFrameGate) || forceOpen;
