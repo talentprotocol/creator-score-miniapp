@@ -313,24 +313,31 @@ export function ProfileScreen({
   // --- NEW: Show overlay only if inside Farcaster and not added/enabled ---
   const shouldShowFrameGate = isInFarcaster && showFrameGate;
 
+  // DEBUG: Add a test button to force open the Drawer (remove after validation)
+  // const [forceOpen, setForceOpen] = React.useState(false);
+
   return (
     <main className="flex-1 overflow-y-auto relative">
-      <FrameGateDrawer
-        open={shouldShowFrameGate}
-        onClose={() => setShowFrameGate(false)}
-        onAddFrame={async () => {
-          try {
-            const result = await sdk.actions.addFrame();
-            setIsFrameAdded(!!result.notificationDetails);
-            setHasNotifications(!!result.notificationDetails);
-            if (result.notificationDetails) setShowFrameGate(false);
-          } catch {
-            setIsFrameAdded(false);
-            setHasNotifications(false);
-            setShowFrameGate(true);
-          }
-        }}
-      />
+      {/* Only render Drawer when it should be open */}
+      {shouldShowFrameGate && (
+        <FrameGateDrawer
+          open={true}
+          onClose={() => setShowFrameGate(false)}
+          onAddFrame={async () => {
+            try {
+              const result = await sdk.actions.addFrame();
+              setIsFrameAdded(!!result.notificationDetails);
+              setHasNotifications(!!result.notificationDetails);
+              if (result.notificationDetails) setShowFrameGate(false);
+            } catch {
+              setIsFrameAdded(false);
+              setHasNotifications(false);
+              setShowFrameGate(true); // fallback: keep open if error
+            }
+          }}
+        />
+      )}
+      {/* <button onClick={() => setShowFrameGate(true)}>Test Drawer</button> */}
       <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
         <ProfileHeader
           followers={formatK(totalFollowers)}
