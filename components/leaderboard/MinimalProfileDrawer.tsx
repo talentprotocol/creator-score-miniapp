@@ -130,7 +130,13 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
           />
           <StatCard
             title="Total Rewards"
-            value={loading ? "—" : formatNumberWithSuffix(totalEarnings)}
+            value={
+              loading
+                ? "—"
+                : totalEarnings === null
+                  ? "—"
+                  : formatNumberWithSuffix(totalEarnings)
+            }
           />
         </div>
         <div className="mt-8 flex justify-center">

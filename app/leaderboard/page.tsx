@@ -5,17 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { getUserWalletAddresses } from "@/app/services/neynarService";
-import {
-  getCreatorScore,
-  getLeaderboardCreators,
-  getLeaderboardStats,
-} from "@/app/services/talentService";
-import { filterEthAddresses } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/app/services/talentService";
 import { MinimalProfileDrawer } from "@/components/leaderboard/MinimalProfileDrawer";
 import { sdk } from "@farcaster/frame-sdk";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useLeaderboardStats } from "@/hooks/useLeaderboardStats";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
 
@@ -34,15 +30,10 @@ export default function LeaderboardPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
 
-  // Real Creator Score state
-  const [creatorScore, setCreatorScore] = useState<number | null>(null);
-
-  // Leaderboard state
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const perPage = 10;
+  // Use new hooks for data fetching
+  const { creatorScore } = useUserCreatorScore(user?.fid);
+  const { entries, loading, error, hasMore, loadMore } = useLeaderboard(10);
+  const { stats, loading: statsLoading } = useLeaderboardStats();
 
   // Countdown state
   const [countdown, setCountdown] = useState(() =>
@@ -58,88 +49,10 @@ export default function LeaderboardPage() {
     pfp?: string;
   } | null>(null);
 
-  // Leaderboard stats state
-  const [minScore, setMinScore] = useState<number | null>(null);
-  const [totalCreators, setTotalCreators] = useState<number | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
     sdk.actions.ready(); // Notifies Farcaster host to hide splash
   }, []);
-
-  // Fetch leaderboard data
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchLeaderboard() {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getLeaderboardCreators({ page: 1, perPage });
-        if (!cancelled) setEntries(data);
-      } catch (err) {
-        if (!cancelled)
-          setError(
-            err instanceof Error ? err.message : "Failed to load leaderboard",
-          );
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    fetchLeaderboard();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Load more handler
-  const handleLoadMore = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const nextPage = page + 1;
-      const data = await getLeaderboardCreators({ page: nextPage, perPage });
-      // Combine previous and new entries
-      const combined = [...entries, ...data];
-      // Recalculate rank for all entries
-      const reRanked = combined.map((entry, idx) => ({
-        ...entry,
-        rank: idx + 1,
-      }));
-      setEntries(reRanked);
-      setPage(nextPage);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load leaderboard",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch real Creator Score
-  useEffect(() => {
-    async function fetchScore() {
-      if (!user?.fid) return;
-      try {
-        const walletData = await getUserWalletAddresses(user.fid);
-        const addresses = filterEthAddresses([
-          ...walletData.addresses,
-          walletData.primaryEthAddress,
-          walletData.primarySolAddress,
-        ]);
-        if (addresses.length > 0) {
-          const scoreData = await getCreatorScore(addresses);
-          setCreatorScore(scoreData.score ?? 0);
-        } else {
-          setCreatorScore(0);
-        }
-      } catch {
-        setCreatorScore(null);
-      }
-    }
-    fetchScore();
-  }, [user?.fid]);
 
   // Live countdown effect
   useEffect(() => {
@@ -147,32 +60,6 @@ export default function LeaderboardPage() {
       setCountdown(getCountdownParts(ROUND_ENDS_AT));
     }, 60000); // update every minute
     return () => clearInterval(interval);
-  }, []);
-
-  // Fetch leaderboard stats (minScore and totalCreators)
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchStats() {
-      setStatsLoading(true);
-      try {
-        const stats = await getLeaderboardStats();
-        if (!cancelled) {
-          setMinScore(stats.minScore);
-          setTotalCreators(stats.totalCreators);
-        }
-      } catch {
-        if (!cancelled) {
-          setMinScore(null);
-          setTotalCreators(null);
-        }
-      } finally {
-        if (!cancelled) setStatsLoading(false);
-      }
-    }
-    fetchStats();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   // Find user entry in leaderboard data (if present)
@@ -259,7 +146,7 @@ export default function LeaderboardPage() {
             <p className="text-2xl font-bold">10 ETH</p>
           </CardContent>
         </Card>
-        {/* New: Min. Creator Score */}
+        {/* Min. Creator Score */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-gray-600">
@@ -271,12 +158,12 @@ export default function LeaderboardPage() {
               <Skeleton className="h-8 w-20 rounded" />
             ) : (
               <p className="text-2xl font-bold">
-                {minScore !== null ? minScore : "-"}
+                {stats.minScore !== null ? stats.minScore : "-"}
               </p>
             )}
           </CardContent>
         </Card>
-        {/* New: Total Creators */}
+        {/* Total Creators */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-gray-600">
@@ -288,7 +175,7 @@ export default function LeaderboardPage() {
               <Skeleton className="h-8 w-20 rounded" />
             ) : (
               <p className="text-2xl font-bold">
-                {totalCreators !== null ? totalCreators : "-"}
+                {stats.totalCreators !== null ? stats.totalCreators : "-"}
               </p>
             )}
           </CardContent>
@@ -359,12 +246,12 @@ export default function LeaderboardPage() {
             </div>
           ))}
         </div>
-        {/* Only show Load More if at least 10 entries are loaded */}
-        {entries.length >= 10 && (
+        {/* Only show Load More if there are more entries available */}
+        {hasMore && (
           <Button
             variant="outline"
             className="w-full mt-2 flex items-center justify-center"
-            onClick={handleLoadMore}
+            onClick={loadMore}
             disabled={loading}
           >
             {loading ? (

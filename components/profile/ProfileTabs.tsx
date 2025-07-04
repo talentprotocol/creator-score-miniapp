@@ -23,12 +23,23 @@ import { ExternalLink } from "lucide-react";
 import { COMING_SOON_CREDENTIALS } from "./comingSoonCredentials";
 import { useProfileCredentials } from "@/hooks/useProfileCredentials";
 import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
+import { LEVEL_RANGES } from "@/lib/constants";
 
 function ScoreProgressAccordion({ talentUUID }: { talentUUID: string }) {
-  const { creatorScore, loading } = useProfileCreatorScore(talentUUID);
+  const { creatorScore, lastCalculatedAt, loading } =
+    useProfileCreatorScore(talentUUID);
 
   const score = typeof creatorScore === "number" ? creatorScore : null;
-  const level = score ? Math.min(Math.floor(score / 1000) + 1, 6) : null;
+
+  // Calculate level using LEVEL_RANGES
+  const level = score
+    ? (() => {
+        const levelInfo = LEVEL_RANGES.find(
+          (range) => score >= range.min && score <= range.max,
+        );
+        return levelInfo ? LEVEL_RANGES.indexOf(levelInfo) + 1 : 1;
+      })()
+    : null;
 
   const progress = calculateScoreProgress(score ?? 0, level ?? 1);
   const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
@@ -68,7 +79,12 @@ function ScoreProgressAccordion({ talentUUID }: { talentUUID: string }) {
                     ? "Master level reached!"
                     : "Level up!"}
               </span>
-              <span>Last updated: —</span>
+              <span>
+                Last updated:{" "}
+                {lastCalculatedAt
+                  ? new Date(lastCalculatedAt).toLocaleDateString()
+                  : "—"}
+              </span>
             </div>
           </div>
         </AccordionContent>

@@ -85,7 +85,11 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
           <StatCard
             title="Total Earnings"
             value={
-              earningsLoading ? "—" : formatNumberWithSuffix(totalEarnings)
+              earningsLoading
+                ? "—"
+                : totalEarnings === null
+                  ? "—"
+                  : formatNumberWithSuffix(totalEarnings)
             }
           />
         </div>

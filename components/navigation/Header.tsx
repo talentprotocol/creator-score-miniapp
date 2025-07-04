@@ -1,39 +1,17 @@
 "use client";
 
-import { HelpCircle, User, Trophy, Settings } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InfoDrawer } from "./InfoModal";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { getUserContext } from "@/lib/user-context";
+import { useUserNavigation } from "@/hooks/useUserNavigation";
 
 export function Header() {
   const [infoOpen, setInfoOpen] = React.useState(false);
   const pathname = usePathname();
-  const { context } = useMiniKit();
-  const user = getUserContext(context);
-  const canonical = user?.username || user?.fid;
-
-  const navItems = [
-    {
-      href: canonical ? `/${canonical}` : undefined,
-      icon: User,
-      label: "Profile",
-      disabled: !canonical,
-    },
-    {
-      href: "/leaderboard",
-      icon: Trophy,
-      label: "Leaderboard",
-    },
-    {
-      href: "/settings",
-      icon: Settings,
-      label: "Settings",
-    },
-  ];
+  const { navItems } = useUserNavigation();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white">

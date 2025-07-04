@@ -12,7 +12,7 @@ import {
 } from "@/lib/utils";
 
 export function useProfileTotalEarnings(talentUUID: string) {
-  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [totalEarnings, setTotalEarnings] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +26,10 @@ export function useProfileTotalEarnings(talentUUID: string) {
         CACHE_DURATIONS.PROFILE_DATA,
       );
       if (cachedEarnings !== null) {
+        console.log(
+          `[useProfileTotalEarnings] Using cached earnings for ${talentUUID}:`,
+          cachedEarnings,
+        );
         setTotalEarnings(cachedEarnings);
         setLoading(false);
         return;
@@ -35,6 +39,9 @@ export function useProfileTotalEarnings(talentUUID: string) {
         setLoading(true);
         setError(null);
 
+        console.log(
+          `[useProfileTotalEarnings] Fetching credentials for ${talentUUID}`,
+        );
         const credentials = await getCredentialsForTalentId(talentUUID);
         const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
 
@@ -47,7 +54,7 @@ export function useProfileTotalEarnings(talentUUID: string) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch total earnings",
         );
-        setTotalEarnings(0);
+        setTotalEarnings(null); // Use null to indicate error, not 0
       } finally {
         setLoading(false);
       }

@@ -677,6 +677,9 @@ export async function getCredentialsForTalentId(
   talentId: string | number,
 ): Promise<IssuerCredentialGroup[]> {
   try {
+    console.log(
+      `[getCredentialsForTalentId] Fetching credentials for talent ID: ${talentId}`,
+    );
     let baseUrl = "";
     if (typeof window !== "undefined") {
       if (window.location.hostname === "localhost") {
@@ -691,18 +694,31 @@ export async function getCredentialsForTalentId(
       talent_protocol_id: String(talentId),
       scorer_slug: SCORER_SLUGS.CREATOR,
     });
-    const response = await fetch(
-      `${baseUrl}/api/talent-credentials?${params.toString()}`,
-      { method: "GET" },
-    );
+    const url = `${baseUrl}/api/talent-credentials?${params.toString()}`;
+
+    const response = await fetch(url, { method: "GET" });
+
+    if (!response.ok) {
+      return [];
+    }
+
     const data = await response.json();
-    if (data.error || !Array.isArray(data.credentials)) {
+
+    if (data.error) {
+      return [];
+    }
+
+    if (!Array.isArray(data.credentials)) {
       return [];
     }
     // Grouping logic as in getCredentialsForFarcaster
     const issuerGroups = new Map<string, IssuerCredentialGroup>();
+
     data.credentials.forEach((cred: Credential) => {
-      if (cred.points === 0) return;
+      if (cred.points === 0) {
+        return;
+      }
+
       // Move Kaito credential under X/Twitter and rename
       let issuer = cred.data_issuer_name;
       let name = cred.name;
@@ -710,10 +726,15 @@ export async function getCredentialsForTalentId(
         issuer = "X/Twitter";
         name = "Kaito Yaps Airdrop";
       }
-      if (typeof issuer !== "string") return;
+
+      if (typeof issuer !== "string") {
+        return;
+      }
+
       const existingGroup = issuerGroups.get(issuer);
       let readableValue = null;
       let uom = null;
+
       if (cred.points_calculation_logic?.data_points) {
         const maxDataPoint = cred.points_calculation_logic.data_points.find(
           (dp) => dp.is_maximum,
@@ -723,6 +744,7 @@ export async function getCredentialsForTalentId(
       } else {
         uom = cred.uom ?? null;
       }
+
       const maxScore = cred.points_calculation_logic?.max_points ?? null;
       if (existingGroup) {
         existingGroup.total += cred.points;
@@ -754,8 +776,13 @@ export async function getCredentialsForTalentId(
         });
       }
     });
-    return Array.from(issuerGroups.values()).sort((a, b) => b.total - a.total);
-  } catch {
+
+    const result = Array.from(issuerGroups.values()).sort(
+      (a, b) => b.total - a.total,
+    );
+
+    return result;
+  } catch (error) {
     return [];
   }
 }

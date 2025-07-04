@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { isEarningsCredential } from "./total-earnings-config";
 import { LEVEL_RANGES } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
@@ -64,7 +65,7 @@ export async function getEthUsdcPrice(): Promise<number> {
     cacheKey,
     CACHE_DURATIONS.ETH_PRICE,
   );
-  if (cachedPrice !== null) {
+  if (cachedPrice !== null && cachedPrice !== undefined) {
     return cachedPrice;
   }
 
@@ -72,16 +73,25 @@ export async function getEthUsdcPrice(): Promise<number> {
     const response = await fetch(
       "https://api.coinbase.com/v2/prices/ETH-USD/spot",
     );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
     const data = await response.json();
-    const price = parseFloat(data.data.amount);
+    const price = parseFloat(data.data?.amount);
+
+    if (isNaN(price) || price <= 0) {
+      throw new Error("Invalid price data");
+    }
 
     // Cache the price
     setCachedData(cacheKey, price);
 
     return price;
   } catch (error) {
-    console.error("Failed to fetch ETH price:", error);
-    return 3000; // Conservative fallback price
+    // Return fallback price if fetch fails
+    return 3000;
   }
 }
 
@@ -90,6 +100,21 @@ export function convertEthToUsdc(ethAmount: number, ethPrice: number): number {
 }
 
 export function formatNumberWithSuffix(num: number): string {
+  // Handle invalid numbers - return error indicator instead of $0
+  if (isNaN(num) || !isFinite(num)) {
+    return "—";
+  }
+
+  // Handle negative numbers (shouldn't happen for earnings but just in case)
+  if (num < 0) {
+    return "—";
+  }
+
+  // Handle legitimate $0 (user has earned exactly $0)
+  if (num === 0) {
+    return "$0";
+  }
+
   if (num >= 1_000_000_000) {
     return `$${(num / 1_000_000_000).toFixed(2)}B`;
   }
@@ -116,38 +141,47 @@ export async function calculateTotalRewards(
   getEthUsdcPriceFn: () => Promise<number>,
 ): Promise<number> {
   const ethPrice = await getEthUsdcPriceFn();
-  const debugBreakdown: Array<{
-    label: string;
-    uom: string | null;
-    value: number;
-    contribution: number;
-  }> = [];
+
   // Sum up all rewards, converting ETH to USDC
   const total = credentials.reduce((sum, issuer) => {
     const issuerTotal = issuer.points.reduce((acc, pt) => {
-      // Skip ETH Balance credential
-      if (pt.label === "ETH Balance") {
+      // Only count credentials that are creator earnings
+      if (!isEarningsCredential(pt.label)) {
         return acc;
       }
-      if (!pt.readable_value) return acc;
-      const value = parseFloat(pt.readable_value.replace(/[^0-9.-]+/g, ""));
-      if (isNaN(value)) return acc;
+
+      if (!pt.readable_value) {
+        return acc;
+      }
+
+      // Parse value handling K/M suffixes
+      let value: number;
+      const cleanValue = pt.readable_value.replace(/[^0-9.KM-]+/g, "");
+      if (cleanValue.includes("K")) {
+        value = parseFloat(cleanValue.replace("K", "")) * 1000;
+      } else if (cleanValue.includes("M")) {
+        value = parseFloat(cleanValue.replace("M", "")) * 1000000;
+      } else {
+        value = parseFloat(cleanValue);
+      }
+
+      if (isNaN(value)) {
+        return acc;
+      }
+
       let contribution = 0;
       if (pt.uom === "ETH") {
         contribution = convertEthToUsdc(value, ethPrice);
       } else if (pt.uom === "USDC") {
         contribution = value;
       }
-      debugBreakdown.push({
-        label: pt.label,
-        uom: pt.uom,
-        value,
-        contribution,
-      });
+
       return acc + contribution;
     }, 0);
+
     return sum + issuerTotal;
   }, 0);
+
   return total;
 }
 
