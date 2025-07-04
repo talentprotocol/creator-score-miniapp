@@ -40,7 +40,9 @@ This document outlines a high-level, step-by-step plan to migrate and modularize
 
 **Profile Screen Status:** Complete ✅ - All components are now pure UI with TalentUUID-based data fetching, comprehensive caching, and modular architecture.
 
-### 2.2. Next Component/Page Refactoring
+### 2.2. Leaderboard Page Refactoring 🚧 IN PROGRESS
+
+**Current Status**: MinimalProfileDrawer completed ✅, main leaderboard page needs refactoring
 
 - **[ ]** Refactor all relevant UI components in the original repo to be pure UI (no API calls, no business logic). All data should come from props.
 - **[ ]** Move all data fetching and business logic to hooks and service files in the original repo.
@@ -66,10 +68,12 @@ This document outlines a high-level, step-by-step plan to migrate and modularize
 
 ## 3. Next Components to Refactor
 
-### 3.1. Leaderboard Page
+### 3.1. Leaderboard Components ✅ PARTIALLY COMPLETED
+- **[✅]** Refactor MinimalProfileDrawer to use profile hooks instead of direct API calls
 - **[ ]** Refactor LeaderboardRow component to pure UI
-- **[ ]** Create useLeaderboard hook for data fetching
-- **[ ]** Implement proper loading and error states
+- **[ ]** Create useLeaderboard hook for leaderboard data fetching
+- **[ ]** Refactor main leaderboard page to use hooks instead of direct API calls
+- **[ ]** Implement proper loading and error states throughout leaderboard
 - **[ ]** Apply shadcn/ui design system consistency
 - **[ ]** Add caching for leaderboard data
 
