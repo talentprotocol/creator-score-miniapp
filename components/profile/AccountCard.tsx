@@ -101,7 +101,7 @@ export function AccountCard({
     <Card
       className={cn(
         "p-2 sm:p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer",
-        "bg-white border border-border/50",
+        "bg-card border border-border/50",
         "flex flex-col justify-between min-h-[100px]",
         className,
       )}
@@ -117,7 +117,7 @@ export function AccountCard({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between mt-2 sm:mt-4 text-[11px] font-normal text-muted-foreground whitespace-nowrap">
+      <div className="flex items-center justify-between mt-2 sm:mt-4 text-xs font-normal text-muted-foreground whitespace-nowrap">
         <span>{accountAge}</span>
         <span className="ml-3">
           {formattedFollowers !== "—" ? `${formattedFollowers} followers` : "—"}

@@ -110,9 +110,9 @@ function ScoreProgressAccordion({
     <Accordion type="single" collapsible className="space-y-2">
       <AccordionItem
         value="score-progress"
-        className="bg-gray-100 rounded-xl p-0 mb-3 border-0 shadow-none"
+        className="bg-muted rounded-xl p-0 mb-3 border-0 shadow-none"
       >
-        <AccordionTrigger className="px-6 py-4 flex items-center justify-between bg-gray-100 rounded-xl">
+        <AccordionTrigger className="px-6 py-4 flex items-center justify-between bg-muted rounded-xl">
           <div className="flex flex-col flex-1 gap-1 text-left">
             <span className="font-medium text-base text-foreground">
               Creator Score
@@ -125,12 +125,12 @@ function ScoreProgressAccordion({
             {score?.toLocaleString() ?? "—"}
           </span>
         </AccordionTrigger>
-        <AccordionContent className="px-6 pb-5 bg-gray-100 rounded-b-xl">
+        <AccordionContent className="px-6 pb-5 bg-muted rounded-b-xl">
           <div className="space-y-2">
             <div className="relative w-full flex items-center justify-center mb-0">
               <Progress
                 value={progress}
-                className="h-2 bg-gray-200 [&>div]:bg-gray-800"
+                className="h-2 bg-muted-foreground/20 [&>div]:bg-foreground"
               />
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
@@ -325,7 +325,7 @@ function ScoreDataPoints({
           <AccordionItem
             key={issuer.issuer}
             value={`issuer-${index}`}
-            className="bg-white rounded-2xl shadow border p-0 mb-3"
+            className="bg-card rounded-2xl shadow border p-0 mb-3"
           >
             <AccordionTrigger className="px-6 py-4 flex items-center justify-between">
               <div className="flex flex-col flex-1 gap-1">
@@ -415,13 +415,13 @@ function CredentialIdeasCallout() {
     }
   };
   return (
-    <div className="border border-purple-200 bg-purple-50 rounded-xl px-6 py-4 my-1 flex items-center text-purple-700 text-xs">
+    <div className="border border-border bg-muted rounded-xl px-6 py-4 my-1 flex items-center text-muted-foreground text-xs">
       <span className="font-semibold mr-0.5">New credential ideas?</span>
       <span className="ml-0.5">Reach out to </span>
       <a
         href="https://farcaster.xyz/juampi"
         onClick={handleClick}
-        className="ml-1 text-purple-700 hover:text-purple-800 flex items-center font-normal"
+        className="ml-1 text-muted-foreground hover:text-foreground flex items-center font-normal"
         target="_blank"
         rel="noopener noreferrer"
         style={{ textDecoration: "none" }}
