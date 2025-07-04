@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import type { LeaderboardEntry } from "@/app/services/talentService";
+import type { LeaderboardEntry } from "@/app/services/types";
 import { MinimalProfileDrawer } from "@/components/leaderboard/MinimalProfileDrawer";
 import { sdk } from "@farcaster/frame-sdk";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-import {
-  getCredentialsForTalentId,
-  type IssuerCredentialGroup,
-} from "@/app/services/talentService";
+import { getCredentialsForTalentId } from "@/app/services/credentialsService";
+import type { IssuerCredentialGroup } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useProfileCredentials(talentUUID: string) {

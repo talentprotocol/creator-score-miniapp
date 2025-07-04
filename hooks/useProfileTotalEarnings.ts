@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  getCredentialsForTalentId,
-  type IssuerCredentialGroup,
-} from "@/app/services/talentService";
+import { getCredentialsForTalentId } from "@/app/services/credentialsService";
+import type { IssuerCredentialGroup } from "@/app/services/types";
 import {
   calculateTotalRewards,
   getEthUsdcPrice,

@@ -89,7 +89,7 @@ export async function getEthUsdcPrice(): Promise<number> {
     setCachedData(cacheKey, price);
 
     return price;
-  } catch (error) {
+  } catch {
     // Return fallback price if fetch fails
     return 3000;
   }

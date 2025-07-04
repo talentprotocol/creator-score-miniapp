@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getUserWalletAddresses } from "@/app/services/neynarService";
-import { getCreatorScore } from "@/app/services/talentService";
+import { getCreatorScore } from "@/app/services/scoresService";
 import {
   filterEthAddresses,
   getCachedData,

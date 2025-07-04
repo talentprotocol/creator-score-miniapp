@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getLeaderboardStats } from "@/app/services/talentService";
+import { getLeaderboardStats } from "@/app/services/leaderboardService";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 interface LeaderboardStats {

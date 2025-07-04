@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AccountCard } from "./AccountCard";
-import type { SocialAccount } from "@/app/services/talentService";
+import type { SocialAccount } from "@/app/services/types";
 
 interface AccountGridProps {
   socialAccounts: SocialAccount[];

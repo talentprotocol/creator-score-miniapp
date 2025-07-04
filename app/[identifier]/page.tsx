@@ -8,7 +8,6 @@ const RESERVED_WORDS = [
   "settings",
   "leaderboard",
   "profile",
-  "old-prototype",
   "services",
   ".well-known",
   "favicon.ico",

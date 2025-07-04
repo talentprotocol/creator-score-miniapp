@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getCreatorScoreForTalentId } from "@/app/services/talentService";
+import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useProfileCreatorScore(talentUUID: string) {

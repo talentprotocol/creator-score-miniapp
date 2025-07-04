@@ -1,4 +1,4 @@
-import type { IssuerCredentialGroup } from "@/app/services/talentService";
+import type { IssuerCredentialGroup } from "@/app/services/types";
 
 export const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
   {

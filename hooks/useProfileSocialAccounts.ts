@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  getSocialAccountsForTalentId,
-  type SocialAccount,
-} from "@/app/services/talentService";
+import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
+import type { SocialAccount } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useProfileSocialAccounts(talentUUID: string) {

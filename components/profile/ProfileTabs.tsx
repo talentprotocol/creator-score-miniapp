@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { type IssuerCredentialGroup } from "@/app/services/talentService";
+import { type IssuerCredentialGroup } from "@/app/services/types";
 import {
   calculateScoreProgress,
   calculatePointsToNextLevel,
@@ -315,7 +315,7 @@ function CredentialIdeasCallout() {
 
 interface ProfileTabsProps {
   accountsCount: number;
-  socialAccounts: import("@/app/services/talentService").SocialAccount[];
+  socialAccounts: import("@/app/services/types").SocialAccount[];
   talentUUID: string;
 }
 

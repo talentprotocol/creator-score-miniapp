@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  getLeaderboardCreators,
-  type LeaderboardEntry,
-} from "@/app/services/talentService";
+import { getLeaderboardCreators } from "@/app/services/leaderboardService";
+import type { LeaderboardEntry } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useLeaderboard(perPage: number = 10) {
