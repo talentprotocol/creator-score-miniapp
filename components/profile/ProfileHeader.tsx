@@ -11,12 +11,10 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Copy, WalletMinimal } from "lucide-react";
-import {
-  getUserWalletAddresses,
-  type UserWalletAddresses,
-} from "@/app/services/neynarService";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
+import { useProfileWalletAddresses } from "@/hooks/useProfileWalletAddresses";
+import { truncateAddress } from "@/lib/utils";
 
 export function ProfileHeader({
   followers,
@@ -38,30 +36,15 @@ export function ProfileHeader({
   const fid = user?.fid; // Only use real fid, no fallback
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const [walletData, setWalletData] =
-    React.useState<UserWalletAddresses | null>(null);
-  const [walletError, setWalletError] = React.useState<string | undefined>();
-  const [loading, setLoading] = React.useState(false);
+  const {
+    walletData,
+    loading,
+    error: walletError,
+  } = useProfileWalletAddresses(drawerOpen ? fid : undefined);
 
-  const handleOpenChange = async (open: boolean) => {
+  const handleOpenChange = (open: boolean) => {
     setDrawerOpen(open);
-    if (open && !walletData && !loading) {
-      if (!fid) return; // No context, do not fetch
-      setLoading(true);
-      try {
-        const data = await getUserWalletAddresses(fid);
-        setWalletData(data);
-        setWalletError(data.error);
-      } finally {
-        setLoading(false);
-      }
-    }
   };
-
-  function truncateAddress(addr: string) {
-    if (!addr) return "";
-    return addr.slice(0, 6) + "..." + addr.slice(-4);
-  }
 
   return (
     <div className="flex items-center justify-between w-full gap-4">

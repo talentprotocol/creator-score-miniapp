@@ -171,4 +171,57 @@ export function formatRewardValue(num: number): string {
   return formatNumberWithSuffix(num);
 }
 
+// Profile-specific utility functions
+export function formatK(num: number | string): string {
+  const n = typeof num === "string" ? parseFloat(num.replace(/,/g, "")) : num;
+  if (isNaN(n)) return "0";
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return n.toString();
+}
+
+export function truncateAddress(addr: string): string {
+  if (!addr) return "";
+  return addr.slice(0, 6) + "..." + addr.slice(-4);
+}
+
+export function shouldShowUom(uom: string | null): boolean {
+  if (!uom) return false;
+  const hiddenUoms = [
+    "creation date",
+    "out transactions",
+    "followers",
+    "stack points",
+  ];
+  return !hiddenUoms.includes(uom);
+}
+
+export function formatReadableValue(
+  value: string | null,
+  uom: string | null = null,
+): string {
+  if (!value) return "";
+  if (/[a-zA-Z]/.test(value)) return value;
+  const num = parseFloat(value);
+  if (isNaN(num)) return value;
+
+  // Special handling for ETH values
+  if (uom === "ETH") {
+    return num.toFixed(3);
+  }
+
+  // Existing handling for other values
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+}
+
+export function cleanCredentialLabel(label: string, issuer: string): string {
+  // Remove the issuer name from the beginning of the label if it exists
+  const issuerPrefix = `${issuer} `;
+  return label.startsWith(issuerPrefix)
+    ? label.slice(issuerPrefix.length)
+    : label;
+}
+
 export { resolveTalentUser } from "./user-resolver";

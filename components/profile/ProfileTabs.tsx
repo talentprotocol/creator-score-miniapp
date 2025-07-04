@@ -21,21 +21,13 @@ import {
   filterEthAddresses,
   calculateScoreProgress,
   calculatePointsToNextLevel,
+  shouldShowUom,
+  formatReadableValue,
+  cleanCredentialLabel,
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
 import { ExternalLink } from "lucide-react";
 import { COMING_SOON_CREDENTIALS } from "./comingSoonCredentials";
-
-function shouldShowUom(uom: string | null): boolean {
-  if (!uom) return false;
-  const hiddenUoms = [
-    "creation date",
-    "out transactions",
-    "followers",
-    "stack points",
-  ];
-  return !hiddenUoms.includes(uom);
-}
 
 function ScoreProgressAccordion({
   fid,
@@ -156,35 +148,6 @@ function ScoreProgressAccordion({
       </AccordionItem>
     </Accordion>
   );
-}
-
-function formatReadableValue(
-  value: string | null,
-  uom: string | null = null,
-): string {
-  if (!value) return "";
-  if (/[a-zA-Z]/.test(value)) return value;
-  const num = parseFloat(value);
-  if (isNaN(num)) return value;
-
-  // Special handling for ETH values
-  if (uom === "ETH") {
-    return num.toFixed(3);
-  }
-
-  // Existing handling for other values
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
-  }
-  return num.toString();
-}
-
-function cleanCredentialLabel(label: string, issuer: string): string {
-  // Remove the issuer name from the beginning of the label if it exists
-  const issuerPrefix = `${issuer} `;
-  return label.startsWith(issuerPrefix)
-    ? label.slice(issuerPrefix.length)
-    : label;
 }
 
 function ScoreDataPoints({

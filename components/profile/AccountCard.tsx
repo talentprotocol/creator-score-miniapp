@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatK } from "@/lib/utils";
+import { PLATFORM_NAMES } from "@/lib/constants";
 import {
   Twitter,
   Linkedin,
@@ -22,13 +23,6 @@ interface AccountCardProps {
   profileUrl?: string;
 }
 
-function formatK(num: number | string): string {
-  const n = typeof num === "string" ? parseFloat(num.replace(/,/g, "")) : num;
-  if (isNaN(n)) return "—";
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return n.toString();
-}
-
 const platformIcons: Record<
   string,
   React.ComponentType<{ className?: string }>
@@ -42,16 +36,6 @@ const platformIcons: Record<
   linkedin: Linkedin,
 };
 
-const platformNames: Record<string, string> = {
-  base: "Base",
-  ethereum: "Ethereum",
-  farcaster: "Farcaster",
-  lens: "Lens",
-  twitter: "Twitter",
-  linkedin: "LinkedIn",
-  github: "GitHub",
-};
-
 export function AccountCard({
   platform,
   handle,
@@ -62,7 +46,7 @@ export function AccountCard({
   profileUrl,
 }: AccountCardProps) {
   const Icon = platformIcons[platform] || CircleUserRound;
-  const platformName = displayName || platformNames[platform] || platform;
+  const platformName = displayName || PLATFORM_NAMES[platform] || platform;
   const formattedFollowers =
     followers !== "—" && followers !== null && followers !== undefined
       ? formatK(followers)

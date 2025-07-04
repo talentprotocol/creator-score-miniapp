@@ -4,7 +4,7 @@ import * as React from "react";
 import { ProfileHeader } from "./ProfileHeader";
 import { StatCard } from "./StatCard";
 import { ProfileTabs } from "./ProfileTabs";
-import { formatNumberWithSuffix } from "@/lib/utils";
+import { formatNumberWithSuffix, formatK } from "@/lib/utils";
 import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
 import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
@@ -35,10 +35,6 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
     (sum, acc) => sum + (acc.followerCount ?? 0),
     0,
   );
-  function formatK(num: number): string {
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-    return num.toString();
-  }
 
   if (profileLoading) {
     return (

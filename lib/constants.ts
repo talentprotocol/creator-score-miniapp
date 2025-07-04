@@ -8,3 +8,17 @@ export const LEVEL_RANGES = [
 ] as const;
 
 export type LevelRange = (typeof LEVEL_RANGES)[number];
+
+// Platform display name mappings
+export const PLATFORM_NAMES: Record<string, string> = {
+  base: "Base",
+  ethereum: "Ethereum",
+  farcaster: "Farcaster",
+  lens: "Lens",
+  twitter: "Twitter",
+  x: "X", // Legacy support
+  linkedin: "LinkedIn",
+  github: "GitHub",
+  discord: "Discord",
+  telegram: "Telegram",
+} as const;
