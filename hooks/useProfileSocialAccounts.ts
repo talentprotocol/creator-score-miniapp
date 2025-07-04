@@ -1,26 +1,57 @@
 import { useState, useEffect } from "react";
 import {
   getSocialAccountsForTalentId,
-  SocialAccount,
+  type SocialAccount,
 } from "@/app/services/talentService";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useProfileSocialAccounts(talentUUID: string) {
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!talentUUID) return;
-    setLoading(true);
-    getSocialAccountsForTalentId(talentUUID)
-      .then((accounts) => {
+    async function fetchSocialAccounts() {
+      const cacheKey = `social_accounts_${talentUUID}`;
+
+      // Check cache first
+      const cachedAccounts = getCachedData<SocialAccount[]>(
+        cacheKey,
+        CACHE_DURATIONS.PROFILE_DATA,
+      );
+      if (cachedAccounts) {
+        setSocialAccounts(cachedAccounts);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const accounts = await getSocialAccountsForTalentId(talentUUID);
+
         setSocialAccounts(accounts);
-        setLoading(false);
-      })
-      .catch(() => {
+
+        // Cache the social accounts data
+        setCachedData(cacheKey, accounts);
+      } catch (err) {
+        console.error("Error fetching social accounts:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch social accounts",
+        );
         setSocialAccounts([]);
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    if (talentUUID) {
+      fetchSocialAccounts();
+    }
   }, [talentUUID]);
 
-  return { socialAccounts, loading };
+  return { socialAccounts, loading, error };
 }

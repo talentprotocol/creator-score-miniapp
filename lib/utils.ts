@@ -56,24 +56,16 @@ export function getLevelBadgeColor(level: number | null): string {
   }
 }
 
-interface CachedPrice {
-  price: number;
-  timestamp: number;
-}
-
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const CACHE_KEY = "eth_usdc_price";
-
 export async function getEthUsdcPrice(): Promise<number> {
+  const cacheKey = "eth_usdc_price";
+
   // Check cache first
-  if (typeof window !== "undefined") {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      const { price, timestamp }: CachedPrice = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_DURATION) {
-        return price;
-      }
-    }
+  const cachedPrice = getCachedData<number>(
+    cacheKey,
+    CACHE_DURATIONS.ETH_PRICE,
+  );
+  if (cachedPrice !== null) {
+    return cachedPrice;
   }
 
   try {
@@ -84,15 +76,7 @@ export async function getEthUsdcPrice(): Promise<number> {
     const price = parseFloat(data.data.amount);
 
     // Cache the price
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
-          price,
-          timestamp: Date.now(),
-        }),
-      );
-    }
+    setCachedData(cacheKey, price);
 
     return price;
   } catch (error) {
@@ -223,5 +207,54 @@ export function cleanCredentialLabel(label: string, issuer: string): string {
     ? label.slice(issuerPrefix.length)
     : label;
 }
+
+// Generic caching utility
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
+
+export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const cached = localStorage.getItem(key);
+    if (!cached) return null;
+
+    const { data, timestamp }: CachedData<T> = JSON.parse(cached);
+    if (Date.now() - timestamp < maxAgeMs) {
+      return data;
+    }
+
+    // Data is stale, remove it
+    localStorage.removeItem(key);
+    return null;
+  } catch {
+    // Invalid cache data, remove it
+    localStorage.removeItem(key);
+    return null;
+  }
+}
+
+export function setCachedData<T>(key: string, data: T): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const cachedData: CachedData<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(key, JSON.stringify(cachedData));
+  } catch {
+    // Storage quota exceeded or other error, silently fail
+  }
+}
+
+// Cache duration constants
+export const CACHE_DURATIONS = {
+  PROFILE_DATA: 5 * 60 * 1000, // 5 minutes
+  SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
+  ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours
+} as const;
 
 export { resolveTalentUser } from "./user-resolver";

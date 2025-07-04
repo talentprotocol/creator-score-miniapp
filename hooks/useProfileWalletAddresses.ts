@@ -3,6 +3,7 @@ import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "@/app/services/neynarService";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useProfileWalletAddresses(fid: number | string | undefined) {
   const [walletData, setWalletData] = useState<UserWalletAddresses | null>(
@@ -13,6 +14,20 @@ export function useProfileWalletAddresses(fid: number | string | undefined) {
 
   const fetchWalletData = async () => {
     if (!fid) return;
+
+    const cacheKey = `wallet_addresses_${fid}`;
+
+    // Check cache first
+    const cachedData = getCachedData<UserWalletAddresses>(
+      cacheKey,
+      CACHE_DURATIONS.PROFILE_DATA,
+    );
+    if (cachedData) {
+      setWalletData(cachedData);
+      setError(cachedData.error);
+      return;
+    }
+
     setLoading(true);
     setError(undefined);
     try {
@@ -28,6 +43,9 @@ export function useProfileWalletAddresses(fid: number | string | undefined) {
       }
       setWalletData(data);
       setError(data.error);
+
+      // Cache the wallet data
+      setCachedData(cacheKey, data);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch wallet data",

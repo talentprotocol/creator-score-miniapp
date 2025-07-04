@@ -1,43 +1,62 @@
 import { useState, useEffect } from "react";
 import {
   getCredentialsForTalentId,
-  IssuerCredentialGroup,
+  type IssuerCredentialGroup,
 } from "@/app/services/talentService";
-import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
+import {
+  calculateTotalRewards,
+  getEthUsdcPrice,
+  getCachedData,
+  setCachedData,
+  CACHE_DURATIONS,
+} from "@/lib/utils";
 
 export function useProfileTotalEarnings(talentUUID: string) {
   const [totalEarnings, setTotalEarnings] = useState<number>(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!talentUUID) return;
-    setLoading(true);
-    Promise.all([getCredentialsForTalentId(talentUUID), getEthUsdcPrice()])
-      .then(([credentials, ethPrice]) => {
-        let total = 0;
-        credentials.forEach((issuer: IssuerCredentialGroup) => {
-          issuer.points.forEach((pt) => {
-            if (pt.label === "ETH Balance") return;
-            if (!pt.readable_value) return;
-            const value = parseFloat(
-              pt.readable_value.replace(/[^0-9.-]+/g, ""),
-            );
-            if (isNaN(value)) return;
-            if (pt.uom === "ETH") {
-              total += convertEthToUsdc(value, ethPrice);
-            } else if (pt.uom === "USDC") {
-              total += value;
-            }
-          });
-        });
+    async function fetchTotalEarnings() {
+      const cacheKey = `total_earnings_${talentUUID}`;
+
+      // Check cache first
+      const cachedEarnings = getCachedData<number>(
+        cacheKey,
+        CACHE_DURATIONS.PROFILE_DATA,
+      );
+      if (cachedEarnings !== null) {
+        setTotalEarnings(cachedEarnings);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const credentials = await getCredentialsForTalentId(talentUUID);
+        const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
+
         setTotalEarnings(total);
-        setLoading(false);
-      })
-      .catch(() => {
+
+        // Cache the total earnings
+        setCachedData(cacheKey, total);
+      } catch (err) {
+        console.error("Error fetching total earnings:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch total earnings",
+        );
         setTotalEarnings(0);
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    if (talentUUID) {
+      fetchTotalEarnings();
+    }
   }, [talentUUID]);
 
-  return { totalEarnings, loading };
+  return { totalEarnings, loading, error };
 }

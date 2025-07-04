@@ -80,7 +80,7 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
         <div className="flex flex-row gap-4 w-full">
           <StatCard
             title="Creator Score"
-            value={scoreLoading ? "—" : (creatorScore ?? "—")}
+            value={scoreLoading ? "—" : (creatorScore?.toLocaleString() ?? "—")}
           />
           <StatCard
             title="Total Earnings"
