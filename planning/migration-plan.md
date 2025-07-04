@@ -19,26 +19,43 @@ This document outlines a high-level, step-by-step plan to migrate and modularize
 
 **For each feature/page, follow this improved workflow:**
 
-### 2.1. Refactor in Original Repo
+### 2.1. Profile Screen Refactoring ✅ COMPLETED
+
+- **[✅]** Refactor all relevant UI components in the original repo to be pure UI (no API calls, no business logic). All data should come from props.
+- **[✅]** Move all data fetching and business logic to hooks and service files in the original repo.
+- **[✅]** Use shadcn/ui components by default; avoid custom components unless necessary.
+- **[✅]** Ensure all modals (e.g., profile overlays) follow the mobile/desktop modal principles (bottom sheet/side sheet/dialog).
+- **[✅]** Apply minimal custom CSS, using Tailwind utilities and shadcn/ui variants.
+- **[✅]** Implement mobile-first navigation (fixed header, bottom nav on mobile; centered content, hidden bottom nav on desktop).
+- **[✅]** Use minimal, thin progress bars for scores and rewards.
+- **[✅]** Truncate long text with show more/less toggles where needed.
+- **[✅]** Apply the documented color system and typographic scale.
+- **[✅]** Use the shared user resolver for all user/account lookups.
+- **[✅]** Centralize any shared logic or constants.
+- **[✅]** Implement caching for profile data (5 min) and score breakdowns (until profile updates).
+- **[✅]** Ensure public profiles are accessible at `/[identifier]` and avoid reserved route words.
+- **[✅]** Test the refactor in the original context for feature parity (UI, data, loading/error states, modal overlays, mobile/desktop adaptation).
+- **[✅]** Ensure all taxonomy terms (User, Talent UUID, Account, etc.) are preserved and documented in code and docs.
+- **[✅]** Document any unique or opinionated decisions made during refactoring.
+
+**Profile Screen Status:** Complete ✅ - All components are now pure UI with TalentUUID-based data fetching, comprehensive caching, and modular architecture.
+
+### 2.2. Next Component/Page Refactoring
 
 - **[ ]** Refactor all relevant UI components in the original repo to be pure UI (no API calls, no business logic). All data should come from props.
 - **[ ]** Move all data fetching and business logic to hooks and service files in the original repo.
 - **[ ]** Use shadcn/ui components by default; avoid custom components unless necessary.
-- **[ ]** Ensure all modals (e.g., profile overlays) follow the mobile/desktop modal principles (bottom sheet/side sheet/dialog).
+- **[ ]** Ensure all modals follow the mobile/desktop modal principles.
 - **[ ]** Apply minimal custom CSS, using Tailwind utilities and shadcn/ui variants.
-- **[ ]** Implement mobile-first navigation (fixed header, bottom nav on mobile; centered content, hidden bottom nav on desktop).
-- **[ ]** Use minimal, thin progress bars for scores and rewards.
-- **[ ]** Truncate long text with show more/less toggles where needed.
-- **[ ]** Apply the documented color system and typographic scale.
+- **[ ]** Implement mobile-first navigation and responsive design.
 - **[ ]** Use the shared user resolver for all user/account lookups.
 - **[ ]** Centralize any shared logic or constants.
-- **[ ]** Implement caching for profile data (5 min) and score breakdowns (until profile updates).
-- **[ ]** Ensure public profiles are accessible at `/[identifier]` and avoid reserved route words.
-- **[ ]** Test the refactor in the original context for feature parity (UI, data, loading/error states, modal overlays, mobile/desktop adaptation).
-- **[ ]** Ensure all taxonomy terms (User, Talent UUID, Account, etc.) are preserved and documented in code and docs.
+- **[ ]** Implement appropriate caching strategies.
+- **[ ]** Test the refactor in the original context for feature parity.
+- **[ ]** Ensure all taxonomy terms are preserved and documented.
 - **[ ]** Document any unique or opinionated decisions made during refactoring.
 
-### 2.2. Copy Refactored Code to New Repo
+### 2.3. Copy Refactored Code to New Repo (When Ready)
 
 - **[ ]** Copy only the refactored, modular, and pure UI code (components, hooks, services, utils) to the new repo.
 - **[ ]** Compose the page/container in the new repo using the refactored code.
@@ -47,16 +64,33 @@ This document outlines a high-level, step-by-step plan to migrate and modularize
 
 ---
 
-### 2.3. Repeat for Other Features/Pages
+## 3. Next Components to Refactor
 
-For each additional feature/page (e.g., Leaderboard, Settings, etc.):
-- **[ ]** Repeat steps 2.1 and 2.2 above.
+### 3.1. Leaderboard Page
+- **[ ]** Refactor LeaderboardRow component to pure UI
+- **[ ]** Create useLeaderboard hook for data fetching
+- **[ ]** Implement proper loading and error states
+- **[ ]** Apply shadcn/ui design system consistency
+- **[ ]** Add caching for leaderboard data
+
+### 3.2. Navigation Components
+- **[ ]** Refactor Header and BottomNav to pure UI
+- **[ ]** Create navigation hooks for user state management
+- **[ ]** Ensure mobile/desktop responsive behavior
+
+### 3.3. Settings Page
+- **[ ]** Refactor settings components to pure UI
+- **[ ]** Create appropriate hooks for settings data
+
+### 3.4. Additional Features
+For each additional feature/page:
+- **[ ]** Repeat refactoring steps above
 - **[ ]** Ensure all principles in architecture.md
 - **[ ]** Document unique/opinionated decisions
 
 ---
 
-## 3. Final Steps
+## 4. Final Steps
 
 - **[ ]** Review all components to ensure no API calls or business logic remain in UI components.
 - **[ ]** Ensure all hooks and services are well-documented and tested.
@@ -68,7 +102,7 @@ For each additional feature/page (e.g., Leaderboard, Settings, etc.):
 
 ---
 
-## 4. Tips & Best Practices
+## 5. Tips & Best Practices
 
 - **Refactor before migrating:** Always refactor in the original repo first, then migrate only clean, modular code.
 - **Keep UI components pure:** Only receive data via props, emit events/callbacks.

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -8,20 +8,14 @@ import {
 } from "@/components/ui/drawer";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { StatCard } from "@/components/profile/StatCard";
-import {
-  getCreatorScoreForTalentId,
-  getCredentialsForTalentId,
-  getSocialAccountsForTalentId,
-} from "@/app/services/talentService";
-import {
-  getEthUsdcPrice,
-  calculateTotalRewards,
-  formatRewardValue,
-} from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { resolveTalentUser } from "@/lib/user-resolver";
+import { formatK, formatNumberWithSuffix } from "@/lib/utils";
+import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
+import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
+import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
+import { useProfileTotalEarnings } from "@/hooks/useProfileTotalEarnings";
 
 interface MinimalProfileDrawerProps {
   open: boolean;
@@ -38,70 +32,53 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
   name,
   avatarUrl,
 }) => {
-  const [followers, setFollowers] = useState<string>("—");
-  const [creatorScore, setCreatorScore] = useState<string>("—");
-  const [totalRewards, setTotalRewards] = useState<string>("—");
-  const [loading, setLoading] = useState(false);
-  const [farcasterHandle, setFarcasterHandle] = useState<string | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
-  const [github, setGithub] = useState<string | null>(null);
-  const [uuid, setUuid] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    if (!open || !talentId) return;
-    setLoading(true);
-    setFollowers("—");
-    setCreatorScore("—");
-    setTotalRewards("—");
-    setFarcasterHandle(null);
-    setGithub(null);
-    setUuid(null);
-    (async () => {
-      try {
-        // Fetch Creator Score
-        const scoreData = await getCreatorScoreForTalentId(talentId);
-        setCreatorScore(scoreData.score?.toLocaleString() ?? "0");
-        // Fetch credentials for rewards
-        const credentials = await getCredentialsForTalentId(talentId);
-        const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
-        setTotalRewards(formatRewardValue(total));
-        // Fetch social accounts for followers and Farcaster handle
-        const socials = await getSocialAccountsForTalentId(talentId);
-        const followersCount = socials.reduce(
-          (sum, acc) => sum + (acc.followerCount ?? 0),
-          0,
-        );
-        setFollowers(
-          followersCount >= 1000
-            ? `${(followersCount / 1000).toFixed(1)}k`
-            : followersCount.toString(),
-        );
-        // Find Farcaster handle
-        const farcaster = socials.find(
-          (s) => s.source === "farcaster" && s.handle,
-        );
-        if (farcaster && farcaster.handle) {
-          setFarcasterHandle(farcaster.handle.replace(/^@/, ""));
-        }
-        // Fetch canonical Github and UUID
-        const user = await resolveTalentUser(String(talentId));
-        if (user) {
-          setGithub(user.github || null);
-          setUuid(user.id || null);
-        }
-      } catch {
-        setFollowers("—");
-        setCreatorScore("—");
-        setTotalRewards("—");
-        setFarcasterHandle(null);
-        setGithub(null);
-        setUuid(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [open, talentId]);
+  const talentUUID = String(talentId || "");
+
+  // Use existing profile hooks when drawer is open and we have a talentId
+  const shouldFetch = open && talentId;
+  const { profile } = useProfileHeaderData(shouldFetch ? talentUUID : "");
+  const { creatorScore, loading: scoreLoading } = useProfileCreatorScore(
+    shouldFetch ? talentUUID : "",
+  );
+  const { socialAccounts } = useProfileSocialAccounts(
+    shouldFetch ? talentUUID : "",
+  );
+  const { totalEarnings, loading: earningsLoading } = useProfileTotalEarnings(
+    shouldFetch ? talentUUID : "",
+  );
+
+  // Calculate derived data
+  const totalFollowers = socialAccounts.reduce(
+    (sum, acc) => sum + (acc.followerCount ?? 0),
+    0,
+  );
+
+  const farcasterAccount = socialAccounts.find(
+    (s) => s.source === "farcaster" && s.handle,
+  );
+  const farcasterHandle = farcasterAccount?.handle?.replace(/^@/, "") || null;
+
+  const loading = scoreLoading || earningsLoading;
+
+  const handleSeeProfile = () => {
+    let url = "/";
+    if (farcasterHandle) {
+      url += farcasterHandle;
+    } else if (profile?.github) {
+      url += profile.github;
+    } else if (profile?.id) {
+      url += profile.id;
+    } else if (talentId) {
+      url += talentId;
+    } else {
+      return;
+    }
+    setLoadingProfile(true);
+    router.push(url);
+  };
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -142,40 +119,25 @@ export const MinimalProfileDrawer: React.FC<MinimalProfileDrawerProps> = ({
               </span>
             )}
             <span className="text-muted-foreground text-base">
-              {followers} total followers
+              {formatK(totalFollowers)} total followers
             </span>
           </div>
         </div>
         <div className="flex flex-row gap-4 w-full mt-6">
           <StatCard
             title="Creator Score"
-            value={loading ? "—" : creatorScore}
+            value={loading ? "—" : (creatorScore?.toLocaleString() ?? "—")}
           />
           <StatCard
             title="Total Rewards"
-            value={loading ? "—" : totalRewards}
+            value={loading ? "—" : formatNumberWithSuffix(totalEarnings)}
           />
         </div>
         <div className="mt-8 flex justify-center">
           <Button
             variant="outline"
             className="w-full flex items-center justify-center"
-            onClick={() => {
-              let url = "/";
-              if (farcasterHandle) {
-                url += farcasterHandle;
-              } else if (github) {
-                url += github;
-              } else if (uuid) {
-                url += uuid;
-              } else if (talentId) {
-                url += talentId;
-              } else {
-                return;
-              }
-              setLoadingProfile(true);
-              router.push(url);
-            }}
+            onClick={handleSeeProfile}
             disabled={loadingProfile}
           >
             {loadingProfile ? (
