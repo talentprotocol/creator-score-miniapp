@@ -10,15 +10,8 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { type IssuerCredentialGroup } from "@/app/services/talentService";
 import {
-  getBuilderScore,
-  SCORER_SLUGS,
-  getCredentialsForFarcaster,
-  type IssuerCredentialGroup,
-} from "@/app/services/talentService";
-import { getUserWalletAddresses } from "@/app/services/neynarService";
-import {
-  filterEthAddresses,
   calculateScoreProgress,
   calculatePointsToNextLevel,
   shouldShowUom,
@@ -28,72 +21,14 @@ import {
 import { sdk } from "@farcaster/frame-sdk";
 import { ExternalLink } from "lucide-react";
 import { COMING_SOON_CREDENTIALS } from "./comingSoonCredentials";
+import { useProfileCredentials } from "@/hooks/useProfileCredentials";
+import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 
-function ScoreProgressAccordion({
-  fid,
-  wallet,
-  github,
-}: {
-  fid?: number | string;
-  wallet?: string;
-  github?: string;
-}) {
-  const [score, setScore] = React.useState<number | null>(null);
-  const [level, setLevel] = React.useState<number | null>(null);
-  const [lastUpdated, setLastUpdated] = React.useState<string | null>(null);
+function ScoreProgressAccordion({ talentUUID }: { talentUUID: string }) {
+  const { creatorScore, loading } = useProfileCreatorScore(talentUUID);
 
-  React.useEffect(() => {
-    async function fetchScore() {
-      const identifier = fid ?? wallet ?? github;
-      if (!identifier) return;
-      try {
-        let walletData;
-        if (fid && typeof fid === "number") {
-          walletData = await getUserWalletAddresses(fid);
-        } else if (fid && typeof fid === "string" && !isNaN(Number(fid))) {
-          walletData = await getUserWalletAddresses(Number(fid));
-        } else {
-          setScore(null);
-          setLevel(null);
-          setLastUpdated(null);
-          return;
-        }
-        if (walletData.error) {
-          throw new Error(walletData.error);
-        }
-
-        const addresses = filterEthAddresses([
-          ...walletData.addresses,
-          walletData.primaryEthAddress,
-          walletData.primarySolAddress,
-        ]);
-
-        if (addresses.length === 0) {
-          throw new Error("No wallet addresses found");
-        }
-
-        const scoreData = await getBuilderScore(
-          addresses,
-          SCORER_SLUGS.CREATOR,
-        );
-        if (scoreData.error) {
-          throw new Error(scoreData.error);
-        }
-
-        setScore(scoreData.score);
-        setLevel(scoreData.level);
-        setLastUpdated(
-          scoreData.lastCalculatedAt
-            ? new Date(scoreData.lastCalculatedAt).toLocaleDateString()
-            : null,
-        );
-      } catch {
-        // No error handling needed if the error variable is not used
-      }
-    }
-
-    fetchScore();
-  }, [fid, wallet, github]);
+  const score = typeof creatorScore === "number" ? creatorScore : null;
+  const level = score ? Math.min(Math.floor(score / 1000) + 1, 6) : null;
 
   const progress = calculateScoreProgress(score ?? 0, level ?? 1);
   const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
@@ -114,7 +49,7 @@ function ScoreProgressAccordion({
             </span>
           </div>
           <span className="ml-4 text-xl font-semibold text-foreground w-16 text-right">
-            {score?.toLocaleString() ?? "—"}
+            {loading ? "—" : (score?.toLocaleString() ?? "—")}
           </span>
         </AccordionTrigger>
         <AccordionContent className="px-6 pb-5 bg-muted rounded-b-xl">
@@ -133,15 +68,7 @@ function ScoreProgressAccordion({
                     ? "Master level reached!"
                     : "Level up!"}
               </span>
-              <span>
-                Last updated:{" "}
-                {lastUpdated
-                  ? new Date(lastUpdated).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "—"}
-              </span>
+              <span>Last updated: —</span>
             </div>
           </div>
         </AccordionContent>
@@ -150,38 +77,12 @@ function ScoreProgressAccordion({
   );
 }
 
-function ScoreDataPoints({
-  fid,
-  wallet,
-  github,
-}: {
-  fid?: number | string;
-  wallet?: string;
-  github?: string;
-}) {
-  const [credentials, setCredentials] = React.useState<IssuerCredentialGroup[]>(
-    [],
-  );
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    async function fetchCredentials() {
-      const identifier = fid ?? wallet ?? github;
-      if (!identifier) return;
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await getCredentialsForFarcaster(identifier.toString());
-        setCredentials(data);
-      } catch {
-        // No error handling needed if the error variable is not used
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchCredentials();
-  }, [fid, wallet, github]);
+function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
+  const {
+    credentials,
+    loading: isLoading,
+    error,
+  } = useProfileCredentials(talentUUID);
 
   // Filter out coming soon credentials if they already exist in the API response (by slug)
   const apiCredentialSlugs = new Set(
@@ -399,39 +300,21 @@ function CredentialIdeasCallout() {
 interface ProfileTabsProps {
   accountsCount: number;
   socialAccounts: import("@/app/services/talentService").SocialAccount[];
-  fid?: number | string;
-  wallet?: string;
-  github?: string;
+  talentUUID: string;
 }
 
 export function ProfileTabs({
   accountsCount,
   socialAccounts,
-  fid,
-  wallet,
-  github,
+  talentUUID,
 }: ProfileTabsProps) {
-  const [credentialsCount, setCredentialsCount] = React.useState<number>(0);
+  const { credentials } = useProfileCredentials(talentUUID);
 
-  React.useEffect(() => {
-    async function fetchCredentialsCount() {
-      const identifier = fid ?? wallet ?? github;
-      if (!identifier) return;
-      try {
-        const data = await getCredentialsForFarcaster(identifier.toString());
-        // Sum up all credentials across all issuers
-        const total = data.reduce(
-          (sum, issuer) => sum + issuer.points.length,
-          0,
-        );
-        setCredentialsCount(total);
-      } catch {
-        // No error handling needed if the error variable is not used
-      }
-    }
-
-    fetchCredentialsCount();
-  }, [fid, wallet, github]);
+  // Calculate credentials count from the hook data
+  const credentialsCount = credentials.reduce(
+    (sum: number, issuer: IssuerCredentialGroup) => sum + issuer.points.length,
+    0,
+  );
 
   return (
     <Tabs defaultValue="accounts" className="w-full flex flex-col">
@@ -479,9 +362,9 @@ export function ProfileTabs({
         <AccountGrid socialAccounts={socialAccounts} />
       </TabsContent>
       <TabsContent value="score" className="mt-6 space-y-6">
-        <ScoreProgressAccordion fid={fid} wallet={wallet} github={github} />
+        <ScoreProgressAccordion talentUUID={talentUUID} />
         <CredentialIdeasCallout />
-        <ScoreDataPoints fid={fid} wallet={wallet} github={github} />
+        <ScoreDataPoints talentUUID={talentUUID} />
       </TabsContent>
     </Tabs>
   );

@@ -24,12 +24,16 @@ export async function GET(req: NextRequest) {
   const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
 
   // Build query object based on what we need
-  const query: any = {};
-
-  // Always filter for profiles with creator score > 0
-  query.score = {
-    min: 1,
-    scorer: "Creator Score",
+  const query: {
+    score: {
+      min: number;
+      scorer: string;
+    };
+  } = {
+    score: {
+      min: 1,
+      scorer: "Creator Score",
+    },
   };
 
   const data = {
