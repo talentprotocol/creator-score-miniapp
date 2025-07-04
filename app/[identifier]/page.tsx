@@ -51,7 +51,7 @@ export default async function PublicProfilePage({
   // Show loading spinner while resolving user
   const userPromise = resolveTalentUser(params.identifier);
   const user = await userPromise;
-  if (!user) {
+  if (!user || !user.id) {
     return (
       <div className="p-8 text-center text-destructive">User not found</div>
     );
@@ -65,13 +65,5 @@ export default async function PublicProfilePage({
   ) {
     redirect(`/${canonical}`);
   }
-  return (
-    <ProfileScreen
-      // Always use UUID for internal lookups
-      {...(user.id ? { uuid: user.id } : {})}
-      {...(user.fid != null ? { fid: user.fid } : {})}
-      {...(user.wallet ? { wallet: user.wallet } : {})}
-      {...(user.github ? { github: user.github } : {})}
-    />
-  );
+  return <ProfileScreen talentUUID={user.id} />;
 }

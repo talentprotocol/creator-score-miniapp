@@ -19,9 +19,21 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const page = parseInt(searchParams.get("page") || "1", 10);
   const perPage = parseInt(searchParams.get("perPage") || "25", 10); // Use max allowed 25
+  const statsOnly = searchParams.get("statsOnly") === "true";
 
   const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
+
+  // Build query object based on what we need
+  const query: any = {};
+
+  // Always filter for profiles with creator score > 0
+  query.score = {
+    min: 1,
+    scorer: "Creator Score",
+  };
+
   const data = {
+    query,
     sort: {
       score: { order: "desc", scorer: "Creator Score" },
       id: { order: "desc" },
@@ -29,7 +41,9 @@ export async function GET(req: NextRequest) {
     page,
     per_page: perPage,
   };
+
   const queryString = [
+    `query=${encodeURIComponent(JSON.stringify(data.query))}`,
     `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
     `page=${page}`,
     `per_page=${perPage}`,
@@ -47,20 +61,26 @@ export async function GET(req: NextRequest) {
   }
   const json = await res.json();
 
-  // TEMP: Log the first 10 creator scores for inspection
-  // if (Array.isArray(json.profiles)) {
-  //   const creatorScores = json.profiles.slice(0, 10).map((profile: Profile) => {
-  //     const p = profile;
-  //     const creatorScoreObj = Array.isArray(p.scores)
-  //       ? p.scores.find((s) => s.slug === "creator_score")
-  //       : null;
-  //     return {
-  //       name: p.display_name || p.name,
-  //       creator_score: creatorScoreObj?.points ?? 0,
-  //     };
-  //   });
-  //   console.log("First 10 creator scores:", creatorScores);
-  // }
+  // If we only want stats, return them directly
+  if (statsOnly) {
+    const totalCreators = json.pagination?.total || 0;
+    // For minScore, we could either:
+    // 1. Use a fixed threshold (e.g., 100 points)
+    // 2. Fetch the 100th creator specifically
+    // 3. Use the lowest score in the current page
+    // Let's use option 1 for now - a fixed minimum of 100 points to qualify for rewards
+    const minScore = 100;
+
+    return NextResponse.json({
+      minScore,
+      totalCreators,
+      // Include some debug info
+      debug: {
+        query: data.query,
+        paginationTotal: json.pagination?.total,
+      },
+    });
+  }
 
   // Step 1: Map each profile to its highest Creator Score
   const mapped = (json.profiles || []).map((profile: Profile) => {
@@ -107,16 +127,9 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  // New: Calculate minScore (100th creator) and totalCreators
-  let minScore = null;
-  if (ranked.length >= 100) {
-    minScore = ranked[99].score;
-  } else if (ranked.length > 0) {
-    minScore = ranked[ranked.length - 1].score;
-  }
-  // Use json.total if available, otherwise fallback to ranked.length
-  const totalCreators =
-    typeof json.total === "number" ? json.total : ranked.length;
+  // Calculate stats for backward compatibility
+  const minScore = 100; // Fixed threshold for rewards qualification
+  const totalCreators = json.pagination?.total || ranked.length;
 
   return NextResponse.json({ entries: ranked, minScore, totalCreators });
 }
