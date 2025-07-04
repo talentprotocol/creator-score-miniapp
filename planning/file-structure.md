@@ -7,6 +7,7 @@ This file structure reflects the **completed modular architecture** where UI com
 - **Pure UI Components**: All components in `components/` receive data via props only
 - **Centralized Data Fetching**: Custom hooks in `hooks/` handle all API calls and business logic
 - **Modular Service Layer**: External API interactions split into focused, single-responsibility services
+- **MiniApp Authentication**: User context provided automatically via MiniKit (no separate auth needed)
 - **Shared Utilities**: Common functions and constants in `lib/`
 
 ```plaintext
@@ -48,7 +49,6 @@ creator-score-miniapp/
       BottomNav.tsx              # Mobile bottom navigation
       Header.tsx                 # Top header with user info
       InfoModal.tsx              # About/info modal
-      RequireFarcasterUser.tsx   # Auth gate component
     profile/                     # Profile UI components
       AccountCard.tsx            # Social account display card
       AccountGrid.tsx            # Grid of social accounts
@@ -70,7 +70,6 @@ creator-score-miniapp/
       progress.tsx               # Progress bars
       skeleton.tsx               # Loading skeletons
       tabs.tsx                   # Tab navigation
-    FarcasterGate.tsx            # Farcaster authentication gate
 
   hooks/                         # Custom React hooks (all data fetching)
     useLeaderboard.ts            # Paginated leaderboard data
@@ -127,7 +126,7 @@ creator-score-miniapp/
 
 ### Data Flow Pattern
 ```
-External APIs → Modular Services → Hooks → Components
+MiniKit Context (User Auth) → External APIs → Modular Services → Hooks → Components
 ```
 
 ### Service Layer Architecture (NEW)
