@@ -199,9 +199,70 @@ These handle proper lazy instantiation:
 - `planning/architecture-check-prompt.md` ✅ (This file)
 - `planning/file-structure.md` ✅ (Updated with client-server separation)
 
+## Debugging Session Learnings: Data Structure Issues
+
+### **CRITICAL DISCOVERY**: Three-Phase Architecture Issues
+
+This debugging session revealed that proper architecture compliance requires **THREE PHASES**:
+
+**Phase 1**: Fix client-side service imports (what we originally documented)
+**Phase 2**: Fix API route parameter mismatches (parameter mapping)
+**Phase 3**: Fix API response data structure extraction (NEW - discovered in this session)
+
+### **Phase 3: API Response Data Structure Issues**
+
+#### Problem Pattern
+API routes return nested objects, but hooks expect flat arrays:
+
+❌ **API Response**: `{ "socials": [...] }` or `{ "credentials": [...] }`
+❌ **Hook Assumption**: `[...]` (direct array)
+❌ **Result**: `TypeError: data.reduce is not a function`
+
+#### Fixed Hooks
+These hooks were updated to extract data properly:
+- `useProfileSocialAccounts.ts`: `responseData.socials || []`
+- `useProfileTotalEarnings.ts`: `responseData.credentials || []`
+- `useProfileCredentials.ts`: `responseData.credentials || []`
+
+#### Pattern for Fix
+```typescript
+// ❌ WRONG (assumes direct array)
+const data = await response.json();
+setData(data);
+
+// ✅ CORRECT (extracts from nested object)
+const responseData = await response.json();
+const data = responseData.arrayProperty || [];
+setData(data);
+```
+
+### **Testing Strategy for All 3 Phases**
+
+```bash
+# Phase 1: Check for direct service imports
+grep -r "from.*Service" hooks/
+
+# Phase 2: Test API route functionality
+curl -v "http://localhost:3000/api/talent-socials?uuid=${TEST_UUID}"
+
+# Phase 3: Test data structure extraction
+# Check that ProfileScreen renders without "reduce is not a function" errors
+# Monitor browser console for JavaScript errors
+```
+
+### **Error Signatures to Watch For**
+
+1. **Phase 1**: `"NeynarClient can only be used server-side"`
+2. **Phase 2**: `400 Bad Request` or `500 Internal Server Error` from API routes
+3. **Phase 3**: `"TypeError: data.reduce is not a function"` or similar
+
+### **Files That MUST Be Copied to New Repo**
+
+All the hooks listed above contain critical fixes for Phase 3 issues. Using the original versions from the old repo will cause immediate runtime crashes when trying to render profile pages.
+
 ## Architecture Principle
 
-**CRITICAL**: This is a **TWO-PHASE** architecture compliance check:
+**CRITICAL**: This is a **THREE-PHASE** architecture compliance check:
 
 **Phase 1**: Client-side code (hooks, components) should NEVER directly import server-side services. Always use this pattern:
 ```
@@ -214,9 +275,15 @@ Hook sends: ?uuid=abc123
 API route: searchParams.get('uuid') // NOT talent_protocol_id
 ```
 
+**Phase 3**: Hooks must properly extract data from API response objects:
+```
+API returns: { "socials": [...] }
+Hook extracts: responseData.socials || []
+```
+
 This ensures:
 - Proper separation of client/server code
 - Smaller client bundles (40% reduction achieved)
 - No runtime errors from server-side dependencies
 - Consistent error handling through API routes
-- **NEW**: Actual functional end-to-end data flow 
+- **NEW**: Actual functional end-to-end data flow without crashes 
