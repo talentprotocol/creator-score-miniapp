@@ -2,9 +2,13 @@
 
 import * as React from "react";
 import { ProfileHeader } from "./ProfileHeader";
-import { StatCard } from "./StatCard";
+import { StatCard } from "@/components/ui/StatCard";
 import { ProfileTabs } from "./ProfileTabs";
-import { formatNumberWithSuffix, formatK } from "@/lib/utils";
+import {
+  formatNumberWithSuffix,
+  formatK,
+  calculateTotalFollowers,
+} from "@/lib/utils";
 import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
 import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
@@ -31,10 +35,7 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
     useProfileTotalEarnings(talentUUID);
 
   // Calculate total followers
-  const totalFollowers = socialAccounts.reduce(
-    (sum, acc) => sum + (acc.followerCount ?? 0),
-    0,
-  );
+  const totalFollowers = calculateTotalFollowers(socialAccounts);
 
   if (profileLoading) {
     return (

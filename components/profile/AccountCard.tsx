@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Card } from "@/components/ui/card";
-import { cn, formatK } from "@/lib/utils";
+import { cn, formatK, openExternalUrl } from "@/lib/utils";
 import { PLATFORM_NAMES } from "@/lib/constants";
 import {
   Twitter,
@@ -11,7 +11,6 @@ import {
   Sprout,
   BadgeCheck,
 } from "lucide-react";
-import { sdk } from "@farcaster/frame-sdk";
 
 interface AccountCardProps {
   platform: string;
@@ -56,29 +55,15 @@ export function AccountCard({
     if (!profileUrl) return;
     e.preventDefault();
 
-    // Handle Farcaster profiles
+    // Handle Farcaster profiles differently (direct URL)
     if (platform === "farcaster") {
-      try {
-        await sdk.actions.openUrl(profileUrl);
-        return;
-      } catch (error) {
-        console.error("Failed to open Farcaster profile:", error);
-        // Fallback to regular link if SDK fails
-        window.open(profileUrl, "_blank", "noopener,noreferrer");
-        return;
-      }
+      await openExternalUrl(profileUrl);
+      return;
     }
 
-    // For all other platforms, force opening in external browser
-    try {
-      // Add a special parameter to force external browser
-      const externalUrl = `${profileUrl}${profileUrl.includes("?") ? "&" : "?"}_external=true`;
-      await sdk.actions.openUrl(externalUrl);
-    } catch (error) {
-      console.error("Failed to open external link:", error);
-      // Fallback to regular link if SDK fails
-      window.open(profileUrl, "_blank", "noopener,noreferrer");
-    }
+    // For all other platforms, add external parameter
+    const externalUrl = `${profileUrl}${profileUrl.includes("?") ? "&" : "?"}_external=true`;
+    await openExternalUrl(externalUrl);
   };
 
   const cardContent = (

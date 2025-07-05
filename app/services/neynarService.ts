@@ -1,3 +1,5 @@
+import { neynarClient } from "@/lib/neynar-client";
+
 export interface UserWalletAddresses {
   addresses: string[];
   custodyAddress: string;
@@ -15,60 +17,16 @@ export async function getUserWalletAddresses(
   fid: number,
 ): Promise<UserWalletAddresses> {
   try {
-    const response = await fetch(`/api/farcaster-wallets?fid=${fid}`);
-    const data = await response.json();
+    const data = await neynarClient.getWalletAddressesRaw(fid);
 
-    if (!response.ok) {
-      return {
-        addresses: [],
-        custodyAddress: "",
-        primaryEthAddress: null,
-        primarySolAddress: null,
-        error: data.error || "Failed to fetch wallet addresses",
-      };
-    }
-
-    return data;
+    return {
+      addresses: data.addresses,
+      custodyAddress: data.custodyAddress || "",
+      primaryEthAddress: data.primaryEthAddress,
+      primarySolAddress: data.primarySolAddress,
+    };
   } catch (error) {
     console.error("Error fetching user wallet addresses:", error);
-    return {
-      addresses: [],
-      custodyAddress: "",
-      primaryEthAddress: null,
-      primarySolAddress: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch wallet addresses",
-    };
-  }
-}
-
-/**
- * Fetches all wallet addresses associated with a wallet address
- * @param wallet The wallet address to fetch wallet addresses for
- * @returns Promise<UserWalletAddresses> Object containing array of addresses or error
- */
-export async function getUserWalletAddressesByWallet(
-  wallet: string,
-): Promise<UserWalletAddresses> {
-  try {
-    const response = await fetch(`/api/farcaster-wallets?wallet=${wallet}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        addresses: [],
-        custodyAddress: "",
-        primaryEthAddress: null,
-        primarySolAddress: null,
-        error: data.error || "Failed to fetch wallet addresses",
-      };
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching user wallet addresses by wallet:", error);
     return {
       addresses: [],
       custodyAddress: "",

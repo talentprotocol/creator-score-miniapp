@@ -6,12 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import type { LeaderboardEntry } from "@/app/services/types";
-import { MinimalProfileDrawer } from "@/components/leaderboard/MinimalProfileDrawer";
 import { sdk } from "@farcaster/frame-sdk";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useLeaderboardStats } from "@/hooks/useLeaderboardStats";
+import { useRouter } from "next/navigation";
+import { generateProfileUrl } from "@/lib/utils";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
 
@@ -29,6 +30,7 @@ function getCountdownParts(target: Date) {
 export default function LeaderboardPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
+  const router = useRouter();
 
   // Use new hooks for data fetching
   const { creatorScore } = useUserCreatorScore(user?.fid);
@@ -39,15 +41,6 @@ export default function LeaderboardPage() {
   const [countdown, setCountdown] = useState(() =>
     getCountdownParts(ROUND_ENDS_AT),
   );
-
-  // Drawer state
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<{
-    talent_protocol_id?: string | number;
-    id: string;
-    name: string;
-    pfp?: string;
-  } | null>(null);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -82,42 +75,41 @@ export default function LeaderboardPage() {
     return (score * multiplier).toFixed(3) + " ETH";
   }
 
-  // Handler to open drawer for a leaderboard entry
+  // Handler to navigate to profile page for a leaderboard entry
   function handleEntryClick(entry: LeaderboardEntry) {
-    setSelectedProfile({
-      talent_protocol_id: entry.talent_protocol_id,
-      id: entry.id,
-      name: entry.name,
-      pfp: entry.pfp,
+    const url = generateProfileUrl({
+      farcasterHandle: null, // We don't have farcaster handle from leaderboard data
+      githubHandle: null,
+      profileId: entry.id,
+      talentId: entry.talent_protocol_id,
     });
-    setDrawerOpen(true);
+
+    if (url) {
+      router.push(url);
+    }
   }
 
-  // Handler to open drawer for pinned user
+  // Handler to navigate to profile page for pinned user
   function handlePinnedUserClick() {
     if (!user) return;
     const entry = entries.find(
       (e) => e.name === (user.displayName || user.username),
     );
-    setSelectedProfile({
-      talent_protocol_id: entry?.talent_protocol_id,
-      id: entry?.id || "user-pinned",
-      name: user.displayName || user.username || "Unknown user",
-      pfp: user.pfpUrl || undefined,
+
+    const url = generateProfileUrl({
+      farcasterHandle: user.username,
+      githubHandle: null,
+      profileId: entry?.id,
+      talentId: entry?.talent_protocol_id,
     });
-    setDrawerOpen(true);
+
+    if (url) {
+      router.push(url);
+    }
   }
 
   return (
     <div className="max-w-md mx-auto w-full p-4 space-y-6 pb-24">
-      {/* MinimalProfileDrawer */}
-      <MinimalProfileDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        talentId={selectedProfile?.talent_protocol_id || selectedProfile?.id}
-        name={selectedProfile?.name || ""}
-        avatarUrl={selectedProfile?.pfp}
-      />
       {/* Page Title */}
       <div className="flex items-center px-1 mb-2">
         <span className="text-xl font-bold leading-tight">

@@ -13,15 +13,14 @@ This file structure reflects the **completed modular architecture** where UI com
 ```plaintext
 creator-score-miniapp/
   app/                           # Next.js app directory
-    api/                         # API route handlers (proxy to external APIs)
-      farcaster-wallets/         # Farcaster wallet resolution
+    api/                         # API route handlers (REFACTORED: ~80% code reduction)
+      farcaster-wallets/         # Unified wallet resolution (consolidated from 2 routes)
       leaderboard/               # Leaderboard data aggregation
       notify/                    # Notification handling
-      talent-credentials/        # Talent Protocol credentials
-      talent-score/              # Talent Protocol scores
-      talent-socials/            # Social account data
-      talent-user/               # User profile data
-      wallet-addresses/          # Wallet address resolution
+      talent-credentials/        # Talent Protocol credentials (simplified with client)
+      talent-score/              # Talent Protocol scores (simplified with client)
+      talent-socials/            # Social account data (simplified with client)
+      talent-user/               # User profile data (simplified with client)
       webhook/                   # Webhook handlers
     [identifier]/                # Dynamic profile routes (Farcaster/GitHub/UUID)
       page.tsx                   # Profile page - uses useProfile* hooks
@@ -49,13 +48,15 @@ creator-score-miniapp/
       BottomNav.tsx              # Mobile bottom navigation
       Header.tsx                 # Top header with user info
       InfoModal.tsx              # About/info modal
-    profile/                     # Profile UI components
+    profile/                     # Profile UI components (REFACTORED: ProfileTabs modularized)
       AccountCard.tsx            # Social account display card
       AccountGrid.tsx            # Grid of social accounts
       ProfileHeader.tsx          # Profile header with avatar/stats
       ProfileScreen.tsx          # Main profile layout
-      ProfileTabs.tsx            # Profile tabs with score breakdown
-      StatCard.tsx               # Individual stat display
+      ProfileTabs.tsx            # Profile tabs layout (REFACTORED: 388→85 lines)
+      ScoreProgressAccordion.tsx # Creator Score progress display (EXTRACTED from ProfileTabs)
+      ScoreDataPoints.tsx        # Credential breakdown display (EXTRACTED from ProfileTabs)
+      CredentialIdeasCallout.tsx # Feedback callout component (EXTRACTED from ProfileTabs)
       comingSoonCredentials.ts   # Placeholder credentials config
     settings/                    # Settings UI components (empty)
     ui/                          # shadcn/ui primitives
@@ -69,6 +70,7 @@ creator-score-miniapp/
       drawer.tsx                 # Bottom sheet/drawer
       progress.tsx               # Progress bars
       skeleton.tsx               # Loading skeletons
+      StatCard.tsx               # Individual stat display (MOVED from profile/)
       tabs.tsx                   # Tab navigation
 
   hooks/                         # Custom React hooks (all data fetching)
@@ -85,7 +87,11 @@ creator-score-miniapp/
     neynarService.ts             # Neynar/Farcaster API client
 
   lib/                           # Shared utilities and configuration
+    api-utils.ts                 # NEW: Shared API utilities (validation, error handling, retry)
+    talent-api-client.ts         # NEW: Abstracted Talent Protocol API client
+    neynar-client.ts             # NEW: Abstracted Neynar API client
     constants.ts                 # App-wide constants (cache durations, etc.)
+    credentialUtils.ts           # NEW: Credential processing utilities (EXTRACTED from ProfileTabs)
     notification-client.ts       # Notification system client
     notification.ts              # Notification helpers
     redis.ts                     # Redis caching utilities
@@ -126,7 +132,7 @@ creator-score-miniapp/
 
 ### Data Flow Pattern
 ```
-MiniKit Context (User Auth) → External APIs → Modular Services → Hooks → Components
+MiniKit Context (User Auth) → External APIs → API Clients (lib/) → Modular Services → Hooks → Components
 ```
 
 ### Service Layer Architecture (NEW)
@@ -189,5 +195,5 @@ This structure enables:
 - **Fast development** with clear separation of concerns
 - **Easy testing** with isolated business logic
 - **Maintainable code** with consistent patterns
-- **Reusable components** across different contexts
+- **Reusable components** across different contexts 
 - **Focused modules** with single responsibilities 

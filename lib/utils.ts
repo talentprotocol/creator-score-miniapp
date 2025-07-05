@@ -292,3 +292,52 @@ export const CACHE_DURATIONS = {
 } as const;
 
 export { resolveTalentUser } from "./user-resolver";
+
+/**
+ * Generate profile URL from user data
+ */
+export function generateProfileUrl(params: {
+  farcasterHandle?: string | null;
+  githubHandle?: string | null;
+  profileId?: string | null;
+  talentId?: string | number | null;
+}): string | null {
+  const { farcasterHandle, githubHandle, profileId, talentId } = params;
+
+  if (farcasterHandle) {
+    return `/${farcasterHandle}`;
+  }
+  if (githubHandle) {
+    return `/${githubHandle}`;
+  }
+  if (profileId) {
+    return `/${profileId}`;
+  }
+  if (talentId) {
+    return `/${talentId}`;
+  }
+  return null;
+}
+
+/**
+ * Open external URL with SDK fallback
+ */
+export async function openExternalUrl(url: string): Promise<void> {
+  try {
+    const { sdk } = await import("@farcaster/frame-sdk");
+    await sdk.actions.openUrl(url);
+  } catch (error) {
+    console.error("Failed to open external URL:", error);
+    // Fallback to regular link if SDK fails
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
+/**
+ * Calculate total followers from social accounts
+ */
+export function calculateTotalFollowers(
+  socialAccounts: Array<{ followerCount?: number | null }>,
+): number {
+  return socialAccounts.reduce((sum, acc) => sum + (acc.followerCount ?? 0), 0);
+}
