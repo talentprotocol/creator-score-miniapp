@@ -132,7 +132,17 @@ creator-score-miniapp/
 
 ### Data Flow Pattern
 ```
-MiniKit Context (User Auth) → External APIs → API Clients (lib/) → Modular Services → Hooks → Components
+MiniKit Context (User Auth) → External APIs → API Clients (lib/) → Modular Services → API Routes → Hooks → Components
+```
+
+### Critical Architecture Rule: Client-Server Separation
+
+**ENFORCED PRINCIPLE**: Client-side code (hooks, components) must never directly import server-side services. All data fetching flows through API routes to ensure proper separation and prevent runtime errors.
+
+**REQUIRED PATTERN**: 
+```
+❌ PROHIBITED: Hook → Direct Service Import → External API
+✅ REQUIRED: Hook → API Route → Service → External API
 ```
 
 ### Service Layer Architecture (NEW)

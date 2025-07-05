@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import type { IssuerCredentialGroup } from "@/app/services/types";
 import {
   calculateTotalRewards,
@@ -40,7 +39,13 @@ export function useProfileTotalEarnings(talentUUID: string) {
         console.log(
           `[useProfileTotalEarnings] Fetching credentials for ${talentUUID}`,
         );
-        const credentials = await getCredentialsForTalentId(talentUUID);
+        const response = await fetch(
+          `/api/talent-credentials?uuid=${talentUUID}`,
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const credentials: IssuerCredentialGroup[] = await response.json();
         const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
 
         setTotalEarnings(total);

@@ -28,14 +28,31 @@
 **CRITICAL**: This app follows a **strict modular architecture** where:
 
 ```
-External APIs → API Clients → Services → Hooks → Pure UI Components
+External APIs → API Clients → Services → API Routes → Hooks → Pure UI Components
 ```
 
 #### Layer Responsibilities:
 1. **API Clients Layer** (lib/): Abstracted external API interactions with shared utilities
 2. **Services Layer**: Domain-specific business logic and data transformations
-3. **Hooks Layer**: All data fetching, caching, and state management  
-4. **Components Layer**: Pure UI components that receive data via props only
+3. **API Routes Layer**: Server-side endpoints that call services (Next.js API routes)
+4. **Hooks Layer**: All data fetching, caching, and state management via API calls
+5. **Components Layer**: Pure UI components that receive data via props only
+
+#### Client-Server Separation Rules
+
+**FUNDAMENTAL PRINCIPLE**: Strict separation between client-side and server-side code is mandatory.
+
+**REQUIRED PATTERN**:
+```
+❌ PROHIBITED: Client Hook → Direct Service Import → External API
+✅ REQUIRED: Client Hook → API Route → Service → External API
+```
+
+**Architecture Rules**:
+- Client-side code (hooks, components) NEVER directly imports server-side services
+- All data fetching flows through API routes (`/api/*`)
+- Server-side packages (Node.js SDKs) only exist in `/api` routes and `/services`
+- This ensures clean separation, smaller client bundles, and prevents runtime errors
 
 ### Data Fetching Principles
 

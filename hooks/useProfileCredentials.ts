@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import type { IssuerCredentialGroup } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
@@ -32,7 +31,13 @@ export function useProfileCredentials(talentUUID: string) {
           return;
         }
 
-        const data = await getCredentialsForTalentId(talentUUID);
+        const response = await fetch(
+          `/api/talent-credentials?uuid=${talentUUID}`,
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
         setCredentials(data);
 
         // Cache the credentials data for 5 minutes

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getLeaderboardCreators } from "@/app/services/leaderboardService";
 import type { LeaderboardEntry } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
@@ -33,7 +32,14 @@ export function useLeaderboard(perPage: number = 10) {
     setError(null);
 
     try {
-      const data = await getLeaderboardCreators({ page: 1, perPage });
+      const response = await fetch(
+        `/api/leaderboard?page=1&perPage=${perPage}`,
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      const data = result.entries || [];
       setEntries(data);
       setPage(1);
       setHasMore(data.length >= perPage);
@@ -58,7 +64,14 @@ export function useLeaderboard(perPage: number = 10) {
 
     try {
       const nextPage = page + 1;
-      const data = await getLeaderboardCreators({ page: nextPage, perPage });
+      const response = await fetch(
+        `/api/leaderboard?page=${nextPage}&perPage=${perPage}`,
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      const data = result.entries || [];
 
       if (data.length === 0) {
         setHasMore(false);

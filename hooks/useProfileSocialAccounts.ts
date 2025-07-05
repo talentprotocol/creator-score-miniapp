@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
 import type { SocialAccount } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
@@ -27,7 +26,11 @@ export function useProfileSocialAccounts(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        const accounts = await getSocialAccountsForTalentId(talentUUID);
+        const response = await fetch(`/api/talent-socials?uuid=${talentUUID}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const accounts = await response.json();
 
         setSocialAccounts(accounts);
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getLeaderboardStats } from "@/app/services/leaderboardService";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 interface LeaderboardStats {
@@ -37,7 +36,11 @@ export function useLeaderboardStats() {
       setError(null);
 
       try {
-        const data = await getLeaderboardStats();
+        const response = await fetch(`/api/leaderboard?statsOnly=true`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
         const newStats = {
           minScore: data.minScore,
           totalCreators: data.totalCreators,
