@@ -27,8 +27,10 @@ export function useProfileCreatorScore(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        // Fetch creator score via API route
-        const response = await fetch(`/api/talent-score?id=${talentUUID}`);
+        // Fetch creator score via API route (explicitly request creator_score)
+        const response = await fetch(
+          `/api/talent-score?id=${talentUUID}&scorer_slug=creator_score`,
+        );
 
         if (!response.ok) {
           throw new Error("Failed to fetch creator score");
