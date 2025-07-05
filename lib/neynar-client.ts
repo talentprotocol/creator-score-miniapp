@@ -205,5 +205,17 @@ export class NeynarClient {
   }
 }
 
-// Export a default instance
-export const neynarClient = new NeynarClient();
+// Lazy instance creation to avoid client-side instantiation
+let _neynarClient: NeynarClient | null = null;
+
+export function getNeynarClient(): NeynarClient {
+  if (typeof window !== "undefined") {
+    throw new Error("NeynarClient can only be used server-side");
+  }
+
+  if (!_neynarClient) {
+    _neynarClient = new NeynarClient();
+  }
+
+  return _neynarClient;
+}

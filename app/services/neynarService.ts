@@ -1,4 +1,4 @@
-import { neynarClient } from "@/lib/neynar-client";
+import { getNeynarClient } from "@/lib/neynar-client";
 
 export interface UserWalletAddresses {
   addresses: string[];
@@ -17,6 +17,7 @@ export async function getUserWalletAddresses(
   fid: number,
 ): Promise<UserWalletAddresses> {
   try {
+    const neynarClient = getNeynarClient();
     const data = await neynarClient.getWalletAddressesRaw(fid);
 
     return {
