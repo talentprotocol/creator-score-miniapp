@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUserWalletAddresses } from "@/app/services/neynarService";
-import { getCreatorScore } from "@/app/services/scoresService";
 import {
   filterEthAddresses,
   getCachedData,
@@ -40,7 +38,13 @@ export function useUserCreatorScore(fid: number | undefined) {
         setLoading(true);
         setError(null);
 
-        const walletData = await getUserWalletAddresses(fid);
+        // Fetch wallet addresses via API route
+        const walletResponse = await fetch(`/api/farcaster-wallets?fid=${fid}`);
+        if (!walletResponse.ok) {
+          throw new Error("Failed to fetch wallet addresses");
+        }
+        const walletData = await walletResponse.json();
+
         if (walletData.error) {
           throw new Error(walletData.error);
         }
@@ -52,8 +56,15 @@ export function useUserCreatorScore(fid: number | undefined) {
         ]);
 
         if (addresses.length > 0) {
-          const scoreData = await getCreatorScore(addresses);
-          const score = scoreData.score ?? 0;
+          // Use the first address to get creator score via API route
+          const scoreResponse = await fetch(
+            `/api/talent-score?address=${addresses[0]}&account_source=wallet`,
+          );
+          if (!scoreResponse.ok) {
+            throw new Error("Failed to fetch creator score");
+          }
+          const scoreData = await scoreResponse.json();
+          const score = scoreData.score?.points ?? 0;
           setCreatorScore(score);
 
           // Cache the score

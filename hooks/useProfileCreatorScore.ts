@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useProfileCreatorScore(talentUUID: string) {
@@ -28,19 +27,28 @@ export function useProfileCreatorScore(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        const scoreData = await getCreatorScoreForTalentId(talentUUID);
+        // Fetch creator score via API route
+        const response = await fetch(`/api/talent-score?id=${talentUUID}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch creator score");
+        }
+
+        const scoreData = await response.json();
 
         if (scoreData.error) {
           setCreatorScore(null);
           setLastCalculatedAt(null);
         } else {
-          setCreatorScore(scoreData.score);
-          setLastCalculatedAt(scoreData.lastCalculatedAt);
+          const score = scoreData.score?.points ?? 0;
+          const lastCalculated = scoreData.score?.last_calculated_at ?? null;
+          setCreatorScore(score);
+          setLastCalculatedAt(lastCalculated);
 
           // Cache the complete score data
           setCachedData(cacheKey, {
-            score: scoreData.score,
-            lastCalculatedAt: scoreData.lastCalculatedAt,
+            score: score,
+            lastCalculatedAt: lastCalculated,
           });
         }
       } catch (err) {
