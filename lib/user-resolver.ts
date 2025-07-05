@@ -11,7 +11,7 @@ export function getAccountSource(id: string): "wallet" | "farcaster" | null {
 
 /**
  * Resolves a Talent Protocol user identifier (Farcaster username, Github username, or UUID) to a user object.
- * Always calls /api/talent-user?id=identifier and lets the API route determine account_source.
+ * Uses proper server-side URL construction to avoid client-side crypto dependencies.
  * Returns { id, fid, fname, github, ... } or null if not found.
  */
 export async function resolveTalentUser(identifier: string): Promise<{
@@ -25,9 +25,16 @@ export async function resolveTalentUser(identifier: string): Promise<{
   [key: string]: unknown;
 } | null> {
   let baseUrl = "";
+
+  // Server-side: construct proper localhost URL
   if (typeof window === "undefined") {
-    baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+    // Always use localhost:3000 for server-side requests in development
+    baseUrl =
+      process.env.NODE_ENV === "production"
+        ? process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app"
+        : "http://localhost:3000";
   }
+
   const res = await fetch(`${baseUrl}/api/talent-user?id=${identifier}`);
   if (res.ok) {
     const user = await res.json();

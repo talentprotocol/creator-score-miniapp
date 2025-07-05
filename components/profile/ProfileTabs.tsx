@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { AccountGrid } from "./AccountGrid";
-import { type IssuerCredentialGroup } from "@/app/services/types";
+
 import { useProfileCredentials } from "@/hooks/useProfileCredentials";
 import { ScoreProgressAccordion } from "./ScoreProgressAccordion";
 import { ScoreDataPoints } from "./ScoreDataPoints";
@@ -23,10 +23,7 @@ export function ProfileTabs({
   const { credentials } = useProfileCredentials(talentUUID);
 
   // Calculate credentials count from the hook data
-  const credentialsCount = credentials.reduce(
-    (sum: number, issuer: IssuerCredentialGroup) => sum + issuer.points.length,
-    0,
-  );
+  const credentialsCount = credentials.length;
 
   return (
     <Tabs defaultValue="accounts" className="w-full flex flex-col">

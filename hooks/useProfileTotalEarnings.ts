@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import type { IssuerCredentialGroup } from "@/app/services/types";
 import {
   calculateTotalRewards,
   getEthUsdcPrice,
@@ -48,8 +47,7 @@ export function useProfileTotalEarnings(talentUUID: string) {
         const responseData = await response.json();
 
         // Extract the credentials array from the response object
-        const credentials: IssuerCredentialGroup[] =
-          responseData.credentials || [];
+        const credentials = responseData.credentials || [];
         const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
 
         setTotalEarnings(total);

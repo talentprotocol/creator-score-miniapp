@@ -132,54 +132,69 @@ export function formatNumberWithSuffix(num: number): string {
 
 export async function calculateTotalRewards(
   credentials: Array<{
-    points: Array<{
-      label: string;
-      uom: string | null;
-      readable_value: string | null;
-    }>;
+    name: string;
+    points_calculation_logic?: {
+      data_points: Array<{
+        name: string;
+        value: string;
+        readable_value: string;
+      }>;
+    };
   }>,
   getEthUsdcPriceFn: () => Promise<number>,
 ): Promise<number> {
   const ethPrice = await getEthUsdcPriceFn();
 
   // Sum up all rewards, converting ETH to USDC
-  const total = credentials.reduce((sum, issuer) => {
-    const issuerTotal = issuer.points.reduce((acc, pt) => {
-      // Only count credentials that are creator earnings
-      if (!isEarningsCredential(pt.label)) {
-        return acc;
-      }
+  const total = credentials.reduce((sum, credential) => {
+    // Only count credentials that are creator earnings
+    if (!isEarningsCredential(credential.name)) {
+      return sum;
+    }
 
-      if (!pt.readable_value) {
-        return acc;
-      }
+    // Check if this credential has earnings data
+    if (!credential.points_calculation_logic?.data_points) {
+      return sum;
+    }
 
-      // Parse value handling K/M suffixes
-      let value: number;
-      const cleanValue = pt.readable_value.replace(/[^0-9.KM-]+/g, "");
-      if (cleanValue.includes("K")) {
-        value = parseFloat(cleanValue.replace("K", "")) * 1000;
-      } else if (cleanValue.includes("M")) {
-        value = parseFloat(cleanValue.replace("M", "")) * 1000000;
-      } else {
-        value = parseFloat(cleanValue);
-      }
+    const credentialTotal =
+      credential.points_calculation_logic.data_points.reduce(
+        (acc, dataPoint) => {
+          if (!dataPoint.readable_value && !dataPoint.value) {
+            return acc;
+          }
 
-      if (isNaN(value)) {
-        return acc;
-      }
+          // Use readable_value first, fallback to value
+          const valueStr = dataPoint.readable_value || dataPoint.value;
 
-      let contribution = 0;
-      if (pt.uom === "ETH") {
-        contribution = convertEthToUsdc(value, ethPrice);
-      } else if (pt.uom === "USDC") {
-        contribution = value;
-      }
+          // Parse value handling K/M suffixes and ETH suffix
+          let value: number;
+          const cleanValue = valueStr.replace(/[^0-9.KM-]+/g, "");
+          if (cleanValue.includes("K")) {
+            value = parseFloat(cleanValue.replace("K", "")) * 1000;
+          } else if (cleanValue.includes("M")) {
+            value = parseFloat(cleanValue.replace("M", "")) * 1000000;
+          } else {
+            value = parseFloat(cleanValue);
+          }
 
-      return acc + contribution;
-    }, 0);
+          if (isNaN(value)) {
+            return acc;
+          }
 
-    return sum + issuerTotal;
+          let contribution = 0;
+          if (valueStr.includes("ETH")) {
+            contribution = convertEthToUsdc(value, ethPrice);
+          } else if (valueStr.includes("USDC")) {
+            contribution = value;
+          }
+
+          return acc + contribution;
+        },
+        0,
+      );
+
+    return sum + credentialTotal;
   }, 0);
 
   return total;
