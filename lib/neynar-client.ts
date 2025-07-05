@@ -1,4 +1,3 @@
-import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { NextResponse } from "next/server";
 import {
   validateNeynarApiKey,
@@ -8,6 +7,33 @@ import {
   withRetry,
   logApiError,
 } from "./api-utils";
+
+// Type definition for the Neynar client
+interface NeynarClientType {
+  fetchBulkUsers: (params: { fids: number[] }) => Promise<{
+    users: Array<{
+      fid: number;
+      verifications: string[];
+      custody_address: string;
+      verified_addresses: {
+        primary: {
+          eth_address: string | null;
+          sol_address: string | null;
+        };
+      };
+    }>;
+  }>;
+}
+
+// Dynamic import function for Neynar SDK
+async function createNeynarClient(apiKey: string): Promise<NeynarClientType> {
+  if (typeof window !== "undefined") {
+    throw new Error("NeynarClient can only be used server-side");
+  }
+
+  const { NeynarAPIClient } = await import("@neynar/nodejs-sdk");
+  return new NeynarAPIClient({ apiKey });
+}
 
 export interface WalletAddressesResponse {
   addresses: string[];
@@ -23,32 +49,56 @@ export interface NeynarClientOptions {
 }
 
 export class NeynarClient {
-  private client: NeynarAPIClient;
+  private client: NeynarClientType | null = null;
+  private apiKey: string;
   private enableRetry: boolean;
   private maxRetryAttempts: number;
 
   constructor(options: NeynarClientOptions = {}) {
-    const apiKey = options.apiKey || process.env.NEYNAR_API_KEY;
+    this.apiKey = options.apiKey || process.env.NEYNAR_API_KEY || "";
 
-    if (!apiKey) {
+    if (!this.apiKey) {
       throw new Error("Neynar API key is required");
     }
 
-    this.client = new NeynarAPIClient({ apiKey });
+    if (typeof window !== "undefined") {
+      throw new Error("NeynarClient can only be used server-side");
+    }
+
     this.enableRetry = options.enableRetry ?? true;
     this.maxRetryAttempts = options.maxRetryAttempts ?? 2;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async fetchUserData(fid: number): Promise<any> {
+  private async getClient(): Promise<NeynarClientType> {
+    if (!this.client) {
+      this.client = await createNeynarClient(this.apiKey);
+    }
+    return this.client;
+  }
+
+  private async fetchUserData(fid: number): Promise<{
+    users: Array<{
+      fid: number;
+      verifications: string[];
+      custody_address: string;
+      verified_addresses: {
+        primary: {
+          eth_address: string | null;
+          sol_address: string | null;
+        };
+      };
+    }>;
+  }> {
+    const client = await this.getClient();
+
     if (this.enableRetry) {
       return withRetry(
-        () => this.client.fetchBulkUsers({ fids: [fid] }),
+        () => client.fetchBulkUsers({ fids: [fid] }),
         this.maxRetryAttempts,
       );
     }
 
-    return this.client.fetchBulkUsers({ fids: [fid] });
+    return client.fetchBulkUsers({ fids: [fid] });
   }
 
   async getWalletAddresses(params: {
