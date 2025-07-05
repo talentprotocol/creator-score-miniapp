@@ -90,6 +90,7 @@ Check that these API routes are available:
 
 ## Commands to Run
 
+### Phase 1: Detect Import Violations
 ```bash
 # Search for direct service imports in hooks
 grep -r "from.*Service" hooks/
@@ -102,24 +103,120 @@ grep -r "from '@neynar/sdk'" --include="*.ts" --include="*.tsx" --exclude-dir=ap
 grep -r "import.*NeynarClient" --include="*.ts" --include="*.tsx" --exclude-dir=api .
 ```
 
+### Phase 2: Test API Route Functionality
+**CRITICAL**: After fixing imports, test API routes directly to catch parameter mismatches:
+
+```bash
+# Test with a known UUID (replace with actual UUID from your system)
+TEST_UUID="bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"
+
+# Test each API route that hooks call
+curl -v "http://localhost:3000/api/talent-socials?uuid=${TEST_UUID}"
+curl -v "http://localhost:3000/api/talent-credentials?uuid=${TEST_UUID}"  
+curl -v "http://localhost:3000/api/talent-score?uuid=${TEST_UUID}"
+curl -v "http://localhost:3000/api/leaderboard?page=1&perPage=10"
+curl -v "http://localhost:3000/api/leaderboard?statsOnly=true"
+
+# Look for these error patterns:
+# - 400 Bad Request = Parameter mismatch (missing/wrong parameter names)
+# - 500 Internal Server Error = Server-side processing issue
+# - 200 OK = Success (should return JSON data)
+```
+
+### Phase 3: Check Hook Parameter Usage
+```bash
+# Search for how hooks call API routes to ensure parameter compatibility
+grep -r "api/talent-" hooks/ -A 2 -B 2
+grep -r "fetch.*uuid=" hooks/
+grep -r "fetch.*talent_protocol_id=" hooks/
+```
+
+## Common Parameter Mismatch Patterns
+
+**CRITICAL DISCOVERY**: After fixing client-side service imports, API routes may still fail due to parameter mismatches.
+
+### Issue Pattern: Hook vs API Route Parameter Names
+
+❌ **COMMON ISSUE**:
+- Hook sends: `fetch('/api/talent-score?uuid=abc123')`
+- API route expects: `searchParams.get('talent_protocol_id')`
+- Result: 400 Bad Request or 500 Internal Server Error
+
+✅ **SOLUTION 1 - Update API Route**:
+```typescript
+// In API route, map uuid to expected parameter
+const uuid = searchParams.get('uuid')
+const talentProtocolId = uuid  // Map uuid to talent_protocol_id
+```
+
+✅ **SOLUTION 2 - Update Hook**:
+```typescript
+// In hook, use the parameter name API expects
+fetch(`/api/talent-score?talent_protocol_id=${uuid}`)
+```
+
+### Known Parameter Mappings (From This Project)
+
+Based on debugging, these API routes needed parameter mapping:
+- `/api/talent-credentials` - Maps `uuid` → `talent_protocol_id`
+- `/api/talent-socials` - Maps `uuid` → `talent_protocol_id`
+- `/api/talent-score` - Maps `uuid` → `talent_protocol_id`
+
 ## Expected Results
 
 After fixing violations:
-- All hooks should call API routes instead of direct services
+- **Phase 1**: All hooks should call API routes instead of direct services
+- **Phase 2**: All API routes should return 200 OK with valid JSON data
 - Bundle sizes should be reduced (no server-side dependencies in client bundles)
 - No "can only be used server-side" runtime errors
 - Build should succeed with no hydration errors
+- **NEW**: Profile pages should load correctly via navigation (not just direct URL access)
+
+## Critical Files to Copy/Replace in New Repo
+
+### 1. Fixed API Routes (Copy Directly)
+These routes now properly handle `uuid` parameter mapping:
+- `app/api/talent-credentials/route.ts` ✅
+- `app/api/talent-socials/route.ts` ✅  
+- `app/api/talent-score/route.ts` ✅
+
+### 2. Fixed Hooks (Copy Directly)
+These hooks now call API routes instead of direct services:
+- `hooks/useUserCreatorScore.ts` ✅
+- `hooks/useProfileCreatorScore.ts` ✅
+- `hooks/useProfileCredentials.ts` ✅
+- `hooks/useProfileSocialAccounts.ts` ✅
+- `hooks/useLeaderboard.ts` ✅
+- `hooks/useLeaderboardStats.ts` ✅
+- `hooks/useProfileTotalEarnings.ts` ✅
+
+### 3. Server-Side Service Files (Copy Directly)
+These handle proper lazy instantiation:
+- `lib/neynar-client.ts` ✅ (Lazy getNeynarClient() function)
+- `app/services/neynarService.ts` ✅ (Uses lazy client)
+
+### 4. Architecture Documentation (Copy Directly)
+- `planning/architecture-check-prompt.md` ✅ (This file)
+- `planning/file-structure.md` ✅ (Updated with client-server separation)
 
 ## Architecture Principle
 
-**CRITICAL**: Client-side code (hooks, components) should NEVER directly import server-side services. Always use this pattern:
+**CRITICAL**: This is a **TWO-PHASE** architecture compliance check:
 
+**Phase 1**: Client-side code (hooks, components) should NEVER directly import server-side services. Always use this pattern:
 ```
 Client-side Hook → API Route → Server-side Service → External API
 ```
 
+**Phase 2**: API routes must handle parameter compatibility with how hooks call them:
+```
+Hook sends: ?uuid=abc123
+API route: searchParams.get('uuid') // NOT talent_protocol_id
+```
+
 This ensures:
 - Proper separation of client/server code
-- Smaller client bundles
+- Smaller client bundles (40% reduction achieved)
 - No runtime errors from server-side dependencies
-- Consistent error handling through API routes 
+- Consistent error handling through API routes
+- **NEW**: Actual functional end-to-end data flow 

@@ -45,7 +45,11 @@ export function useProfileTotalEarnings(talentUUID: string) {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const credentials: IssuerCredentialGroup[] = await response.json();
+        const responseData = await response.json();
+
+        // Extract the credentials array from the response object
+        const credentials: IssuerCredentialGroup[] =
+          responseData.credentials || [];
         const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
 
         setTotalEarnings(total);

@@ -30,11 +30,13 @@ export function useProfileSocialAccounts(talentUUID: string) {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const accounts = await response.json();
+        const responseData = await response.json();
 
+        // Extract the socials array from the response object
+        const accounts = responseData.socials || [];
         setSocialAccounts(accounts);
 
-        // Cache the social accounts data
+        // Cache the social accounts data (the extracted array)
         setCachedData(cacheKey, accounts);
       } catch (err) {
         console.error("Error fetching social accounts:", err);

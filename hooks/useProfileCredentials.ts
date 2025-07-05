@@ -37,10 +37,13 @@ export function useProfileCredentials(talentUUID: string) {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
+        const responseData = await response.json();
+
+        // Extract the credentials array from the response object
+        const data = responseData.credentials || [];
         setCredentials(data);
 
-        // Cache the credentials data for 5 minutes
+        // Cache the credentials data for 5 minutes (the extracted array)
         setCachedData(cacheKey, data);
       } catch (err) {
         setError(
