@@ -78,11 +78,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       minScore,
       totalCreators,
-      // Include some debug info
-      debug: {
-        query: data.query,
-        paginationTotal: json.pagination?.total,
-      },
     });
   }
 

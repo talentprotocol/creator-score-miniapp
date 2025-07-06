@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
+import { getLeaderboardStats } from "@/app/services/leaderboardService";
 
 interface LeaderboardStats {
   minScore: number | null;
@@ -36,15 +37,7 @@ export function useLeaderboardStats() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/leaderboard?statsOnly=true`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        const newStats = {
-          minScore: data.minScore,
-          totalCreators: data.totalCreators,
-        };
+        const newStats = await getLeaderboardStats();
 
         setStats(newStats);
 

@@ -7,7 +7,7 @@ export async function getLeaderboardCreators({
   page = 1,
   perPage = 10,
 }: { page?: number; perPage?: number } = {}): Promise<LeaderboardEntry[]> {
-  const res = await fetch(`/api/leaderboard?page=${page}&perPage=${perPage}`);
+  const res = await fetch(`/api/leaderboard?page=${page}&per_page=${perPage}`);
   if (!res.ok) {
     const errorText = await res.text();
     throw new Error(errorText || "Failed to fetch leaderboard data");

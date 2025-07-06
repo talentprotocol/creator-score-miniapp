@@ -6,6 +6,7 @@ import {
   setCachedData,
   CACHE_DURATIONS,
 } from "@/lib/utils";
+import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 
 export function useProfileTotalEarnings(talentUUID: string) {
   const [totalEarnings, setTotalEarnings] = useState<number | null>(null);
@@ -22,10 +23,6 @@ export function useProfileTotalEarnings(talentUUID: string) {
         CACHE_DURATIONS.PROFILE_DATA,
       );
       if (cachedEarnings !== null) {
-        console.log(
-          `[useProfileTotalEarnings] Using cached earnings for ${talentUUID}:`,
-          cachedEarnings,
-        );
         setTotalEarnings(cachedEarnings);
         setLoading(false);
         return;
@@ -35,20 +32,25 @@ export function useProfileTotalEarnings(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        console.log(
-          `[useProfileTotalEarnings] Fetching credentials for ${talentUUID}`,
-        );
-        const response = await fetch(
-          `/api/talent-credentials?uuid=${talentUUID}`,
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const responseData = await response.json();
+        const credentialsGroups = await getCredentialsForTalentId(talentUUID);
 
-        // Extract the credentials array from the response object
-        const credentials = responseData.credentials || [];
+        // Flatten the grouped credentials back to individual credentials for calculation
+        const credentials = credentialsGroups.flatMap((group) =>
+          group.points.map((point) => ({
+            name: point.label,
+            slug: point.slug,
+            points: point.value,
+            max_score: point.max_score,
+            readable_value: point.readable_value,
+            uom: point.uom,
+            external_url: point.external_url,
+            data_issuer_name: group.issuer,
+          })),
+        );
+
+        console.log("[Total Earnings Debug] Credentials:", credentials);
         const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
+        console.log("[Total Earnings Debug] Calculated total:", total);
 
         setTotalEarnings(total);
 

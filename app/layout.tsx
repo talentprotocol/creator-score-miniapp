@@ -5,6 +5,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -81,11 +82,13 @@ export default function RootLayout({
       <body className="min-h-full bg-white flex flex-col">
         <div className="relative flex flex-col w-full max-w-lg mx-auto bg-background overflow-hidden my-0 md:my-0 md:max-w-none md:mx-0 md:bg-white md:shadow-none md:rounded-none">
           <Providers>
-            <Header />
-            <main className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
-              {children}
-            </main>
-            <BottomNav />
+            <ErrorBoundary>
+              <Header />
+              <main className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
+                <ErrorBoundary>{children}</ErrorBoundary>
+              </main>
+              <BottomNav />
+            </ErrorBoundary>
           </Providers>
         </div>
       </body>

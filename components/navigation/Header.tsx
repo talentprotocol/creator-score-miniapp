@@ -1,15 +1,11 @@
 "use client";
 
-import { HelpCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { InfoDrawer } from "./InfoModal";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 
 export function Header() {
-  const [infoOpen, setInfoOpen] = React.useState(false);
   const pathname = usePathname();
   const { navItems } = useUserNavigation();
 
@@ -55,16 +51,6 @@ export function Header() {
             return null;
           })}
         </nav>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          aria-label="Learn more about Creator Score"
-          onClick={() => setInfoOpen(true)}
-        >
-          <HelpCircle className="h-5 w-5 text-muted-foreground" />
-        </Button>
-        <InfoDrawer open={infoOpen} onOpenChange={setInfoOpen} />
       </div>
     </header>
   );

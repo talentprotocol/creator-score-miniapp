@@ -36,6 +36,7 @@ export interface Credential {
     data_points?: Array<{
       is_maximum: boolean;
       readable_value: string | null;
+      value: string | null;
       uom: string | null;
     }>;
     max_points: number | null;

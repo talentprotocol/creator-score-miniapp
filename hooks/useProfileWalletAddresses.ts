@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import {
   getUserWalletAddresses,
   type UserWalletAddresses,
 } from "@/app/services/neynarService";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useProfileWalletAddresses(fid: number | string | undefined) {
   const [walletData, setWalletData] = useState<UserWalletAddresses | null>(
@@ -31,16 +31,19 @@ export function useProfileWalletAddresses(fid: number | string | undefined) {
     setLoading(true);
     setError(undefined);
     try {
-      let data;
+      let fidParam;
       if (typeof fid === "number") {
-        data = await getUserWalletAddresses(fid);
+        fidParam = fid;
       } else if (typeof fid === "string" && !isNaN(Number(fid))) {
-        data = await getUserWalletAddresses(Number(fid));
+        fidParam = Number(fid);
       } else {
         setWalletData(null);
         setError(undefined);
         return;
       }
+
+      const data = await getUserWalletAddresses(fidParam);
+
       setWalletData(data);
       setError(data.error);
 

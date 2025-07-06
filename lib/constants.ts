@@ -22,3 +22,40 @@ export const PLATFORM_NAMES: Record<string, string> = {
   discord: "Discord",
   telegram: "Telegram",
 } as const;
+
+// List of reserved words that cannot be used as profile identifiers
+export const RESERVED_WORDS = [
+  "api",
+  "settings",
+  "leaderboard",
+  "profile",
+  "services",
+  ".well-known",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+  // Recommended additions
+  "login",
+  "logout",
+  "register",
+  "signup",
+  "signin",
+  "auth",
+  "admin",
+  "dashboard",
+  "home",
+  "explore",
+  "notifications",
+  "messages",
+  "search",
+  "help",
+  "support",
+  "terms",
+  "privacy",
+  "about",
+  "contact",
+  "static",
+  "public",
+  "assets",
+  // Add more as needed
+];

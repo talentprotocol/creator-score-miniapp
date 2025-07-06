@@ -14,5 +14,10 @@ export async function GET(req: NextRequest) {
 
   const params = extractTalentProtocolParams(searchParams);
 
+  // Default to creator_score if no scorer_slug is provided
+  if (!params.scorer_slug) {
+    params.scorer_slug = "creator_score";
+  }
+
   return talentApiClient.getCredentials(params);
 }

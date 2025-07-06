@@ -139,8 +139,10 @@ export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
                             `$${formatReadableValue(pt.readable_value)}`
                           ) : pt.readable_value ? (
                             <>
-                              {formatReadableValue(pt.readable_value, pt.uom)}
-                              {shouldShowUom(pt.uom) && <span>{pt.uom}</span>}
+                              {formatReadableValue(pt.readable_value)}
+                              {shouldShowUom(pt.uom) && (
+                                <span style={{ marginLeft: 2 }}>{pt.uom}</span>
+                              )}
                             </>
                           ) : null}
                           {pt.readable_value && (

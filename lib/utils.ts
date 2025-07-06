@@ -130,14 +130,25 @@ export function formatNumberWithSuffix(num: number): string {
   return `$${rounded >= 1000 ? rounded.toLocaleString() : rounded}`;
 }
 
+/**
+ * Calculate total earnings from credentials by summing up creator earnings
+ * and converting ETH to USDC using current market price.
+ *
+ * FIXED: Previously had a data structure mismatch where currency detection
+ * was checking readable_value (e.g., "2.67") for "ETH" instead of the
+ * original value field (e.g., "1.6341052597675584 ETH"). Now correctly uses:
+ * - readable_value for clean numeric amount
+ * - original value field for currency detection
+ */
 export async function calculateTotalRewards(
   credentials: Array<{
     name: string;
     points_calculation_logic?: {
       data_points: Array<{
-        name: string;
-        value: string;
-        readable_value: string;
+        name?: string;
+        value: string | null;
+        readable_value: string | null;
+        uom?: string | null;
       }>;
     };
   }>,
@@ -148,52 +159,61 @@ export async function calculateTotalRewards(
   // Sum up all rewards, converting ETH to USDC
   const total = credentials.reduce((sum, credential) => {
     // Only count credentials that are creator earnings
-    if (!isEarningsCredential(credential.name)) {
+    const isEarnings = isEarningsCredential(credential.name);
+    if (!isEarnings) {
       return sum;
     }
-
-    // Check if this credential has earnings data
     if (!credential.points_calculation_logic?.data_points) {
       return sum;
     }
-
+    console.log(
+      "[Total Earnings Debug] Processing credential:",
+      credential.name,
+      credential.points_calculation_logic.data_points,
+    );
     const credentialTotal =
       credential.points_calculation_logic.data_points.reduce(
         (acc, dataPoint) => {
           if (!dataPoint.readable_value && !dataPoint.value) {
             return acc;
           }
-
-          // Use readable_value first, fallback to value
-          const valueStr = dataPoint.readable_value || dataPoint.value;
-
-          // Parse value handling K/M suffixes and ETH suffix
+          const cleanValue = dataPoint.readable_value || dataPoint.value || "";
+          const originalValue = dataPoint.value || "";
+          // Debug log for each data point
+          console.log(
+            "[Total Earnings Debug] DataPoint:",
+            dataPoint,
+            "cleanValue:",
+            cleanValue,
+            "originalValue:",
+            originalValue,
+          );
           let value: number;
-          const cleanValue = valueStr.replace(/[^0-9.KM-]+/g, "");
-          if (cleanValue.includes("K")) {
-            value = parseFloat(cleanValue.replace("K", "")) * 1000;
-          } else if (cleanValue.includes("M")) {
-            value = parseFloat(cleanValue.replace("M", "")) * 1000000;
+          const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+          if (numericValue.includes("K")) {
+            value = parseFloat(numericValue.replace("K", "")) * 1000;
+          } else if (numericValue.includes("M")) {
+            value = parseFloat(numericValue.replace("M", "")) * 1000000;
           } else {
-            value = parseFloat(cleanValue);
+            value = parseFloat(numericValue);
           }
-
           if (isNaN(value)) {
             return acc;
           }
-
           let contribution = 0;
-          if (valueStr.includes("ETH")) {
+          // This fixes the issue where readable_value (e.g., "2.67") was being checked for "ETH"
+          // instead of the original value field (e.g., "1.6341052597675584 ETH")
+          if (originalValue.includes("ETH")) {
             contribution = convertEthToUsdc(value, ethPrice);
-          } else if (valueStr.includes("USDC")) {
+          } else if (originalValue.includes("USDC")) {
             contribution = value;
           }
-
+          console.log("[Total Earnings Debug] Contribution:", contribution);
           return acc + contribution;
         },
         0,
       );
-
+    console.log("[Total Earnings Debug] credentialTotal:", credentialTotal);
     return sum + credentialTotal;
   }, 0);
 

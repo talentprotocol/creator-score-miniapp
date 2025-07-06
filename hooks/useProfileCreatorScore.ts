@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
+import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 
 export function useProfileCreatorScore(talentUUID: string) {
   const [creatorScore, setCreatorScore] = useState<number | null>(null);
@@ -27,30 +28,21 @@ export function useProfileCreatorScore(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        // Fetch creator score via API route (explicitly request creator_score)
-        const response = await fetch(
-          `/api/talent-score?id=${talentUUID}&scorer_slug=creator_score`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch creator score");
-        }
-
-        const scoreData = await response.json();
+        // Use service layer instead of direct API call
+        const scoreData = await getCreatorScoreForTalentId(talentUUID);
 
         if (scoreData.error) {
+          setError(scoreData.error);
           setCreatorScore(null);
           setLastCalculatedAt(null);
         } else {
-          const score = scoreData.score?.points ?? 0;
-          const lastCalculated = scoreData.score?.last_calculated_at ?? null;
-          setCreatorScore(score);
-          setLastCalculatedAt(lastCalculated);
+          setCreatorScore(scoreData.score);
+          setLastCalculatedAt(scoreData.lastCalculatedAt);
 
           // Cache the complete score data
           setCachedData(cacheKey, {
-            score: score,
-            lastCalculatedAt: lastCalculated,
+            score: scoreData.score,
+            lastCalculatedAt: scoreData.lastCalculatedAt,
           });
         }
       } catch (err) {
