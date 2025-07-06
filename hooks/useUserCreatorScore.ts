@@ -7,7 +7,7 @@ import {
   setCachedData,
   CACHE_DURATIONS,
 } from "@/lib/utils";
-import { getUserWalletAddresses } from "@/app/services/neynarService";
+// Remove the direct service import - we'll use the API route instead
 import { getCreatorScore } from "@/app/services/scoresService";
 
 export function useUserCreatorScore(fid: number | undefined) {
@@ -40,8 +40,14 @@ export function useUserCreatorScore(fid: number | undefined) {
         setLoading(true);
         setError(null);
 
-        // Fetch wallet addresses using service
-        const walletData = await getUserWalletAddresses(fid);
+        // Fetch wallet addresses using API route
+        const response = await fetch(`/api/farcaster-wallets?fid=${fid}`);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch wallet addresses: ${response.status}`,
+          );
+        }
+        const walletData = await response.json();
 
         if (walletData.error) {
           throw new Error(walletData.error);

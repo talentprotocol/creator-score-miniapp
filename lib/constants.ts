@@ -1,3 +1,16 @@
+// Development configuration
+// NOTE: This port must match the --port value in package.json's "dev" script
+// When changing this port, also update package.json's dev script
+export const DEV_PORT = 3000;
+
+/**
+ * Get the local development URL, respecting the configured port
+ * @returns The base URL for local development
+ */
+export function getLocalBaseUrl(): string {
+  return `http://localhost:${DEV_PORT}`;
+}
+
 export const LEVEL_RANGES = [
   { min: 0, max: 39, name: "Level 1" },
   { min: 40, max: 79, name: "Level 2" },

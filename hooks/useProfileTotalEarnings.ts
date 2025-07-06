@@ -34,23 +34,23 @@ export function useProfileTotalEarnings(talentUUID: string) {
 
         const credentialsGroups = await getCredentialsForTalentId(talentUUID);
 
-        // Flatten the grouped credentials back to individual credentials for calculation
+        // Transform grouped credentials into the structure expected by calculateTotalRewards
         const credentials = credentialsGroups.flatMap((group) =>
           group.points.map((point) => ({
             name: point.label,
-            slug: point.slug,
-            points: point.value,
-            max_score: point.max_score,
-            readable_value: point.readable_value,
-            uom: point.uom,
-            external_url: point.external_url,
-            data_issuer_name: group.issuer,
+            points_calculation_logic: {
+              data_points: [
+                {
+                  value: `${point.readable_value} ${point.uom}`, // Reconstruct original value with currency
+                  readable_value: point.readable_value,
+                  uom: point.uom,
+                },
+              ],
+            },
           })),
         );
 
-        console.log("[Total Earnings Debug] Credentials:", credentials);
         const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
-        console.log("[Total Earnings Debug] Calculated total:", total);
 
         setTotalEarnings(total);
 

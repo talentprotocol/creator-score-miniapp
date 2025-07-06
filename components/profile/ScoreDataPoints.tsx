@@ -99,8 +99,8 @@ export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
                   {issuer.issuer}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {issuer.points.length} credential
-                  {issuer.points.length !== 1 ? "s" : ""}
+                  {issuer.points.filter((pt) => pt.value > 0).length}/
+                  {issuer.points.length} credentials
                 </span>
               </div>
               <span className="ml-4 text-xl font-semibold text-foreground w-16 text-right">
@@ -139,10 +139,8 @@ export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
                             `$${formatReadableValue(pt.readable_value)}`
                           ) : pt.readable_value ? (
                             <>
-                              {formatReadableValue(pt.readable_value)}
-                              {shouldShowUom(pt.uom) && (
-                                <span style={{ marginLeft: 2 }}>{pt.uom}</span>
-                              )}
+                              {formatReadableValue(pt.readable_value, pt.uom)}
+                              {shouldShowUom(pt.uom) && <span>{pt.uom}</span>}
                             </>
                           ) : null}
                           {pt.readable_value && (

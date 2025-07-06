@@ -143,7 +143,7 @@ export function ProfileHeader({
       <div className="relative flex-shrink-0">
         <Avatar className="h-16 w-16">
           <AvatarImage src={image} alt={name} />
-          <AvatarFallback>{name[0]}</AvatarFallback>
+          <AvatarFallback></AvatarFallback>
         </Avatar>
       </div>
     </div>

@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import {
-  getUserWalletAddresses,
-  type UserWalletAddresses,
-} from "@/app/services/neynarService";
+// Import the type directly since we need it for TypeScript
+interface UserWalletAddresses {
+  addresses: string[];
+  custodyAddress: string;
+  primaryEthAddress: string | null;
+  primarySolAddress: string | null;
+  error?: string;
+}
 
 export function useProfileWalletAddresses(fid: number | string | undefined) {
   const [walletData, setWalletData] = useState<UserWalletAddresses | null>(
@@ -42,7 +46,12 @@ export function useProfileWalletAddresses(fid: number | string | undefined) {
         return;
       }
 
-      const data = await getUserWalletAddresses(fidParam);
+      // Call the API route instead of the service directly
+      const response = await fetch(`/api/farcaster-wallets?fid=${fidParam}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch wallet addresses: ${response.status}`);
+      }
+      const data = await response.json();
 
       setWalletData(data);
       setError(data.error);

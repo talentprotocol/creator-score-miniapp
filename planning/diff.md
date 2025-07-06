@@ -2,22 +2,20 @@
 
 creator-score-miniapp/
   app/                           # Next.js app directory
-    api/                         # API route handlers (REFACTORED: ~80% code reduction)
-      farcaster-wallets/         # Unified wallet resolution (consolidated from 2 routes)
-      leaderboard/               # Leaderboard data aggregation
-      notify/                    # Notification handling
-      talent-credentials/        # Talent Protocol credentials (simplified with client)
-      talent-score/              # Talent Protocol scores (simplified with client)
-      talent-socials/            # Social account data (simplified with client)
-      talent-user/               # User profile data (simplified with client)
-      webhook/                   # Webhook handlers
+    api/                         # API route handlers 
+      farcaster-wallets/         # Unified wallet resolution **from: creator-score-miniapp**
+      leaderboard/               # Leaderboard data aggregation **from: creator-score-miniapp**
+      talent-credentials/        # Talent Protocol credentials **from: creator-score-miniapp**
+      talent-score/              # Talent Protocol scores **from: creator-score-miniapp**
+      talent-socials/            # Social account data **from: creator-score-miniapp**
+      talent-user/               # User profile data **from: creator-score-miniapp**
     [identifier]/                # Dynamic profile routes (Farcaster/UUID) **from: creator-score-miniapp**
-    leaderboard/                 # Leaderboard page *conflict*
+    leaderboard/                 # Leaderboard page **from: creator-score-miniapp**
     settings/                    # Settings page **from: creator-score-miniapp**
     services/                    # Modular service layer (refactored from single file)
       types.ts                   # Shared interfaces and types **from: creator-score-miniapp**
       scoresService.ts           # Score-related functions (Builder/Creator scores) **from: creator-score-miniapp**
-      credentialsService.ts      # Credential fetching and grouping *conflict*
+      credentialsService.ts      # Credential fetching and grouping **from: creator-score-miniapp**
       leaderboardService.ts      # **similar**
       socialAccountsService.ts   # Social account data processing **from: creator-score-miniapp**
       leaderboardService.ts      # Leaderboard data and statistics **similar**
@@ -32,15 +30,15 @@ creator-score-miniapp/
     leaderboard/                 # Leaderboard UI components **from: creator-score-miniapp**
     navigation/                  # Navigation components **from: creator-score-miniapp**
     profile/                     # Profile UI components
-      AccountCard.tsx            # Social account display card
-      AccountGrid.tsx            # Grid of social accounts
-      ProfileHeader.tsx          # Profile header with avatar/stats
-      ProfileScreen.tsx          # Main profile layout
-      ProfileTabs.tsx            # Profile tabs layout
-      ScoreProgressAccordion.tsx # Creator Score progress display
-      ScoreDataPoints.tsx        # Credential breakdown display
-      CredentialIdeasCallout.tsx # Feedback callout component
-      comingSoonCredentials.ts   # Placeholder credentials config
+      AccountCard.tsx            # Social account display card **similar**
+      AccountGrid.tsx            # Grid of social accounts **similar**
+      ProfileHeader.tsx          # Profile header with avatar/stats **similar**
+      ProfileScreen.tsx          # Main profile layout **similar**
+      ProfileTabs.tsx            # Profile tabs layout **similar**
+      ScoreProgressAccordion.tsx # Creator Score progress display **similar**
+      ScoreDataPoints.tsx        # Credential breakdown display **similar**
+      CredentialIdeasCallout.tsx # Feedback callout component  **similar**
+      comingSoonCredentials.ts   # Placeholder credentials config  **similar**
     ui/                          # shadcn/ui primitives **from: creator-score-miniapp**
 
   hooks/                         # Custom React hooks (all data fetching)
@@ -63,7 +61,7 @@ creator-score-miniapp/
     talent-api-client.ts         # Abstracted Talent Protocol API client **Similar**
     total-earnings-config.ts     # Total earnings calculation configuration **Similar**
     user-context.ts              # Unified user context utilities **from: creator-score-miniapp**
-    user-resolver.ts             # Universal user identifier resolution *conflict*
+    user-resolver.ts             # Universal user identifier resolution **from: creator-score-miniapp**
     utils.ts                     # Utility functions (formatting, validation) **from: creator-score-miniapp**
 
 ```

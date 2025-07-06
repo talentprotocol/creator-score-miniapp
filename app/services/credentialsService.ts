@@ -61,64 +61,47 @@ export async function getCredentialsForTalentId(
       }
 
       const existingGroup = issuerGroups.get(issuer);
-      const maxScore = cred.points_calculation_logic?.max_points ?? null;
-      let pointsArr = [];
+      let readableValue = null;
+      let uom = null;
 
-      // For each credential, log the raw data_points array
-      // eslint-disable-next-line no-console
-      console.log(
-        "[CredentialService Debug] Credential:",
-        cred.name,
-        cred.points_calculation_logic?.data_points,
-      );
-
-      // If there are data points, use them for readable_value and uom
-      if (
-        cred.points_calculation_logic?.data_points &&
-        cred.points_calculation_logic.data_points.length > 0
-      ) {
-        pointsArr = cred.points_calculation_logic.data_points.map((dp) => {
-          // Debug log for the raw data point
-          // eslint-disable-next-line no-console
-          console.log("[CredentialService Debug] Raw data_point:", dp);
-          const point = {
-            label: name,
-            value: cred.points, // points for progress bar
-            max_score: maxScore,
-            readable_value: dp.readable_value ?? dp.value ?? null, // clean value for display
-            uom: dp.uom ?? cred.uom ?? null,
-            external_url: cred.external_url,
-          };
-          // Debug log for each mapped point
-          // eslint-disable-next-line no-console
-          console.log("[CredentialService Debug] Mapped point:", point);
-          return point;
-        });
+      if (cred.points_calculation_logic?.data_points) {
+        const maxDataPoint = cred.points_calculation_logic.data_points.find(
+          (dp) => dp.is_maximum,
+        );
+        readableValue = maxDataPoint?.readable_value ?? null;
+        uom = maxDataPoint?.uom ?? cred.uom ?? null;
       } else {
-        const point = {
-          label: name,
-          value: cred.points,
-          max_score: maxScore,
-          readable_value: null,
-          uom: cred.uom ?? null,
-          external_url: cred.external_url,
-        };
-        // eslint-disable-next-line no-console
-        console.log("[Credential Debug] Point:", point);
-        pointsArr = [point];
+        uom = cred.uom ?? null;
       }
 
+      const maxScore = cred.points_calculation_logic?.max_points ?? null;
       if (existingGroup) {
         existingGroup.total += cred.points;
         existingGroup.max_total =
           (existingGroup.max_total ?? 0) + (maxScore ?? 0);
-        existingGroup.points.push(...pointsArr);
+        existingGroup.points.push({
+          label: name,
+          value: cred.points,
+          max_score: maxScore,
+          readable_value: readableValue,
+          uom: uom,
+          external_url: cred.external_url,
+        });
       } else {
         issuerGroups.set(issuer, {
           issuer,
           total: cred.points,
           max_total: maxScore ?? 0,
-          points: pointsArr,
+          points: [
+            {
+              label: name,
+              value: cred.points,
+              max_score: maxScore,
+              readable_value: readableValue,
+              uom: uom,
+              external_url: cred.external_url,
+            },
+          ],
         });
       }
     });
@@ -126,8 +109,7 @@ export async function getCredentialsForTalentId(
     const result = Array.from(issuerGroups.values()).sort(
       (a, b) => b.total - a.total,
     );
-    // eslint-disable-next-line no-console
-    console.log("[Credential Debug] Final grouped result:", result);
+
     return result;
   } catch {
     return [];

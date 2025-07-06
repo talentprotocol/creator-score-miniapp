@@ -166,11 +166,6 @@ export async function calculateTotalRewards(
     if (!credential.points_calculation_logic?.data_points) {
       return sum;
     }
-    console.log(
-      "[Total Earnings Debug] Processing credential:",
-      credential.name,
-      credential.points_calculation_logic.data_points,
-    );
     const credentialTotal =
       credential.points_calculation_logic.data_points.reduce(
         (acc, dataPoint) => {
@@ -179,15 +174,6 @@ export async function calculateTotalRewards(
           }
           const cleanValue = dataPoint.readable_value || dataPoint.value || "";
           const originalValue = dataPoint.value || "";
-          // Debug log for each data point
-          console.log(
-            "[Total Earnings Debug] DataPoint:",
-            dataPoint,
-            "cleanValue:",
-            cleanValue,
-            "originalValue:",
-            originalValue,
-          );
           let value: number;
           const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
           if (numericValue.includes("K")) {
@@ -208,12 +194,10 @@ export async function calculateTotalRewards(
           } else if (originalValue.includes("USDC")) {
             contribution = value;
           }
-          console.log("[Total Earnings Debug] Contribution:", contribution);
           return acc + contribution;
         },
         0,
       );
-    console.log("[Total Earnings Debug] credentialTotal:", credentialTotal);
     return sum + credentialTotal;
   }, 0);
 
@@ -333,20 +317,12 @@ export { resolveTalentUser } from "./user-resolver";
  */
 export function generateProfileUrl(params: {
   farcasterHandle?: string | null;
-  githubHandle?: string | null;
-  profileId?: string | null;
   talentId?: string | number | null;
 }): string | null {
-  const { farcasterHandle, githubHandle, profileId, talentId } = params;
+  const { farcasterHandle, talentId } = params;
 
   if (farcasterHandle) {
     return `/${farcasterHandle}`;
-  }
-  if (githubHandle) {
-    return `/${githubHandle}`;
-  }
-  if (profileId) {
-    return `/${profileId}`;
   }
   if (talentId) {
     return `/${talentId}`;

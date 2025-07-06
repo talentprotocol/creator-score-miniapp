@@ -79,8 +79,6 @@ export default function LeaderboardPage() {
   function handleEntryClick(entry: LeaderboardEntry) {
     const url = generateProfileUrl({
       farcasterHandle: null, // We don't have farcaster handle from leaderboard data
-      githubHandle: null,
-      profileId: entry.id,
       talentId: entry.talent_protocol_id,
     });
 
@@ -98,8 +96,6 @@ export default function LeaderboardPage() {
 
     const url = generateProfileUrl({
       farcasterHandle: user.username,
-      githubHandle: null,
-      profileId: entry?.id,
       talentId: entry?.talent_protocol_id,
     });
 
