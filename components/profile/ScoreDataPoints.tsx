@@ -11,7 +11,6 @@ import {
   cleanCredentialLabel,
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
-import { ExternalLink } from "lucide-react";
 import { COMING_SOON_CREDENTIALS } from "./comingSoonCredentials";
 import { useProfileCredentials } from "@/hooks/useProfileCredentials";
 import {
@@ -133,7 +132,7 @@ export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
                       )}
                     </span>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {pt.value > 0 ? (
+                      {pt.max_score !== null ? (
                         <>
                           {pt.readable_value && pt.uom === "USDC" ? (
                             `$${formatReadableValue(pt.readable_value)}`
@@ -157,9 +156,6 @@ export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
                         <span className="text-xs text-muted-foreground italic">
                           Coming soon
                         </span>
-                      )}
-                      {pt.external_url && (
-                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
                       )}
                     </div>
                   </li>

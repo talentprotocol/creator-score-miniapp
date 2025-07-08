@@ -35,23 +35,7 @@ export const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
       },
     ],
   },
-  {
-    issuer: "X/Twitter",
-    total: 0,
-    max_total: 0,
-    points: [
-      // Add credentials here as needed, with slug
-      {
-        label: "Kaito Yaps Airdrop",
-        slug: "kaito_airdrop_one",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
+
   {
     issuer: "Flaunch",
     total: 0,
@@ -76,15 +60,6 @@ export const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
       {
         label: "Music Earnings",
         slug: "coop_records_earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Unique Collectors",
-        slug: "coop_reords_holders",
         value: 0,
         max_score: null,
         readable_value: null,
@@ -128,64 +103,6 @@ export const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
     ],
   },
   {
-    issuer: "Mirror",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Total Mints",
-        slug: "mirror_total_mints",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Total Posts",
-        slug: "mirror_total_posts",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      // Removed 'Unique Collectors' from Mirror
-    ],
-  },
-  {
-    issuer: "Phi",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Artist Score",
-        slug: "phi_artist_score",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
-    issuer: "Noice",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Tip Earnings",
-        slug: "noice_tips_earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
     issuer: "Pods",
     total: 0,
     max_total: 0,
@@ -202,71 +119,10 @@ export const COMING_SOON_CREDENTIALS: IssuerCredentialGroup[] = [
     ],
   },
   {
-    issuer: "Zora",
-    total: 0,
-    max_total: 0,
-    points: [
-      {
-        label: "Coin Earnings",
-        slug: "zora_coin_earnings",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Total Posts",
-        slug: "zora_posts_coins",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Unique Holders",
-        slug: "zora_unique_holders",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Coin Volume",
-        slug: "zora_coin_volume",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-      {
-        label: "Market Cap",
-        slug: "zora_market_cap",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
-    ],
-  },
-  {
     issuer: "Lens",
     total: 0,
     max_total: 0,
     points: [
-      {
-        label: "Bonsai Airdrop #1",
-        slug: "bonsai_airdrop",
-        value: 0,
-        max_score: null,
-        readable_value: null,
-        uom: null,
-        external_url: null,
-      },
       {
         label: "Total Earnings",
         slug: "lens_total_earnings",

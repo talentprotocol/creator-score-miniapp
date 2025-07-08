@@ -44,16 +44,17 @@ export async function getCredentialsForTalentId(
     const issuerGroups = new Map<string, IssuerCredentialGroup>();
 
     data.credentials.forEach((cred: Credential) => {
-      if (cred.points === 0) {
-        return;
-      }
-
       // Move Kaito credential under X/Twitter and rename
+      // Move Bonsai credential under Lens and rename
       let issuer = cred.data_issuer_name;
       let name = cred.name;
       if (issuer.toLowerCase().includes("kaito")) {
         issuer = "X/Twitter";
         name = "Kaito Yaps Airdrop";
+      }
+      if (issuer.toLowerCase().includes("bonsai")) {
+        issuer = "Lens";
+        name = "Bonsai Airdrop #1";
       }
 
       if (typeof issuer !== "string") {
@@ -74,13 +75,14 @@ export async function getCredentialsForTalentId(
         uom = cred.uom ?? null;
       }
 
-      const maxScore = cred.points_calculation_logic?.max_points ?? null;
+      const maxScore = cred.max_score; // Use max_score from API directly
       if (existingGroup) {
         existingGroup.total += cred.points;
         existingGroup.max_total =
           (existingGroup.max_total ?? 0) + (maxScore ?? 0);
         existingGroup.points.push({
           label: name,
+          slug: cred.slug,
           value: cred.points,
           max_score: maxScore,
           readable_value: readableValue,
@@ -95,6 +97,7 @@ export async function getCredentialsForTalentId(
           points: [
             {
               label: name,
+              slug: cred.slug,
               value: cred.points,
               max_score: maxScore,
               readable_value: readableValue,
