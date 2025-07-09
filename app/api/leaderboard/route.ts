@@ -78,10 +78,54 @@ export async function GET(req: NextRequest) {
     // Let's use option 1 for now - a fixed minimum of 100 points to qualify for rewards
     const minScore = 100;
 
-    return NextResponse.json({
-      minScore,
-      totalCreators,
-    });
+    // Fetch eligible creators count (score >= 80, which is Level 3+)
+    const eligibleQuery = {
+      score: {
+        min: 80,
+        scorer: "Creator Score",
+      },
+    };
+
+    const eligibleData = {
+      query: eligibleQuery,
+      page: 1,
+      per_page: 1, // We only need the count, not the actual profiles
+    };
+
+    const eligibleQueryString = [
+      `query=${encodeURIComponent(JSON.stringify(eligibleData.query))}`,
+      `page=1`,
+      `per_page=1`,
+    ].join("&");
+
+    try {
+      const eligibleRes = await fetch(`${baseUrl}?${eligibleQueryString}`, {
+        headers: {
+          Accept: "application/json",
+          "X-API-KEY": apiKey,
+        },
+      });
+
+      let eligibleCreators = 0;
+      if (eligibleRes.ok) {
+        const eligibleJson = await eligibleRes.json();
+        eligibleCreators = eligibleJson.pagination?.total || 0;
+      }
+
+      return NextResponse.json({
+        minScore,
+        totalCreators,
+        eligibleCreators,
+      });
+    } catch (error) {
+      // If the eligible creators query fails, fallback to the estimate
+      console.error("Failed to fetch eligible creators count:", error);
+      return NextResponse.json({
+        minScore,
+        totalCreators,
+        eligibleCreators: Math.floor(totalCreators * 0.3), // Fallback estimate
+      });
+    }
   }
 
   // Step 1: Map each profile to its highest Creator Score

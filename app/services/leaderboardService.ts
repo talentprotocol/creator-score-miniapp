@@ -22,6 +22,7 @@ export async function getLeaderboardCreators({
 export async function getLeaderboardStats(): Promise<{
   minScore: number | null;
   totalCreators: number;
+  eligibleCreators: number;
 }> {
   const res = await fetch(`/api/leaderboard?statsOnly=true&page=1&per_page=1`);
   if (!res.ok) {
@@ -31,5 +32,6 @@ export async function getLeaderboardStats(): Promise<{
   return {
     minScore: json.minScore ?? null,
     totalCreators: json.totalCreators ?? 0,
+    eligibleCreators: json.eligibleCreators ?? 0,
   };
 }

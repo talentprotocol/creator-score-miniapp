@@ -13,8 +13,10 @@ import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useLeaderboardStats } from "@/hooks/useLeaderboardStats";
 import { useRouter } from "next/navigation";
 import { generateProfileUrl } from "@/lib/utils";
+import { LEVEL_RANGES } from "@/lib/constants";
+import { ExternalLink } from "lucide-react";
 
-const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
+const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -25,6 +27,35 @@ function getCountdownParts(target: Date) {
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
   return { days, hours };
+}
+
+// Helper to format numbers with K notation (2 decimals)
+function formatWithK(value: number): string {
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(2)}K`;
+  }
+  return value.toString();
+}
+
+// Helper to truncate wallet address
+function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+// Helper to get user level from creator score
+function getUserLevel(score: number): string {
+  const level = LEVEL_RANGES.find(
+    (range) => score >= range.min && score <= range.max,
+  );
+  return level ? level.name : "Level 1";
+}
+
+// Helper to check if user is eligible (Level 3+)
+function isEligible(score: number): boolean {
+  const level = LEVEL_RANGES.find(
+    (range) => score >= range.min && score <= range.max,
+  );
+  return level ? level.min >= 80 : false; // Level 3 starts at 80
 }
 
 export default function LeaderboardPage() {
@@ -114,57 +145,85 @@ export default function LeaderboardPage() {
       </div>
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="relative">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-600">Round Ends</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {countdown.days}d {countdown.hours}h
+        {/* Rewards Pool - Top Left */}
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-gray-600 mb-4">Rewards Pool</p>
+            <p className="text-2xl font-bold">$2.50K</p>
+            <p className="text-sm text-gray-600 mt-1">
+              <a
+                href="https://basescan.org/address/0x3758e0f97f7f5f91372329d43eca69fcc1af48a7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gray-900 flex items-center gap-1"
+              >
+                {truncateAddress("0x3758e0f97f7f5f91372329d43eca69fcc1af48a7")}
+                <ExternalLink className="h-3 w-3" />
+              </a>
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-600">
-              Total Rewards
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">10 ETH</p>
+
+        {/* Rewards End - Top Right */}
+        <Card className="relative">
+          <CardContent className="pt-6">
+            <p className="text-sm text-gray-600 mb-4">Rewards End</p>
+            <p className="text-2xl font-bold">
+              {countdown.days}d {countdown.hours}h
+            </p>
+            <p className="text-sm text-gray-600 mt-1">Jul 22 - Aug 31</p>
           </CardContent>
         </Card>
-        {/* Min. Creator Score */}
+
+        {/* Creator Score - Bottom Left */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-600">
-              Min. Creator Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
+            <p className="text-sm text-gray-600 mb-4">Creator Score</p>
+            <p className="text-2xl font-bold">
+              {creatorScore !== null ? creatorScore : "-"}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              {creatorScore !== null ? (
+                <>
+                  <span className="text-sm text-gray-600">
+                    {getUserLevel(creatorScore)}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      isEligible(creatorScore)
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {isEligible(creatorScore) ? "Eligible" : "Not Eligible"}
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm text-gray-600">-</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Eligible Creators - Bottom Right */}
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-gray-600 mb-4">Eligible Creators</p>
             {statsLoading ? (
               <Skeleton className="h-8 w-20 rounded" />
             ) : (
-              <p className="text-2xl font-bold">
-                {stats.minScore !== null ? stats.minScore : "-"}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        {/* Total Creators */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-600">
-              Total Creators
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {statsLoading ? (
-              <Skeleton className="h-8 w-20 rounded" />
-            ) : (
-              <p className="text-2xl font-bold">
-                {stats.totalCreators !== null ? stats.totalCreators : "-"}
-              </p>
+              <>
+                <p className="text-2xl font-bold">
+                  {stats.eligibleCreators !== null
+                    ? formatWithK(stats.eligibleCreators)
+                    : "-"}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {stats.totalCreators !== null
+                    ? `${formatWithK(stats.totalCreators)} total`
+                    : "-"}
+                </p>
+              </>
             )}
           </CardContent>
         </Card>
