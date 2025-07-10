@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { TabNavigation } from "@/components/ui/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import type { LeaderboardEntry } from "@/app/services/types";
@@ -17,6 +18,96 @@ import { LEVEL_RANGES } from "@/lib/constants";
 import { ExternalLink } from "lucide-react";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
+
+// Mock sponsor data
+const SPONSORS = [
+  {
+    id: "base",
+    name: "Base",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2F7Q0QBrm.jpg",
+    amount: 5000,
+    date: "2025-07-15",
+    rank: 1,
+    txHash: "0x1234567890abcdef1234567890abcdef12345678",
+  },
+  {
+    id: "zora",
+    name: "Zora",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/1b471987-45b1-48e3-6af4-44929b6e4900/anim=false,fit=contain,f=auto,w=576",
+    amount: 2500,
+    date: "2025-07-18",
+    rank: 2,
+    txHash: "0x2345678901bcdef12345678901bcdef23456789",
+  },
+  {
+    id: "farcaster",
+    name: "Farcaster",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2FI2rEbPF.png",
+    amount: 2500,
+    date: "2025-07-12",
+    rank: 3,
+    txHash: "0x3456789012cdef123456789012cdef3456789a",
+  },
+  {
+    id: "talent-protocol",
+    name: "Talent Protocol",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/002f0efe-2513-41e7-3d89-d38875d76800/anim=false,f=auto,w=288",
+    amount: 2500,
+    date: "2025-07-25",
+    rank: 4,
+    txHash: "0x456789013def23456789013def456789ab",
+  },
+  {
+    id: "noice",
+    name: "Noice",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/96aabcca-a8ce-47d6-b6f6-d2b6d1272500/anim=false,fit=contain,f=auto,w=576",
+    amount: 1250,
+    date: "2025-07-08",
+    rank: 5,
+    txHash: "0x56789014ef3456789014ef56789abc",
+  },
+  {
+    id: "phi",
+    name: "Phi",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/9b5ad594-f3e9-4160-9c33-4e0eeaf28500/anim=false,fit=contain,f=auto,w=576",
+    amount: 1250,
+    date: "2025-07-22",
+    rank: 6,
+    txHash: "0x6789015f456789015f6789abcd",
+  },
+  {
+    id: "coop-records",
+    name: "Coop Records",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2FYZRdO5m.jpg",
+    amount: 1250,
+    date: "2025-07-10",
+    rank: 7,
+    txHash: "0x789016056789016056789abcde",
+  },
+  {
+    id: "paragraph",
+    name: "Paragraph",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/4855b0cc-c1da-482c-de24-962162497200/anim=false,fit=contain,f=auto,w=576",
+    amount: 1250,
+    date: "2025-07-28",
+    rank: 8,
+    txHash: "0x89017067890170567890abcdef",
+  },
+];
+
+// Calculate total sponsors pool
+const TOTAL_SPONSORS_POOL = SPONSORS.reduce(
+  (sum, sponsor) => sum + sponsor.amount,
+  0,
+);
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -35,6 +126,23 @@ function formatWithK(value: number): string {
     return `${(value / 1000).toFixed(2)}K`;
   }
   return value.toString();
+}
+
+// Helper to format date
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+// Helper to format currency
+function formatCurrency(amount: number): string {
+  if (amount >= 1000) {
+    return `$${formatWithK(amount)}`;
+  }
+  return `$${amount}`;
 }
 
 // Helper to truncate wallet address
@@ -62,6 +170,10 @@ export default function LeaderboardPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("creators");
+
+  // Static total of all eligible creators' scores (calculated once via script)
+  const TOTAL_ELIGIBLE_SCORES = 54279;
 
   // Use new hooks for data fetching
   const { creatorScore } = useUserCreatorScore(user?.fid);
@@ -95,15 +207,26 @@ export default function LeaderboardPage() {
     rank: userLeaderboardEntry ? userLeaderboardEntry.rank : "—",
     name: user.displayName || user.username || "Unknown user",
     pfp: user.pfpUrl || undefined,
-    rewards: "-", // To be calculated later
+    rewards: creatorScore ? getUsdcRewards(creatorScore) : "$0",
     score: creatorScore ?? 0,
     id: userLeaderboardEntry ? userLeaderboardEntry.id : "user-pinned",
   };
 
-  // Helper to calculate rewards
-  function getEthRewards(score: number) {
-    const multiplier = 0.00005588184343025108;
-    return (score * multiplier).toFixed(3) + " ETH";
+  // Helper to calculate USDC rewards using static multiplier
+  function getUsdcRewards(score: number): string {
+    // Only eligible creators earn rewards
+    if (score < 80) return "$0";
+
+    // Calculate static multiplier: total_rewards_pool / total_eligible_scores
+    const multiplier = TOTAL_SPONSORS_POOL / TOTAL_ELIGIBLE_SCORES;
+    const reward = score * multiplier;
+
+    // Format as currency
+    if (reward >= 1) {
+      return `$${reward.toFixed(0)}`;
+    } else {
+      return `$${reward.toFixed(2)}`;
+    }
   }
 
   // Handler to navigate to profile page for a leaderboard entry
@@ -135,21 +258,30 @@ export default function LeaderboardPage() {
     }
   }
 
+  // Tab configuration
+  const tabs = [
+    {
+      id: "creators",
+      label: "Rewards",
+    },
+    {
+      id: "sponsors",
+      label: "Sponsors",
+      count: SPONSORS.length,
+    },
+  ];
+
   return (
     <div className="max-w-md mx-auto w-full p-4 space-y-6 pb-24">
-      {/* Page Title */}
-      <div className="flex items-center px-1 mb-2">
-        <span className="text-xl font-bold leading-tight">
-          Rewards Leaderboard
-        </span>
-      </div>
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4">
         {/* Rewards Pool - Top Left */}
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-gray-600 mb-4">Rewards Pool</p>
-            <p className="text-2xl font-bold">$2.50K</p>
+            <p className="text-2xl font-bold">
+              ${formatWithK(TOTAL_SPONSORS_POOL)}
+            </p>
             <p className="text-sm text-gray-600 mt-1">
               <a
                 href="https://basescan.org/address/0x3758e0f97f7f5f91372329d43eca69fcc1af48a7"
@@ -178,7 +310,7 @@ export default function LeaderboardPage() {
         {/* Creator Score - Bottom Left */}
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-4">Creator Score</p>
+            <p className="text-sm text-gray-600 mb-4">Your Creator Score</p>
             <p className="text-2xl font-bold">
               {creatorScore !== null ? creatorScore : "-"}
             </p>
@@ -229,87 +361,145 @@ export default function LeaderboardPage() {
         </Card>
       </div>
 
+      {/* Tabs */}
+      <TabNavigation
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+
       {/* Leaderboard */}
       <div className="space-y-2">
         {error && <div className="text-destructive text-sm px-2">{error}</div>}
-        {/* User pinned entry always on top */}
-        {pinnedUserEntry && (
-          <div
-            className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 cursor-pointer hover:bg-purple-100 transition-colors mb-2"
-            onClick={handlePinnedUserClick}
-          >
-            <span className="text-sm font-medium w-6">
-              #{pinnedUserEntry.rank}
-            </span>
-            <Avatar className="h-8 w-8">
-              {pinnedUserEntry.pfp ? (
-                <AvatarImage src={pinnedUserEntry.pfp} />
-              ) : (
-                <AvatarFallback>{pinnedUserEntry.name[0]}</AvatarFallback>
-              )}
-            </Avatar>
-            <div className="flex-1">
-              <p className="font-medium text-sm">{pinnedUserEntry.name}</p>
-              <p className="text-xs text-gray-600">
-                Creator Score: {pinnedUserEntry.score}
-              </p>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-medium">
-                {getEthRewards(pinnedUserEntry.score)}
-              </span>
-            </div>
-          </div>
-        )}
-        {/* Leaderboard list (user may appear again in their real position) */}
-        <div className="overflow-hidden rounded-lg bg-gray-50">
-          {entries.map((user, index, array) => (
-            <div key={user.id}>
+
+        {activeTab === "creators" && (
+          <>
+            {/* User pinned entry always on top */}
+            {pinnedUserEntry && (
               <div
-                className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleEntryClick(user)}
+                className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 cursor-pointer hover:bg-purple-100 transition-colors mb-2"
+                onClick={handlePinnedUserClick}
               >
-                <span className="text-sm font-medium w-6">#{user.rank}</span>
+                <span className="text-sm font-medium w-6">
+                  #{pinnedUserEntry.rank}
+                </span>
                 <Avatar className="h-8 w-8">
-                  {user.pfp ? (
-                    <AvatarImage src={user.pfp} />
+                  {pinnedUserEntry.pfp ? (
+                    <AvatarImage src={pinnedUserEntry.pfp} />
                   ) : (
-                    <AvatarFallback>{user.name[0]}</AvatarFallback>
+                    <AvatarFallback>{pinnedUserEntry.name[0]}</AvatarFallback>
                   )}
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-medium text-sm">{user.name}</p>
+                  <p className="font-medium text-sm">{pinnedUserEntry.name}</p>
                   <p className="text-xs text-gray-600">
-                    Creator Score: {user.score}
+                    Creator Score: {pinnedUserEntry.score}
                   </p>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="text-sm font-medium">
-                    {getEthRewards(user.score)}
+                    {getUsdcRewards(pinnedUserEntry.score)}
                   </span>
                 </div>
               </div>
-              {index < array.length - 1 && <div className="h-px bg-gray-200" />}
-            </div>
-          ))}
-        </div>
-        {/* Only show Load More if there are more entries available */}
-        {hasMore && (
-          <Button
-            variant="outline"
-            className="w-full mt-2 flex items-center justify-center"
-            onClick={loadMore}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></span>
-                Loading...
-              </>
-            ) : (
-              "Load More"
             )}
-          </Button>
+            {/* Leaderboard list (user may appear again in their real position) */}
+            <div className="overflow-hidden rounded-lg bg-gray-50">
+              {entries.map((user, index, array) => (
+                <div key={user.id}>
+                  <div
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleEntryClick(user)}
+                  >
+                    <span className="text-sm font-medium w-6">
+                      #{user.rank}
+                    </span>
+                    <Avatar className="h-8 w-8">
+                      {user.pfp ? (
+                        <AvatarImage src={user.pfp} />
+                      ) : (
+                        <AvatarFallback>{user.name[0]}</AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{user.name}</p>
+                      <p className="text-xs text-gray-600">
+                        Creator Score: {user.score}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-sm font-medium">
+                        {getUsdcRewards(user.score)}
+                      </span>
+                    </div>
+                  </div>
+                  {index < array.length - 1 && (
+                    <div className="h-px bg-gray-200" />
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Only show Load More if there are more entries available */}
+            {hasMore && (
+              <Button
+                variant="outline"
+                className="w-full mt-2 flex items-center justify-center"
+                onClick={loadMore}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></span>
+                    Loading...
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </Button>
+            )}
+          </>
+        )}
+
+        {activeTab === "sponsors" && (
+          <div className="overflow-hidden rounded-lg bg-gray-50">
+            {SPONSORS.map((sponsor, index, array) => (
+              <div key={sponsor.id}>
+                <div className="flex items-center gap-3 p-3">
+                  <span className="text-sm font-medium w-6">
+                    #{sponsor.rank}
+                  </span>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={sponsor.avatar} />
+                    <AvatarFallback>{sponsor.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{sponsor.name}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs text-gray-600">
+                        {formatDate(sponsor.date)}
+                      </p>
+                      <a
+                        href={`https://basescan.org/tx/${sponsor.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-600 hover:text-gray-900"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-medium">
+                      {formatCurrency(sponsor.amount)}
+                    </span>
+                  </div>
+                </div>
+                {index < array.length - 1 && (
+                  <div className="h-px bg-gray-200" />
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
