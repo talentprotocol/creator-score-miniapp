@@ -53,22 +53,30 @@ export function ProfileTabs({ talentUUID }: ProfileTabsProps) {
       };
     }
 
-    // Sort by follower count and take top 5
-    const sortedAccounts = socialAccounts
+    // Group accounts by name and sum their followers
+    const accountGroups = new Map<string, number>();
+
+    socialAccounts
       .filter((account) => account.followerCount && account.followerCount > 0)
-      .sort((a, b) => (b.followerCount || 0) - (a.followerCount || 0));
+      .forEach((account) => {
+        const name = account.displayName || account.source;
+        const existing = accountGroups.get(name) || 0;
+        accountGroups.set(name, existing + (account.followerCount || 0));
+      });
+
+    // Sort by follower count and take top 5
+    const sortedAccounts = Array.from(accountGroups.entries()).sort(
+      ([, a], [, b]) => b - a,
+    );
 
     const top5 = sortedAccounts.slice(0, 5);
     const others = sortedAccounts.slice(5);
-    const otherTotal = others.reduce(
-      (sum, acc) => sum + (acc.followerCount || 0),
-      0,
-    );
+    const otherTotal = others.reduce((sum, [, value]) => sum + value, 0);
 
-    const segments = top5.map((account) => ({
-      name: account.displayName || account.source,
-      value: account.followerCount || 0,
-      percentage: ((account.followerCount || 0) / totalFollowers) * 100,
+    const segments = top5.map(([name, value]) => ({
+      name,
+      value,
+      percentage: (value / totalFollowers) * 100,
     }));
 
     if (otherTotal > 0) {

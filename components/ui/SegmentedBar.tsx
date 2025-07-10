@@ -91,7 +91,7 @@ export function SegmentedBar({
           <div className="flex h-2 bg-muted-foreground/10 rounded-full overflow-hidden">
             {segments.map((segment, index) => (
               <div
-                key={segment.name}
+                key={`${segment.name}-${index}`}
                 className={cn(
                   "h-full transition-all duration-300",
                   getSegmentColorClass(index),
@@ -106,7 +106,7 @@ export function SegmentedBar({
         <div className="space-y-2">
           {segments.map((segment, index) => (
             <div
-              key={segment.name}
+              key={`${segment.name}-${index}`}
               className="flex items-center justify-between"
             >
               <div className="flex items-center space-x-2">
