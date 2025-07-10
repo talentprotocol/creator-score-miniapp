@@ -9,16 +9,16 @@ async function getScoreForAddress(
   scorerSlug: string = SCORER_SLUGS.BUILDER,
 ): Promise<BuilderScore> {
   try {
-    // Use relative path for local development to avoid CORS issues
+    // Always use relative path to avoid CORS issues and ensure we use our API routes
     let baseUrl = "";
     if (typeof window !== "undefined") {
-      if (window.location.hostname === "localhost") {
-        baseUrl = ""; // relative path
-      } else {
-        baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
-      }
+      // Client-side: use relative path to ensure we call our own API routes
+      baseUrl = "";
     } else {
-      baseUrl = process.env.NEXT_PUBLIC_URL || "";
+      // Server-side: use the current origin
+      baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "";
     }
     const params = new URLSearchParams({ address });
     if (scorerSlug) params.append("scorer_slug", scorerSlug);
@@ -148,15 +148,16 @@ export async function getCreatorScoreForTalentId(
   talentId: string | number,
 ): Promise<CreatorScore> {
   try {
+    // Always use relative path to avoid CORS issues and ensure we use our API routes
     let baseUrl = "";
     if (typeof window !== "undefined") {
-      if (window.location.hostname === "localhost") {
-        baseUrl = ""; // relative path
-      } else {
-        baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
-      }
+      // Client-side: use relative path to ensure we call our own API routes
+      baseUrl = "";
     } else {
-      baseUrl = process.env.NEXT_PUBLIC_URL || "";
+      // Server-side: use the current origin
+      baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "";
     }
     const params = new URLSearchParams({
       talent_protocol_id: String(talentId),
