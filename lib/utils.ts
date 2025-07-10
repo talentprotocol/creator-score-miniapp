@@ -340,7 +340,7 @@ export async function openExternalUrl(url: string): Promise<void> {
     (window.location.hostname.includes("farcaster") ||
       window.location.hostname.includes("warpcast") ||
       // Check for Farcaster-specific globals
-      (window as any).farcasterFrame ||
+      "farcasterFrame" in window ||
       // Check user agent for Farcaster
       navigator.userAgent.includes("Farcaster"));
 
