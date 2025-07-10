@@ -96,7 +96,7 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
             }
           />
         </div>
-        <ProfileTabs socialAccounts={socialAccounts} talentUUID={talentUUID} />
+        <ProfileTabs talentUUID={talentUUID} />
         {children}
       </div>
     </main>

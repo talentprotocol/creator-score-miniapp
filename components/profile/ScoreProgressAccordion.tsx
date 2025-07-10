@@ -38,12 +38,12 @@ export function ScoreProgressAccordion({ talentUUID }: { talentUUID: string }) {
         value="score-progress"
         className="bg-muted rounded-xl p-0 mb-3 border-0 shadow-none"
       >
-        <AccordionTrigger className="px-6 py-4 flex items-center justify-between bg-muted rounded-xl">
+        <AccordionTrigger className="p-6 flex items-center justify-between bg-muted rounded-xl">
           <div className="flex flex-col flex-1 gap-1 text-left">
-            <span className="font-medium text-base text-foreground">
+            <span className="text-xs text-muted-foreground font-medium">
               Creator Score
             </span>
-            <span className="text-xs text-muted-foreground font-normal mt-0.5">
+            <span className="text-xl font-semibold text-foreground mt-0.5">
               Level {level ?? "—"}
             </span>
           </div>
@@ -51,7 +51,7 @@ export function ScoreProgressAccordion({ talentUUID }: { talentUUID: string }) {
             {loading ? "—" : (score?.toLocaleString() ?? "—")}
           </span>
         </AccordionTrigger>
-        <AccordionContent className="px-6 pb-5 bg-muted rounded-b-xl">
+        <AccordionContent className="px-6 pb-6 bg-muted rounded-b-xl">
           <div className="space-y-2">
             <div className="relative w-full flex items-center justify-center mb-0">
               <Progress

@@ -1,21 +1,21 @@
 import * as React from "react";
 import { useState } from "react";
 import { TabNavigation } from "@/components/ui/tabs-navigation";
-import type { IssuerCredentialGroup } from "@/app/services/types";
-import { useProfileCredentials } from "@/hooks/useProfileCredentials";
+import { SegmentedBar } from "@/components/ui/SegmentedBar";
 import { useProfilePostsPaginated } from "@/hooks/useProfilePostsPaginated";
+import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
+import { useProfileEarningsBreakdown } from "@/hooks/useProfileEarningsBreakdown";
+import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
 import { ScoreProgressAccordion } from "./ScoreProgressAccordion";
 import { ScoreDataPoints } from "./ScoreDataPoints";
 import { CredentialIdeasCallout } from "./CredentialIdeasCallout";
 import { PostsList } from "./PostsList";
 
 interface ProfileTabsProps {
-  socialAccounts: import("@/app/services/types").SocialAccount[];
   talentUUID: string;
 }
 
-export function ProfileTabs({ socialAccounts, talentUUID }: ProfileTabsProps) {
-  const { credentials } = useProfileCredentials(talentUUID);
+export function ProfileTabs({ talentUUID }: ProfileTabsProps) {
   const {
     posts,
     loading: postsLoading,
@@ -23,18 +23,74 @@ export function ProfileTabs({ socialAccounts, talentUUID }: ProfileTabsProps) {
     hasMore,
     loadMore,
   } = useProfilePostsPaginated(talentUUID, 10);
+  const {
+    socialAccounts,
+    loading: socialAccountsLoading,
+    error: socialAccountsError,
+  } = useProfileSocialAccounts(talentUUID);
+  const {
+    breakdown: earningsBreakdown,
+    loading: earningsLoading,
+    error: earningsError,
+  } = useProfileEarningsBreakdown(talentUUID);
   const [activeTab, setActiveTab] = useState("score");
 
-  // Calculate credentials count from the hook data
-  const credentialsCount = credentials.reduce(
-    (sum: number, issuer: IssuerCredentialGroup) => sum + issuer.points.length,
-    0,
-  );
+  // Process followers breakdown
+  const processFollowersBreakdown = () => {
+    if (!socialAccounts || socialAccounts.length === 0) {
+      return {
+        totalFollowers: 0,
+        segments: [],
+      };
+    }
+
+    const totalFollowers = calculateTotalFollowers(socialAccounts);
+
+    if (totalFollowers === 0) {
+      return {
+        totalFollowers: 0,
+        segments: [],
+      };
+    }
+
+    // Sort by follower count and take top 5
+    const sortedAccounts = socialAccounts
+      .filter((account) => account.followerCount && account.followerCount > 0)
+      .sort((a, b) => (b.followerCount || 0) - (a.followerCount || 0));
+
+    const top5 = sortedAccounts.slice(0, 5);
+    const others = sortedAccounts.slice(5);
+    const otherTotal = others.reduce(
+      (sum, acc) => sum + (acc.followerCount || 0),
+      0,
+    );
+
+    const segments = top5.map((account) => ({
+      name: account.displayName || account.source,
+      value: account.followerCount || 0,
+      percentage: ((account.followerCount || 0) / totalFollowers) * 100,
+    }));
+
+    if (otherTotal > 0) {
+      segments.push({
+        name: "Other",
+        value: otherTotal,
+        percentage: (otherTotal / totalFollowers) * 100,
+      });
+    }
+
+    return {
+      totalFollowers,
+      segments,
+    };
+  };
+
+  const followersBreakdown = processFollowersBreakdown();
 
   const tabs = [
     {
       id: "score",
-      label: "Score",
+      label: "Stats",
     },
     {
       id: "content",
@@ -42,8 +98,7 @@ export function ProfileTabs({ socialAccounts, talentUUID }: ProfileTabsProps) {
     },
     {
       id: "credentials",
-      label: "Credentials",
-      count: credentialsCount,
+      label: "Score",
     },
   ];
 
@@ -57,7 +112,24 @@ export function ProfileTabs({ socialAccounts, talentUUID }: ProfileTabsProps) {
       <div className="mt-6">
         {activeTab === "score" && (
           <div className="space-y-6">
-            {/* Score tab content - empty for now */}
+            <SegmentedBar
+              title="Total Earnings"
+              total={earningsBreakdown?.totalEarnings || 0}
+              segments={earningsBreakdown?.segments || []}
+              color="green"
+              formatValue={formatRewardValue}
+              loading={earningsLoading}
+              error={earningsError}
+            />
+            <SegmentedBar
+              title="Total Followers"
+              total={followersBreakdown.totalFollowers}
+              segments={followersBreakdown.segments}
+              color="pink"
+              formatValue={(value) => value.toLocaleString()}
+              loading={socialAccountsLoading}
+              error={socialAccountsError}
+            />
           </div>
         )}
         {activeTab === "content" && (
@@ -74,8 +146,8 @@ export function ProfileTabs({ socialAccounts, talentUUID }: ProfileTabsProps) {
         {activeTab === "credentials" && (
           <div className="space-y-6">
             <ScoreProgressAccordion talentUUID={talentUUID} />
-            <CredentialIdeasCallout />
             <ScoreDataPoints talentUUID={talentUUID} />
+            <CredentialIdeasCallout />
           </div>
         )}
       </div>

@@ -3,22 +3,8 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn, formatPostDate } from "@/lib/utils";
+import { formatPostDate } from "@/lib/utils";
 import type { Post } from "@/app/services/types";
-
-// Platform styling - using more muted colors to match existing design
-const platformStyles = {
-  paragraph: "text-blue-600",
-  mirror: "text-purple-600",
-  zora: "text-green-600",
-  default: "text-muted-foreground",
-} as const;
-
-function getPlatformStyle(platform: string): string {
-  const normalizedPlatform =
-    platform.toLowerCase() as keyof typeof platformStyles;
-  return platformStyles[normalizedPlatform] || platformStyles.default;
-}
 
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -29,13 +15,15 @@ interface PostRowProps {
 }
 
 const PostRow: React.FC<PostRowProps> = ({ post }) => {
-  const handleLinkClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleRowClick = () => {
     window.open(post.url, "_blank", "noopener,noreferrer");
   };
 
   return (
-    <div className="flex gap-3 p-3 hover:bg-gray-100 transition-colors">
+    <div
+      className="flex gap-3 p-3 hover:bg-gray-100 transition-colors cursor-pointer active:bg-gray-200"
+      onClick={handleRowClick}
+    >
       {/* Left side: Title + Date stacked */}
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <p className="font-medium text-sm truncate leading-tight">
@@ -48,13 +36,9 @@ const PostRow: React.FC<PostRowProps> = ({ post }) => {
 
       {/* Right side: External link + Platform stacked */}
       <div className="flex flex-col items-end justify-between">
-        <button
-          onClick={handleLinkClick}
-          className="text-gray-600 hover:text-gray-900 transition-colors p-1"
-          aria-label={`Open ${post.name}`}
-        >
+        <div className="text-gray-600 p-1">
           <ExternalLink className="w-4 h-4" />
-        </button>
+        </div>
         <span className="text-xs text-gray-600">
           {capitalizeFirst(post.platform)}
         </span>
