@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { generateProfileUrl } from "@/lib/utils";
 import { LEVEL_RANGES } from "@/lib/constants";
 import { ExternalLink } from "lucide-react";
+import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
@@ -376,63 +377,28 @@ export default function LeaderboardPage() {
           <>
             {/* User pinned entry always on top */}
             {pinnedUserEntry && (
-              <div
-                className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 cursor-pointer hover:bg-purple-100 transition-colors mb-2"
+              <LeaderboardRow
+                rank={pinnedUserEntry.rank}
+                name={pinnedUserEntry.name}
+                avatarUrl={pinnedUserEntry.pfp}
+                score={pinnedUserEntry.score}
+                rewards={getUsdcRewards(pinnedUserEntry.score)}
+                isPinned={true}
                 onClick={handlePinnedUserClick}
-              >
-                <span className="text-sm font-medium w-6">
-                  #{pinnedUserEntry.rank}
-                </span>
-                <Avatar className="h-8 w-8">
-                  {pinnedUserEntry.pfp ? (
-                    <AvatarImage src={pinnedUserEntry.pfp} />
-                  ) : (
-                    <AvatarFallback>{pinnedUserEntry.name[0]}</AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{pinnedUserEntry.name}</p>
-                  <p className="text-xs text-gray-600">
-                    Creator Score: {pinnedUserEntry.score}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-sm font-medium">
-                    {getUsdcRewards(pinnedUserEntry.score)}
-                  </span>
-                </div>
-              </div>
+              />
             )}
             {/* Leaderboard list (user may appear again in their real position) */}
             <div className="overflow-hidden rounded-lg bg-gray-50">
               {entries.map((user, index, array) => (
                 <div key={user.id}>
-                  <div
-                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                  <LeaderboardRow
+                    rank={user.rank}
+                    name={user.name}
+                    avatarUrl={user.pfp}
+                    score={user.score}
+                    rewards={getUsdcRewards(user.score)}
                     onClick={() => handleEntryClick(user)}
-                  >
-                    <span className="text-sm font-medium w-6">
-                      #{user.rank}
-                    </span>
-                    <Avatar className="h-8 w-8">
-                      {user.pfp ? (
-                        <AvatarImage src={user.pfp} />
-                      ) : (
-                        <AvatarFallback>{user.name[0]}</AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{user.name}</p>
-                      <p className="text-xs text-gray-600">
-                        Creator Score: {user.score}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-sm font-medium">
-                        {getUsdcRewards(user.score)}
-                      </span>
-                    </div>
-                  </div>
+                  />
                   {index < array.length - 1 && (
                     <div className="h-px bg-gray-200" />
                   )}

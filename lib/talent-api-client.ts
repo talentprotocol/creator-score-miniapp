@@ -269,6 +269,62 @@ export class TalentApiClient {
       return createServerErrorResponse("Failed to fetch user data");
     }
   }
+
+  async getPosts(params: TalentProtocolParams): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!params.talent_protocol_id && !params.id) {
+      return createBadRequestResponse("Missing id");
+    }
+
+    try {
+      const urlParams = new URLSearchParams();
+      const talentId = params.talent_protocol_id || params.id;
+
+      if (params.talent_protocol_id) {
+        // Direct talent ID lookup
+        urlParams.append("id", talentId!);
+      } else {
+        // Account source lookup
+        urlParams.append("id", talentId!);
+        const accountSource = params.account_source || "farcaster";
+        urlParams.append("account_source", accountSource);
+      }
+
+      // Add pagination parameters if provided
+      if (params.page) {
+        urlParams.append("page", params.page);
+      }
+      if (params.per_page) {
+        urlParams.append("per_page", params.per_page);
+      }
+
+      const data = await this.makeRequest(
+        "/creator_posts/profile_posts",
+        urlParams,
+      );
+      return NextResponse.json(data);
+    } catch (error) {
+      const identifier = params.talent_protocol_id || params.id;
+
+      if (error instanceof Error && error.message.includes("404")) {
+        return NextResponse.json(
+          { error: "Talent API returned 404", posts: [] },
+          { status: 502 },
+        );
+      }
+
+      logApiError(
+        "getPosts",
+        identifier || "unknown",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to fetch posts");
+    }
+  }
 }
 
 // Export a default instance

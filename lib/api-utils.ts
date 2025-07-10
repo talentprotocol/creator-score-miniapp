@@ -27,6 +27,8 @@ export interface TalentProtocolParams {
   fid?: string | null;
   account_source?: string | null;
   scorer_slug?: string | null;
+  page?: string | null;
+  per_page?: string | null;
 }
 
 export function extractTalentProtocolParams(
@@ -39,6 +41,8 @@ export function extractTalentProtocolParams(
     fid: searchParams.get("fid"),
     account_source: searchParams.get("account_source"),
     scorer_slug: searchParams.get("scorer_slug"),
+    page: searchParams.get("page"),
+    per_page: searchParams.get("per_page"),
   };
 }
 

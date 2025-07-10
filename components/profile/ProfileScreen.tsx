@@ -96,11 +96,7 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
             }
           />
         </div>
-        <ProfileTabs
-          accountsCount={socialAccounts.length}
-          socialAccounts={socialAccounts}
-          talentUUID={talentUUID}
-        />
+        <ProfileTabs socialAccounts={socialAccounts} talentUUID={talentUUID} />
         {children}
       </div>
     </main>

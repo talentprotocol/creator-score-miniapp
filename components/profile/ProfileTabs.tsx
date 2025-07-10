@@ -1,26 +1,29 @@
 import * as React from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { AccountGrid } from "./AccountGrid";
+import { useState } from "react";
+import { TabNavigation } from "@/components/ui/tabs-navigation";
 import type { IssuerCredentialGroup } from "@/app/services/types";
 import { useProfileCredentials } from "@/hooks/useProfileCredentials";
+import { useProfilePostsPaginated } from "@/hooks/useProfilePostsPaginated";
 import { ScoreProgressAccordion } from "./ScoreProgressAccordion";
 import { ScoreDataPoints } from "./ScoreDataPoints";
 import { CredentialIdeasCallout } from "./CredentialIdeasCallout";
+import { PostsList } from "./PostsList";
 
 interface ProfileTabsProps {
-  accountsCount: number;
   socialAccounts: import("@/app/services/types").SocialAccount[];
   talentUUID: string;
 }
 
-export function ProfileTabs({
-  accountsCount,
-  socialAccounts,
-  talentUUID,
-}: ProfileTabsProps) {
+export function ProfileTabs({ socialAccounts, talentUUID }: ProfileTabsProps) {
   const { credentials } = useProfileCredentials(talentUUID);
+  const {
+    posts,
+    loading: postsLoading,
+    error: postsError,
+    hasMore,
+    loadMore,
+  } = useProfilePostsPaginated(talentUUID, 10);
+  const [activeTab, setActiveTab] = useState("score");
 
   // Calculate credentials count from the hook data
   const credentialsCount = credentials.reduce(
@@ -28,56 +31,54 @@ export function ProfileTabs({
     0,
   );
 
+  const tabs = [
+    {
+      id: "score",
+      label: "Score",
+    },
+    {
+      id: "content",
+      label: "Posts",
+    },
+    {
+      id: "credentials",
+      label: "Credentials",
+      count: credentialsCount,
+    },
+  ];
+
   return (
-    <Tabs defaultValue="accounts" className="w-full flex flex-col">
-      <TabsList className="w-full justify-start bg-transparent p-0 h-auto gap-6">
-        <TabsTrigger
-          value="accounts"
-          className={cn(
-            "relative px-0 py-2 text-base font-medium",
-            "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-            "data-[state=active]:text-foreground data-[state=active]:after:absolute",
-            "data-[state=active]:after:bottom-0 data-[state=active]:after:left-0",
-            "data-[state=active]:after:right-0 data-[state=active]:after:h-0.5",
-            "data-[state=active]:after:bg-primary",
-          )}
-        >
-          Accounts
-          <Badge
-            variant="secondary"
-            className="ml-2 bg-muted text-muted-foreground"
-          >
-            {accountsCount}
-          </Badge>
-        </TabsTrigger>
-        <TabsTrigger
-          value="score"
-          className={cn(
-            "relative px-0 py-2 text-base font-medium",
-            "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-            "data-[state=active]:text-foreground data-[state=active]:after:absolute",
-            "data-[state=active]:after:bottom-0 data-[state=active]:after:left-0",
-            "data-[state=active]:after:right-0 data-[state=active]:after:h-0.5",
-            "data-[state=active]:after:bg-primary",
-          )}
-        >
-          Credentials
-          <Badge
-            variant="secondary"
-            className="ml-2 bg-muted text-muted-foreground"
-          >
-            {credentialsCount}
-          </Badge>
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="accounts" className="mt-6 p-2">
-        <AccountGrid socialAccounts={socialAccounts} />
-      </TabsContent>
-      <TabsContent value="score" className="mt-6 space-y-6">
-        <ScoreProgressAccordion talentUUID={talentUUID} />
-        <CredentialIdeasCallout />
-        <ScoreDataPoints talentUUID={talentUUID} />
-      </TabsContent>
-    </Tabs>
+    <div className="w-full flex flex-col">
+      <TabNavigation
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+      <div className="mt-6">
+        {activeTab === "score" && (
+          <div className="space-y-6">
+            {/* Score tab content - empty for now */}
+          </div>
+        )}
+        {activeTab === "content" && (
+          <div className="space-y-6">
+            <PostsList
+              posts={posts}
+              loading={postsLoading}
+              error={postsError}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+            />
+          </div>
+        )}
+        {activeTab === "credentials" && (
+          <div className="space-y-6">
+            <ScoreProgressAccordion talentUUID={talentUUID} />
+            <CredentialIdeasCallout />
+            <ScoreDataPoints talentUUID={talentUUID} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

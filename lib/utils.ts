@@ -378,3 +378,12 @@ export function calculateTotalFollowers(
 ): number {
   return socialAccounts.reduce((sum, acc) => sum + (acc.followerCount ?? 0), 0);
 }
+
+export function formatPostDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
