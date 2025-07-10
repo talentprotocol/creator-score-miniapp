@@ -77,6 +77,8 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
           followers={formatK(totalFollowers)}
           displayName={profile?.display_name}
           profileImage={profile?.image_url}
+          bio={profile?.bio}
+          socialAccounts={socialAccounts}
         />
         <div className="flex flex-row gap-4 w-full">
           <StatCard

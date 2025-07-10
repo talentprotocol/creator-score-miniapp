@@ -2,17 +2,27 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { navItems } = useUserNavigation();
+
+  const handleTitleClick = () => {
+    router.push("/");
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white">
       <div className="flex h-14 w-full items-center justify-between px-4 md:px-8 relative">
-        <h1 className="text-lg font-semibold">Creator Score</h1>
+        <h1
+          className="text-lg font-semibold cursor-pointer hover:opacity-70 transition-opacity"
+          onClick={handleTitleClick}
+        >
+          Creator Score
+        </h1>
         {/* Desktop nav icons, centered */}
         <nav className="hidden md:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
           {navItems.map((item) => {

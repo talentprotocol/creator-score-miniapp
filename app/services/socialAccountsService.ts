@@ -20,6 +20,8 @@ function getDisplayName(source: string): string {
   if (source === "lens") return "Lens";
   if (source === "twitter") return "Twitter";
   if (source === "linkedin") return "LinkedIn";
+  if (source === "efp") return "EFP";
+  if (source === "ens") return "ENS";
   return source.charAt(0).toUpperCase() + source.slice(1);
 }
 
@@ -39,49 +41,12 @@ export async function getSocialAccountsForTalentId(
     const data = await response.json();
     if (!Array.isArray(data.socials)) return [];
 
-    // Process social accounts similar to the original function
-    // 1. Filter EFPs, keep only the one with the highest follower count
-    const efpAccounts = data.socials.filter(
-      (s: TalentSocialAccount) => s.source === "efp",
-    );
-    let mainEfp: TalentSocialAccount | null = null;
-    if (efpAccounts.length > 0) {
-      mainEfp = efpAccounts.reduce(
-        (max: TalentSocialAccount, curr: TalentSocialAccount) =>
-          (curr.followers_count ?? 0) > (max.followers_count ?? 0) ? curr : max,
-        efpAccounts[0],
-      );
-    }
-
-    // 2. Find ENS account
-    const ensAccount = data.socials.find(
-      (s: TalentSocialAccount) => s.source === "ens",
-    );
-
-    // 3. Merge EFP and ENS into 'Ethereum' if either exists
-    let ethereumAccount: SocialAccount | null = null;
-    if (mainEfp || ensAccount) {
-      ethereumAccount = {
-        source: "ethereum",
-        handle: ensAccount?.handle || null,
-        followerCount: mainEfp?.followers_count ?? null,
-        accountAge: getAccountAge(ensAccount?.owned_since ?? null),
-        profileUrl: ensAccount?.profile_url ?? mainEfp?.profile_url ?? null,
-        imageUrl: ensAccount?.image_url ?? mainEfp?.image_url ?? null,
-        displayName: "Ethereum",
-      };
-    }
-
-    // 4. Map and filter other accounts
+    // Process social accounts without merging EFP and ENS
     const socials: SocialAccount[] = data.socials
       .filter((s: TalentSocialAccount) => {
         const src = s.source;
-        return (
-          src !== "efp" &&
-          src !== "ens" &&
-          src !== "linkedin" &&
-          src !== "ethereum"
-        );
+        // Only exclude linkedin and duplicate ethereum accounts
+        return src !== "linkedin" && src !== "ethereum";
       })
       .map((s: TalentSocialAccount) => {
         let handle = s.handle || null;
@@ -119,21 +84,22 @@ export async function getSocialAccountsForTalentId(
           };
         }
 
+        // Special handling for EFP fallback URL
+        let profileUrl = s.profile_url ?? null;
+        if (src === "efp" && !profileUrl && handle) {
+          profileUrl = `https://efp.app/${handle}`;
+        }
+
         return {
           source: src,
           handle,
           followerCount: s.followers_count ?? null,
           accountAge: getAccountAge(s.owned_since ?? null),
-          profileUrl: s.profile_url ?? null,
+          profileUrl,
           imageUrl: s.image_url ?? null,
           displayName,
         };
       });
-
-    // 5. Add merged Ethereum account if present
-    if (ethereumAccount) {
-      socials.unshift(ethereumAccount);
-    }
 
     return socials;
   } catch {

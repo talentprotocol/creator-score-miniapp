@@ -310,7 +310,7 @@ export default function LeaderboardPage() {
         {/* Creator Score - Bottom Left */}
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-4">Your Creator Score</p>
+            <p className="text-sm text-gray-600 mb-4">Your Score</p>
             <p className="text-2xl font-bold">
               {creatorScore !== null ? creatorScore : "-"}
             </p>

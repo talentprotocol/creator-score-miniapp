@@ -331,16 +331,42 @@ export function generateProfileUrl(params: {
 }
 
 /**
- * Open external URL with SDK fallback
+ * Open external URL with environment detection
  */
 export async function openExternalUrl(url: string): Promise<void> {
+  // Check if we're in a Farcaster environment
+  const isInFarcaster =
+    typeof window !== "undefined" &&
+    (window.location.hostname.includes("farcaster") ||
+      window.location.hostname.includes("warpcast") ||
+      // Check for Farcaster-specific globals
+      (window as any).farcasterFrame ||
+      // Check user agent for Farcaster
+      navigator.userAgent.includes("Farcaster"));
+
+  if (isInFarcaster) {
+    try {
+      const { sdk } = await import("@farcaster/frame-sdk");
+      await sdk.actions.openUrl(url);
+      return;
+    } catch (error) {
+      console.error("Failed to open external URL with Farcaster SDK:", error);
+      // Fall through to regular window.open
+    }
+  }
+
+  // Regular browser environment - use window.open synchronously to avoid popup blockers
   try {
-    const { sdk } = await import("@farcaster/frame-sdk");
-    await sdk.actions.openUrl(url);
+    const newWindow = window.open(url, "_blank", "noopener,noreferrer");
+    if (!newWindow) {
+      console.error("Failed to open new window - popup may be blocked");
+      throw new Error("Failed to open external URL");
+    }
+    // Focus the new window if it opened successfully
+    newWindow.focus();
   } catch (error) {
-    console.error("Failed to open external URL:", error);
-    // Fallback to regular link if SDK fails
-    window.open(url, "_blank", "noopener,noreferrer");
+    console.error("window.open failed:", error);
+    throw error;
   }
 }
 

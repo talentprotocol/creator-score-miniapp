@@ -10,6 +10,8 @@ import {
   WalletMinimal,
   Sprout,
   BadgeCheck,
+  Users,
+  Globe,
 } from "lucide-react";
 
 interface AccountCardProps {
@@ -33,6 +35,8 @@ const platformIcons: Record<
   lens: Sprout,
   twitter: Twitter,
   linkedin: Linkedin,
+  efp: Users,
+  ens: Globe,
 };
 
 export function AccountCard({
