@@ -355,6 +355,8 @@ export function ProfileAccountsSheet({
   const [open, setOpen] = React.useState(false);
   const [triggerRect, setTriggerRect] = React.useState<DOMRect | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const drawerContentRef = React.useRef<HTMLDivElement>(null);
+  const previouslyFocusedElement = React.useRef<HTMLElement | null>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const handleDesktopTriggerClick = () => {
@@ -363,6 +365,31 @@ export function ProfileAccountsSheet({
     }
     setOpen(!open);
   };
+
+  // Handle focus management for mobile drawer
+  React.useEffect(() => {
+    if (!isDesktop) {
+      if (open) {
+        // Store the previously focused element
+        previouslyFocusedElement.current =
+          document.activeElement as HTMLElement;
+
+        // Move focus to drawer content
+        const timer = setTimeout(() => {
+          if (drawerContentRef.current) {
+            drawerContentRef.current.focus();
+          }
+        }, 100); // Small delay to ensure drawer is rendered
+
+        return () => clearTimeout(timer);
+      } else {
+        // Restore focus when drawer closes
+        if (previouslyFocusedElement.current) {
+          previouslyFocusedElement.current.focus();
+        }
+      }
+    }
+  }, [open, isDesktop]);
 
   // Close on escape key
   React.useEffect(() => {
@@ -453,7 +480,7 @@ export function ProfileAccountsSheet({
   }
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer open={open} onOpenChange={setOpen} modal={true}>
       <DrawerTrigger asChild>
         <button
           className="flex items-center gap-1 text-xl font-bold leading-tight focus:outline-none"
@@ -471,7 +498,11 @@ export function ProfileAccountsSheet({
             View social accounts and wallet addresses for {name}
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-2 pb-4 overflow-y-auto">
+        <div
+          ref={drawerContentRef}
+          className="px-2 pb-4 overflow-y-auto focus:outline-none"
+          tabIndex={-1}
+        >
           <SheetContent
             socialAccounts={socialAccounts}
             isOpen={open}
