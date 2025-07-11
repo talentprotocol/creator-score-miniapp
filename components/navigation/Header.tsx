@@ -27,15 +27,8 @@ export function Header() {
             Creator Score
           </h1>
 
-          {/* Desktop Navigation - Using reliable CSS instead of problematic Tailwind classes */}
-          <nav
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-            className="desktop-nav"
-          >
+          {/* Desktop Navigation - Using original Tailwind classes */}
+          <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               if (item.onClick) {
                 return (
@@ -73,20 +66,6 @@ export function Header() {
           </nav>
         </div>
       </header>
-
-      <style jsx>{`
-        .desktop-nav {
-          display: none;
-        }
-
-        @media (min-width: 768px) {
-          .desktop-nav {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-          }
-        }
-      `}</style>
 
       <FarcasterAccessModal
         open={modalOpen}
