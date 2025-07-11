@@ -27,7 +27,6 @@ import {
 
 interface ProfileAccountsSheetProps {
   name: string;
-  fid?: number;
   socialAccounts: SocialAccount[];
   talentUUID?: string;
 }
@@ -68,14 +67,6 @@ function SocialAccountsList({
 }: {
   socialAccounts: SocialAccount[];
 }) {
-  if (!socialAccounts || socialAccounts.length === 0) {
-    return (
-      <div className="text-muted-foreground text-sm py-4">
-        No social accounts found.
-      </div>
-    );
-  }
-
   // Process accounts: filter EFP duplicates and sort by follower count
   const processedAccounts = React.useMemo(() => {
     let accounts = [...socialAccounts];
@@ -141,6 +132,18 @@ function SocialAccountsList({
       }
     }
   };
+
+  if (
+    !socialAccounts ||
+    socialAccounts.length === 0 ||
+    processedAccounts.length === 0
+  ) {
+    return (
+      <div className="text-muted-foreground text-sm py-4">
+        No social accounts found.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -319,12 +322,10 @@ function WalletAddressesList({
 }
 
 function SheetContent({
-  fid,
   socialAccounts,
   isOpen,
   talentUUID,
 }: {
-  fid?: number;
   socialAccounts: SocialAccount[];
   isOpen: boolean;
   talentUUID?: string;
@@ -348,7 +349,6 @@ function SheetContent({
 
 export function ProfileAccountsSheet({
   name,
-  fid,
   socialAccounts,
   talentUUID,
 }: ProfileAccountsSheetProps) {
@@ -441,7 +441,6 @@ export function ProfileAccountsSheet({
                 View social accounts and wallet addresses for {name}
               </div>
               <SheetContent
-                fid={fid}
                 socialAccounts={socialAccounts}
                 isOpen={open}
                 talentUUID={talentUUID}
@@ -474,7 +473,6 @@ export function ProfileAccountsSheet({
         </DrawerHeader>
         <div className="px-2 pb-4 overflow-y-auto">
           <SheetContent
-            fid={fid}
             socialAccounts={socialAccounts}
             isOpen={open}
             talentUUID={talentUUID}

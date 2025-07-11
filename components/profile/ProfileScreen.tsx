@@ -79,7 +79,6 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
           profileImage={profile?.image_url}
           bio={profile?.bio}
           socialAccounts={socialAccounts}
-          profileFid={profile?.fid}
           talentUUID={talentUUID}
         />
         <div className="flex flex-row gap-4 w-full">

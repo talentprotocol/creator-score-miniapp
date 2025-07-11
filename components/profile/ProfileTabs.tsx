@@ -10,6 +10,7 @@ import { ScoreProgressAccordion } from "./ScoreProgressAccordion";
 import { ScoreDataPoints } from "./ScoreDataPoints";
 import { CredentialIdeasCallout } from "./CredentialIdeasCallout";
 import { PostsList } from "./PostsList";
+import type { SocialAccount } from "@/app/services/types";
 
 interface ProfileTabsProps {
   talentUUID: string;
@@ -18,7 +19,7 @@ interface ProfileTabsProps {
 // Platform URL mapping for earnings platforms
 const getPlatformUrl = (
   platformName: string,
-  socialAccounts: any[],
+  socialAccounts: SocialAccount[],
   existingUrl?: string,
 ): string | undefined => {
   // First, check if we already have a URL from the data

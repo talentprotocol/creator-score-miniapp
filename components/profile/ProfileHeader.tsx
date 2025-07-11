@@ -14,7 +14,6 @@ export function ProfileHeader({
   profileImage,
   bio,
   socialAccounts = [],
-  profileFid,
   talentUUID,
 }: {
   followers?: string;
@@ -22,7 +21,6 @@ export function ProfileHeader({
   profileImage?: string;
   bio?: string;
   socialAccounts?: SocialAccount[];
-  profileFid?: number | null;
   talentUUID?: string;
 }) {
   const { context } = useMiniKit();
@@ -36,9 +34,6 @@ export function ProfileHeader({
     profileImage ||
     currentUser?.pfpUrl ||
     "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
-
-  // Use the profile's FID to fetch wallet addresses for the profile being viewed
-  const fid = profileFid || undefined;
 
   const [isBioExpanded, setIsBioExpanded] = React.useState(false);
 
@@ -55,7 +50,6 @@ export function ProfileHeader({
         <div className="flex-1 min-w-0">
           <ProfileAccountsSheet
             name={name}
-            fid={fid}
             socialAccounts={socialAccounts}
             talentUUID={talentUUID}
           />
