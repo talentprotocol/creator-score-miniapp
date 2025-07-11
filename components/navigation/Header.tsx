@@ -58,12 +58,16 @@ export function Header() {
                     <button
                       key={item.label}
                       onClick={item.onClick}
-                      className="flex items-center justify-center h-10 w-12 rounded-full transition-colors text-muted-foreground hover:bg-muted/50"
+                      className="flex items-center justify-center h-10 w-12 rounded-full transition-colors text-muted-foreground hover:bg-muted/50 border border-red-300"
                       aria-label={item.label}
-                      title={item.label} // Added for debugging
+                      title={item.label}
+                      style={{ backgroundColor: "rgba(255, 0, 0, 0.1)" }}
                     >
                       {item.icon ? (
-                        <item.icon className="h-6 w-6" />
+                        <item.icon
+                          className="h-6 w-6"
+                          style={{ color: "red", stroke: "red", fill: "red" }}
+                        />
                       ) : (
                         <span className="text-xs">{item.label[0]}</span>
                       )}
@@ -77,17 +81,21 @@ export function Header() {
                       key={item.href}
                       href={item.href}
                       className={
-                        "flex items-center justify-center h-10 w-12 rounded-full transition-colors " +
+                        "flex items-center justify-center h-10 w-12 rounded-full transition-colors border border-red-300 " +
                         (isActive
                           ? "bg-muted text-primary"
                           : "text-muted-foreground hover:bg-muted/50")
                       }
                       aria-label={item.label}
                       aria-current={isActive ? "page" : undefined}
-                      title={item.label} // Added for debugging
+                      title={item.label}
+                      style={{ backgroundColor: "rgba(255, 0, 0, 0.1)" }}
                     >
                       {item.icon ? (
-                        <item.icon className="h-6 w-6" />
+                        <item.icon
+                          className="h-6 w-6"
+                          style={{ color: "red", stroke: "red", fill: "red" }}
+                        />
                       ) : (
                         <span className="text-xs">{item.label[0]}</span>
                       )}

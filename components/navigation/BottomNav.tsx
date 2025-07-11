@@ -47,14 +47,18 @@ export function BottomNav() {
                     key={item.label}
                     onClick={item.onClick}
                     className={cn(
-                      "flex items-center justify-center py-6 px-4 flex-1 transition-colors min-h-[60px]",
+                      "flex items-center justify-center p-4 flex-1 transition-colors border border-red-300",
                       "hover:bg-muted/50 text-muted-foreground",
                     )}
                     aria-label={item.label}
                     title={item.label}
+                    style={{ backgroundColor: "rgba(255, 0, 0, 0.1)" }}
                   >
                     {item.icon ? (
-                      <item.icon className="h-6 w-6" />
+                      <item.icon
+                        className="h-6 w-6"
+                        style={{ color: "red", stroke: "red", fill: "red" }}
+                      />
                     ) : (
                       <span className="text-xs">{item.label[0]}</span>
                     )}
@@ -68,16 +72,20 @@ export function BottomNav() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center justify-center py-6 px-4 flex-1 transition-colors min-h-[60px]",
+                      "flex items-center justify-center p-4 flex-1 transition-colors border border-red-300",
                       "hover:bg-muted/50",
                       isActive ? "text-primary" : "text-muted-foreground",
                     )}
                     aria-label={item.label}
                     aria-current={isActive ? "page" : undefined}
                     title={item.label}
+                    style={{ backgroundColor: "rgba(255, 0, 0, 0.1)" }}
                   >
                     {item.icon ? (
-                      <item.icon className="h-6 w-6" />
+                      <item.icon
+                        className="h-6 w-6"
+                        style={{ color: "red", stroke: "red", fill: "red" }}
+                      />
                     ) : (
                       <span className="text-xs">{item.label[0]}</span>
                     )}
