@@ -40,20 +40,8 @@ export function Header() {
           >
             Creator Score
           </h1>
-          {/* Simple test navigation - visible on all screens */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50px",
-              right: "10px",
-              display: "flex",
-              gap: "10px",
-              zIndex: 9999,
-              backgroundColor: "yellow",
-              padding: "10px",
-              border: "3px solid red",
-            }}
-          >
+          {/* Desktop nav - positioned within header for normal flow */}
+          <div className="hidden md:flex items-center gap-2">
             {navItems.map((item, index) => {
               console.log(`[Header] Rendering nav item ${index}:`, {
                 label: item.label,
@@ -68,8 +56,8 @@ export function Header() {
                     key={item.label}
                     onClick={item.onClick}
                     style={{
-                      width: "50px",
-                      height: "50px",
+                      width: "40px",
+                      height: "40px",
                       backgroundColor: "red",
                       color: "white",
                       border: "2px solid black",
@@ -77,14 +65,15 @@ export function Header() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      borderRadius: "50%",
                     }}
                     title={item.label}
                   >
                     {item.icon ? (
                       <item.icon
                         style={{
-                          width: "30px",
-                          height: "30px",
+                          width: "24px",
+                          height: "24px",
                           color: "white",
                           stroke: "white",
                           fill: "white",
@@ -105,8 +94,8 @@ export function Header() {
                     key={item.href}
                     href={item.href}
                     style={{
-                      width: "50px",
-                      height: "50px",
+                      width: "40px",
+                      height: "40px",
                       backgroundColor:
                         pathname === item.href ? "blue" : "green",
                       color: "white",
@@ -115,14 +104,15 @@ export function Header() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      borderRadius: "50%",
                     }}
                     title={item.label}
                   >
                     {item.icon ? (
                       <item.icon
                         style={{
-                          width: "30px",
-                          height: "30px",
+                          width: "24px",
+                          height: "24px",
                           color: "white",
                           stroke: "white",
                           fill: "white",
@@ -142,6 +132,49 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* Additional test navigation - positioned outside header */}
+      <div
+        style={{
+          position: "fixed",
+          top: "70px",
+          right: "20px",
+          display: "flex",
+          gap: "10px",
+          zIndex: 9999,
+          backgroundColor: "yellow",
+          padding: "15px",
+          border: "3px solid red",
+          borderRadius: "10px",
+        }}
+        className="hidden md:block"
+      >
+        <div
+          style={{ color: "black", fontWeight: "bold", marginRight: "10px" }}
+        >
+          TEST NAV:
+        </div>
+        {navItems.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              width: "50px",
+              height: "50px",
+              backgroundColor: "purple",
+              color: "white",
+              border: "2px solid black",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              fontWeight: "bold",
+            }}
+          >
+            {item.label[0]}
+          </div>
+        ))}
+      </div>
+
       <FarcasterAccessModal
         open={modalOpen}
         onOpenChange={setModalOpen}
