@@ -40,7 +40,7 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
   if (profileLoading) {
     return (
       <main className="flex-1 overflow-y-auto relative">
-        <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-md mx-auto px-4 py-6 space-y-6">
           <div className="flex items-center justify-between w-full gap-4">
             <div className="flex-1 min-w-0">
               <Skeleton className="h-8 w-48 mb-2" />
@@ -61,7 +61,7 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
   if (profileError) {
     return (
       <main className="flex-1 overflow-y-auto relative">
-        <div className="container max-w-md mx-auto px-4 py-6">
+        <div className="max-w-md mx-auto px-4 py-6">
           <Callout>
             <strong>Error loading profile:</strong> {profileError}
           </Callout>
@@ -72,13 +72,15 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
 
   return (
     <main className="flex-1 overflow-y-auto relative">
-      <div className="container max-w-md mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
         <ProfileHeader
           followers={formatK(totalFollowers)}
           displayName={profile?.display_name}
           profileImage={profile?.image_url}
           bio={profile?.bio}
           socialAccounts={socialAccounts}
+          profileFid={profile?.fid}
+          talentUUID={talentUUID}
         />
         <div className="flex flex-row gap-4 w-full">
           <StatCard

@@ -84,7 +84,7 @@ export function PostsList({
   if (posts.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p className="text-sm">No posts available.</p>
+        <p className="text-sm">No Mirror, Paragraph or Zora posts available.</p>
       </div>
     );
   }

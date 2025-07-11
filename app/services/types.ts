@@ -107,6 +107,26 @@ export type LeaderboardEntry = {
   talent_protocol_id: string | number;
 };
 
+// Wallet account types for Talent Protocol API
+export interface WalletAccount {
+  identifier: string; // wallet address
+  imported_from: string | null;
+  connected_at: string;
+  owned_since: string | null;
+  source: string;
+  username: string | null;
+  invalid_token: boolean;
+}
+
+export interface GroupedWalletAccounts {
+  farcasterVerified: WalletAccount[]; // imported_from = "farcaster"
+  talentVerified: WalletAccount[]; // imported_from = null
+}
+
+export interface WalletAccountsResponse {
+  accounts: WalletAccount[];
+}
+
 // Scorer slugs from Talent Protocol API
 export const SCORER_SLUGS = {
   BUILDER: "builder_score", // default scorer

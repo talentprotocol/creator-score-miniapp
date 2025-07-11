@@ -359,14 +359,15 @@ export async function openExternalUrl(url: string): Promise<void> {
   try {
     const newWindow = window.open(url, "_blank", "noopener,noreferrer");
     if (!newWindow) {
-      console.error("Failed to open new window - popup may be blocked");
-      throw new Error("Failed to open external URL");
+      console.debug("Failed to open new window - popup may be blocked");
+      // Don't throw error - popups being blocked is expected behavior
+      return;
     }
     // Focus the new window if it opened successfully
     newWindow.focus();
   } catch (error) {
-    console.error("window.open failed:", error);
-    throw error;
+    console.debug("window.open failed:", error);
+    // Don't throw error - this is expected in some environments
   }
 }
 

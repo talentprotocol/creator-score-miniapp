@@ -10,7 +10,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Copy, ChevronDown, ExternalLink } from "lucide-react";
-import { useProfileWalletAddresses } from "@/hooks/useProfileWalletAddresses";
+import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
 import { truncateAddress, formatK, openExternalUrl } from "@/lib/utils";
 import type { SocialAccount } from "@/app/services/types";
 import {
@@ -29,6 +29,7 @@ interface ProfileAccountsSheetProps {
   name: string;
   fid?: number;
   socialAccounts: SocialAccount[];
+  talentUUID?: string;
 }
 
 const platformIcons: Record<
@@ -75,6 +76,33 @@ function SocialAccountsList({
     );
   }
 
+  // Process accounts: filter EFP duplicates and sort by follower count
+  const processedAccounts = React.useMemo(() => {
+    let accounts = [...socialAccounts];
+
+    // Filter EFP accounts - keep only the one with most followers
+    const efpAccounts = accounts.filter((acc) => acc.source === "efp");
+    if (efpAccounts.length > 1) {
+      // Find EFP account with highest follower count
+      const bestEfp = efpAccounts.reduce((best, current) => {
+        const bestCount = best.followerCount ?? -1;
+        const currentCount = current.followerCount ?? -1;
+        return currentCount > bestCount ? current : best;
+      });
+
+      // Remove all EFP accounts and add back the best one
+      accounts = accounts.filter((acc) => acc.source !== "efp");
+      accounts.push(bestEfp);
+    }
+
+    // Sort by follower count (descending), treating null/undefined as -1
+    return accounts.sort((a, b) => {
+      const aCount = a.followerCount ?? -1;
+      const bCount = b.followerCount ?? -1;
+      return bCount - aCount;
+    });
+  }, [socialAccounts]);
+
   const handleSocialClick = (
     url: string | null | undefined,
     platform: string,
@@ -116,17 +144,26 @@ function SocialAccountsList({
 
   return (
     <div className="space-y-3">
-      {socialAccounts.map((account, idx) => {
+      {processedAccounts.map((account, idx) => {
         const Icon = platformIcons[account.source] || CircleUserRound;
         const followers =
-          account.followerCount !== null && account.followerCount !== undefined
+          account.followerCount !== null &&
+          account.followerCount !== undefined &&
+          account.followerCount > 0
             ? formatK(account.followerCount)
             : "—";
 
         return (
           <div
             key={`${account.source}-${account.handle || idx}`}
-            className="flex items-center gap-3 py-2"
+            className={`flex items-center gap-3 py-2 transition-colors ${
+              account.profileUrl ? "cursor-pointer active:bg-gray-200" : ""
+            }`}
+            onClick={
+              account.profileUrl
+                ? () => handleSocialClick(account.profileUrl, account.source)
+                : undefined
+            }
           >
             <Icon className="h-5 w-5 text-muted-foreground" />
             <div className="flex-1 min-w-0">
@@ -142,15 +179,9 @@ function SocialAccountsList({
                 {followers !== "—" ? `${followers} followers` : "—"}
               </div>
               {account.profileUrl && (
-                <button
-                  onClick={() =>
-                    handleSocialClick(account.profileUrl, account.source)
-                  }
-                  className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={`Open ${account.displayName || account.source} profile`}
-                >
+                <div className="text-gray-600 p-1">
                   <ExternalLink className="h-4 w-4" />
-                </button>
+                </div>
               )}
             </div>
           </div>
@@ -161,19 +192,30 @@ function SocialAccountsList({
 }
 
 function WalletAddressesList({
-  fid,
+  talentUUID,
   isOpen,
 }: {
-  fid?: number;
+  talentUUID?: string;
   isOpen: boolean;
 }) {
+  const [copiedAddress, setCopiedAddress] = React.useState<string | null>(null);
   const {
     walletData,
     loading,
     error: walletError,
-  } = useProfileWalletAddresses(isOpen ? fid : undefined);
+  } = useProfileWalletAccounts(isOpen ? talentUUID : undefined);
 
-  if (!fid) {
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
+    setCopiedAddress(address);
+
+    // Reset after 1 second
+    setTimeout(() => {
+      setCopiedAddress(null);
+    }, 1000);
+  };
+
+  if (!talentUUID) {
     return (
       <div className="text-muted-foreground text-sm py-4">
         No addresses found.
@@ -189,7 +231,11 @@ function WalletAddressesList({
     return <div className="text-destructive text-sm py-4">{walletError}</div>;
   }
 
-  if (!walletData || walletData.addresses.length === 0) {
+  if (
+    !walletData ||
+    (walletData.farcasterVerified.length === 0 &&
+      walletData.talentVerified.length === 0)
+  ) {
     return (
       <div className="text-muted-foreground text-sm py-4">
         No addresses found.
@@ -197,43 +243,77 @@ function WalletAddressesList({
     );
   }
 
+  const WalletItem = ({ address }: { address: string }) => (
+    <div
+      key={address}
+      className="flex items-center gap-3 py-2 cursor-pointer transition-colors"
+      onClick={() => handleCopyAddress(address)}
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M16 3L16.2 3.6V21.7L16 21.9L7.1 17.1L16 3Z" fill="#232323" />
+        <path d="M16 3L24.9 17.1L16 21.9V12.2V3Z" fill="#232323" />
+        <path
+          d="M16 23.6L16.1 23.8V28.7L16 29L7.1 18.7L16 23.6Z"
+          fill="#232323"
+        />
+        <path d="M16 29V23.6L24.9 18.7L16 29Z" fill="#232323" />
+        <path d="M16 21.9L7.1 17.1L16 12.2V21.9Z" fill="#232323" />
+        <path d="M24.9 17.1L16 21.9V12.2L24.9 17.1Z" fill="#232323" />
+      </svg>
+      <span className="flex-1 text-foreground font-mono text-sm truncate">
+        {truncateAddress(address)}
+      </span>
+      <div className="text-gray-600 p-1 flex items-center justify-end min-w-[60px]">
+        {copiedAddress === address ? (
+          <span className="text-xs text-gray-500">Copied</span>
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-3">
-      {walletData.addresses.map((address: string) => (
-        <div key={address} className="flex items-center gap-3 py-2">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M16 3L16.2 3.6V21.7L16 21.9L7.1 17.1L16 3Z"
-              fill="#232323"
-            />
-            <path d="M16 3L24.9 17.1L16 21.9V12.2V3Z" fill="#232323" />
-            <path
-              d="M16 23.6L16.1 23.8V28.7L16 29L7.1 18.7L16 23.6Z"
-              fill="#232323"
-            />
-            <path d="M16 29V23.6L24.9 18.7L16 29Z" fill="#232323" />
-            <path d="M16 21.9L7.1 17.1L16 12.2V21.9Z" fill="#232323" />
-            <path d="M24.9 17.1L16 21.9V12.2L24.9 17.1Z" fill="#232323" />
-          </svg>
-          <span className="flex-1 text-foreground font-mono text-sm truncate">
-            {truncateAddress(address)}
-          </span>
-          <button
-            type="button"
-            className="p-1 rounded hover:bg-accent"
-            onClick={() => navigator.clipboard.writeText(address)}
-            aria-label="Copy address"
-          >
-            <Copy className="h-4 w-4 text-muted-foreground" />
-          </button>
+    <div className="space-y-4">
+      {/* Verified on Talent */}
+      {walletData.talentVerified.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground mb-2">
+            Verified on Talent
+          </h4>
+          <div className="space-y-1">
+            {walletData.talentVerified.map((account) => (
+              <WalletItem
+                key={account.identifier}
+                address={account.identifier}
+              />
+            ))}
+          </div>
         </div>
-      ))}
+      )}
+
+      {/* Verified on Farcaster */}
+      {walletData.farcasterVerified.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground mb-2">
+            Verified on Farcaster
+          </h4>
+          <div className="space-y-1">
+            {walletData.farcasterVerified.map((account) => (
+              <WalletItem
+                key={account.identifier}
+                address={account.identifier}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -242,10 +322,12 @@ function SheetContent({
   fid,
   socialAccounts,
   isOpen,
+  talentUUID,
 }: {
   fid?: number;
   socialAccounts: SocialAccount[];
   isOpen: boolean;
+  talentUUID?: string;
 }) {
   return (
     <div className="space-y-6">
@@ -258,7 +340,7 @@ function SheetContent({
       {/* Wallets Section */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Wallets</h3>
-        <WalletAddressesList fid={fid} isOpen={isOpen} />
+        <WalletAddressesList talentUUID={talentUUID} isOpen={isOpen} />
       </div>
     </div>
   );
@@ -268,14 +350,15 @@ export function ProfileAccountsSheet({
   name,
   fid,
   socialAccounts,
+  talentUUID,
 }: ProfileAccountsSheetProps) {
   const [open, setOpen] = React.useState(false);
   const [triggerRect, setTriggerRect] = React.useState<DOMRect | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  const handleTriggerClick = () => {
-    if (isDesktop && triggerRef.current) {
+  const handleDesktopTriggerClick = () => {
+    if (triggerRef.current) {
       setTriggerRect(triggerRef.current.getBoundingClientRect());
     }
     setOpen(!open);
@@ -318,21 +401,19 @@ export function ProfileAccountsSheet({
     }
   }, [open, isDesktop]);
 
-  const trigger = (
-    <button
-      ref={triggerRef}
-      onClick={handleTriggerClick}
-      className="flex items-center gap-1 text-xl font-bold leading-tight focus:outline-none"
-    >
-      <span>{name}</span>
-      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-    </button>
-  );
-
   if (isDesktop) {
     return (
       <>
-        {trigger}
+        <button
+          ref={triggerRef}
+          onClick={handleDesktopTriggerClick}
+          className="flex items-center gap-1 text-xl font-bold leading-tight focus:outline-none"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+        >
+          <span>{name}</span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        </button>
         {open && triggerRect && (
           <>
             {/* Backdrop */}
@@ -343,16 +424,27 @@ export function ProfileAccountsSheet({
             {/* Desktop Overlay */}
             <div
               data-profile-sheet-overlay
-              className="fixed z-50 w-80 bg-background border border-border rounded-lg shadow-lg p-4"
+              className="fixed z-50 w-80 bg-background border border-border rounded-lg shadow-lg p-4 max-h-[80vh] overflow-y-auto"
               style={{
                 top: triggerRect.bottom + 8,
                 left: triggerRect.left,
               }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="profile-sheet-title"
+              aria-describedby="profile-sheet-description"
             >
+              <div id="profile-sheet-title" className="sr-only">
+                {name} Profile Details
+              </div>
+              <div id="profile-sheet-description" className="sr-only">
+                View social accounts and wallet addresses for {name}
+              </div>
               <SheetContent
                 fid={fid}
                 socialAccounts={socialAccounts}
                 isOpen={open}
+                talentUUID={talentUUID}
               />
             </div>
           </>
@@ -363,19 +455,29 @@ export function ProfileAccountsSheet({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-      <DrawerContent className="max-w-sm mx-auto w-full p-4 rounded-t-2xl">
+      <DrawerTrigger asChild>
+        <button
+          className="flex items-center gap-1 text-xl font-bold leading-tight focus:outline-none"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+        >
+          <span>{name}</span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </DrawerTrigger>
+      <DrawerContent className="max-w-sm mx-auto w-full p-4 rounded-t-2xl max-h-[80vh]">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{name} Profile Details</DrawerTitle>
           <DrawerDescription>
             View social accounts and wallet addresses for {name}
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-2 pb-4" role="dialog" aria-modal="true">
+        <div className="px-2 pb-4 overflow-y-auto">
           <SheetContent
             fid={fid}
             socialAccounts={socialAccounts}
             isOpen={open}
+            talentUUID={talentUUID}
           />
         </div>
       </DrawerContent>

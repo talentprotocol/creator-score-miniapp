@@ -2,7 +2,7 @@
 import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, openExternalUrl } from "@/lib/utils";
 
 interface SegmentedBarProps {
   title: string;
@@ -11,6 +11,7 @@ interface SegmentedBarProps {
     name: string;
     value: number;
     percentage: number;
+    url?: string;
   }>;
   color: string; // e.g., 'green', 'pink', 'blue', 'red', etc.
   formatValue?: (value: number) => string;
@@ -116,9 +117,18 @@ export function SegmentedBar({
                     getSegmentColorClass(index),
                   )}
                 />
-                <span className="text-sm font-medium text-foreground">
-                  {segment.name}
-                </span>
+                {segment.url ? (
+                  <button
+                    onClick={() => openExternalUrl(segment.url!)}
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors cursor-pointer text-left"
+                  >
+                    {segment.name}
+                  </button>
+                ) : (
+                  <span className="text-sm font-medium text-foreground">
+                    {segment.name}
+                  </span>
+                )}
               </div>
               <div className="flex items-center space-x-3">
                 <span className="text-sm font-medium text-foreground">

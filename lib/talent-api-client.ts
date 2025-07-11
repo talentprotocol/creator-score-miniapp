@@ -325,6 +325,51 @@ export class TalentApiClient {
       return createServerErrorResponse("Failed to fetch posts");
     }
   }
+
+  async getAccounts(params: TalentProtocolParams): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!params.talent_protocol_id && !params.id) {
+      return createBadRequestResponse("Missing id");
+    }
+
+    try {
+      const urlParams = new URLSearchParams();
+      const talentId = params.talent_protocol_id || params.id;
+
+      if (params.talent_protocol_id) {
+        // Direct talent ID lookup
+        urlParams.append("id", talentId!);
+      } else {
+        // Account source lookup
+        urlParams.append("id", talentId!);
+        const accountSource = params.account_source || "farcaster";
+        urlParams.append("account_source", accountSource);
+      }
+
+      const data = await this.makeRequest("/accounts", urlParams);
+      return NextResponse.json(data);
+    } catch (error) {
+      const identifier = params.talent_protocol_id || params.id;
+
+      if (error instanceof Error && error.message.includes("404")) {
+        return NextResponse.json(
+          { error: "Talent API returned 404", accounts: [] },
+          { status: 502 },
+        );
+      }
+
+      logApiError(
+        "getAccounts",
+        identifier || "unknown",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to fetch accounts");
+    }
+  }
 }
 
 // Export a default instance
