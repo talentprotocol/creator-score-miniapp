@@ -19,7 +19,7 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white">
-        <div className="flex h-14 w-full items-center justify-between px-4 md:px-8 relative">
+        <div className="flex h-14 w-full items-center justify-between px-4 md:px-8">
           <h1
             className="text-lg font-semibold cursor-pointer hover:opacity-70 transition-opacity"
             onClick={handleTitleClick}
@@ -27,19 +27,46 @@ export function Header() {
             Creator Score
           </h1>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => {
+          {/* Desktop Navigation - Icon Only */}
+          <nav
+            className="hidden md:flex items-center gap-1"
+            style={{
+              backgroundColor: "red",
+              padding: "4px",
+              border: "2px solid blue",
+            }}
+          >
+            {navItems.map((item, index) => {
+              console.log(`[Header] Rendering desktop nav item ${index}:`, {
+                label: item.label,
+                hasIcon: !!item.icon,
+                iconName: item.icon?.name,
+                hasOnClick: !!item.onClick,
+                hasHref: !!item.href,
+              });
+
               if (item.onClick) {
                 return (
                   <button
                     key={item.label}
                     onClick={item.onClick}
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-2 text-muted-foreground hover:text-foreground transition-colors"
                     title={item.label}
+                    style={{
+                      backgroundColor: "yellow",
+                      border: "1px solid black",
+                    }}
                   >
-                    {item.icon && <item.icon className="h-4 w-4" />}
-                    <span>{item.label}</span>
+                    {item.icon ? (
+                      <item.icon
+                        className="h-5 w-5"
+                        style={{ color: "purple", stroke: "purple" }}
+                      />
+                    ) : (
+                      <span style={{ color: "red", fontWeight: "bold" }}>
+                        {item.label[0]}
+                      </span>
+                    )}
                   </button>
                 );
               }
@@ -50,15 +77,27 @@ export function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
+                    className={`p-2 transition-colors ${
                       isActive
-                        ? "text-foreground font-medium"
+                        ? "text-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                     title={item.label}
+                    style={{
+                      backgroundColor: "yellow",
+                      border: "1px solid black",
+                    }}
                   >
-                    {item.icon && <item.icon className="h-4 w-4" />}
-                    <span>{item.label}</span>
+                    {item.icon ? (
+                      <item.icon
+                        className="h-5 w-5"
+                        style={{ color: "purple", stroke: "purple" }}
+                      />
+                    ) : (
+                      <span style={{ color: "red", fontWeight: "bold" }}>
+                        {item.label[0]}
+                      </span>
+                    )}
                   </Link>
                 );
               }
