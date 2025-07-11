@@ -28,5 +28,12 @@ export function getUserContext(
     return context.user;
   }
 
-  return undefined;
+  // Production fallback: Return fallback user data when no Farcaster context
+  // This ensures navigation works consistently when app is accessed outside of Farcaster
+  return {
+    fid: 8446,
+    username: "macedo",
+    displayName: "Filipe Macedo",
+    pfpUrl: "https://i.imgur.com/YgNTMUI.jpg",
+  };
 }

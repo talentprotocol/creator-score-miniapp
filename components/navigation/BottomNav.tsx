@@ -2,62 +2,56 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
-import { FarcasterAccessModal } from "@/components/navigation/FarcasterAccessModal";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { navItems, modalOpen, modalFeature, setModalOpen } =
-    useUserNavigation();
+  const { navItems } = useUserNavigation();
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden">
-        <div className="flex justify-around items-center h-16 px-4">
+      {/* Mobile: bottom fixed full width */}
+      <Card className="fixed bottom-0 left-0 right-0 w-full p-0 bg-white backdrop-blur supports-[backdrop-filter]:bg-white rounded-none shadow-lg border-t z-50 md:hidden">
+        <nav className="flex items-center justify-around">
           {navItems.map((item) => {
-            if (item.onClick) {
+            const isActive = pathname === item.href;
+            if (item.disabled) {
               return (
-                <button
+                <span
                   key={item.label}
-                  onClick={item.onClick}
-                  className="flex flex-col items-center gap-1 p-2 text-muted-foreground hover:text-foreground transition-colors"
-                  title={item.label}
+                  className={cn(
+                    "flex items-center justify-center p-4 flex-1 text-muted-foreground opacity-50 cursor-not-allowed",
+                  )}
+                  aria-label={item.label}
                 >
-                  {item.icon && <item.icon className="h-5 w-5" />}
-                  <span className="text-xs">{item.label}</span>
-                </button>
+                  <item.icon className="h-6 w-6" />
+                </span>
               );
             }
-
             if (item.href) {
-              const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center gap-1 p-2 transition-colors ${
-                    isActive
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title={item.label}
+                  className={cn(
+                    "flex items-center justify-center p-4 flex-1 transition-colors",
+                    "hover:bg-muted/50",
+                    isActive ? "text-primary" : "text-muted-foreground",
+                  )}
+                  aria-label={item.label}
+                  aria-current={isActive ? "page" : undefined}
                 >
-                  {item.icon && <item.icon className="h-5 w-5" />}
-                  <span className="text-xs">{item.label}</span>
+                  <item.icon className="h-6 w-6" />
                 </Link>
               );
             }
-
             return null;
           })}
-        </div>
-      </nav>
-
-      <FarcasterAccessModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        feature={modalFeature}
-      />
+        </nav>
+      </Card>
+      {/* Desktop: nothing rendered here, handled in Header */}
     </>
   );
 }

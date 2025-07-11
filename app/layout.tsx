@@ -1,7 +1,7 @@
 import "./theme.css";
-import "./globals.css";
 import "@coinbase/onchainkit/styles.css";
 import type { Metadata, Viewport } from "next";
+import "./globals.css";
 import { Providers } from "./providers";
 import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
@@ -80,7 +80,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full bg-white flex flex-col">
-        <div className="relative flex flex-col w-full bg-white">
+        <div className="relative flex flex-col w-full bg-background overflow-hidden my-0 md:my-0 md:bg-white md:shadow-none md:rounded-none">
           <Providers>
             <ErrorBoundary>
               <Header />
