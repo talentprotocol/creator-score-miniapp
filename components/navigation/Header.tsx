@@ -40,75 +40,106 @@ export function Header() {
           >
             Creator Score
           </h1>
-          {/* Desktop nav icons, centered */}
-          <nav className="hidden md:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-            {navItems.length > 0 ? (
-              navItems.map((item, index) => {
-                const isActive = pathname === item.href;
-                console.log(`[Header] Rendering nav item ${index}:`, {
-                  label: item.label,
-                  hasIcon: !!item.icon,
-                  hasOnClick: !!item.onClick,
-                  hasHref: !!item.href,
-                  isActive,
-                });
+          {/* Simple test navigation - visible on all screens */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50px",
+              right: "10px",
+              display: "flex",
+              gap: "10px",
+              zIndex: 9999,
+              backgroundColor: "yellow",
+              padding: "10px",
+              border: "3px solid red",
+            }}
+          >
+            {navItems.map((item, index) => {
+              console.log(`[Header] Rendering nav item ${index}:`, {
+                label: item.label,
+                hasIcon: !!item.icon,
+                hasOnClick: !!item.onClick,
+                hasHref: !!item.href,
+              });
 
-                if (item.onClick) {
-                  return (
-                    <button
-                      key={item.label}
-                      onClick={item.onClick}
-                      className="flex items-center justify-center h-10 w-12 rounded-full transition-colors text-muted-foreground hover:bg-muted/50 border border-red-300"
-                      aria-label={item.label}
-                      title={item.label}
-                      style={{ backgroundColor: "rgba(255, 0, 0, 0.1)" }}
-                    >
-                      {item.icon ? (
-                        <item.icon
-                          className="h-6 w-6"
-                          style={{ color: "red", stroke: "red", fill: "red" }}
-                        />
-                      ) : (
-                        <span className="text-xs">{item.label[0]}</span>
-                      )}
-                    </button>
-                  );
-                }
+              if (item.onClick) {
+                return (
+                  <button
+                    key={item.label}
+                    onClick={item.onClick}
+                    style={{
+                      width: "50px",
+                      height: "50px",
+                      backgroundColor: "red",
+                      color: "white",
+                      border: "2px solid black",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title={item.label}
+                  >
+                    {item.icon ? (
+                      <item.icon
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          color: "white",
+                          stroke: "white",
+                          fill: "white",
+                        }}
+                      />
+                    ) : (
+                      <span style={{ color: "white", fontWeight: "bold" }}>
+                        {item.label[0]}
+                      </span>
+                    )}
+                  </button>
+                );
+              }
 
-                if (item.href) {
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={
-                        "flex items-center justify-center h-10 w-12 rounded-full transition-colors border border-red-300 " +
-                        (isActive
-                          ? "bg-muted text-primary"
-                          : "text-muted-foreground hover:bg-muted/50")
-                      }
-                      aria-label={item.label}
-                      aria-current={isActive ? "page" : undefined}
-                      title={item.label}
-                      style={{ backgroundColor: "rgba(255, 0, 0, 0.1)" }}
-                    >
-                      {item.icon ? (
-                        <item.icon
-                          className="h-6 w-6"
-                          style={{ color: "red", stroke: "red", fill: "red" }}
-                        />
-                      ) : (
-                        <span className="text-xs">{item.label[0]}</span>
-                      )}
-                    </Link>
-                  );
-                }
+              if (item.href) {
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    style={{
+                      width: "50px",
+                      height: "50px",
+                      backgroundColor:
+                        pathname === item.href ? "blue" : "green",
+                      color: "white",
+                      border: "2px solid black",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title={item.label}
+                  >
+                    {item.icon ? (
+                      <item.icon
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          color: "white",
+                          stroke: "white",
+                          fill: "white",
+                        }}
+                      />
+                    ) : (
+                      <span style={{ color: "white", fontWeight: "bold" }}>
+                        {item.label[0]}
+                      </span>
+                    )}
+                  </Link>
+                );
+              }
 
-                return null;
-              })
-            ) : (
-              <div className="text-xs text-red-500">No nav items</div>
-            )}
-          </nav>
+              return null;
+            })}
+          </div>
         </div>
       </header>
       <FarcasterAccessModal
