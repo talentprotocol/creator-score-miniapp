@@ -12,24 +12,7 @@ export function useUserNavigation() {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [modalFeature, setModalFeature] = React.useState("");
 
-  // Debug logging for production
-  React.useEffect(() => {
-    console.log("[useUserNavigation] Debug info:", {
-      hasContext: !!context,
-      hasUser: !!user,
-      canonical,
-      userFid: user?.fid,
-      username: user?.username,
-    });
-  }, [context, user, canonical]);
-
   const handleRestrictedClick = (feature: string) => {
-    console.log(
-      "[useUserNavigation] Restricted click:",
-      feature,
-      "canonical:",
-      canonical,
-    );
     if (!canonical) {
       setModalFeature(feature);
       setModalOpen(true);
@@ -65,20 +48,6 @@ export function useUserNavigation() {
       onClick: canonical ? undefined : () => handleRestrictedClick("Settings"),
     },
   ];
-
-  // Debug log the nav items
-  React.useEffect(() => {
-    console.log(
-      "[useUserNavigation] Nav items:",
-      navItems.map((item) => ({
-        label: item.label,
-        hasHref: !!item.href,
-        hasOnClick: !!item.onClick,
-        hasIcon: !!item.icon,
-        iconName: item.icon?.name || item.icon?.displayName || "unknown",
-      })),
-    );
-  }, [canonical]);
 
   return {
     user,
