@@ -97,11 +97,7 @@ body {
   font-style: normal;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
+
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-in-out;
