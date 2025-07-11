@@ -154,25 +154,61 @@ export function Header() {
         >
           TEST NAV:
         </div>
-        {navItems.map((item, index) => (
-          <div
-            key={index}
-            style={{
-              width: "50px",
-              height: "50px",
-              backgroundColor: "purple",
-              color: "white",
-              border: "2px solid black",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "50%",
-              fontWeight: "bold",
-            }}
-          >
-            {item.label[0]}
-          </div>
-        ))}
+        {navItems.map((item, index) => {
+          if (item.onClick) {
+            return (
+              <button
+                key={index}
+                onClick={item.onClick}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  backgroundColor: "purple",
+                  color: "white",
+                  border: "2px solid black",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+                title={item.label}
+              >
+                {item.label[0]}
+              </button>
+            );
+          }
+
+          if (item.href) {
+            return (
+              <Link
+                key={index}
+                href={item.href}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  backgroundColor:
+                    pathname === item.href ? "darkblue" : "purple",
+                  color: "white",
+                  border: "2px solid black",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                }}
+                title={item.label}
+              >
+                {item.label[0]}
+              </Link>
+            );
+          }
+
+          return null;
+        })}
       </div>
 
       <FarcasterAccessModal
