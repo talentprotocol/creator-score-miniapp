@@ -1,9 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
   --app-background: #ffffff;
   --app-foreground: #111111;
@@ -99,12 +95,6 @@ body {
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
 }
 
 .animate-fade-in {
