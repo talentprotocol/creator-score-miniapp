@@ -10,12 +10,15 @@ import {
   getCreatorScore,
   getLeaderboardCreators,
   getLeaderboardStats,
+  getCredentialsForFarcaster,
 } from "@/app/services/talentService";
 import { filterEthAddresses } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/app/services/talentService";
 import { MinimalProfileDrawer } from "@/components/leaderboard/MinimalProfileDrawer";
+import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { sdk } from "@farcaster/frame-sdk";
 import { Skeleton } from "@/components/ui/skeleton";
+import { determineCreatorCategory, type Category } from "@/lib/categories";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 6, 7, 23, 59, 59)); // July is month 6 (0-indexed)
 
@@ -62,6 +65,9 @@ export default function LeaderboardPage() {
   const [minScore, setMinScore] = useState<number | null>(null);
   const [totalCreators, setTotalCreators] = useState<number | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  
+  // Categories state
+  const [userCategory, setUserCategory] = useState<Category | null>(null);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -117,7 +123,7 @@ export default function LeaderboardPage() {
     }
   };
 
-  // Fetch real Creator Score
+  // Fetch real Creator Score and Category
   useEffect(() => {
     async function fetchScore() {
       if (!user?.fid) return;
@@ -131,11 +137,22 @@ export default function LeaderboardPage() {
         if (addresses.length > 0) {
           const scoreData = await getCreatorScore(addresses);
           setCreatorScore(scoreData.score ?? 0);
+          
+          // Fetch category
+          try {
+            const credentials = await getCredentialsForFarcaster(user.fid.toString());
+            const categoryData = determineCreatorCategory(credentials);
+            setUserCategory(categoryData.primaryCategory);
+          } catch {
+            setUserCategory(null);
+          }
         } else {
           setCreatorScore(0);
+          setUserCategory(null);
         }
       } catch {
         setCreatorScore(null);
+        setUserCategory(null);
       }
     }
     fetchScore();
@@ -187,6 +204,7 @@ export default function LeaderboardPage() {
     rewards: "-", // To be calculated later
     score: creatorScore ?? 0,
     id: userLeaderboardEntry ? userLeaderboardEntry.id : "user-pinned",
+    category: userCategory,
   };
 
   // Helper to calculate rewards
@@ -300,62 +318,30 @@ export default function LeaderboardPage() {
         {error && <div className="text-destructive text-sm px-2">{error}</div>}
         {/* User pinned entry always on top */}
         {pinnedUserEntry && (
-          <div
-            className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 cursor-pointer hover:bg-purple-100 transition-colors mb-2"
-            onClick={handlePinnedUserClick}
-          >
-            <span className="text-sm font-medium w-6">
-              #{pinnedUserEntry.rank}
-            </span>
-            <Avatar className="h-8 w-8">
-              {pinnedUserEntry.pfp ? (
-                <AvatarImage src={pinnedUserEntry.pfp} />
-              ) : (
-                <AvatarFallback>{pinnedUserEntry.name[0]}</AvatarFallback>
-              )}
-            </Avatar>
-            <div className="flex-1">
-              <p className="font-medium text-sm">{pinnedUserEntry.name}</p>
-              <p className="text-xs text-gray-600">
-                Creator Score: {pinnedUserEntry.score}
-              </p>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-medium">
-                {getEthRewards(pinnedUserEntry.score)}
-              </span>
-            </div>
+          <div onClick={handlePinnedUserClick}>
+            <LeaderboardRow
+              rank={typeof pinnedUserEntry.rank === 'number' ? pinnedUserEntry.rank : 0}
+              name={pinnedUserEntry.name}
+              avatarUrl={pinnedUserEntry.pfp}
+              score={pinnedUserEntry.score}
+              rewards={getEthRewards(pinnedUserEntry.score)}
+              category={pinnedUserEntry.category}
+              highlight={true}
+            />
           </div>
         )}
         {/* Leaderboard list (user may appear again in their real position) */}
-        <div className="overflow-hidden rounded-lg bg-gray-50">
-          {entries.map((user, index, array) => (
-            <div key={user.id}>
-              <div
-                className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleEntryClick(user)}
-              >
-                <span className="text-sm font-medium w-6">#{user.rank}</span>
-                <Avatar className="h-8 w-8">
-                  {user.pfp ? (
-                    <AvatarImage src={user.pfp} />
-                  ) : (
-                    <AvatarFallback>{user.name[0]}</AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{user.name}</p>
-                  <p className="text-xs text-gray-600">
-                    Creator Score: {user.score}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-sm font-medium">
-                    {getEthRewards(user.score)}
-                  </span>
-                </div>
-              </div>
-              {index < array.length - 1 && <div className="h-px bg-gray-200" />}
+        <div className="space-y-2">
+          {entries.map((user) => (
+            <div key={user.id} onClick={() => handleEntryClick(user)}>
+              <LeaderboardRow
+                rank={user.rank}
+                name={user.name}
+                avatarUrl={user.pfp}
+                score={user.score}
+                rewards={getEthRewards(user.score)}
+                category={null} // We don't have category data for other users yet
+              />
             </div>
           ))}
         </div>

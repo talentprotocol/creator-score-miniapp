@@ -1,6 +1,7 @@
 import React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { getCategoryIcon, getCategoryColor, type Category } from "@/lib/categories";
 
 interface LeaderboardRowProps {
   rank: number;
@@ -9,6 +10,7 @@ interface LeaderboardRowProps {
   score: number;
   rewards: string; // e.g., "0.08 ETH"
   highlight?: boolean;
+  category?: Category | null;
 }
 
 export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
@@ -18,6 +20,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   score,
   rewards,
   highlight = false,
+  category,
 }) => {
   return (
     <div
@@ -44,9 +47,17 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           <span className="font-semibold truncate leading-tight text-base">
             {name}
           </span>
-          <span className="text-xs text-muted-foreground">
-            Creator Score: {score}
-          </span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Creator Score: {score}</span>
+            {category && (
+              <>
+                <span>•</span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${getCategoryColor(category)} text-white`}>
+                  {getCategoryIcon(category)} {category}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </div>
       {/* Rewards */}

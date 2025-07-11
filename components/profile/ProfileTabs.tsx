@@ -3,6 +3,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { AccountGrid } from "./AccountGrid";
+import { FeedGrid } from "./FeedGrid";
+import { FeedGridV2 } from "./FeedGridV2";
 import { Progress } from "@/components/ui/progress";
 import {
   Accordion,
@@ -25,6 +27,15 @@ import {
 import { sdk } from "@farcaster/frame-sdk";
 import { ExternalLink } from "lucide-react";
 import { COMING_SOON_CREDENTIALS } from "./comingSoonCredentials";
+import { 
+  determineCreatorCategory, 
+  getCategoryColor, 
+  getCategoryIcon,
+  getCategoryPastelColor,
+  getCategoryPastelProgressColor,
+  type Category 
+} from "@/lib/categories";
+import { CategoryBreakdownModal } from "./CategoryBreakdownModal";
 
 function shouldShowUom(uom: string | null): boolean {
   if (!uom) return false;
@@ -37,7 +48,7 @@ function shouldShowUom(uom: string | null): boolean {
   return !hiddenUoms.includes(uom);
 }
 
-function ScoreProgressAccordion({
+function CategoryAccordion({
   fid,
   wallet,
   github,
@@ -47,14 +58,41 @@ function ScoreProgressAccordion({
   github?: string;
 }) {
   const [score, setScore] = React.useState<number | null>(null);
-  const [level, setLevel] = React.useState<number | null>(null);
+  const [credentials, setCredentials] = React.useState<IssuerCredentialGroup[]>([]);
+  const [categoryData, setCategoryData] = React.useState<{
+    primaryCategory: Category | null;
+    breakdown: Array<{
+      category: Category;
+      points: number;
+      percentage: number;
+      credentials: Array<{
+        issuer: string;
+        label: string;
+        points: number;
+      }>;
+    }>;
+    issuerBreakdown: Array<{
+      issuer: string;
+      category: Category | null;
+      points: number;
+      percentage: number;
+      credentials: Array<{
+        issuer: string;
+        label: string;
+        points: number;
+      }>;
+    }>;
+    totalPoints: number;
+  } | null>(null);
   const [lastUpdated, setLastUpdated] = React.useState<string | null>(null);
+  const [modalOpen, setModalOpen] = React.useState(false);
 
   React.useEffect(() => {
-    async function fetchScore() {
+    async function fetchData() {
       const identifier = fid ?? wallet ?? github;
       if (!identifier) return;
       try {
+        // Fetch score
         let walletData;
         if (fid && typeof fid === "number") {
           walletData = await getUserWalletAddresses(fid);
@@ -62,7 +100,8 @@ function ScoreProgressAccordion({
           walletData = await getUserWalletAddresses(Number(fid));
         } else {
           setScore(null);
-          setLevel(null);
+          setCredentials([]);
+          setCategoryData(null);
           setLastUpdated(null);
           return;
         }
@@ -89,72 +128,113 @@ function ScoreProgressAccordion({
         }
 
         setScore(scoreData.score);
-        setLevel(scoreData.level);
         setLastUpdated(
           scoreData.lastCalculatedAt
             ? new Date(scoreData.lastCalculatedAt).toLocaleDateString()
             : null,
         );
+
+        // Fetch credentials and determine category
+        const credentialsData = await getCredentialsForFarcaster(identifier.toString());
+        setCredentials(credentialsData);
+        
+        const category = determineCreatorCategory(credentialsData);
+        setCategoryData(category);
       } catch {
         // No error handling needed if the error variable is not used
       }
     }
 
-    fetchScore();
+    fetchData();
   }, [fid, wallet, github]);
 
-  const progress = calculateScoreProgress(score ?? 0, level ?? 1);
-  const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
-
   return (
-    <Accordion type="single" collapsible className="space-y-2">
-      <AccordionItem
-        value="score-progress"
-        className="bg-gray-100 rounded-xl p-0 mb-3 border-0 shadow-none"
-      >
-        <AccordionTrigger className="px-6 py-4 flex items-center justify-between bg-gray-100 rounded-xl">
-          <div className="flex flex-col flex-1 gap-1 text-left">
-            <span className="font-medium text-base text-foreground">
-              Creator Score
-            </span>
-            <span className="text-xs text-muted-foreground font-normal mt-0.5">
-              Level {level ?? "—"}
-            </span>
-          </div>
-          <span className="ml-4 text-xl font-semibold text-foreground w-16 text-right">
-            {score?.toLocaleString() ?? "—"}
-          </span>
-        </AccordionTrigger>
-        <AccordionContent className="px-6 pb-5 bg-gray-100 rounded-b-xl">
-          <div className="space-y-2">
-            <div className="relative w-full flex items-center justify-center mb-0">
-              <Progress
-                value={progress}
-                className="h-2 bg-gray-200 [&>div]:bg-gray-800"
-              />
-            </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-              <span>
-                {pointsToNext && level
-                  ? `${pointsToNext.toString()} points to Level ${(level + 1).toString()}`
-                  : level === 6
-                    ? "Master level reached!"
-                    : "Level up!"}
-              </span>
-              <span>
-                Last updated:{" "}
-                {lastUpdated
-                  ? new Date(lastUpdated).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "—"}
+    <>
+      <Accordion type="single" collapsible className="space-y-2">
+        <AccordionItem
+          value="category-progress"
+          className="bg-gray-100 rounded-xl p-0 mb-3 border-0 shadow-none"
+        >
+          <AccordionTrigger className="px-6 py-4 flex items-center justify-between bg-gray-100 rounded-xl">
+            <div className="flex flex-col flex-1 gap-1 text-left">
+              <span className="text-lg font-semibold text-foreground flex items-center gap-2">
+                {categoryData?.primaryCategory ? (
+                  <>
+                    <span className={`text-2xl ${getCategoryColor(categoryData.primaryCategory)}`}>
+                      {getCategoryIcon(categoryData.primaryCategory)}
+                    </span>
+                    {categoryData.primaryCategory}
+                  </>
+                ) : (
+                  "No category"
+                )}
               </span>
             </div>
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+            <div className="ml-4 text-right">
+              <div className="text-xs text-muted-foreground">
+                {categoryData?.breakdown.length ?? 0} categories
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-5 bg-gray-100 rounded-b-xl">
+            <div className="space-y-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">All Categories</span>
+                  <button
+                    onClick={() => setModalOpen(true)}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    View Details
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {categoryData?.breakdown.map((item) => (
+                    <div key={item.category} className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{getCategoryIcon(item.category)}</span>
+                          <span className="font-medium">{item.category}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">{item.points.toLocaleString()} pts</span>
+                          <span className="text-muted-foreground">({item.percentage.toFixed(1)}%)</span>
+                        </div>
+                      </div>
+                      <div 
+                        className="h-2 rounded-full"
+                        style={{
+                          backgroundColor: getCategoryPastelColor(item.category)
+                        }}
+                      >
+                        <div 
+                          className="h-2 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${item.percentage}%`,
+                            backgroundColor: getCategoryPastelProgressColor(item.category)
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {categoryData && (
+        <CategoryBreakdownModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          breakdown={categoryData.breakdown}
+          issuerBreakdown={categoryData.issuerBreakdown}
+          totalPoints={categoryData.totalPoints}
+          primaryCategory={categoryData.primaryCategory}
+        />
+      )}
+    </>
   );
 }
 
@@ -511,14 +591,64 @@ export function ProfileTabs({
             {credentialsCount}
           </Badge>
         </TabsTrigger>
+        <TabsTrigger
+          value="feed"
+          className={cn(
+            "relative px-0 py-2 text-base font-medium",
+            "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+            "data-[state=active]:text-foreground data-[state=active]:after:absolute",
+            "data-[state=active]:after:bottom-0 data-[state=active]:after:left-0",
+            "data-[state=active]:after:right-0 data-[state=active]:after:h-0.5",
+            "data-[state=active]:after:bg-primary",
+          )}
+        >
+          Feed
+          <Badge
+            variant="secondary"
+            className="ml-2 bg-muted text-muted-foreground"
+          >
+            6
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger
+          value="feed-v2"
+          className={cn(
+            "relative px-0 py-2 text-base font-medium",
+            "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+            "data-[state=active]:text-foreground data-[state=active]:after:absolute",
+            "data-[state=active]:after:bottom-0 data-[state=active]:after:left-0",
+            "data-[state=active]:after:right-0 data-[state=active]:after:h-0.5",
+            "data-[state=active]:after:bg-primary",
+          )}
+        >
+          Feed V2
+          <Badge
+            variant="secondary"
+            className="ml-2 bg-muted text-muted-foreground"
+          >
+            6
+          </Badge>
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="accounts" className="mt-6 p-2">
         <AccountGrid socialAccounts={socialAccounts} />
       </TabsContent>
       <TabsContent value="score" className="mt-6 space-y-6">
-        <ScoreProgressAccordion fid={fid} wallet={wallet} github={github} />
+        <CategoryAccordion fid={fid} wallet={wallet} github={github} />
         <CredentialIdeasCallout />
         <ScoreDataPoints fid={fid} wallet={wallet} github={github} />
+      </TabsContent>
+      <TabsContent value="feed" className="mt-6 p-2">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Most successful content</h3>
+          <FeedGrid />
+        </div>
+      </TabsContent>
+      <TabsContent value="feed-v2" className="mt-6 p-2">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Most successful content</h3>
+          <FeedGridV2 />
+        </div>
       </TabsContent>
     </Tabs>
   );
