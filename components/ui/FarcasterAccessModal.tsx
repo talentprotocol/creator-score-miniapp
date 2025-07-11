@@ -54,31 +54,6 @@ export function FarcasterAccessModal({
     );
   };
 
-  const content = (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Access {feature} in Farcaster</h3>
-        <p className="text-sm text-muted-foreground">
-          To view your {feature.toLowerCase()} and access all features, please
-          open this app in Farcaster.
-        </p>
-      </div>
-      <div className="flex flex-col gap-2">
-        <Button onClick={handleFarcasterClick} className="w-full">
-          <ExternalLink className="w-4 h-4 mr-2" />
-          Open in Farcaster
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => onOpenChange(false)}
-          className="w-full"
-        >
-          Continue Browsing
-        </Button>
-      </div>
-    </div>
-  );
-
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
