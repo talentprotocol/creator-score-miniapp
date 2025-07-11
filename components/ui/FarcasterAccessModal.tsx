@@ -54,6 +54,11 @@ export function FarcasterAccessModal({
     );
   };
 
+  const handleContinueBrowsing = () => {
+    // Just close the modal, keeping user on current page
+    onOpenChange(false);
+  };
+
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,7 +77,7 @@ export function FarcasterAccessModal({
             </Button>
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={handleContinueBrowsing}
               className="w-full"
             >
               Continue Browsing
@@ -101,7 +106,7 @@ export function FarcasterAccessModal({
             </Button>
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={handleContinueBrowsing}
               className="w-full"
             >
               Continue Browsing

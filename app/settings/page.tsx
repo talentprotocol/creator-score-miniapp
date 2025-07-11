@@ -2,35 +2,28 @@
 
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { FarcasterAccessModal } from "@/components/ui/FarcasterAccessModal";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function SettingsPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const [showModal, setShowModal] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!user) {
-      // If no user context, show the modal
-      setShowModal(true);
+      // If no user context, redirect to leaderboard
+      router.push("/leaderboard");
     }
-  }, [user]);
+  }, [user, router]);
 
   if (!user) {
     return (
-      <>
-        <main className="flex-1 overflow-y-auto relative">
-          <div className="max-w-md mx-auto px-4 py-6">
-            <div className="text-center text-muted-foreground">Loading...</div>
-          </div>
-        </main>
-        <FarcasterAccessModal
-          open={showModal}
-          onOpenChange={setShowModal}
-          feature="Settings"
-        />
-      </>
+      <main className="flex-1 overflow-y-auto relative">
+        <div className="max-w-md mx-auto px-4 py-6">
+          <div className="text-center text-muted-foreground">Loading...</div>
+        </div>
+      </main>
     );
   }
 
