@@ -11,10 +11,10 @@ export function useUserNavigation() {
 
   const navItems = [
     {
-      href: canonical ? `/${canonical}` : undefined,
+      href: canonical ? `/${canonical}` : "/profile",
       icon: User,
       label: "Profile",
-      disabled: !canonical,
+      disabled: false,
     },
     {
       href: "/leaderboard",
