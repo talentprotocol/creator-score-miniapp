@@ -9,6 +9,9 @@ export function useUserNavigation() {
   const user = getUserContext(context);
   const canonical = user?.username;
 
+  console.log("[useUserNavigation] User context:", user);
+  console.log("[useUserNavigation] Canonical identifier:", canonical);
+
   const navItems = [
     {
       href: canonical ? `/${canonical}` : "/profile",
@@ -27,6 +30,8 @@ export function useUserNavigation() {
       label: "Settings",
     },
   ];
+
+  console.log("[useUserNavigation] Profile href:", navItems[0].href);
 
   return {
     user,

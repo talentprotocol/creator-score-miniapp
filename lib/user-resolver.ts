@@ -24,10 +24,17 @@ export async function resolveTalentUser(identifier: string): Promise<{
   image_url: string | null;
   [key: string]: unknown;
 } | null> {
+  console.log(
+    "[resolveTalentUser] Starting resolution for identifier:",
+    identifier,
+  );
+
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
   }
+
+  console.log("[resolveTalentUser] Base URL:", baseUrl);
 
   // Add retry logic for server-side calls
   const maxRetries = 3;
@@ -35,13 +42,22 @@ export async function resolveTalentUser(identifier: string): Promise<{
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const res = await fetch(`${baseUrl}/api/talent-user?id=${identifier}`);
+      const apiUrl = `${baseUrl}/api/talent-user?id=${identifier}`;
+      console.log(
+        `[resolveTalentUser] Attempt ${attempt}/${maxRetries}, calling:`,
+        apiUrl,
+      );
+
+      const res = await fetch(apiUrl);
+      console.log(`[resolveTalentUser] Response status:`, res.status);
 
       if (res.ok) {
         const user = await res.json();
+        console.log(`[resolveTalentUser] API response:`, user);
+
         // Accept if any identifier is present
         if (user && (user.fid || user.wallet || user.github || user.id)) {
-          return {
+          const result = {
             id: user.id || null,
             fid: user.fid ?? null,
             wallet: user.wallet ?? null,
@@ -51,7 +67,20 @@ export async function resolveTalentUser(identifier: string): Promise<{
             image_url: user.image_url ?? null,
             ...user,
           };
+          console.log(`[resolveTalentUser] Returning user result:`, result);
+          return result;
+        } else {
+          console.log(
+            `[resolveTalentUser] User data invalid - no identifiers found:`,
+            user,
+          );
         }
+      } else {
+        console.log(
+          `[resolveTalentUser] Response not ok:`,
+          res.status,
+          res.statusText,
+        );
       }
 
       // If we get here, the response was not ok or user data was invalid
