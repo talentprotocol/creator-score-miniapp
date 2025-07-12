@@ -15,14 +15,17 @@ export function getUserContext(
 ): UserContext | undefined {
   console.log("[getUserContext] Input context:", context);
 
-  // Development mode: return hardcoded user data for FID 8446
+  // Development mode: return hardcoded user data for courinha (FID 374478)
   if (process.env.NODE_ENV === "development") {
-    console.log("[getUserContext] Development mode - returning hardcoded user");
+    console.log(
+      "[getUserContext] Development mode - returning hardcoded courinha user",
+    );
     return {
-      fid: 8446,
-      username: "macedo",
-      displayName: "Filipe Macedo",
-      pfpUrl: "https://i.imgur.com/YgNTMUI.jpg",
+      fid: 374478,
+      username: "courinha",
+      displayName: "João Courinha",
+      pfpUrl:
+        "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/98db301a-ca0f-41bc-bc34-449270d9eb00/original",
     };
   }
 
