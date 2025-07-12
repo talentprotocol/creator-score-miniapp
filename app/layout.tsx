@@ -6,6 +6,7 @@ import { Providers } from "./providers";
 import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { SwipeWrapper } from "@/components/common/SwipeWrapper";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -84,9 +85,11 @@ export default function RootLayout({
           <Providers>
             <ErrorBoundary>
               <Header />
-              <main className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
-                <ErrorBoundary>{children}</ErrorBoundary>
-              </main>
+              <SwipeWrapper className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
+                <main className="flex-1 flex flex-col w-full relative">
+                  <ErrorBoundary>{children}</ErrorBoundary>
+                </main>
+              </SwipeWrapper>
               <BottomNav />
             </ErrorBoundary>
           </Providers>
