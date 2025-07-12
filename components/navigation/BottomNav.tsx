@@ -31,7 +31,15 @@ export function BottomNav() {
     <>
       {/* Mobile: bottom fixed full width */}
       <Card className="fixed bottom-0 left-0 right-0 w-full p-0 bg-white backdrop-blur supports-[backdrop-filter]:bg-white rounded-none shadow-lg border-t z-50 md:hidden">
-        <nav className="flex items-center justify-around">
+        <nav
+          className="flex items-center justify-around"
+          style={{
+            height: "88px", // Fixed height - cannot be compressed
+            paddingTop: "12px",
+            paddingBottom:
+              "max(20px, calc(env(safe-area-inset-bottom) + 12px))",
+          }}
+        >
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             if (item.disabled) {
@@ -39,7 +47,7 @@ export function BottomNav() {
                 <span
                   key={item.label}
                   className={cn(
-                    "flex items-center justify-center p-4 flex-1 text-muted-foreground opacity-50 cursor-not-allowed",
+                    "flex items-center justify-center h-14 px-4 flex-1 text-muted-foreground opacity-50 cursor-not-allowed",
                   )}
                   aria-label={item.label}
                 >
@@ -54,7 +62,7 @@ export function BottomNav() {
                   href={item.href}
                   onClick={(e) => handleNavClick(item, e)}
                   className={cn(
-                    "flex items-center justify-center p-4 flex-1 transition-colors",
+                    "flex items-center justify-center h-14 px-4 flex-1 transition-colors",
                     "hover:bg-muted/50",
                     isActive ? "text-primary" : "text-muted-foreground",
                   )}
