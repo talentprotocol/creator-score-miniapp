@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ProfileHeader } from "./ProfileHeader";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatCard } from "@/components/common/StatCard";
 import { ProfileTabs } from "./ProfileTabs";
 import {
   formatNumberWithSuffix,
@@ -14,7 +14,7 @@ import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
 import { useProfileTotalEarnings } from "@/hooks/useProfileTotalEarnings";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Callout } from "@/components/ui/Callout";
+import { Callout } from "@/components/common/Callout";
 
 interface ProfileScreenProps {
   talentUUID: string;

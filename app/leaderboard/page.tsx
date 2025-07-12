@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { TabNavigation } from "@/components/ui/tabs-navigation";
+import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import type { LeaderboardEntry } from "@/app/services/types";

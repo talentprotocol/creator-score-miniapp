@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
-import { FarcasterAccessModal } from "@/components/ui/FarcasterAccessModal";
+import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 export function Header() {
   const pathname = usePathname();

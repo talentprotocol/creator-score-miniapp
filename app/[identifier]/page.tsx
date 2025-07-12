@@ -19,8 +19,8 @@ export default async function PublicProfilePage({
       <div className="p-8 text-center text-destructive">User not found</div>
     );
   }
-  // Determine canonical human-readable identifier: Farcaster, else UUID
-  const canonical = user.fname || user.id;
+  // Determine canonical human-readable identifier: Farcaster, Wallet, else UUID
+  const canonical = user.fname || user.wallet || user.id;
   if (
     canonical &&
     params.identifier !== canonical &&

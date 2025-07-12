@@ -7,7 +7,7 @@ import { User, Trophy, Settings } from "lucide-react";
 export function useUserNavigation() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const canonical = user?.username || user?.fid;
+  const canonical = user?.username;
 
   const navItems = [
     {

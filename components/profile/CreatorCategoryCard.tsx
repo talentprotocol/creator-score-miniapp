@@ -81,7 +81,7 @@ export function CreatorCategoryCard({ talentUUID }: CreatorCategoryCardProps) {
                     {category.name} {category.emoji}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {category.points} pts (
+                    {category.points}/{category.maxPoints} pts (
                     {category.completionPercentage.toFixed(0)}% complete)
                   </span>
                 </div>

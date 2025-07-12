@@ -13,7 +13,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       // If user exists, redirect to their profile
-      const canonical = user.username || user.fid;
+      const canonical = user.username;
       if (canonical) {
         router.push(`/${canonical}`);
         return;

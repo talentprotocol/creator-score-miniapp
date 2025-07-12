@@ -3,7 +3,6 @@ import { getLocalBaseUrl } from "./constants";
 
 export function getAccountSource(id: string): "wallet" | "farcaster" | null {
   if (id.startsWith("0x") && id.length === 42) return "wallet";
-  if (/^\d+$/.test(id)) return "farcaster";
   // Farcaster usernames: 1-16 chars, lowercase, alphanumeric, may include . or -
   if (/^[a-z0-9][a-z0-9\-\.]{0,15}$/.test(id)) return "farcaster";
   // UUID or unknown: return null to omit account_source
@@ -11,9 +10,9 @@ export function getAccountSource(id: string): "wallet" | "farcaster" | null {
 }
 
 /**
- * Resolves a Talent Protocol user identifier (Farcaster username, Github username, or UUID) to a user object.
+ * Resolves a Talent Protocol user identifier (Farcaster username, wallet address, or UUID) to a user object.
  * Always calls /api/talent-user?id=identifier and lets the API route determine account_source.
- * Returns { id, fid, fname, github, ... } or null if not found.
+ * Returns { id, fid, fname, github, wallet, ... } or null if not found.
  */
 export async function resolveTalentUser(identifier: string): Promise<{
   id: string | null;

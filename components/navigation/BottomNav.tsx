@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
-import { FarcasterAccessModal } from "@/components/ui/FarcasterAccessModal";
+import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 export function BottomNav() {
   const pathname = usePathname();
