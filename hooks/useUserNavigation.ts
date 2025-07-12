@@ -11,18 +11,11 @@ export function useUserNavigation() {
   const user = getUserContext(context);
   const [talentUuid, setTalentUuid] = useState<string | null>(null);
 
-  console.log("[useUserNavigation] User context:", user);
-
   // Resolve FID to Talent UUID for navigation
   useEffect(() => {
     async function resolveTalentUuid() {
       if (user?.fid) {
-        console.log(
-          "[useUserNavigation] Resolving FID to Talent UUID:",
-          user.fid,
-        );
         const uuid = await resolveFidToTalentUuid(user.fid);
-        console.log("[useUserNavigation] Resolved Talent UUID:", uuid);
         setTalentUuid(uuid);
       }
     }
@@ -33,7 +26,6 @@ export function useUserNavigation() {
   // Determine canonical identifier for navigation
   // Priority: Talent UUID > Farcaster username > fallback to /profile
   const canonical = talentUuid || user?.username;
-  console.log("[useUserNavigation] Canonical identifier:", canonical);
 
   const navItems = [
     {
@@ -53,8 +45,6 @@ export function useUserNavigation() {
       label: "Settings",
     },
   ];
-
-  console.log("[useUserNavigation] Profile href:", navItems[0].href);
 
   return {
     user,

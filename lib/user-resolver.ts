@@ -16,8 +16,6 @@ export function getAccountSource(id: string): "wallet" | "farcaster" | null {
 export async function resolveFidToTalentUuid(
   fid: number,
 ): Promise<string | null> {
-  console.log("[resolveFidToTalentUuid] Resolving FID to Talent UUID:", fid);
-
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
@@ -25,17 +23,11 @@ export async function resolveFidToTalentUuid(
 
   try {
     const apiUrl = `${baseUrl}/api/talent-user?id=${fid}`;
-    console.log("[resolveFidToTalentUuid] API call:", apiUrl);
-
     const res = await fetch(apiUrl);
-    console.log("[resolveFidToTalentUuid] Response status:", res.status);
 
     if (res.ok) {
       const user = await res.json();
-      console.log("[resolveFidToTalentUuid] API response:", user);
-
       if (user && user.id) {
-        console.log("[resolveFidToTalentUuid] Found Talent UUID:", user.id);
         return user.id;
       }
     }
@@ -43,7 +35,6 @@ export async function resolveFidToTalentUuid(
     console.error("[resolveFidToTalentUuid] Error:", error);
   }
 
-  console.warn("[resolveFidToTalentUuid] Could not resolve FID to Talent UUID");
   return null;
 }
 
@@ -62,17 +53,10 @@ export async function resolveTalentUser(identifier: string): Promise<{
   image_url: string | null;
   [key: string]: unknown;
 } | null> {
-  console.log(
-    "[resolveTalentUser] Starting resolution for identifier:",
-    identifier,
-  );
-
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
   }
-
-  console.log("[resolveTalentUser] Base URL:", baseUrl);
 
   // Add retry logic for server-side calls
   const maxRetries = 3;
@@ -81,21 +65,14 @@ export async function resolveTalentUser(identifier: string): Promise<{
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const apiUrl = `${baseUrl}/api/talent-user?id=${identifier}`;
-      console.log(
-        `[resolveTalentUser] Attempt ${attempt}/${maxRetries}, calling:`,
-        apiUrl,
-      );
-
       const res = await fetch(apiUrl);
-      console.log(`[resolveTalentUser] Response status:`, res.status);
 
       if (res.ok) {
         const user = await res.json();
-        console.log(`[resolveTalentUser] API response:`, user);
 
         // Accept if any identifier is present
         if (user && (user.fid || user.wallet || user.github || user.id)) {
-          const result = {
+          return {
             id: user.id || null,
             fid: user.fid ?? null,
             wallet: user.wallet ?? null,
@@ -105,30 +82,13 @@ export async function resolveTalentUser(identifier: string): Promise<{
             image_url: user.image_url ?? null,
             ...user,
           };
-          console.log(`[resolveTalentUser] Returning user result:`, result);
-          return result;
-        } else {
-          console.log(
-            `[resolveTalentUser] User data invalid - no identifiers found:`,
-            user,
-          );
         }
-      } else {
-        console.log(
-          `[resolveTalentUser] Response not ok:`,
-          res.status,
-          res.statusText,
-        );
       }
 
       // If we get here, the response was not ok or user data was invalid
       lastError = new Error(`HTTP ${res.status}: ${res.statusText}`);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(
-        `[resolveTalentUser] Attempt ${attempt}/${maxRetries} failed:`,
-        lastError.message,
-      );
 
       // Wait before retry (exponential backoff)
       if (attempt < maxRetries) {
