@@ -10,13 +10,41 @@ export function getAccountSource(id: string): "wallet" | "farcaster" | null {
 }
 
 /**
- * Normalize Farcaster username by removing .eth suffix if present
+ * Resolves a Farcaster FID to a Talent Protocol UUID
+ * This is used for navigation to ensure we always use the canonical Talent UUID
  */
-function normalizeFarcasterUsername(username: string): string {
-  if (username.endsWith(".eth")) {
-    return username.slice(0, -4); // Remove .eth suffix
+export async function resolveFidToTalentUuid(
+  fid: number,
+): Promise<string | null> {
+  console.log("[resolveFidToTalentUuid] Resolving FID to Talent UUID:", fid);
+
+  let baseUrl = "";
+  if (typeof window === "undefined") {
+    baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
   }
-  return username;
+
+  try {
+    const apiUrl = `${baseUrl}/api/talent-user?id=${fid}`;
+    console.log("[resolveFidToTalentUuid] API call:", apiUrl);
+
+    const res = await fetch(apiUrl);
+    console.log("[resolveFidToTalentUuid] Response status:", res.status);
+
+    if (res.ok) {
+      const user = await res.json();
+      console.log("[resolveFidToTalentUuid] API response:", user);
+
+      if (user && user.id) {
+        console.log("[resolveFidToTalentUuid] Found Talent UUID:", user.id);
+        return user.id;
+      }
+    }
+  } catch (error) {
+    console.error("[resolveFidToTalentUuid] Error:", error);
+  }
+
+  console.warn("[resolveFidToTalentUuid] Could not resolve FID to Talent UUID");
+  return null;
 }
 
 /**
@@ -39,13 +67,6 @@ export async function resolveTalentUser(identifier: string): Promise<{
     identifier,
   );
 
-  // Normalize Farcaster usernames by removing .eth suffix
-  const normalizedIdentifier = normalizeFarcasterUsername(identifier);
-  console.log(
-    "[resolveTalentUser] Normalized identifier:",
-    normalizedIdentifier,
-  );
-
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
@@ -59,7 +80,7 @@ export async function resolveTalentUser(identifier: string): Promise<{
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const apiUrl = `${baseUrl}/api/talent-user?id=${normalizedIdentifier}`;
+      const apiUrl = `${baseUrl}/api/talent-user?id=${identifier}`;
       console.log(
         `[resolveTalentUser] Attempt ${attempt}/${maxRetries}, calling:`,
         apiUrl,
