@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
-import { TabNavigation } from "@/components/ui/tabs-navigation";
-import { SegmentedBar } from "@/components/ui/SegmentedBar";
+import { TabNavigation } from "@/components/common/tabs-navigation";
+import { SegmentedBar } from "@/components/common/SegmentedBar";
 import { useProfilePostsPaginated } from "@/hooks/useProfilePostsPaginated";
 import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
 import { useProfileEarningsBreakdown } from "@/hooks/useProfileEarningsBreakdown";
@@ -10,6 +10,7 @@ import { ScoreProgressAccordion } from "./ScoreProgressAccordion";
 import { ScoreDataPoints } from "./ScoreDataPoints";
 import { CredentialIdeasCallout } from "./CredentialIdeasCallout";
 import { PostsList } from "./PostsList";
+import { CreatorCategoryCard } from "./CreatorCategoryCard";
 import type { SocialAccount } from "@/app/services/types";
 
 interface ProfileTabsProps {
@@ -210,6 +211,7 @@ export function ProfileTabs({ talentUUID }: ProfileTabsProps) {
       <div className="mt-6">
         {activeTab === "score" && (
           <div className="space-y-6">
+            <CreatorCategoryCard talentUUID={talentUUID} />
             <SegmentedBar
               title="Total Earnings"
               total={earningsBreakdownWithUrls?.totalEarnings || 0}

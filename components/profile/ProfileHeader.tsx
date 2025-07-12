@@ -6,6 +6,7 @@ import { ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { ProfileAccountsSheet } from "./ProfileAccountsSheet";
+import { useCreatorCategory } from "@/hooks/useCreatorCategory";
 import type { SocialAccount } from "@/app/services/types";
 
 export function ProfileHeader({
@@ -25,6 +26,7 @@ export function ProfileHeader({
 }) {
   const { context } = useMiniKit();
   const currentUser = getUserContext(context);
+  const { data: categoryData } = useCreatorCategory(talentUUID || "");
   const name =
     displayName ||
     currentUser?.displayName ||
@@ -56,6 +58,9 @@ export function ProfileHeader({
           <div className="mt-1 flex flex-col gap-0.5">
             <span className="text-muted-foreground text-sm">
               {followers ?? "—"} total followers
+              {categoryData?.primaryCategory.name && (
+                <> • {categoryData.primaryCategory.name}</>
+              )}
             </span>
           </div>
         </div>
