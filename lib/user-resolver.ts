@@ -10,6 +10,16 @@ export function getAccountSource(id: string): "wallet" | "farcaster" | null {
 }
 
 /**
+ * Normalize Farcaster username by removing .eth suffix if present
+ */
+function normalizeFarcasterUsername(username: string): string {
+  if (username.endsWith(".eth")) {
+    return username.slice(0, -4); // Remove .eth suffix
+  }
+  return username;
+}
+
+/**
  * Resolves a Talent Protocol user identifier (Farcaster username, wallet address, or UUID) to a user object.
  * Always calls /api/talent-user?id=identifier and lets the API route determine account_source.
  * Returns { id, fid, fname, github, wallet, ... } or null if not found.
@@ -29,6 +39,13 @@ export async function resolveTalentUser(identifier: string): Promise<{
     identifier,
   );
 
+  // Normalize Farcaster usernames by removing .eth suffix
+  const normalizedIdentifier = normalizeFarcasterUsername(identifier);
+  console.log(
+    "[resolveTalentUser] Normalized identifier:",
+    normalizedIdentifier,
+  );
+
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
@@ -42,7 +59,7 @@ export async function resolveTalentUser(identifier: string): Promise<{
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const apiUrl = `${baseUrl}/api/talent-user?id=${identifier}`;
+      const apiUrl = `${baseUrl}/api/talent-user?id=${normalizedIdentifier}`;
       console.log(
         `[resolveTalentUser] Attempt ${attempt}/${maxRetries}, calling:`,
         apiUrl,
