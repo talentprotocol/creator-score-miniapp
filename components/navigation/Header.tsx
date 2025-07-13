@@ -10,7 +10,7 @@ export function Header() {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { navItems, user } = useUserNavigation();
+  const { navItems, settingsItem, user } = useUserNavigation();
   const [showModal, setShowModal] = React.useState(false);
   const [modalFeature, setModalFeature] = React.useState<
     "Profile" | "Settings"
@@ -24,7 +24,10 @@ export function Header() {
     router.push("/");
   };
 
-  const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
+  const handleNavClick = (
+    item: (typeof navItems)[0] | typeof settingsItem,
+    e: React.MouseEvent,
+  ) => {
     // If user tries to access Profile or Settings without user context, show modal
     if (!user && (item.label === "Profile" || item.label === "Settings")) {
       e.preventDefault();
@@ -97,6 +100,23 @@ export function Header() {
               return null;
             })}
           </nav>
+          {/* Settings link - right aligned */}
+          <div className="flex items-center">
+            <Link
+              href={settingsItem.href}
+              onClick={(e) => handleNavClick(settingsItem, e)}
+              className={
+                "flex items-center justify-center h-10 w-12 rounded-full transition-colors " +
+                (pathname === settingsItem.href
+                  ? "bg-muted text-primary"
+                  : "text-muted-foreground hover:bg-muted/50")
+              }
+              aria-label={settingsItem.label}
+              aria-current={pathname === settingsItem.href ? "page" : undefined}
+            >
+              <settingsItem.icon className="h-6 w-6" />
+            </Link>
+          </div>
         </div>
       </header>
       <FarcasterAccessModal

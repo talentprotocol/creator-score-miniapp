@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
 import { ProfileHeader } from "./ProfileHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { ProfileTabs } from "./ProfileTabs";
@@ -22,6 +23,9 @@ interface ProfileScreenProps {
 }
 
 export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
+  // Tab state management
+  const [activeTab, setActiveTab] = useState("score");
+
   // Use hooks to fetch all data
   const {
     profile,
@@ -85,6 +89,7 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
           <StatCard
             title="Creator Score"
             value={scoreLoading ? "—" : (creatorScore?.toLocaleString() ?? "—")}
+            onClick={() => setActiveTab("credentials")}
           />
           <StatCard
             title="Total Earnings"
@@ -95,9 +100,14 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
                   ? "—"
                   : formatNumberWithSuffix(totalEarnings)
             }
+            onClick={() => setActiveTab("score")}
           />
         </div>
-        <ProfileTabs talentUUID={talentUUID} />
+        <ProfileTabs
+          talentUUID={talentUUID}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
         {children}
       </div>
     </main>

@@ -13,19 +13,17 @@ export function BottomNav() {
   const pathname = usePathname();
   const { navItems, user } = useUserNavigation();
   const [showModal, setShowModal] = React.useState(false);
-  const [modalFeature, setModalFeature] = React.useState<
-    "Profile" | "Settings"
-  >("Profile");
+  const [modalFeature, setModalFeature] = React.useState<"Profile">("Profile");
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
-    // If user tries to access Profile or Settings without user context, show modal
-    if (!user && (item.label === "Profile" || item.label === "Settings")) {
+    // If user tries to access Profile without user context, show modal
+    if (!user && item.label === "Profile") {
       e.preventDefault();
-      setModalFeature(item.label as "Profile" | "Settings");
+      setModalFeature("Profile");
       setShowModal(true);
       return;
     }

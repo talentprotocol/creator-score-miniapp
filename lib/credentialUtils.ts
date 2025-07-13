@@ -72,9 +72,8 @@ export const CREDENTIAL_CATEGORIES = {
   base_nft_collections_unique_holders: ["Artist"],
   base_nft_collections_market_cap: ["Artist"],
   phi_artist_score: ["Artist"],
-  zora_coin_earnings: ["Artist", "Social"],
   zora_unique_holders: ["Artist", "Social"],
-  zora_creator_rewards: ["Artist", "Social"],
+  zora_creator_rewards: ["Artist"],
 
   // Writer
   mirror_unique_collectors: ["Writer"],
@@ -101,6 +100,7 @@ export const CREDENTIAL_CATEGORIES = {
   stack_score: ["Social"],
   twitter_followers: ["Social"],
   twitter_account_age: ["Social"],
+  zora_coin_earnings: ["Social"],
 
   // Music
   coop_records_holders: ["Music"],
