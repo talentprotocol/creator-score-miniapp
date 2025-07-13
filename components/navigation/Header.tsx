@@ -7,6 +7,7 @@ import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 export function Header() {
+  const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { navItems, user } = useUserNavigation();
@@ -14,6 +15,10 @@ export function Header() {
   const [modalFeature, setModalFeature] = React.useState<
     "Profile" | "Settings"
   >("Profile");
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleTitleClick = () => {
     router.push("/");
@@ -29,6 +34,19 @@ export function Header() {
     }
     // Otherwise, navigate normally (Link component handles it)
   };
+
+  // Prevent hydration mismatch by not rendering pathname-dependent content until mounted
+  if (!mounted) {
+    return (
+      <header className="sticky top-0 z-40 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white">
+        <div className="flex h-14 w-full items-center justify-between px-4 md:px-8 relative">
+          <h1 className="text-lg font-semibold cursor-pointer hover:opacity-70 transition-opacity">
+            Creator Score
+          </h1>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>

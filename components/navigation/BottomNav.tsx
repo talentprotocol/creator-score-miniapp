@@ -9,12 +9,17 @@ import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 export function BottomNav() {
+  const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
   const { navItems, user } = useUserNavigation();
   const [showModal, setShowModal] = React.useState(false);
   const [modalFeature, setModalFeature] = React.useState<
     "Profile" | "Settings"
   >("Profile");
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
     // If user tries to access Profile or Settings without user context, show modal
@@ -26,6 +31,25 @@ export function BottomNav() {
     }
     // Otherwise, navigate normally (Link component handles it)
   };
+
+  // Prevent hydration mismatch by not rendering pathname-dependent content until mounted
+  if (!mounted) {
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 pb-safe">
+        <div className="grid grid-cols-3 gap-1">
+          {navItems.map((item) => (
+            <div
+              key={item.label}
+              className="flex flex-col items-center justify-center py-2 px-4 min-h-[60px]"
+            >
+              <item.icon className="w-5 h-5 text-gray-400" />
+              <span className="text-xs mt-1 text-gray-400">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <>
