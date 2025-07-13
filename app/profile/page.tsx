@@ -26,7 +26,7 @@ export default function ProfilePage() {
 
   return (
     <main className="flex-1 overflow-y-auto relative">
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="max-w-xl mx-auto px-4 py-6">
         <div className="text-center text-muted-foreground">Loading...</div>
       </div>
     </main>

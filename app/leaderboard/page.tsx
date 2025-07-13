@@ -273,7 +273,7 @@ export default function LeaderboardPage() {
   ];
 
   return (
-    <div className="max-w-md mx-auto w-full p-4 space-y-6 pb-24">
+    <div className="max-w-xl mx-auto w-full p-4 space-y-6 pb-24">
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4">
         {/* Rewards Pool - Top Left */}

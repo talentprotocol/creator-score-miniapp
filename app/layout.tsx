@@ -81,7 +81,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full bg-white flex flex-col">
-        <div className="relative flex flex-col w-full bg-background overflow-hidden my-0 md:my-0 md:bg-white md:shadow-none md:rounded-none">
+        <div className="relative flex flex-col w-full bg-background my-0 md:my-0 md:bg-white md:shadow-none md:rounded-none md:overflow-hidden">
           <Providers>
             <ErrorBoundary>
               <Header />

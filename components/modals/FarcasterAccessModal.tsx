@@ -51,7 +51,7 @@ export function FarcasterAccessModal({
 
   const handleFarcasterClick = () => {
     window.open(
-      "https://warpcast.com/~/composer-action?url=https://creator-score.vercel.app",
+      "https://farcaster.xyz/miniapps/WSqcbI1uxFJo/creator-score-mini-app",
       "_blank",
     );
   };

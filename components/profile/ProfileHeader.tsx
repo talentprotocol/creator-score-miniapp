@@ -92,7 +92,7 @@ export function ProfileHeader({
                   <ChevronDown className="h-3 w-3 ml-0.5" />
                 )}
               </button>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 hidden">
                 <Sparkles className="h-3 w-3 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">AI</span>
               </div>

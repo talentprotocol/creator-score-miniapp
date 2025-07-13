@@ -132,3 +132,74 @@ export const SCORER_SLUGS = {
   BUILDER: "builder_score", // default scorer
   CREATOR: "creator_score",
 } as const;
+
+// Settings page types
+export interface ConnectedAccount {
+  identifier: string; // username, handle, or address
+  source: string; // "github", "twitter", "wallet", etc.
+  username: string | null;
+  handle: string | null;
+  connected_at: string;
+  owned_since: string | null;
+  imported_from: string | null;
+  invalid_token: boolean;
+  is_primary?: boolean; // For wallet accounts
+  is_public?: boolean; // For wallet accounts
+  is_enabled?: boolean; // For wallet accounts
+  profile_url?: string | null;
+  image_url?: string | null;
+}
+
+export interface ConnectedAccountsResponse {
+  accounts: ConnectedAccount[];
+}
+
+export interface GroupedConnectedAccounts {
+  social: ConnectedAccount[]; // GitHub, Twitter, etc.
+  wallet: ConnectedAccount[]; // Wallet addresses
+}
+
+// Settings specific types
+export interface UserSettings {
+  email: string | null;
+  notifications: {
+    farcaster: boolean;
+    email: boolean;
+  };
+}
+
+export interface AccountManagementAction {
+  action:
+    | "connect"
+    | "disconnect"
+    | "set_primary"
+    | "update_email"
+    | "delete_account";
+  account_type?: "github" | "twitter" | "wallet";
+  identifier?: string;
+  data?: Record<string, unknown>;
+}
+
+// Proof of Humanity types
+export interface HumanityCredential {
+  account_source: string;
+  calculating_score: boolean;
+  category: string;
+  data_issuer_name: string;
+  data_issuer_slug: string;
+  description: string;
+  external_url: string;
+  immutable: boolean;
+  last_calculated_at: string | null;
+  max_score: number;
+  name: string;
+  points: number;
+  points_calculation_logic: Record<string, unknown>;
+  slug: string;
+  uom: string;
+  updated_at: string | null;
+}
+
+export interface HumanityCredentialsResponse {
+  credentials: HumanityCredential[];
+}

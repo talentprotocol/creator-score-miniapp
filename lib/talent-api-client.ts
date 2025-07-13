@@ -327,47 +327,80 @@ export class TalentApiClient {
   }
 
   async getAccounts(params: TalentProtocolParams): Promise<NextResponse> {
+    const errorMessage = validateTalentProtocolParams(params);
+    if (errorMessage) {
+      return createBadRequestResponse(errorMessage);
+    }
+
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {
       return createServerErrorResponse(apiKeyError);
     }
 
-    if (!params.talent_protocol_id && !params.id) {
-      return createBadRequestResponse("Missing id");
+    try {
+      const urlParams = this.buildRequestParams(params);
+      const response = await this.makeRequest("/accounts", urlParams);
+
+      if (!response || !response.accounts) {
+        return createNotFoundResponse(
+          "No accounts found for the specified criteria",
+        );
+      }
+
+      return NextResponse.json(response, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "getAccounts",
+        params.id || params.talent_protocol_id || "unknown",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+      return createServerErrorResponse(
+        `Failed to fetch accounts: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  /**
+   * Get humanity credentials for a talent protocol user
+   */
+  async getHumanityCredentials(
+    params: TalentProtocolParams,
+  ): Promise<NextResponse> {
+    const errorMessage = validateTalentProtocolParams(params);
+    if (errorMessage) {
+      return createBadRequestResponse(errorMessage);
+    }
+
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
     }
 
     try {
       const urlParams = new URLSearchParams();
       const talentId = params.talent_protocol_id || params.id;
-
-      if (params.talent_protocol_id) {
-        // Direct talent ID lookup
-        urlParams.append("id", talentId!);
-      } else {
-        // Account source lookup
-        urlParams.append("id", talentId!);
-        const accountSource = params.account_source || "farcaster";
-        urlParams.append("account_source", accountSource);
+      if (talentId) {
+        urlParams.append("talent_id", talentId);
       }
 
-      const data = await this.makeRequest("/accounts", urlParams);
-      return NextResponse.json(data);
+      const response = await this.makeRequest("/human_checkmark", urlParams);
+
+      return NextResponse.json(response, { status: 200 });
     } catch (error) {
-      const identifier = params.talent_protocol_id || params.id;
+      logApiError(
+        "getHumanityCredentials",
+        params.id || params.talent_protocol_id || "unknown",
+        error instanceof Error ? error.message : "Unknown error",
+      );
 
+      // Return empty credentials array on 404 instead of error
       if (error instanceof Error && error.message.includes("404")) {
-        return NextResponse.json(
-          { error: "Talent API returned 404", accounts: [] },
-          { status: 502 },
-        );
+        return NextResponse.json({ credentials: [] }, { status: 200 });
       }
 
-      logApiError(
-        "getAccounts",
-        identifier || "unknown",
-        error instanceof Error ? error.message : String(error),
+      return createServerErrorResponse(
+        `Failed to fetch humanity credentials: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
-      return createServerErrorResponse("Failed to fetch accounts");
     }
   }
 }
