@@ -2,7 +2,6 @@
 
 import React from "react";
 import { ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { formatPostDate } from "@/lib/utils";
 import type { Post } from "@/app/services/types";
 
@@ -51,17 +50,9 @@ interface PostsListProps {
   posts: Post[];
   loading: boolean;
   error: string | null;
-  hasMore: boolean;
-  onLoadMore: () => void;
 }
 
-export function PostsList({
-  posts,
-  loading,
-  error,
-  hasMore,
-  onLoadMore,
-}: PostsListProps) {
+export function PostsList({ posts, loading, error }: PostsListProps) {
   if (error) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -101,27 +92,6 @@ export function PostsList({
           </React.Fragment>
         ))}
       </div>
-
-      {/* Load More Button */}
-      {hasMore && (
-        <div className="flex justify-center mt-6">
-          <Button
-            onClick={onLoadMore}
-            disabled={loading}
-            variant="outline"
-            className="w-full"
-          >
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                Loading...
-              </>
-            ) : (
-              "Load More"
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

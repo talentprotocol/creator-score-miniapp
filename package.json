@@ -1,13 +1,16 @@
 {
   "name": "builder-score-miniapp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NEXT_PUBLIC_BUILD_DATE=$(date -u +%Y-%m-%d) next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "version:patch": "node scripts/version-bump.js patch",
+    "version:minor": "node scripts/version-bump.js minor",
+    "version:major": "node scripts/version-bump.js major"
   },
   "dependencies": {
     "@coinbase/onchainkit": "latest",

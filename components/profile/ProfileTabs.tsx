@@ -2,7 +2,7 @@ import * as React from "react";
 import { useState } from "react";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { SegmentedBar } from "@/components/common/SegmentedBar";
-import { useProfilePostsPaginated } from "@/hooks/useProfilePostsPaginated";
+import { useProfilePostsAll } from "@/hooks/useProfilePostsAll";
 import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
 import { useProfileEarningsBreakdown } from "@/hooks/useProfileEarningsBreakdown";
 import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { ScoreProgressAccordion } from "./ScoreProgressAccordion";
 import { ScoreDataPoints } from "./ScoreDataPoints";
 import { CredentialIdeasCallout } from "./CredentialIdeasCallout";
 import { PostsList } from "./PostsList";
+import { PostsChart } from "./PostsChart";
 import { CreatorCategoryCard } from "./CreatorCategoryCard";
 import type { SocialAccount } from "@/app/services/types";
 
@@ -80,11 +81,10 @@ const getPlatformUrl = (
 export function ProfileTabs({ talentUUID }: ProfileTabsProps) {
   const {
     posts,
+    yearlyData,
     loading: postsLoading,
     error: postsError,
-    hasMore,
-    loadMore,
-  } = useProfilePostsPaginated(talentUUID, 10);
+  } = useProfilePostsAll(talentUUID);
   const {
     socialAccounts,
     loading: socialAccountsLoading,
@@ -234,12 +234,15 @@ export function ProfileTabs({ talentUUID }: ProfileTabsProps) {
         )}
         {activeTab === "content" && (
           <div className="space-y-6">
+            <PostsChart
+              yearlyData={yearlyData}
+              loading={postsLoading}
+              error={postsError}
+            />
             <PostsList
               posts={posts}
               loading={postsLoading}
               error={postsError}
-              hasMore={hasMore}
-              onLoadMore={loadMore}
             />
           </div>
         )}

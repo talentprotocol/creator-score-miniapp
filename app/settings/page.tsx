@@ -19,6 +19,7 @@ import { AccountSettingsSection } from "@/components/settings/AccountSettingsSec
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
 import { Button } from "@/components/ui/button";
+import { getVersionDisplay } from "@/lib/version";
 import {
   ExternalLink,
   FileText,
@@ -284,9 +285,7 @@ export default function SettingsPage() {
 
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-muted text-center space-y-1">
-        <p className="text-xs text-muted-foreground">
-          Creator Score App v2025.07.13
-        </p>
+        <p className="text-xs text-muted-foreground">{getVersionDisplay()}</p>
         <p className="text-xs text-muted-foreground">
           Powered by{" "}
           <button
