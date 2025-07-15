@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ProfileHeader } from "./ProfileHeader";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { StatCard } from "@/components/common/StatCard";
-import { ProfileTabs } from "./ProfileTabs";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import {
   formatNumberWithSuffix,
   formatK,
@@ -17,13 +17,17 @@ import { useProfileTotalEarnings } from "@/hooks/useProfileTotalEarnings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Callout } from "@/components/common/Callout";
 
-interface ProfileScreenProps {
+interface ProfileLayoutContentProps {
   talentUUID: string;
-  activeTab?: string;
-  children?: React.ReactNode;
+  identifier: string;
+  children: React.ReactNode;
 }
 
-export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
+export function ProfileLayoutContent({
+  talentUUID,
+  identifier,
+  children,
+}: ProfileLayoutContentProps) {
   const router = useRouter();
 
   // Use hooks to fetch all data
@@ -32,8 +36,11 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
     loading: profileLoading,
     error: profileError,
   } = useProfileHeaderData(talentUUID);
-  const { creatorScore, loading: scoreLoading } =
-    useProfileCreatorScore(talentUUID);
+  const {
+    creatorScore,
+    hasNoScore,
+    loading: scoreLoading,
+  } = useProfileCreatorScore(talentUUID);
   const { socialAccounts } = useProfileSocialAccounts(talentUUID);
   const { totalEarnings, loading: earningsLoading } =
     useProfileTotalEarnings(talentUUID);
@@ -96,8 +103,6 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
                   : formatNumberWithSuffix(totalEarnings)
             }
             onClick={() => {
-              const identifier =
-                profile?.fname || profile?.wallet || talentUUID;
               router.push(`/${identifier}/stats`);
             }}
           />
@@ -105,17 +110,12 @@ export function ProfileScreen({ talentUUID, children }: ProfileScreenProps) {
             title="Creator Score"
             value={scoreLoading ? "—" : (creatorScore?.toLocaleString() ?? "—")}
             onClick={() => {
-              const identifier =
-                profile?.fname || profile?.wallet || talentUUID;
               router.push(`/${identifier}/score`);
             }}
           />
         </div>
-        <ProfileTabs
-          talentUUID={talentUUID}
-          identifier={profile?.fname || profile?.wallet || talentUUID}
-        />
-        {children}
+        <ProfileTabs talentUUID={talentUUID} identifier={identifier} />
+        {!hasNoScore && <div className="mt-6">{children}</div>}
       </div>
     </main>
   );

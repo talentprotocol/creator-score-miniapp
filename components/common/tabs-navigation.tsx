@@ -1,10 +1,12 @@
 "use client";
 
 import type React from "react";
+import Link from "next/link";
 
 interface Tab {
   id: string;
   label: string;
+  href?: string; // Optional href for routing
   icon?: React.ComponentType<{ className?: string }>;
   count?: number;
   indicator?: "live" | "new" | boolean;
@@ -14,7 +16,7 @@ interface Tab {
 interface TabNavigationProps {
   tabs: Tab[];
   activeTab: string;
-  onTabChange: (tabId: string) => void;
+  onTabChange?: (tabId: string) => void; // Made optional for routing mode
   showCounts?: boolean;
   className?: string;
 }
@@ -34,21 +36,18 @@ export function TabNavigation({
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
 
-        return (
-          <button
-            key={tab.id}
-            onClick={() => !tab.disabled && onTabChange(tab.id)}
-            disabled={tab.disabled}
-            className={`flex items-center justify-center gap-2 px-4 py-3 text-center relative whitespace-nowrap ${
-              tabs.length <= 3 ? "flex-1" : "min-w-0"
-            } ${
-              tab.disabled
-                ? "text-gray-400 cursor-not-allowed"
-                : isActive
-                  ? "text-gray-900"
-                  : "text-gray-500"
-            }`}
-          >
+        const baseClassName = `flex items-center justify-center gap-2 px-4 py-3 text-center relative whitespace-nowrap ${
+          tabs.length <= 3 ? "flex-1" : "min-w-0"
+        } ${
+          tab.disabled
+            ? "text-gray-400 cursor-not-allowed"
+            : isActive
+              ? "text-gray-900"
+              : "text-gray-500"
+        }`;
+
+        const content = (
+          <>
             {/* Icon if provided */}
             {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
 
@@ -66,6 +65,26 @@ export function TabNavigation({
             {isActive && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
             )}
+          </>
+        );
+
+        // Use Link for routing mode, button for callback mode
+        if (tab.href && !tab.disabled) {
+          return (
+            <Link key={tab.id} href={tab.href} className={baseClassName}>
+              {content}
+            </Link>
+          );
+        }
+
+        return (
+          <button
+            key={tab.id}
+            onClick={() => !tab.disabled && onTabChange?.(tab.id)}
+            disabled={tab.disabled}
+            className={baseClassName}
+          >
+            {content}
           </button>
         );
       })}

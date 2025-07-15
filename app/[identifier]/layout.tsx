@@ -2,10 +2,13 @@ import { resolveTalentUser } from "@/lib/user-resolver";
 import { redirect } from "next/navigation";
 import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
+import { ProfileLayoutContent } from "./ProfileLayoutContent";
 
-export default async function PublicProfilePage({
+export default async function ProfileLayout({
+  children,
   params,
 }: {
+  children: React.ReactNode;
   params: { identifier: string };
 }) {
   if (RESERVED_WORDS.includes(params.identifier)) {
@@ -27,9 +30,20 @@ export default async function PublicProfilePage({
     params.identifier !== canonical &&
     params.identifier !== undefined
   ) {
-    redirect(`/${canonical}/stats`);
+    // Preserve the current path when redirecting to canonical
+    const currentPath = params.identifier;
+    if (currentPath.includes("/")) {
+      const pathParts = currentPath.split("/");
+      const tabPart = pathParts[pathParts.length - 1];
+      redirect(`/${canonical}/${tabPart}`);
+    } else {
+      redirect(`/${canonical}/stats`);
+    }
   }
 
-  // Redirect to stats tab by default
-  redirect(`/${params.identifier}/stats`);
+  return (
+    <ProfileLayoutContent talentUUID={user.id} identifier={canonical}>
+      {children}
+    </ProfileLayoutContent>
+  );
 }

@@ -309,7 +309,24 @@ export default function LeaderboardPage() {
         </Card>
 
         {/* Creator Score - Bottom Left */}
-        <Card>
+        <Card
+          className="cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => {
+            if (!user) return;
+            const entry = entries.find(
+              (e) => e.name === (user.displayName || user.username),
+            );
+
+            const url = generateProfileUrl({
+              farcasterHandle: user.username,
+              talentId: entry?.talent_protocol_id,
+            });
+
+            if (url) {
+              router.push(`${url}/score`);
+            }
+          }}
+        >
           <CardContent className="pt-6">
             <p className="text-sm text-gray-600 mb-4">Your Score</p>
             <p className="text-2xl font-bold">

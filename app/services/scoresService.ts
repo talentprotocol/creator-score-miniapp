@@ -43,6 +43,9 @@ async function getScoreForAddress(
     // Extract points and last_calculated_at from the nested score object
     const points = data.score?.points ?? 0;
     const lastCalculatedAt = data.score?.last_calculated_at ?? null;
+    const calculating = data.score?.calculating_score ?? false;
+    const calculatingEnqueuedAt =
+      data.score?.calculating_score_enqueued_at ?? null;
 
     const levelInfo =
       LEVEL_RANGES.find(
@@ -56,6 +59,8 @@ async function getScoreForAddress(
       levelName: levelInfo.name,
       lastCalculatedAt,
       walletAddress: address,
+      calculating,
+      calculatingEnqueuedAt,
     };
   } catch (error) {
     return {
@@ -180,6 +185,9 @@ export async function getCreatorScoreForTalentId(
     }
     const points = data.score?.points ?? 0;
     const lastCalculatedAt = data.score?.last_calculated_at ?? null;
+    const calculating = data.score?.calculating_score ?? false;
+    const calculatingEnqueuedAt =
+      data.score?.calculating_score_enqueued_at ?? null;
     const levelInfo =
       LEVEL_RANGES.find(
         (range) => points >= range.min && points <= range.max,
@@ -191,6 +199,8 @@ export async function getCreatorScoreForTalentId(
       levelName: levelInfo.name,
       lastCalculatedAt,
       walletAddress: null,
+      calculating,
+      calculatingEnqueuedAt,
     };
   } catch (error) {
     return {

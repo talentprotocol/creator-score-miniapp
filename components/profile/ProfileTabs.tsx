@@ -1,318 +1,87 @@
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { TabNavigation } from "@/components/common/tabs-navigation";
-import { SegmentedBar } from "@/components/common/SegmentedBar";
-import { useProfilePostsAll } from "@/hooks/useProfilePostsAll";
-import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
-import { useProfileEarningsBreakdown } from "@/hooks/useProfileEarningsBreakdown";
-import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
-import { ScoreProgressAccordion } from "./ScoreProgressAccordion";
-import { ScoreDataPoints } from "./ScoreDataPoints";
-import { CredentialIdeasCallout } from "./CredentialIdeasCallout";
-import { PostsList } from "./PostsList";
-import { PostsChart } from "./PostsChart";
-import { CreatorCategoryCard } from "./CreatorCategoryCard";
-import type { SocialAccount } from "@/app/services/types";
+import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
+import { useScoreRefresh } from "@/hooks/useScoreRefresh";
+import { NoScoreStates } from "./NoScoreStates";
 
 interface ProfileTabsProps {
   talentUUID: string;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  identifier: string; // The URL identifier for building links
 }
 
-// Platform URL mapping for earnings platforms
-const getPlatformUrl = (
-  platformName: string,
-  socialAccounts: SocialAccount[],
-  existingUrl?: string,
-): string | undefined => {
-  // First, check if we already have a URL from the data
-  if (existingUrl) {
-    return existingUrl;
-  }
+export function ProfileTabs({ talentUUID, identifier }: ProfileTabsProps) {
+  const pathname = usePathname();
 
-  const platform = platformName.toLowerCase();
+  // Determine active tab from URL pathname
+  const activeTab = pathname.endsWith("/posts")
+    ? "content"
+    : pathname.endsWith("/score")
+      ? "credentials"
+      : "score"; // default to stats tab
 
-  // For social platforms, try to find matching social account
-  if (platform === "farcaster") {
-    const farcasterAccount = socialAccounts.find(
-      (acc) => acc.source === "farcaster",
-    );
-    if (farcasterAccount?.handle) {
-      const handle = farcasterAccount.handle.startsWith("@")
-        ? farcasterAccount.handle.slice(1)
-        : farcasterAccount.handle;
-      return `https://farcaster.xyz/${handle}`;
-    }
-  }
-
-  // For earnings platforms, we need to construct URLs based on social accounts
-  if (platform === "mirror") {
-    // Mirror typically uses ENS or wallet addresses
-    const ensAccount = socialAccounts.find((acc) => acc.source === "ens");
-    if (ensAccount?.handle) {
-      return `https://mirror.xyz/${ensAccount.handle}`;
-    }
-    // Could also check for wallet addresses if needed
-  }
-
-  if (platform === "zora") {
-    // Zora can use ENS or wallet addresses
-    const ensAccount = socialAccounts.find((acc) => acc.source === "ens");
-    if (ensAccount?.handle) {
-      return `https://zora.co/${ensAccount.handle}`;
-    }
-  }
-
-  if (platform === "noice") {
-    // Noice uses Farcaster links
-    const farcasterAccount = socialAccounts.find(
-      (acc) => acc.source === "farcaster",
-    );
-    if (farcasterAccount?.handle) {
-      const handle = farcasterAccount.handle.startsWith("@")
-        ? farcasterAccount.handle.slice(1)
-        : farcasterAccount.handle;
-      return `https://farcaster.xyz/${handle}`;
-    }
-  }
-
-  return undefined;
-};
-
-export function ProfileTabs({
-  talentUUID,
-  activeTab,
-  onTabChange,
-}: ProfileTabsProps) {
   const {
-    posts,
-    yearlyData,
-    loading: postsLoading,
-    error: postsError,
-  } = useProfilePostsAll(talentUUID);
+    hasNoScore,
+    calculating,
+    calculatingEnqueuedAt,
+    loading: scoreLoading,
+    refetch: refetchScore,
+  } = useProfileCreatorScore(talentUUID);
+
+  // Hook for handling score refresh
   const {
-    socialAccounts,
-    loading: socialAccountsLoading,
-    error: socialAccountsError,
-  } = useProfileSocialAccounts(talentUUID);
-  const {
-    breakdown: earningsBreakdown,
-    loading: earningsLoading,
-    error: earningsError,
-  } = useProfileEarningsBreakdown(talentUUID);
-
-  // Process followers breakdown with URLs
-  const processFollowersBreakdown = () => {
-    if (!socialAccounts || socialAccounts.length === 0) {
-      return {
-        totalFollowers: 0,
-        segments: [],
-      };
-    }
-
-    const totalFollowers = calculateTotalFollowers(socialAccounts);
-
-    if (totalFollowers === 0) {
-      return {
-        totalFollowers: 0,
-        segments: [],
-      };
-    }
-
-    // Group accounts by name and sum their followers
-    const accountGroups = new Map<
-      string,
-      { count: number; profileUrl?: string }
-    >();
-
-    socialAccounts
-      .filter((account) => account.followerCount && account.followerCount > 0)
-      .forEach((account) => {
-        const name = account.displayName || account.source;
-        const existing = accountGroups.get(name) || {
-          count: 0,
-          profileUrl: undefined,
-        };
-        accountGroups.set(name, {
-          count: existing.count + (account.followerCount || 0),
-          profileUrl: existing.profileUrl || account.profileUrl || undefined,
-        });
-      });
-
-    // Sort by follower count and take top 5
-    const sortedAccounts = Array.from(accountGroups.entries()).sort(
-      ([, a], [, b]) => b.count - a.count,
-    );
-
-    const top5 = sortedAccounts.slice(0, 5);
-    const others = sortedAccounts.slice(5);
-    const otherTotal = others.reduce((sum, [, data]) => sum + data.count, 0);
-
-    const segments = top5.map(([name, data]) => ({
-      name,
-      value: data.count,
-      percentage: (data.count / totalFollowers) * 100,
-      url: data.profileUrl,
-    }));
-
-    if (otherTotal > 0) {
-      segments.push({
-        name: "Other",
-        value: otherTotal,
-        percentage: (otherTotal / totalFollowers) * 100,
-        url: undefined,
-      });
-    }
-
-    return {
-      totalFollowers,
-      segments,
-    };
-  };
-
-  // Process earnings breakdown with URLs
-  const processEarningsBreakdown = () => {
-    if (!earningsBreakdown || !socialAccounts) {
-      return earningsBreakdown;
-    }
-
-    const segmentsWithUrls = earningsBreakdown.segments.map((segment) => ({
-      ...segment,
-      url: getPlatformUrl(segment.name, socialAccounts),
-    }));
-
-    return {
-      ...earningsBreakdown,
-      segments: segmentsWithUrls,
-    };
-  };
-
-  // Process posts breakdown by platform
-  const processPostsBreakdown = () => {
-    if (!posts || posts.length === 0) {
-      return {
-        totalPosts: 0,
-        segments: [],
-      };
-    }
-
-    // Group posts by platform
-    const platformCounts = new Map<string, number>();
-    posts.forEach((post) => {
-      const platform = post.platform;
-      platformCounts.set(platform, (platformCounts.get(platform) || 0) + 1);
-    });
-
-    const totalPosts = posts.length;
-
-    // Convert to segments format, only include platforms that have posts
-    const segments = Array.from(platformCounts.entries())
-      .map(([platform, count]) => {
-        // Map platform names to display names
-        const displayNames: Record<string, string> = {
-          paragraph: "Paragraph",
-          zora: "Zora",
-          mirror: "Mirror",
-          farcaster: "Farcaster",
-          lens: "Lens",
-        };
-
-        return {
-          name: displayNames[platform] || platform,
-          value: count,
-          percentage: (count / totalPosts) * 100,
-          url: undefined, // Could add platform URLs later if needed
-        };
-      })
-      .sort((a, b) => b.value - a.value); // Sort by count descending
-
-    return {
-      totalPosts,
-      segments,
-    };
-  };
-
-  const followersBreakdown = processFollowersBreakdown();
-  const earningsBreakdownWithUrls = processEarningsBreakdown();
-  const postsBreakdown = processPostsBreakdown();
+    isRefreshing,
+    successMessage,
+    error: refreshError,
+    refreshScore,
+  } = useScoreRefresh(talentUUID, refetchScore);
 
   const tabs = [
     {
       id: "score",
       label: "Stats",
+      href: `/${identifier}/stats`,
     },
     {
       id: "content",
       label: "Posts",
+      href: `/${identifier}/posts`,
     },
     {
       id: "credentials",
       label: "Score",
+      href: `/${identifier}/score`,
     },
   ];
 
+  // Handle calculate score action
+  const handleCalculateScore = () => {
+    refreshScore();
+  };
+
+  // If user has no score, show simplified version instead of tabs
+  if (hasNoScore && !scoreLoading) {
+    return (
+      <div className="w-full flex flex-col">
+        <div className="mt-6">
+          <NoScoreStates
+            calculating={calculating}
+            calculatingEnqueuedAt={calculatingEnqueuedAt}
+            onCalculateScore={handleCalculateScore}
+            isRefreshing={isRefreshing}
+            successMessage={successMessage}
+            errorMessage={refreshError}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // For users with scores, just render the tab navigation
+  // The content will be rendered by the children (tab-specific pages)
   return (
     <div className="w-full flex flex-col">
-      <TabNavigation
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={onTabChange}
-      />
-      <div className="mt-6">
-        {activeTab === "score" && (
-          <div className="space-y-6">
-            <CreatorCategoryCard talentUUID={talentUUID} />
-            <SegmentedBar
-              title="Total Earnings"
-              total={earningsBreakdownWithUrls?.totalEarnings || 0}
-              segments={earningsBreakdownWithUrls?.segments || []}
-              color="green"
-              formatValue={formatRewardValue}
-              loading={earningsLoading}
-              error={earningsError}
-            />
-            <SegmentedBar
-              title="Total Followers"
-              total={followersBreakdown.totalFollowers}
-              segments={followersBreakdown.segments}
-              color="pink"
-              formatValue={(value) => value.toLocaleString()}
-              loading={socialAccountsLoading}
-              error={socialAccountsError}
-            />
-            <SegmentedBar
-              title="Total Posts"
-              total={postsBreakdown.totalPosts}
-              segments={postsBreakdown.segments}
-              color="blue"
-              formatValue={(value) => value.toLocaleString()}
-              loading={postsLoading}
-              error={postsError}
-            />
-          </div>
-        )}
-        {activeTab === "content" && (
-          <div className="space-y-6">
-            <PostsChart
-              yearlyData={yearlyData}
-              loading={postsLoading}
-              error={postsError}
-            />
-            <PostsList
-              posts={posts}
-              loading={postsLoading}
-              error={postsError}
-            />
-          </div>
-        )}
-        {activeTab === "credentials" && (
-          <div className="space-y-6">
-            <ScoreProgressAccordion talentUUID={talentUUID} />
-            <ScoreDataPoints talentUUID={talentUUID} />
-            <CredentialIdeasCallout />
-          </div>
-        )}
-      </div>
+      <TabNavigation tabs={tabs} activeTab={activeTab} />
     </div>
   );
 }

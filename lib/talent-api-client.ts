@@ -125,6 +125,74 @@ export class TalentApiClient {
     }
   }
 
+  async refreshScore(params: TalentProtocolParams): Promise<NextResponse> {
+    console.log("🔧 refreshScore called with params:", params);
+
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      console.log("❌ API key validation failed:", apiKeyError);
+      return createServerErrorResponse(apiKeyError);
+    }
+    console.log("✅ API key validation passed");
+
+    if (!params.talent_protocol_id && !params.id) {
+      console.log("❌ Missing talent_protocol_id or id");
+      return createBadRequestResponse("Missing talent_protocol_id or id");
+    }
+
+    try {
+      const urlParams = new URLSearchParams();
+      const talentId = params.talent_protocol_id || params.id;
+      urlParams.append("id", talentId!);
+
+      if (params.scorer_slug) {
+        urlParams.append("scorer_slug", params.scorer_slug);
+      }
+
+      const url = `${TALENT_API_BASE}/score/refresh_scorer?${urlParams.toString()}`;
+      console.log("📤 Making PUT request to:", url);
+      console.log("📤 Headers:", createTalentApiHeaders(this.apiKey));
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: createTalentApiHeaders(this.apiKey),
+      });
+
+      console.log("📥 Response status:", response.status, response.statusText);
+      console.log(
+        "📥 Response headers:",
+        Object.fromEntries(response.headers.entries()),
+      );
+
+      if (!validateJsonResponse(response)) {
+        console.log("❌ Invalid response format from Talent API");
+        throw new Error("Invalid response format from Talent API");
+      }
+
+      const data = await response.json();
+      console.log("📥 Response data:", data);
+
+      if (!response.ok) {
+        console.log("❌ Response not ok:", response.status, data);
+        throw new Error(
+          data.error || `HTTP ${response.status}: ${response.statusText}`,
+        );
+      }
+
+      console.log("✅ refreshScore successful");
+      return NextResponse.json(data);
+    } catch (error) {
+      const identifier = params.talent_protocol_id || params.id;
+      console.log("❌ Exception in refreshScore:", error);
+      logApiError(
+        "refreshScore",
+        identifier || "unknown",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to refresh talent score");
+    }
+  }
+
   async getCredentials(params: TalentProtocolParams): Promise<NextResponse> {
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {

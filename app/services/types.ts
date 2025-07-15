@@ -4,6 +4,8 @@ export interface BuilderScore {
   levelName: string;
   lastCalculatedAt: string | null;
   walletAddress: string | null;
+  calculating?: boolean;
+  calculatingEnqueuedAt?: string | null;
   error?: string;
 }
 
