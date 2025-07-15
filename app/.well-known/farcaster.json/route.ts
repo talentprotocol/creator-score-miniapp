@@ -1,3 +1,5 @@
+import { getFrameMetadata } from "../../../lib/app-metadata";
+
 function withValidProperties(
   properties: Record<string, undefined | string | string[]>,
 ) {
@@ -13,31 +15,41 @@ function withValidProperties(
 
 export async function GET() {
   const URL = process.env.NEXT_PUBLIC_URL;
+  const frameMetadata = getFrameMetadata();
+
+  // Ensure environment variables are defined
+  const farcasterHeader = process.env.FARCASTER_HEADER;
+  const farcasterPayload = process.env.FARCASTER_PAYLOAD;
+  const farcasterSignature = process.env.FARCASTER_SIGNATURE;
+
+  if (!farcasterHeader || !farcasterPayload || !farcasterSignature) {
+    console.error("Missing Farcaster environment variables");
+  }
 
   return Response.json({
     accountAssociation: {
-      header: process.env.FARCASTER_HEADER,
-      payload: process.env.FARCASTER_PAYLOAD,
-      signature: process.env.FARCASTER_SIGNATURE,
+      header: farcasterHeader || "",
+      payload: farcasterPayload || "",
+      signature: farcasterSignature || "",
     },
     frame: withValidProperties({
       version: "1",
-      name: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME,
-      subtitle: process.env.NEXT_PUBLIC_APP_SUBTITLE,
-      description: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
+      name: frameMetadata.name,
+      subtitle: frameMetadata.subtitle,
+      description: frameMetadata.description,
       screenshotUrls: [],
-      iconUrl: process.env.NEXT_PUBLIC_APP_ICON,
-      splashImageUrl: process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE,
-      splashBackgroundColor: process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR,
-      homeUrl: URL,
-      webhookUrl: `${URL}/api/webhook`,
-      primaryCategory: process.env.NEXT_PUBLIC_APP_PRIMARY_CATEGORY,
-      tags: process.env.NEXT_PUBLIC_APP_TAGS?.split(",") || [],
-      heroImageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE,
-      tagline: process.env.NEXT_PUBLIC_APP_TAGLINE,
-      ogTitle: process.env.NEXT_PUBLIC_APP_OG_TITLE,
-      ogDescription: process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION,
-      ogImageUrl: process.env.NEXT_PUBLIC_APP_OG_IMAGE,
+      iconUrl: frameMetadata.iconUrl,
+      splashImageUrl: frameMetadata.splashImageUrl,
+      splashBackgroundColor: frameMetadata.splashBackgroundColor,
+      homeUrl: URL || "",
+      webhookUrl: URL ? `${URL}/api/webhook` : "",
+      primaryCategory: frameMetadata.primaryCategory,
+      tags: frameMetadata.tags,
+      heroImageUrl: frameMetadata.heroImageUrl,
+      tagline: frameMetadata.tagline,
+      ogTitle: frameMetadata.ogTitle,
+      ogDescription: frameMetadata.ogDescription,
+      ogImageUrl: frameMetadata.ogImageUrl,
       // imageUrl: process.env.NEXT_PUBLIC_APP_IMAGE_URL,
       // buttonTitle: process.env.NEXT_PUBLIC_APP_BUTTON_TITLE,
     }),

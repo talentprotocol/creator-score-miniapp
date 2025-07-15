@@ -8,6 +8,7 @@ interface Tab {
   icon?: React.ComponentType<{ className?: string }>;
   count?: number;
   indicator?: "live" | "new" | boolean;
+  disabled?: boolean;
 }
 
 interface TabNavigationProps {
@@ -36,10 +37,17 @@ export function TabNavigation({
         return (
           <button
             key={tab.id}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => !tab.disabled && onTabChange(tab.id)}
+            disabled={tab.disabled}
             className={`flex items-center justify-center gap-2 px-4 py-3 text-center relative whitespace-nowrap ${
               tabs.length <= 3 ? "flex-1" : "min-w-0"
-            } ${isActive ? "text-gray-900" : "text-gray-500"}`}
+            } ${
+              tab.disabled
+                ? "text-gray-400 cursor-not-allowed"
+                : isActive
+                  ? "text-gray-900"
+                  : "text-gray-500"
+            }`}
           >
             {/* Icon if provided */}
             {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}

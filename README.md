@@ -30,6 +30,21 @@ The environment variables enable the following features:
 - Account association - Allows users to add your frame to their account, enables notifications
 - Redis API keys - Enable Webhooks and background notifications for your application by storing users notification details
 
+## Metadata Configuration
+
+This app uses a hybrid approach for metadata configuration:
+
+- **Static metadata** (name, description, colors, etc.) is defined in `lib/app-metadata.ts` and version controlled
+- **Environment-specific values** (image URLs, API keys) use environment variables for flexibility between deployments
+
+**Benefits:**
+- Fewer environment variables to manage (reduced from 12+ to 4)
+- Version controlled metadata changes
+- TypeScript type safety and validation
+- Consistent with existing config patterns in the codebase
+
+The optional image URL environment variables allow you to override the default URLs for different environments (e.g., different CDNs for staging vs production).
+
 ```bash
 # Shared/OnchainKit variables
 NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME=
@@ -41,16 +56,10 @@ NEXT_PUBLIC_ONCHAINKIT_API_KEY=
 FARCASTER_HEADER=
 FARCASTER_PAYLOAD=
 FARCASTER_SIGNATURE=
+# Optional: Environment-specific image URL overrides
 NEXT_PUBLIC_APP_ICON=
-NEXT_PUBLIC_APP_SUBTITLE=
-NEXT_PUBLIC_APP_DESCRIPTION=
 NEXT_PUBLIC_APP_SPLASH_IMAGE=
-NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR=
-NEXT_PUBLIC_APP_PRIMARY_CATEGORY=
 NEXT_PUBLIC_APP_HERO_IMAGE=
-NEXT_PUBLIC_APP_TAGLINE=
-NEXT_PUBLIC_APP_OG_TITLE=
-NEXT_PUBLIC_APP_OG_DESCRIPTION=
 NEXT_PUBLIC_APP_OG_IMAGE=
 
 # Redis config

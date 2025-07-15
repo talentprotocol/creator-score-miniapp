@@ -3,7 +3,7 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { resolveFidToTalentUuid } from "@/lib/user-resolver";
-import { User, Trophy, Settings, Award } from "lucide-react";
+import { User, Trophy, Settings, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export function useUserNavigation() {
@@ -15,12 +15,19 @@ export function useUserNavigation() {
   useEffect(() => {
     async function resolveTalentUuid() {
       if (user?.fid) {
-        const uuid = await resolveFidToTalentUuid(user.fid);
-        setTalentUuid(uuid);
+        try {
+          const uuid = await resolveFidToTalentUuid(user.fid);
+          setTalentUuid(uuid);
+        } catch (error) {
+          console.error("Error resolving talent UUID:", error);
+          setTalentUuid(null);
+        }
       }
     }
 
-    resolveTalentUuid();
+    resolveTalentUuid().catch((error) => {
+      console.error("Unhandled error in resolveTalentUuid:", error);
+    });
   }, [user?.fid]);
 
   // Determine canonical identifier for navigation
@@ -40,9 +47,9 @@ export function useUserNavigation() {
       label: "Leaderboard",
     },
     {
-      href: "/badges",
-      icon: Award,
-      label: "Badges",
+      href: "/explore",
+      icon: Search,
+      label: "Explore",
     },
   ];
 

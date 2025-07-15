@@ -18,7 +18,7 @@ async function getScoreForAddress(
       // Server-side: use the current origin
       baseUrl = process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : "";
+        : process.env.NEXT_PUBLIC_URL || "";
     }
     const params = new URLSearchParams({ address });
     if (scorerSlug) params.append("scorer_slug", scorerSlug);
@@ -157,7 +157,7 @@ export async function getCreatorScoreForTalentId(
       // Server-side: use the current origin
       baseUrl = process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : "";
+        : process.env.NEXT_PUBLIC_URL || "";
     }
     const params = new URLSearchParams({
       talent_protocol_id: String(talentId),

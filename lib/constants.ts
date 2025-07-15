@@ -72,3 +72,47 @@ export const RESERVED_WORDS = [
   "assets",
   // Add more as needed
 ];
+
+// Environment variable validation
+export function validateEnvironmentVariables() {
+  const requiredVars = [
+    "NEXT_PUBLIC_URL",
+    "NEXT_PUBLIC_ONCHAINKIT_API_KEY",
+    "TALENT_API_KEY",
+  ];
+
+  const optional = [
+    "NEYNAR_API_KEY",
+    "REDIS_URL",
+    "REDIS_TOKEN",
+    "FARCASTER_HEADER",
+    "FARCASTER_PAYLOAD",
+    "FARCASTER_SIGNATURE",
+  ];
+
+  const missing = requiredVars.filter((varName) => !process.env[varName]);
+  const missingOptional = optional.filter((varName) => !process.env[varName]);
+
+  if (missing.length > 0) {
+    console.error(
+      `❌ Missing required environment variables: ${missing.join(", ")}`,
+    );
+  }
+
+  if (missingOptional.length > 0) {
+    console.warn(
+      `⚠️ Missing optional environment variables: ${missingOptional.join(", ")}`,
+    );
+  }
+
+  return {
+    hasAllRequired: missing.length === 0,
+    missing,
+    missingOptional,
+  };
+}
+
+// Validate on module load (server-side only)
+if (typeof window === "undefined") {
+  validateEnvironmentVariables();
+}

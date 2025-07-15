@@ -403,6 +403,78 @@ export class TalentApiClient {
       );
     }
   }
+
+  /**
+   * Search for profiles by identity using the Talent Protocol search API
+   */
+  async searchProfiles(params: {
+    query: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!params.query || params.query.trim().length < 2) {
+      return createBadRequestResponse(
+        "Query must be at least 2 characters long",
+      );
+    }
+
+    try {
+      const requestData = {
+        query: {
+          identity: params.query.trim(),
+        },
+        sort: {
+          score: {
+            order: "desc",
+          },
+        },
+        page: params.page || 1,
+        per_page: Math.min(params.per_page || 10, 25), // API limit is 25 for free users
+      };
+
+      // Convert request data to URL-encoded query parameters as per API docs
+      const queryParams = new URLSearchParams();
+      Object.keys(requestData).forEach((key) => {
+        queryParams.append(
+          key,
+          JSON.stringify(requestData[key as keyof typeof requestData]),
+        );
+      });
+
+      const url = `${TALENT_API_BASE}/search/advanced/profiles?${queryParams.toString()}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "X-API-Key": this.apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Talent API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "searchProfiles",
+        params.query,
+        error instanceof Error ? error.message : "Unknown error",
+      );
+
+      return createServerErrorResponse(
+        `Failed to search profiles: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
 }
 
 // Export a default instance

@@ -7,6 +7,7 @@ import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
+import { getAppMetadata, getPageMetadata } from "@/lib/app-metadata";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -15,63 +16,79 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL;
+  const appMetadata = getAppMetadata();
+  const pageMetadata = getPageMetadata();
 
   let frameMetadata;
   try {
     frameMetadata = JSON.stringify({
       version: "next",
-      imageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE,
+      imageUrl: appMetadata.heroImageUrl,
       button: {
-        title: `Launch ${process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME}`,
+        title: `Launch ${appMetadata.name}`,
         action: {
           type: "launch_frame",
-          name: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME,
+          name: appMetadata.name,
           url: URL,
-          splashImageUrl: process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE,
-          splashBackgroundColor:
-            process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR,
+          splashImageUrl: appMetadata.splashImageUrl,
+          splashBackgroundColor: appMetadata.splashBackgroundColor,
         },
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Error generating frame metadata:", error);
     // Fallback to a minimal valid frame metadata
     frameMetadata = JSON.stringify({
       version: "next",
-      imageUrl: "",
+      imageUrl: appMetadata.heroImageUrl || "",
       button: {
         title: "Check Score",
         action: {
           type: "launch_frame",
           name: "Creator Score",
-          url: URL || "http://localhost:3000",
-          splashImageUrl: process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE,
-          splashBackgroundColor:
-            process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR || "#0052FF",
+          url: URL || "https://www.creatorscore.app",
+          splashImageUrl: appMetadata.splashImageUrl || "",
+          splashBackgroundColor: appMetadata.splashBackgroundColor || "#C79AF6",
         },
       },
     });
   }
 
   return {
-    title: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Creator Score",
-    description:
-      "Check your Creator Score and track your onchain content across Base and other networks",
+    title: pageMetadata.title,
+    description: pageMetadata.description,
     other: {
       "fc:frame": frameMetadata,
-      "og:title": (process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ||
-        "Creator Score") as string,
-      "og:description":
-        "Check your Creator Score and track your onchain content across Base and other networks",
-      "og:image": (process.env.NEXT_PUBLIC_APP_HERO_IMAGE || "") as string,
+      "og:title": pageMetadata.ogTitle,
+      "og:description": pageMetadata.ogDescription,
+      "og:image": pageMetadata.ogImage,
       "twitter:card": "summary_large_image",
-      "twitter:title": (process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ||
-        "Creator Score") as string,
-      "twitter:description":
-        "Check your Creator Score and track your onchain content across Base and other networks",
-      "twitter:image": (process.env.NEXT_PUBLIC_APP_HERO_IMAGE || "") as string,
+      "twitter:title": pageMetadata.twitterTitle,
+      "twitter:description": pageMetadata.twitterDescription,
+      "twitter:image": pageMetadata.twitterImage,
     },
   };
 }
+
+// Global error handling script
+const globalErrorHandlingScript = `
+  window.addEventListener('error', function(event) {
+    // Filter out Next.js redirects which are normal behavior
+    if (event.error && event.error.message && event.error.message.includes('NEXT_REDIRECT')) {
+      return;
+    }
+    console.error('Global error:', event.error);
+  });
+  
+  window.addEventListener('unhandledrejection', function(event) {
+    // Filter out Next.js redirects which are normal behavior
+    if (event.reason && event.reason.message && event.reason.message.includes('NEXT_REDIRECT')) {
+      return;
+    }
+    console.error('Unhandled promise rejection:', event.reason);
+    event.preventDefault();
+  });
+`;
 
 export default function RootLayout({
   children,
@@ -81,6 +98,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full bg-white flex flex-col">
+        <script
+          dangerouslySetInnerHTML={{ __html: globalErrorHandlingScript }}
+        />
         <div className="relative flex flex-col w-full bg-background my-0 md:my-0 md:bg-white md:shadow-none md:rounded-none md:overflow-hidden">
           <Providers>
             <ErrorBoundary>
