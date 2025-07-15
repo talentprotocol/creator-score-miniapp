@@ -1,15 +1,18 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { TabNavigation } from "@/components/common/tabs-navigation";
-import { SearchBar, SearchResults } from "@/components/search";
+import { SearchBar } from "@/components/search";
 import { useSearch } from "@/hooks/useSearch";
 
-interface ExplorePageContentProps {
-  activeTab: string;
+interface ExploreLayoutProps {
+  children: React.ReactNode;
 }
 
-export function ExplorePageContent({ activeTab }: ExplorePageContentProps) {
+export function ExploreLayout({ children }: ExploreLayoutProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const search = useSearch();
 
   const tabs = [
@@ -18,9 +21,12 @@ export function ExplorePageContent({ activeTab }: ExplorePageContentProps) {
     { id: "featured", label: "Featured", disabled: true },
   ];
 
-  const handleTabChange = () => {
-    // Do nothing - tabs are disabled
-    return;
+  // Determine active tab from pathname
+  const activeTab = pathname.split("/").pop() || "all";
+
+  const handleTabChange = (tabId: string) => {
+    // Navigate to the selected tab (even if disabled for now)
+    router.push(`/explore/${tabId}`);
   };
 
   // TODO: Track search queries for PostHog
@@ -52,31 +58,8 @@ export function ExplorePageContent({ activeTab }: ExplorePageContentProps) {
         onTabChange={handleTabChange}
       />
 
-      {/* Content */}
-      {activeTab === "all" && (
-        <SearchResults
-          results={search.results}
-          loading={search.loading}
-          error={search.error}
-          hasMore={search.hasMore}
-          query={search.query}
-          onLoadMore={search.loadMore}
-          onRetry={search.retry}
-          retryCount={search.retryCount}
-        />
-      )}
-
-      {activeTab === "friends" && (
-        <div className="text-center py-12">
-          <p className="text-gray-600">Friends tab coming soon</p>
-        </div>
-      )}
-
-      {activeTab === "featured" && (
-        <div className="text-center py-12">
-          <p className="text-gray-600">Featured tab coming soon</p>
-        </div>
-      )}
+      {/* Tab Content */}
+      {children}
     </div>
   );
 }
