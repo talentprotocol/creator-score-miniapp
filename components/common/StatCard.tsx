@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { Card } from "@/components/ui/card";
+import { ChevronDown } from "lucide-react";
 
 interface StatCardProps {
   title: string;
@@ -16,7 +17,14 @@ export function StatCard({ title, value, onClick }: StatCardProps) {
       }`}
       onClick={onClick}
     >
-      <span className="text-xs text-muted-foreground font-medium">{title}</span>
+      <div className="flex items-start justify-between">
+        <span className="text-xs text-muted-foreground font-medium">
+          {title}
+        </span>
+        {onClick && (
+          <ChevronDown className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+        )}
+      </div>
       <span className="text-2xl font-bold leading-tight mt-1">{value}</span>
     </Card>
   );
