@@ -38,6 +38,7 @@ export function useProfileTotalEarnings(talentUUID: string) {
         const credentials = credentialsGroups.flatMap((group) =>
           group.points.map((point) => ({
             name: point.label,
+            slug: point.slug,
             points_calculation_logic: {
               data_points: [
                 {

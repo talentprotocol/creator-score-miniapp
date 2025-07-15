@@ -62,7 +62,7 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
         credentials.forEach((credentialGroup) => {
           // Check if any point in this group is earnings-related
           const hasEarningsCredentials = credentialGroup.points.some((point) =>
-            isEarningsCredential(point.label),
+            isEarningsCredential(point.slug || ""),
           );
 
           if (!hasEarningsCredentials) {
@@ -73,7 +73,7 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
 
           // Calculate total for this issuer
           credentialGroup.points.forEach((point) => {
-            if (!isEarningsCredential(point.label)) {
+            if (!isEarningsCredential(point.slug || "")) {
               return;
             }
 

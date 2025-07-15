@@ -139,10 +139,14 @@ export function formatNumberWithSuffix(num: number): string {
  * original value field (e.g., "1.6341052597675584 ETH"). Now correctly uses:
  * - readable_value for clean numeric amount
  * - original value field for currency detection
+ *
+ * UPDATED: Now uses credential slugs instead of names for reliable earnings
+ * detection, preventing issues with display name variations.
  */
 export async function calculateTotalRewards(
   credentials: Array<{
     name: string;
+    slug?: string;
     points_calculation_logic?: {
       data_points: Array<{
         name?: string;
@@ -158,8 +162,8 @@ export async function calculateTotalRewards(
 
   // Sum up all rewards, converting ETH to USDC
   const total = credentials.reduce((sum, credential) => {
-    // Only count credentials that are creator earnings
-    const isEarnings = isEarningsCredential(credential.name);
+    // Only count credentials that are creator earnings - use slug for reliable identification
+    const isEarnings = isEarningsCredential(credential.slug || "");
     if (!isEarnings) {
       return sum;
     }
