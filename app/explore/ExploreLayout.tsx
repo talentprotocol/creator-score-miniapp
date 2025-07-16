@@ -7,7 +7,7 @@ import { SearchBar } from "@/components/search";
 import { useSearch } from "@/hooks/useSearch";
 
 interface ExploreLayoutProps {
-  children: React.ReactNode;
+  children: (search: ReturnType<typeof useSearch>) => React.ReactNode;
 }
 
 export function ExploreLayout({ children }: ExploreLayoutProps) {
@@ -32,14 +32,6 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
   // TODO: Track search queries for PostHog
   const handleSearchChange = (query: string) => {
     search.handleQueryChange(query);
-
-    // TODO: Add PostHog tracking
-    // if (query.trim().length >= 2) {
-    //   posthog?.capture('search_query_entered', {
-    //     query: query.trim(),
-    //     query_length: query.trim().length
-    //   });
-    // }
   };
 
   return (
@@ -59,7 +51,7 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
       />
 
       {/* Tab Content */}
-      {children}
+      {children(search)}
     </div>
   );
 }

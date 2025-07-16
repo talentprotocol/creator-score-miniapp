@@ -22,10 +22,7 @@ export async function POST(req: NextRequest) {
     scorer_slug: "creator_score",
   };
 
-  console.log("📤 Calling talentApiClient.refreshScore with params:", params);
-
   const result = await talentApiClient.refreshScore(params);
-  console.log("📥 talentApiClient.refreshScore result:", result);
 
   return result;
 }

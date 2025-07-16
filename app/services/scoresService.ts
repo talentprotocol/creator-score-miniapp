@@ -193,7 +193,7 @@ export async function getCreatorScoreForTalentId(
         (range) => points >= range.min && points <= range.max,
       ) || LEVEL_RANGES[0];
     const level = LEVEL_RANGES.indexOf(levelInfo) + 1;
-    return {
+    const result = {
       score: points,
       level,
       levelName: levelInfo.name,
@@ -202,6 +202,7 @@ export async function getCreatorScoreForTalentId(
       calculating,
       calculatingEnqueuedAt,
     };
+    return result;
   } catch (error) {
     return {
       score: 0,

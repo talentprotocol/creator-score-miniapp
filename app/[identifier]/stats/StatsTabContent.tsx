@@ -4,6 +4,7 @@ import { SegmentedBar } from "@/components/common/SegmentedBar";
 import { useProfilePostsAll } from "@/hooks/useProfilePostsAll";
 import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
 import { useProfileEarningsBreakdown } from "@/hooks/useProfileEarningsBreakdown";
+import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
 import { CreatorCategoryCard } from "@/components/profile/CreatorCategoryCard";
 import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
@@ -92,6 +93,7 @@ export function StatsTabContent({ identifier }: StatsTabContentProps) {
     loading: earningsLoading,
     error: earningsError,
   } = useProfileEarningsBreakdown(talentUUID || "");
+  const { lastCalculatedAt } = useProfileCreatorScore(talentUUID || "");
 
   if (!talentUUID) {
     return <div>Loading...</div>;
@@ -234,7 +236,10 @@ export function StatsTabContent({ identifier }: StatsTabContentProps) {
 
   return (
     <div className="space-y-6">
-      <CreatorCategoryCard talentUUID={talentUUID} />
+      <CreatorCategoryCard
+        talentUUID={talentUUID}
+        lastCalculatedAt={lastCalculatedAt}
+      />
       <SegmentedBar
         title="Total Earnings"
         total={earningsBreakdownWithUrls?.totalEarnings || 0}

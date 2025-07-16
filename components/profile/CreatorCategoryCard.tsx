@@ -12,9 +12,15 @@ interface CreatorCategoryCardProps {
   talentUUID: string;
 }
 
-export function CreatorCategoryCard({ talentUUID }: CreatorCategoryCardProps) {
+export function CreatorCategoryCard({
+  talentUUID,
+  lastCalculatedAt,
+}: CreatorCategoryCardProps & { lastCalculatedAt?: string | null }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { data, loading, error } = useCreatorCategory(talentUUID);
+
+  // If score was never calculated, don't show creator type
+  const hasNoScore = lastCalculatedAt === null;
 
   if (loading) {
     return (
@@ -29,7 +35,7 @@ export function CreatorCategoryCard({ talentUUID }: CreatorCategoryCardProps) {
     );
   }
 
-  if (error || !data) {
+  if (hasNoScore || error || !data) {
     return (
       <Card className="flex flex-col bg-muted rounded-xl p-6 border-0 shadow-none">
         <div className="flex flex-col space-y-2">
@@ -37,7 +43,7 @@ export function CreatorCategoryCard({ talentUUID }: CreatorCategoryCardProps) {
             Creator Type
           </span>
           <span className="text-sm text-muted-foreground">
-            Failed to load data
+            No data available
           </span>
         </div>
       </Card>

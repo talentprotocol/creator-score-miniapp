@@ -120,6 +120,8 @@ export function useSearch() {
         return;
       }
 
+      // Set loading immediately to prevent "no results" flash during debounce
+      setLoading(true);
       debouncedSearch(newQuery);
     },
     [debouncedSearch],

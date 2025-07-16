@@ -26,7 +26,9 @@ export function SearchBar({
       <Input
         type="text"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+        }}
         placeholder={placeholder}
         disabled={disabled}
         className="pl-10 h-12 text-base"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { Button } from "@/components/ui/button";
 import {
   formatNumberWithSuffix,
   formatK,
@@ -14,8 +15,10 @@ import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
 import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
 import { useProfileTotalEarnings } from "@/hooks/useProfileTotalEarnings";
+import { useProfileActions } from "@/hooks/useProfileActions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Callout } from "@/components/common/Callout";
+import { Share, RotateCcw, Loader2 } from "lucide-react";
 
 interface ProfileLayoutContentProps {
   talentUUID: string;
@@ -38,8 +41,10 @@ export function ProfileLayoutContent({
   } = useProfileHeaderData(talentUUID);
   const {
     creatorScore,
-    hasNoScore,
+    lastCalculatedAt,
+    calculating,
     loading: scoreLoading,
+    refetch: refetchScore,
   } = useProfileCreatorScore(talentUUID);
   const { socialAccounts } = useProfileSocialAccounts(talentUUID);
   const { totalEarnings, loading: earningsLoading } =
@@ -47,6 +52,27 @@ export function ProfileLayoutContent({
 
   // Calculate total followers
   const totalFollowers = calculateTotalFollowers(socialAccounts);
+
+  // Use profile actions hook for buttons and user logic
+  const {
+    isOwnProfile,
+    isCalculatingOrRefreshing,
+    buttonText,
+    pendingText,
+    failedText,
+    refreshError,
+    handleShareStats,
+    handleRefreshScore,
+  } = useProfileActions({
+    talentUUID,
+    refetchScore,
+    profile,
+    creatorScore,
+    lastCalculatedAt,
+    calculating,
+    totalFollowers,
+    totalEarnings,
+  });
 
   if (profileLoading) {
     return (
@@ -92,6 +118,45 @@ export function ProfileLayoutContent({
           socialAccounts={socialAccounts}
           talentUUID={talentUUID}
         />
+
+        {/* Action buttons - show for all profiles */}
+        <div className="flex flex-row gap-4 w-full -mb-2">
+          <Button
+            onClick={handleShareStats}
+            className="flex-1 bg-black text-white hover:bg-gray-800 border-0 shadow-none"
+            disabled={false}
+          >
+            <Share className="w-4 h-4 mr-2" />
+            Share Stats
+          </Button>
+          <Button
+            onClick={handleRefreshScore}
+            variant="outline"
+            className={`flex-1 bg-white border-gray-300 hover:bg-gray-50 shadow-none ${
+              refreshError ? "border-red-300 text-red-500 hover:bg-red-25" : ""
+            }`}
+            disabled={isCalculatingOrRefreshing || !!refreshError}
+          >
+            {isCalculatingOrRefreshing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {pendingText}
+              </>
+            ) : refreshError ? (
+              <>
+                <RotateCcw className="w-4 h-4 mr-2 text-red-500" />
+                {failedText}
+              </>
+            ) : (
+              <>
+                <RotateCcw className="w-4 h-4 mr-2" />
+                {buttonText}
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Profile stat cards */}
         <div className="flex flex-row gap-4 w-full">
           <StatCard
             title="Total Earnings"
@@ -115,7 +180,7 @@ export function ProfileLayoutContent({
           />
         </div>
         <ProfileTabs talentUUID={talentUUID} identifier={identifier} />
-        {!hasNoScore && <div className="mt-6">{children}</div>}
+        <div className="mt-6">{children}</div>
       </div>
     </main>
   );

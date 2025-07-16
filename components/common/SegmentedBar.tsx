@@ -74,6 +74,25 @@ export function SegmentedBar({
     );
   }
 
+  // Handle empty state
+  if (total === 0 || segments.length === 0) {
+    return (
+      <Card className="flex flex-col bg-muted rounded-xl p-6 border-0 shadow-none">
+        <div className="flex flex-col space-y-2">
+          <span className="text-xs text-muted-foreground font-medium">
+            {title}
+          </span>
+          <span className="text-xl font-semibold text-foreground">
+            {formatValue(0)}
+          </span>
+          <span className="text-xs text-muted-foreground mt-2">
+            No data available. Try refreshing the Creator Score.
+          </span>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="flex flex-col bg-muted rounded-xl p-6 border-0 shadow-none">
       <div className="flex flex-col space-y-4">

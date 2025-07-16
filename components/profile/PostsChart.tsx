@@ -77,6 +77,10 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
       <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200">
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">No post activity data available.</p>
+          <p className="text-xs mt-2">
+            Activity from Mirror, Paragraph, and Zora will appear here once your
+            score is calculated.
+          </p>
         </div>
       </Card>
     );

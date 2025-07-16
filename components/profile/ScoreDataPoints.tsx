@@ -52,9 +52,13 @@ export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
 
   if (!credentials || credentials.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8">
+      <div className="flex flex-col items-center justify-center py-8 text-center">
         <span className="text-muted-foreground text-sm">
-          No credentials available for this user.
+          No score data available.
+        </span>
+        <span className="text-muted-foreground text-xs mt-2">
+          Try calculating or refreshing your Creator Score to see detailed
+          breakdown.
         </span>
       </div>
     );

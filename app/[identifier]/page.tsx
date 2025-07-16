@@ -30,6 +30,6 @@ export default async function PublicProfilePage({
     redirect(`/${canonical}/stats`);
   }
 
-  // Redirect to stats tab by default
+  // Always redirect to stats tab by default
   redirect(`/${params.identifier}/stats`);
 }

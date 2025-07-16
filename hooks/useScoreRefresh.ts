@@ -6,6 +6,7 @@ interface UseScoreRefreshResult {
   successMessage: string | null;
   error: string | null;
   refreshScore: () => Promise<void>;
+  clearError: () => void;
 }
 
 export function useScoreRefresh(
@@ -18,82 +19,46 @@ export function useScoreRefresh(
 
   const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasCalledSuccessRef = useRef(false);
 
-  // Clear success message after some time to return to initial state
-  const clearSuccessMessage = () => {
-    if (successTimeoutRef.current) {
-      clearTimeout(successTimeoutRef.current);
-    }
-    successTimeoutRef.current = setTimeout(() => {
-      setSuccessMessage(null);
-      successTimeoutRef.current = null;
-    }, 3000);
-  };
-
-  // Clear error message after some time to return to initial state
-  const clearErrorMessage = () => {
-    if (errorTimeoutRef.current) {
-      clearTimeout(errorTimeoutRef.current);
-    }
-    errorTimeoutRef.current = setTimeout(() => {
-      setError(null);
-      errorTimeoutRef.current = null;
-    }, 3000);
+  const clearError = () => {
+    setError(null);
   };
 
   const refreshScore = async () => {
     if (!talentUUID || isRefreshing) return;
 
-    console.log(
-      "🎯 useScoreRefresh.refreshScore called with talentUUID:",
-      talentUUID,
-    );
-
     try {
       setIsRefreshing(true);
-      // Clear any existing timeouts and messages
-      if (errorTimeoutRef.current) {
-        clearTimeout(errorTimeoutRef.current);
-        errorTimeoutRef.current = null;
-      }
-      if (successTimeoutRef.current) {
-        clearTimeout(successTimeoutRef.current);
-        successTimeoutRef.current = null;
-      }
+      // Clear any existing messages
       setError(null);
       setSuccessMessage(null);
+      hasCalledSuccessRef.current = false;
 
-      console.log("⏳ Calling triggerScoreCalculation...");
       const result = await triggerScoreCalculation(talentUUID);
-      console.log("📊 triggerScoreCalculation result:", result);
 
       if (result.success) {
-        console.log("✅ Score calculation triggered successfully");
         setSuccessMessage("Calculation enqueued");
         // Call onSuccess callback to trigger score refetch
-        if (onSuccess) {
-          console.log("🔄 Scheduling score refetch in 1 second...");
+        // Only call once per refresh to prevent loops
+        if (onSuccess && !hasCalledSuccessRef.current) {
+          hasCalledSuccessRef.current = true;
           // Small delay to show success message before refetching
           setTimeout(() => {
-            console.log("🔄 Triggering score refetch now");
             onSuccess();
           }, 1000);
         }
-        // Clear success message after 3 seconds to return to initial state
-        clearSuccessMessage();
+        // No auto-clear of success message
       } else {
-        console.log("❌ Score calculation failed:", result.error);
-        setError(result.error || "Failed to trigger calculation");
-        // Clear error message after 3 seconds to return to initial state
-        clearErrorMessage();
+        const errorMessage = result.error || "Failed to trigger calculation";
+        setError(errorMessage);
+        // No auto-clear of error message
       }
     } catch (err) {
-      console.log("❌ Exception in useScoreRefresh.refreshScore:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to trigger calculation",
-      );
-      // Clear error message after 3 seconds to return to initial state
-      clearErrorMessage();
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to trigger calculation";
+      setError(errorMessage);
+      // No auto-clear of error message
     } finally {
       setIsRefreshing(false);
     }
@@ -104,5 +69,6 @@ export function useScoreRefresh(
     successMessage,
     error,
     refreshScore,
+    clearError,
   };
 }

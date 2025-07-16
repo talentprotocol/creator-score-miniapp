@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
+import { resolveFidToTalentUuid } from "@/lib/user-resolver";
 import type { LeaderboardEntry } from "@/app/services/types";
 import { sdk } from "@farcaster/frame-sdk";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -172,6 +173,7 @@ export default function LeaderboardPage() {
   const user = getUserContext(context);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
+  const [userTalentUuid, setUserTalentUuid] = useState<string | null>(null);
 
   // Static total of all eligible creators' scores (calculated once via script)
   const TOTAL_ELIGIBLE_SCORES = 54279;
@@ -186,6 +188,23 @@ export default function LeaderboardPage() {
     getCountdownParts(ROUND_ENDS_AT),
   );
 
+  // Resolve user's FID to Talent UUID for proper identification
+  useEffect(() => {
+    async function resolveUserTalentUuid() {
+      if (user?.fid) {
+        try {
+          const uuid = await resolveFidToTalentUuid(user.fid);
+          setUserTalentUuid(uuid);
+        } catch (error) {
+          console.error("Error resolving user talent UUID:", error);
+          setUserTalentUuid(null);
+        }
+      }
+    }
+
+    resolveUserTalentUuid();
+  }, [user?.fid]);
+
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
     sdk.actions.ready(); // Notifies Farcaster host to hide splash
@@ -199,19 +218,38 @@ export default function LeaderboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Find user entry in leaderboard data (if present)
-  const userLeaderboardEntry =
-    user && entries.find((e) => e.name === (user.displayName || user.username));
+  // Find user entry in leaderboard data by Talent UUID (more reliable than name matching)
+  const userLeaderboardEntry = userTalentUuid
+    ? entries.find((e) => e.talent_protocol_id === userTalentUuid)
+    : null;
 
-  // Always show the user pinned at the top
-  const pinnedUserEntry = user && {
-    rank: userLeaderboardEntry ? userLeaderboardEntry.rank : "—",
-    name: user.displayName || user.username || "Unknown user",
-    pfp: user.pfpUrl || undefined,
-    rewards: creatorScore ? getUsdcRewards(creatorScore) : "$0",
-    score: creatorScore ?? 0,
-    id: userLeaderboardEntry ? userLeaderboardEntry.id : "user-pinned",
-  };
+  // Create pinned user entry using leaderboard data for consistency
+  const pinnedUserEntry =
+    user && userLeaderboardEntry
+      ? {
+          rank: userLeaderboardEntry.rank,
+          name: userLeaderboardEntry.name, // Use Talent Protocol name for consistency
+          pfp: userLeaderboardEntry.pfp, // Use Talent Protocol avatar for consistency
+          rewards: creatorScore ? getUsdcRewards(creatorScore) : "$0",
+          score: creatorScore ?? 0,
+          id: userLeaderboardEntry.id,
+        }
+      : user
+        ? {
+            // Fallback if user not found in leaderboard (shouldn't happen often)
+            rank: "—" as const,
+            name: user.displayName || user.username || "Unknown user",
+            pfp: user.pfpUrl || undefined,
+            rewards: creatorScore ? getUsdcRewards(creatorScore) : "$0",
+            score: creatorScore ?? 0,
+            id: "user-pinned",
+          }
+        : null;
+
+  // Filter out the current user from regular leaderboard entries to avoid duplicates
+  const filteredEntries = userTalentUuid
+    ? entries.filter((e) => e.talent_protocol_id !== userTalentUuid)
+    : entries;
 
   // Helper to calculate USDC rewards using static multiplier
   function getUsdcRewards(score: number): string {
@@ -245,13 +283,10 @@ export default function LeaderboardPage() {
   // Handler to navigate to profile page for pinned user
   function handlePinnedUserClick() {
     if (!user) return;
-    const entry = entries.find(
-      (e) => e.name === (user.displayName || user.username),
-    );
 
     const url = generateProfileUrl({
       farcasterHandle: user.username,
-      talentId: entry?.talent_protocol_id,
+      talentId: userLeaderboardEntry?.talent_protocol_id,
     });
 
     if (url) {
@@ -313,13 +348,10 @@ export default function LeaderboardPage() {
           className="cursor-pointer hover:bg-gray-50 transition-colors"
           onClick={() => {
             if (!user) return;
-            const entry = entries.find(
-              (e) => e.name === (user.displayName || user.username),
-            );
 
             const url = generateProfileUrl({
               farcasterHandle: user.username,
-              talentId: entry?.talent_protocol_id,
+              talentId: userLeaderboardEntry?.talent_protocol_id,
             });
 
             if (url) {
@@ -404,9 +436,9 @@ export default function LeaderboardPage() {
                 onClick={handlePinnedUserClick}
               />
             )}
-            {/* Leaderboard list (user may appear again in their real position) */}
+            {/* Leaderboard list (user filtered out to avoid duplicates) */}
             <div className="overflow-hidden rounded-lg bg-gray-50">
-              {entries.map((user, index, array) => (
+              {filteredEntries.map((user, index) => (
                 <div key={user.id}>
                   <LeaderboardRow
                     rank={user.rank}
@@ -416,7 +448,7 @@ export default function LeaderboardPage() {
                     rewards={getUsdcRewards(user.score)}
                     onClick={() => handleEntryClick(user)}
                   />
-                  {index < array.length - 1 && (
+                  {index < filteredEntries.length - 1 && (
                     <div className="h-px bg-gray-200" />
                   )}
                 </div>

@@ -100,18 +100,33 @@ export class TalentApiClient {
 
     try {
       const urlParams = this.buildRequestParams(params);
-      const data = await this.makeRequest("/score", urlParams);
+      const url = buildApiUrl(`${TALENT_API_BASE}/score`, urlParams);
+      const headers = createTalentApiHeaders(this.apiKey);
+      const response = await fetch(url, { headers });
 
+      if (!validateJsonResponse(response)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.error || `HTTP ${response.status}: ${response.statusText}`,
+        );
+      }
       // Transform Farcaster response to match wallet response format
       if (params.account_source === "farcaster" && data.scores?.[0]) {
-        return NextResponse.json({
+        const transformed = {
           score: {
             points: data.scores[0].points,
             last_calculated_at: data.scores[0].last_calculated_at,
           },
-        });
+        };
+        console.log(
+          "[TalentApiClient.getScore] Transformed Farcaster response:",
+          transformed,
+        );
+        return NextResponse.json(transformed);
       }
-
       return NextResponse.json(data);
     } catch (error) {
       const identifier =

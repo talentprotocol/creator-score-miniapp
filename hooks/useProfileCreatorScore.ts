@@ -11,25 +11,28 @@ export function useProfileCreatorScore(talentUUID: string) {
   >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasNoScore, setHasNoScore] = useState<boolean>(false);
 
   const fetchScore = useCallback(async () => {
     const cacheKey = `creator_score_data_${talentUUID}`;
 
-    // Check cache first
-    const cachedData = getCachedData<{
-      score: number;
-      lastCalculatedAt: string | null;
-      calculating: boolean;
-      calculatingEnqueuedAt: string | null;
-    }>(cacheKey, CACHE_DURATIONS.SCORE_BREAKDOWN);
-    if (cachedData !== null) {
-      setCreatorScore(cachedData.score);
-      setLastCalculatedAt(cachedData.lastCalculatedAt);
-      setCalculating(cachedData.calculating);
-      setCalculatingEnqueuedAt(cachedData.calculatingEnqueuedAt);
-      setLoading(false);
-      return;
-    }
+    // TEMPORARILY DISABLE CACHE - Check cache first
+    // const cachedData = getCachedData<{
+    //   score: number;
+    //   lastCalculatedAt: string | null;
+    //   calculating: boolean;
+    //   calculatingEnqueuedAt: string | null;
+    // }>(cacheKey, CACHE_DURATIONS.SCORE_BREAKDOWN);
+    // if (cachedData !== null) {
+    //   console.log("[useProfileCreatorScore] Using cached data:", cachedData);
+    //   setCreatorScore(cachedData.score);
+    //   setLastCalculatedAt(cachedData.lastCalculatedAt);
+    //   setCalculating(cachedData.calculating);
+    //   setCalculatingEnqueuedAt(cachedData.calculatingEnqueuedAt);
+    //   setLoading(false);
+    //   setHasNoScore(cachedData.lastCalculatedAt === null);
+    //   return;
+    // }
 
     try {
       setLoading(true);
@@ -44,11 +47,14 @@ export function useProfileCreatorScore(talentUUID: string) {
         setLastCalculatedAt(null);
         setCalculating(false);
         setCalculatingEnqueuedAt(null);
+        setHasNoScore(true);
       } else {
         setCreatorScore(scoreData.score);
         setLastCalculatedAt(scoreData.lastCalculatedAt);
         setCalculating(scoreData.calculating || false);
         setCalculatingEnqueuedAt(scoreData.calculatingEnqueuedAt || null);
+        // Fix: hasNoScore should be based on lastCalculatedAt, not score value
+        setHasNoScore(scoreData.lastCalculatedAt === null);
 
         // Cache the complete score data
         setCachedData(cacheKey, {
@@ -67,6 +73,7 @@ export function useProfileCreatorScore(talentUUID: string) {
       setLastCalculatedAt(null);
       setCalculating(false);
       setCalculatingEnqueuedAt(null);
+      setHasNoScore(true);
     } finally {
       setLoading(false);
     }
@@ -77,9 +84,6 @@ export function useProfileCreatorScore(talentUUID: string) {
       fetchScore();
     }
   }, [talentUUID, fetchScore]);
-
-  // Helper to determine if user has no score (never calculated)
-  const hasNoScore = !loading && !error && lastCalculatedAt === null;
 
   return {
     creatorScore,

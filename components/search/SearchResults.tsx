@@ -137,8 +137,9 @@ export function SearchResults({
     );
   }
 
-  // Show empty state when no results found (but user has entered a query)
-  if (results.length === 0 && query.trim().length >= 2 && !loading) {
+  // Show empty state when no results found after a completed search
+  // Only show this if we have a query, no results, not currently loading, and not showing error
+  if (results.length === 0 && query.trim().length >= 2 && !loading && !error) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-600 mb-2">No creators found</p>
@@ -152,21 +153,23 @@ export function SearchResults({
   return (
     <div className="space-y-3">
       {/* Results container with gray background and dividers like leaderboard */}
-      <div className="overflow-hidden rounded-lg bg-gray-50">
-        {results.map((result, index, array) => (
-          <div key={result.id}>
-            <SearchResultRow
-              name={result.name}
-              avatarUrl={result.avatarUrl}
-              score={result.score}
-              onClick={() => handleResultClick(result)}
-            />
-            {index < array.length - 1 && <div className="h-px bg-gray-200" />}
-          </div>
-        ))}
-      </div>
+      {results.length > 0 && (
+        <div className="overflow-hidden rounded-lg bg-gray-50">
+          {results.map((result, index, array) => (
+            <div key={result.id}>
+              <SearchResultRow
+                name={result.name}
+                avatarUrl={result.avatarUrl}
+                score={result.score}
+                onClick={() => handleResultClick(result)}
+              />
+              {index < array.length - 1 && <div className="h-px bg-gray-200" />}
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Load more button */}
+      {/* Load more button - only show loading when actually loading more results */}
       {hasMore && (
         <div className="flex justify-center pt-4">
           <Button
