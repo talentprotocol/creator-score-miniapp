@@ -3,7 +3,9 @@ import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 
 export function useProfileCreatorScore(talentUUID: string) {
-  const [creatorScore, setCreatorScore] = useState<number | null>(null);
+  const [creatorScore, setCreatorScore] = useState<number | undefined>(
+    undefined,
+  );
   const [lastCalculatedAt, setLastCalculatedAt] = useState<string | null>(null);
   const [calculating, setCalculating] = useState<boolean>(false);
   const [calculatingEnqueuedAt, setCalculatingEnqueuedAt] = useState<
@@ -43,7 +45,7 @@ export function useProfileCreatorScore(talentUUID: string) {
 
       if (scoreData.error) {
         setError(scoreData.error);
-        setCreatorScore(null);
+        setCreatorScore(undefined);
         setLastCalculatedAt(null);
         setCalculating(false);
         setCalculatingEnqueuedAt(null);
@@ -69,7 +71,7 @@ export function useProfileCreatorScore(talentUUID: string) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch creator score",
       );
-      setCreatorScore(null);
+      setCreatorScore(undefined);
       setLastCalculatedAt(null);
       setCalculating(false);
       setCalculatingEnqueuedAt(null);

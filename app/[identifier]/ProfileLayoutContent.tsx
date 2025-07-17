@@ -55,6 +55,7 @@ export function ProfileLayoutContent({
 
   // Use profile actions hook for buttons and user logic
   const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isOwnProfile,
     isCalculatingOrRefreshing,
     buttonText,
@@ -163,7 +164,7 @@ export function ProfileLayoutContent({
             value={
               earningsLoading
                 ? "—"
-                : totalEarnings === null
+                : totalEarnings === undefined
                   ? "—"
                   : formatNumberWithSuffix(totalEarnings)
             }

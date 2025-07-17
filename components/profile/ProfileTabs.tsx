@@ -7,7 +7,11 @@ interface ProfileTabsProps {
   identifier: string; // The URL identifier for building links
 }
 
-export function ProfileTabs({ talentUUID, identifier }: ProfileTabsProps) {
+export function ProfileTabs({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  talentUUID,
+  identifier,
+}: ProfileTabsProps) {
   const pathname = usePathname();
 
   // Determine active tab from URL pathname

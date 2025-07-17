@@ -16,7 +16,7 @@ interface UseProfileActionsProps {
   lastCalculatedAt?: string | null;
   calculating?: boolean;
   totalFollowers?: number;
-  totalEarnings?: number | null | undefined;
+  totalEarnings?: number | null;
 }
 
 export function useProfileActions({

@@ -9,7 +9,9 @@ import {
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 
 export function useProfileTotalEarnings(talentUUID: string) {
-  const [totalEarnings, setTotalEarnings] = useState<number | null>(null);
+  const [totalEarnings, setTotalEarnings] = useState<number | undefined>(
+    undefined,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +64,7 @@ export function useProfileTotalEarnings(talentUUID: string) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch total earnings",
         );
-        setTotalEarnings(null); // Use null to indicate error, not 0
+        setTotalEarnings(undefined); // Use undefined to indicate error, not 0
       } finally {
         setLoading(false);
       }
