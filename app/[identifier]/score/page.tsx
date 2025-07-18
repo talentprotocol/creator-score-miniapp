@@ -13,12 +13,10 @@ export default function ProfileScorePage({ params }: ProfileScorePageProps) {
   const { profile } = useProfileHeaderData(params.identifier);
   const talentUUID = profile?.id;
 
-  if (!talentUUID) return <div>Loading...</div>;
-
   return (
     <div className="space-y-6">
-      <ScoreProgressAccordion talentUUID={talentUUID} />
-      <ScoreDataPoints talentUUID={talentUUID} />
+      <ScoreProgressAccordion talentUUID={talentUUID || ""} />
+      <ScoreDataPoints talentUUID={talentUUID || ""} />
       <CredentialIdeasCallout />
     </div>
   );

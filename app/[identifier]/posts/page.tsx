@@ -19,8 +19,6 @@ export default function ProfilePostsPage({ params }: ProfilePostsPageProps) {
     error: postsError,
   } = useProfilePostsAll(talentUUID || "");
 
-  if (!talentUUID) return <div>Loading...</div>;
-
   return (
     <div className="space-y-6">
       <PostsChart

@@ -56,8 +56,6 @@ export default function ProfileStatsPage({ params }: ProfileStatsPageProps) {
   } = useProfileEarningsBreakdown(talentUUID || "");
   const { lastCalculatedAt } = useProfileCreatorScore(talentUUID || "");
 
-  if (!talentUUID) return <div>Loading...</div>;
-
   const followersBreakdown = () => {
     if (!socialAccounts?.length) return { totalFollowers: 0, segments: [] };
     const totalFollowers = calculateTotalFollowers(socialAccounts);

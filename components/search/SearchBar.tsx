@@ -31,7 +31,7 @@ export function SearchBar({
         }}
         placeholder={placeholder}
         disabled={disabled}
-        className="pl-10 h-12 text-base"
+        className="!pl-10 pr-3 h-12 text-base"
       />
     </div>
   );

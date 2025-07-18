@@ -44,23 +44,36 @@ export function useScoreRefresh(
         if (onSuccess && !hasCalledSuccessRef.current) {
           hasCalledSuccessRef.current = true;
           // Small delay to show success message before refetching
-          setTimeout(() => {
-            onSuccess();
+          setTimeout(async () => {
+            try {
+              await onSuccess();
+            } catch (error) {
+              console.error("Error during score refetch:", error);
+            } finally {
+              // Keep isRefreshing true for a bit longer after refetch completes
+              // to prevent flickering between states
+              setTimeout(() => {
+                setIsRefreshing(false);
+              }, 500);
+            }
           }, 1000);
+        } else {
+          // If no onSuccess callback, reset immediately
+          setIsRefreshing(false);
         }
         // No auto-clear of success message
       } else {
         const errorMessage = result.error || "Failed to trigger calculation";
         setError(errorMessage);
+        setIsRefreshing(false);
         // No auto-clear of error message
       }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to trigger calculation";
       setError(errorMessage);
-      // No auto-clear of error message
-    } finally {
       setIsRefreshing(false);
+      // No auto-clear of error message
     }
   };
 

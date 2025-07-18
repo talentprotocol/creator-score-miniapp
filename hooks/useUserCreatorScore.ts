@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  filterEthAddresses,
-  getCachedData,
-  setCachedData,
-  CACHE_DURATIONS,
-} from "@/lib/utils";
-// Remove the direct service import - we'll use the API route instead
-import { getCreatorScore } from "@/app/services/scoresService";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 
 export function useUserCreatorScore(fid: number | undefined) {
   const [creatorScore, setCreatorScore] = useState<number | null>(null);
@@ -40,42 +33,24 @@ export function useUserCreatorScore(fid: number | undefined) {
         setLoading(true);
         setError(null);
 
-        // Fetch wallet addresses using API route
-        const response = await fetch(`/api/farcaster-wallets?fid=${fid}`);
+        // Direct FID-based score lookup - much more efficient than fetching wallets first
+        const response = await fetch(
+          `/api/talent-score?fid=${fid}&account_source=farcaster&scorer_slug=creator_score`,
+        );
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch wallet addresses: ${response.status}`,
-          );
+          throw new Error(`Failed to fetch creator score: ${response.status}`);
         }
-        const walletData = await response.json();
+        const scoreData = await response.json();
 
-        if (walletData.error) {
-          throw new Error(walletData.error);
+        if (scoreData.error) {
+          throw new Error(scoreData.error);
         }
 
-        const addresses = filterEthAddresses([
-          ...walletData.addresses,
-          walletData.primaryEthAddress,
-          walletData.primarySolAddress,
-        ]);
+        const score = scoreData.score?.points ?? 0;
+        setCreatorScore(score);
 
-        if (addresses.length > 0) {
-          // Get creator score using service
-          const scoreData = await getCreatorScore(addresses);
-
-          if (scoreData.error) {
-            throw new Error(scoreData.error);
-          }
-
-          const score = scoreData.score;
-          setCreatorScore(score);
-
-          // Cache the score
-          setCachedData(cacheKey, score);
-        } else {
-          setCreatorScore(0);
-          setCachedData(cacheKey, 0);
-        }
+        // Cache the score
+        setCachedData(cacheKey, score);
       } catch (err) {
         console.error("Error fetching user creator score:", err);
         setError(

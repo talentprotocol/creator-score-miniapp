@@ -90,22 +90,36 @@ export function ProofOfHumanitySection({
         return (
           <div
             key={uniqueKey}
-            className="flex items-center justify-between p-4 bg-background border rounded-lg"
+            className={`flex items-center justify-between p-4 border rounded-lg ${
+              isVerified
+                ? "bg-background border-border"
+                : "bg-background/50 border-muted/70"
+            }`}
           >
             <div className="flex-1">
-              <div className="font-medium text-sm">
+              <div
+                className={`font-medium text-sm ${
+                  isVerified ? "" : "text-muted-foreground"
+                }`}
+              >
                 {credential.data_issuer_name}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p
+                className={`text-xs mt-1 ${
+                  isVerified
+                    ? "text-muted-foreground"
+                    : "text-muted-foreground/60"
+                }`}
+              >
                 {cleanedName}
               </p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
               {isVerified ? (
-                <CheckCircle className="h-5 w-5 text-black" />
+                <CheckCircle className="h-5 w-5 text-green-600" />
               ) : (
-                <XCircle className="h-5 w-5 text-muted-foreground" />
+                <XCircle className="h-5 w-5 text-muted-foreground/50" />
               )}
             </div>
           </div>

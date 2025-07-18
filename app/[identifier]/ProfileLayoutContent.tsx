@@ -45,6 +45,7 @@ export function ProfileLayoutContent({
     calculating,
     loading: scoreLoading,
     refetch: refetchScore,
+    hasNoScore,
   } = useProfileCreatorScore(talentUUID);
   const { socialAccounts } = useProfileSocialAccounts(talentUUID);
   const { totalEarnings, loading: earningsLoading } =
@@ -58,6 +59,7 @@ export function ProfileLayoutContent({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isOwnProfile,
     isCalculatingOrRefreshing,
+    isInCooldown,
     buttonText,
     pendingText,
     failedText,
@@ -118,6 +120,8 @@ export function ProfileLayoutContent({
           bio={profile?.bio}
           socialAccounts={socialAccounts}
           talentUUID={talentUUID}
+          isOwnProfile={!!isOwnProfile}
+          hasCreatorScore={!hasNoScore}
         />
 
         {/* Action buttons - show for all profiles */}
@@ -136,7 +140,9 @@ export function ProfileLayoutContent({
             className={`flex-1 bg-white border-gray-300 hover:bg-gray-50 shadow-none ${
               refreshError ? "border-red-300 text-red-500 hover:bg-red-25" : ""
             }`}
-            disabled={isCalculatingOrRefreshing || !!refreshError}
+            disabled={
+              isCalculatingOrRefreshing || !!refreshError || isInCooldown
+            }
           >
             {isCalculatingOrRefreshing ? (
               <>

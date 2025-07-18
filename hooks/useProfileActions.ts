@@ -34,6 +34,7 @@ export function useProfileActions({
   const [currentUserTalentUuid, setCurrentUserTalentUuid] = useState<
     string | null
   >(null);
+  const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
 
   // Resolve current user's Talent UUID
   useEffect(() => {
@@ -50,6 +51,37 @@ export function useProfileActions({
 
     resolveCurrentUserTalentUuid();
   }, [user?.fid]);
+
+  // Cooldown detection and countdown logic
+  useEffect(() => {
+    const calculateCooldownTime = () => {
+      if (!lastCalculatedAt) {
+        setCooldownMinutes(null);
+        return;
+      }
+
+      const lastRefreshTime = new Date(lastCalculatedAt).getTime();
+      const currentTime = new Date().getTime();
+      const oneHourInMs = 60 * 60 * 1000; // 1 hour in milliseconds
+      const cooldownEndTime = lastRefreshTime + oneHourInMs;
+
+      if (currentTime < cooldownEndTime) {
+        const remainingMs = cooldownEndTime - currentTime;
+        const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
+        setCooldownMinutes(remainingMinutes);
+      } else {
+        setCooldownMinutes(null);
+      }
+    };
+
+    // Calculate immediately
+    calculateCooldownTime();
+
+    // Update every minute
+    const interval = setInterval(calculateCooldownTime, 60000);
+
+    return () => clearInterval(interval);
+  }, [lastCalculatedAt]);
 
   // Get creator category data
   const { data: categoryData } = useCreatorCategory(talentUUID);
@@ -72,7 +104,13 @@ export function useProfileActions({
   // Determine button text and state
   const isCalculatingOrRefreshing = calculating || isRefreshing;
   const hasNeverCalculated = lastCalculatedAt === null;
-  const buttonText = hasNeverCalculated ? "Calculate Score" : "Refresh Score";
+  const isInCooldown = cooldownMinutes !== null && cooldownMinutes > 0;
+
+  const buttonText = hasNeverCalculated
+    ? "Calculate Score"
+    : isInCooldown
+      ? `Refresh in ${cooldownMinutes}min`
+      : "Refresh Score";
   const pendingText = "Refresh Pending";
   const failedText = "Refresh Failed";
 
@@ -122,16 +160,17 @@ export function useProfileActions({
 
   // Handle refresh/calculate score action
   const handleRefreshScore = useCallback(() => {
-    // Prevent multiple refresh calls
-    if (isCalculatingOrRefreshing) {
+    // Prevent refresh if in cooldown, calculating, refreshing, or has error
+    if (isCalculatingOrRefreshing || isInCooldown) {
       return;
     }
     refreshScore();
-  }, [refreshScore, isCalculatingOrRefreshing]);
+  }, [refreshScore, isCalculatingOrRefreshing, isInCooldown]);
 
   return {
     isOwnProfile,
     isCalculatingOrRefreshing,
+    isInCooldown,
     buttonText,
     pendingText,
     failedText,

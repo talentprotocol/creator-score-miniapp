@@ -4,6 +4,7 @@ import * as React from "react";
 import { WalletMinimal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { truncateAddress } from "@/lib/utils";
+import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
 import type {
   ConnectedAccount,
   AccountManagementAction,
@@ -24,6 +25,7 @@ export function ConnectedWalletsSection({
   const [_loadingAction, _setLoadingAction] = React.useState<string | null>(
     null,
   );
+  const [modalOpen, setModalOpen] = React.useState(false);
 
   const handleSetPrimary = async (identifier: string) => {
     _setLoadingAction(`primary-${identifier}`);
@@ -57,9 +59,21 @@ export function ConnectedWalletsSection({
         </p>
 
         {/* Add Wallet Button */}
-        <Button disabled className="w-full opacity-50" size="sm" type="button">
-          + Add wallet (coming soon)
+        <Button
+          onClick={() => setModalOpen(true)}
+          variant="outline"
+          className="w-full"
+          size="sm"
+          type="button"
+        >
+          Verify New Wallet
         </Button>
+
+        <AccountManagementModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          accountType="wallet"
+        />
       </div>
     );
   }
@@ -125,9 +139,21 @@ export function ConnectedWalletsSection({
       </div>
 
       {/* Add Wallet Button */}
-      <Button disabled className="w-full opacity-50" size="sm" type="button">
-        + Add wallet (coming soon)
+      <Button
+        onClick={() => setModalOpen(true)}
+        variant="outline"
+        className="w-full"
+        size="sm"
+        type="button"
+      >
+        Verify New Wallet
       </Button>
+
+      <AccountManagementModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        accountType="wallet"
+      />
     </div>
   );
 }
