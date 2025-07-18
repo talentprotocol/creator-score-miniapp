@@ -212,7 +212,7 @@ export function useSearch() {
   // Load top creators on mount
   useEffect(() => {
     loadTopCreators();
-  }, [loadTopCreators]);
+  }, []); // Only run once on mount
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
