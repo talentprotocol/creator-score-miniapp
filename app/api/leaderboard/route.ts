@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { redis } from "@/lib/redis";
 
 type Profile = {
   id: string;
@@ -8,6 +9,71 @@ type Profile = {
   scores?: { slug: string; points?: number }[];
 };
 
+// Cache keys
+const CACHE_KEYS = {
+  TOP_200: "leaderboard:top_200",
+  TOP_200_TOTAL_SCORES: "leaderboard:top_200:total_scores",
+} as const;
+
+// Cache duration
+const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
+
+async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
+  const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
+  const batchSize = 25; // API limit
+  const totalNeeded = 200;
+  let allProfiles: Profile[] = [];
+
+  for (let page = 1; allProfiles.length < totalNeeded; page++) {
+    const data = {
+      query: {
+        score: {
+          min: 1,
+          scorer: "Creator Score",
+        },
+      },
+      sort: {
+        score: { order: "desc", scorer: "Creator Score" },
+        id: { order: "desc" },
+      },
+      page,
+      per_page: batchSize,
+    };
+
+    const queryString = [
+      `query=${encodeURIComponent(JSON.stringify(data.query))}`,
+      `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
+      `page=${page}`,
+      `per_page=${batchSize}`,
+    ].join("&");
+
+    const res = await fetch(`${baseUrl}?${queryString}`, {
+      headers: {
+        Accept: "application/json",
+        "X-API-KEY": apiKey,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch page ${page}`);
+    }
+
+    const json = await res.json();
+    const profiles = json.profiles || [];
+    allProfiles = [...allProfiles, ...profiles];
+
+    // Break if we got fewer results than requested (means we hit the end)
+    if (profiles.length < batchSize) break;
+
+    // Add a small delay between requests to be nice to the API
+    if (page < Math.ceil(totalNeeded / batchSize)) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  return allProfiles.slice(0, totalNeeded);
+}
+
 export async function GET(req: NextRequest) {
   const apiKey = process.env.TALENT_API_KEY;
   if (!apiKey) {
@@ -16,6 +82,7 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
+
   const { searchParams } = req.nextUrl;
   const page = parseInt(searchParams.get("page") || "1", 10);
   const perPage = parseInt(
@@ -24,159 +91,144 @@ export async function GET(req: NextRequest) {
   );
   const statsOnly = searchParams.get("statsOnly") === "true";
 
-  const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
-
-  // Build query object based on what we need
-  const query: {
-    score: {
-      min: number;
-      scorer: string;
-    };
-  } = {
-    score: {
-      min: 1,
-      scorer: "Creator Score",
-    },
-  };
-
-  const data = {
-    query,
-    sort: {
-      score: { order: "desc", scorer: "Creator Score" },
-      id: { order: "desc" },
-    },
-    page,
-    per_page: perPage,
-  };
-
-  const queryString = [
-    `query=${encodeURIComponent(JSON.stringify(data.query))}`,
-    `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
-    `page=${page}`,
-    `per_page=${perPage}`,
-  ].join("&");
-
-  const res = await fetch(`${baseUrl}?${queryString}`, {
-    headers: {
-      Accept: "application/json",
-      "X-API-KEY": apiKey,
-    },
-  });
-  if (!res.ok) {
-    const errorText = await res.text();
-    return NextResponse.json({ error: errorText }, { status: res.status });
-  }
-  const json = await res.json();
-
-  // If we only want stats, return them directly
-  if (statsOnly) {
-    const totalCreators = json.pagination?.total || 0;
-    // For minScore, we could either:
-    // 1. Use a fixed threshold (e.g., 100 points)
-    // 2. Fetch the 100th creator specifically
-    // 3. Use the lowest score in the current page
-    // Let's use option 1 for now - a fixed minimum of 100 points to qualify for rewards
-    const minScore = 100;
-
-    // Fetch eligible creators count (score >= 80, which is Level 3+)
-    const eligibleQuery = {
-      score: {
-        min: 80,
-        scorer: "Creator Score",
-      },
-    };
-
-    const eligibleData = {
-      query: eligibleQuery,
-      page: 1,
-      per_page: 1, // We only need the count, not the actual profiles
-    };
-
-    const eligibleQueryString = [
-      `query=${encodeURIComponent(JSON.stringify(eligibleData.query))}`,
-      `page=1`,
-      `per_page=1`,
-    ].join("&");
-
+  // For top 200 request, try to get from cache first
+  if (page === 1 && perPage === 200) {
     try {
-      const eligibleRes = await fetch(`${baseUrl}?${eligibleQueryString}`, {
-        headers: {
-          Accept: "application/json",
-          "X-API-KEY": apiKey,
-        },
-      });
+      const cachedData = await redis.get(CACHE_KEYS.TOP_200);
+      const cachedTotalScores = await redis.get(
+        CACHE_KEYS.TOP_200_TOTAL_SCORES,
+      );
 
-      let eligibleCreators = 0;
-      if (eligibleRes.ok) {
-        const eligibleJson = await eligibleRes.json();
-        eligibleCreators = eligibleJson.pagination?.total || 0;
+      if (cachedData && cachedTotalScores) {
+        return NextResponse.json({
+          entries: JSON.parse(cachedData),
+          totalScores: parseInt(cachedTotalScores, 10),
+        });
+      }
+    } catch (error) {
+      console.error("Redis error:", error);
+      // Continue with normal flow if cache fails
+    }
+  }
+
+  // For regular requests or if cache miss
+  try {
+    let profiles: Profile[];
+
+    if (page === 1 && perPage === 200) {
+      // Fetch all 200 entries in batches
+      profiles = await fetchTop200Entries(apiKey);
+    } else {
+      // Regular paginated request
+      const data = {
+        query: {
+          score: {
+            min: 1,
+            scorer: "Creator Score",
+          },
+        },
+        sort: {
+          score: { order: "desc", scorer: "Creator Score" },
+          id: { order: "desc" },
+        },
+        page,
+        per_page: perPage,
+      };
+
+      const queryString = [
+        `query=${encodeURIComponent(JSON.stringify(data.query))}`,
+        `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
+        `page=${page}`,
+        `per_page=${perPage}`,
+      ].join("&");
+
+      const res = await fetch(
+        `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-API-KEY": apiKey,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error(await res.text());
       }
 
-      return NextResponse.json({
-        minScore,
-        totalCreators,
-        eligibleCreators,
-      });
-    } catch (error) {
-      // If the eligible creators query fails, fallback to the estimate
-      console.error("Failed to fetch eligible creators count:", error);
-      return NextResponse.json({
-        minScore,
-        totalCreators,
-        eligibleCreators: Math.floor(totalCreators * 0.3), // Fallback estimate
-      });
+      const json = await res.json();
+      profiles = json.profiles || [];
     }
+
+    // Map and rank the entries
+    const mapped = profiles.map((profile: Profile) => {
+      const p = profile;
+      const creatorScores = Array.isArray(p.scores)
+        ? p.scores
+            .filter((s) => s.slug === "creator_score")
+            .map((s) => s.points ?? 0)
+        : [];
+      const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
+      return {
+        name: p.display_name || p.name || "Unknown",
+        pfp: p.image_url || undefined,
+        score,
+        id: p.id,
+        talent_protocol_id: p.id,
+      };
+    });
+
+    // Sort by score
+    mapped.sort((a, b) => b.score - a.score);
+
+    // Assign ranks
+    let lastScore: number | null = null;
+    let lastRank = 0;
+    let ties = 0;
+    const ranked = mapped.map((entry, idx) => {
+      let rank;
+      if (entry.score === lastScore) {
+        rank = lastRank;
+        ties++;
+      } else {
+        rank = idx + 1;
+        if (ties > 0) rank = lastRank + ties;
+        lastScore = entry.score;
+        lastRank = rank;
+        ties = 1;
+      }
+      return {
+        ...entry,
+        rank,
+      };
+    });
+
+    // If this is a top 200 request, cache the results
+    if (page === 1 && perPage === 200) {
+      try {
+        const totalScores = ranked.reduce((sum, entry) => sum + entry.score, 0);
+        await redis.setex(
+          CACHE_KEYS.TOP_200,
+          CACHE_DURATION,
+          JSON.stringify(ranked),
+        );
+        await redis.setex(
+          CACHE_KEYS.TOP_200_TOTAL_SCORES,
+          CACHE_DURATION,
+          totalScores.toString(),
+        );
+      } catch (error) {
+        console.error("Redis cache error:", error);
+        // Continue even if caching fails
+      }
+    }
+
+    return NextResponse.json({ entries: ranked });
+  } catch (error) {
+    console.error("API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch leaderboard data" },
+      { status: 500 },
+    );
   }
-
-  // Step 1: Map each profile to its highest Creator Score
-  const mapped = (json.profiles || []).map((profile: Profile) => {
-    const p = profile;
-    const creatorScores = Array.isArray(p.scores)
-      ? p.scores
-          .filter((s) => s.slug === "creator_score")
-          .map((s) => s.points ?? 0)
-      : [];
-    const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
-    return {
-      name: p.display_name || p.name || "Unknown",
-      pfp: p.image_url || undefined,
-      score,
-      rewards: "-", // To be calculated later
-      id: p.id,
-      talent_protocol_id: p.id, // Add the missing talent_protocol_id field
-    };
-  });
-
-  // Step 2: Sort by score descending
-  mapped.sort(
-    (a: { score: number }, b: { score: number }) => b.score - a.score,
-  );
-
-  // Step 3: Assign ranks
-  let lastScore: number | null = null;
-  let lastRank = 0;
-  let ties = 0;
-  const ranked = mapped.map((entry: { score: number }, idx: number) => {
-    let rank;
-    if (entry.score === lastScore) {
-      rank = lastRank;
-      ties++;
-    } else {
-      rank = idx + 1;
-      if (ties > 0) rank = lastRank + ties;
-      lastScore = entry.score;
-      lastRank = rank;
-      ties = 1;
-    }
-    return {
-      ...entry,
-      rank,
-    };
-  });
-
-  // Calculate stats for backward compatibility
-  const minScore = 100; // Fixed threshold for rewards qualification
-  const totalCreators = json.pagination?.total || ranked.length;
-
-  return NextResponse.json({ entries: ranked, minScore, totalCreators });
 }

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
@@ -9,15 +8,16 @@ import { getUserContext } from "@/lib/user-context";
 import { resolveFidToTalentUuid } from "@/lib/user-resolver";
 import type { LeaderboardEntry } from "@/app/services/types";
 import { sdk } from "@farcaster/frame-sdk";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useLeaderboardStats } from "@/hooks/useLeaderboardStats";
 import { useRouter } from "next/navigation";
 import { generateProfileUrl } from "@/lib/utils";
-import { LEVEL_RANGES } from "@/lib/constants";
-import { ExternalLink } from "lucide-react";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
+import { MyRewards } from "@/components/leaderboard/MyRewards";
+import { StatCard } from "@/components/common/StatCard";
+import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
+import { useTop200Scores } from "@/hooks/useTop200Scores";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
@@ -147,41 +147,26 @@ function formatCurrency(amount: number): string {
   return `$${amount}`;
 }
 
-// Helper to truncate wallet address
-function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-// Helper to get user level from creator score
-function getUserLevel(score: number): string {
-  const level = LEVEL_RANGES.find(
-    (range) => score >= range.min && score <= range.max,
-  );
-  return level ? level.name : "Level 1";
-}
-
-// Helper to check if user is eligible (Level 3+)
-function isEligible(score: number): boolean {
-  const level = LEVEL_RANGES.find(
-    (range) => score >= range.min && score <= range.max,
-  );
-  return level ? level.min >= 80 : false; // Level 3 starts at 80
-}
-
 export default function LeaderboardPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
   const [userTalentUuid, setUserTalentUuid] = useState<string | null>(null);
+  const [howToEarnOpen, setHowToEarnOpen] = useState(false);
 
   // Static total of all eligible creators' scores (calculated once via script)
   const TOTAL_ELIGIBLE_SCORES = 54279;
 
-  // Use new hooks for data fetching
+  // Use hooks for data fetching
   const { creatorScore } = useUserCreatorScore(user?.fid);
   const { entries, loading, error, hasMore, loadMore } = useLeaderboard(10);
-  const { stats, loading: statsLoading } = useLeaderboardStats();
+  const { loading: statsLoading } = useLeaderboardStats();
+  const {
+    entries: top200Entries,
+    totalScores: totalTop200Scores,
+    loading: top200Loading,
+  } = useTop200Scores();
 
   // Countdown state
   const [countdown, setCountdown] = useState(() =>
@@ -218,46 +203,27 @@ export default function LeaderboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Find user entry in leaderboard data by Talent UUID (more reliable than name matching)
-  const userLeaderboardEntry = userTalentUuid
-    ? entries.find((e) => e.talent_protocol_id === userTalentUuid)
+  // Find user entry in top 200 data for accurate rewards
+  const userTop200Entry = userTalentUuid
+    ? top200Entries.find((e) => e.talent_protocol_id === userTalentUuid)
     : null;
 
-  // Create pinned user entry using leaderboard data for consistency
-  const pinnedUserEntry =
-    user && userLeaderboardEntry
-      ? {
-          rank: userLeaderboardEntry.rank,
-          name: userLeaderboardEntry.name, // Use Talent Protocol name for consistency
-          pfp: userLeaderboardEntry.pfp, // Use Talent Protocol avatar for consistency
-          rewards: creatorScore ? getUsdcRewards(creatorScore) : "$0",
-          score: creatorScore ?? 0,
-          id: userLeaderboardEntry.id,
-        }
-      : user
-        ? {
-            // Fallback if user not found in leaderboard (shouldn't happen often)
-            rank: "—" as const,
-            name: user.displayName || user.username || "Unknown user",
-            pfp: user.pfpUrl || undefined,
-            rewards: creatorScore ? getUsdcRewards(creatorScore) : "$0",
-            score: creatorScore ?? 0,
-            id: "user-pinned",
-          }
-        : null;
+  // Get the 200th position score
+  const lastTop200Score = top200Entries[199]?.score ?? 0;
 
-  // Filter out the current user from regular leaderboard entries to avoid duplicates
-  const filteredEntries = userTalentUuid
-    ? entries.filter((e) => e.talent_protocol_id !== userTalentUuid)
-    : entries;
+  // Calculate points needed to reach top 200
+  const pointsToTop200 =
+    creatorScore && !userTop200Entry && lastTop200Score > 0
+      ? Math.max(0, lastTop200Score - creatorScore)
+      : 0;
 
-  // Helper to calculate USDC rewards using static multiplier
-  function getUsdcRewards(score: number): string {
-    // Only eligible creators earn rewards
-    if (score < 80) return "$0";
+  // Helper to calculate USDC rewards using top 200 scores
+  function getUsdcRewards(score: number, rank?: number): string {
+    // Only top 200 creators earn rewards
+    if (!rank || rank > 200) return "$0";
 
-    // Calculate static multiplier: total_rewards_pool / total_eligible_scores
-    const multiplier = TOTAL_SPONSORS_POOL / TOTAL_ELIGIBLE_SCORES;
+    // Calculate multiplier based on total top 200 scores
+    const multiplier = TOTAL_SPONSORS_POOL / totalTop200Scores;
     const reward = score * multiplier;
 
     // Format as currency
@@ -280,185 +246,92 @@ export default function LeaderboardPage() {
     }
   }
 
-  // Handler to navigate to profile page for pinned user
-  function handlePinnedUserClick() {
-    if (!user) return;
-
-    const url = generateProfileUrl({
-      farcasterHandle: user.username,
-      talentId: userLeaderboardEntry?.talent_protocol_id,
-    });
-
-    if (url) {
-      router.push(url);
-    }
-  }
-
-  // Tab configuration
-  const tabs = [
-    {
-      id: "creators",
-      label: "Rewards",
-    },
-    {
-      id: "sponsors",
-      label: "Sponsors",
-      count: SPONSORS.length,
-    },
-  ];
-
   return (
     <div className="max-w-xl mx-auto w-full p-4 space-y-6 pb-24">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Rewards Pool - Top Left */}
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-4">Rewards Pool</p>
-            <p className="text-2xl font-bold">
-              ${formatWithK(TOTAL_SPONSORS_POOL)}
-            </p>
-            <p className="text-sm text-gray-600 mt-1">
-              <a
-                href="https://basescan.org/address/0x3758e0f97f7f5f91372329d43eca69fcc1af48a7"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-900 flex items-center gap-1"
-              >
-                {truncateAddress("0x3758e0f97f7f5f91372329d43eca69fcc1af48a7")}
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Rewards End - Top Right */}
-        <Card className="relative">
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-4">Rewards End</p>
-            <p className="text-2xl font-bold">
-              {countdown.days}d {countdown.hours}h
-            </p>
-            <p className="text-sm text-gray-600 mt-1">Jul 22 - Aug 31</p>
-          </CardContent>
-        </Card>
-
-        {/* Creator Score - Bottom Left */}
-        <Card
-          className="cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={() => {
-            if (!user) return;
-
-            const url = generateProfileUrl({
-              farcasterHandle: user.username,
-              talentId: userLeaderboardEntry?.talent_protocol_id,
-            });
-
-            if (url) {
-              router.push(`${url}/score`);
+      {/* My Rewards Hero - Only show if user is logged in */}
+      {user && (
+        <div className="mt-4">
+          <MyRewards
+            rewards={
+              creatorScore
+                ? getUsdcRewards(creatorScore, userTop200Entry?.rank)
+                : "$0"
             }
-          }}
-        >
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-4">Your Score</p>
-            <p className="text-2xl font-bold">
-              {creatorScore !== null ? creatorScore : "-"}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              {creatorScore !== null ? (
-                <>
-                  <span className="text-sm text-gray-600">
-                    {getUserLevel(creatorScore)}
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      isEligible(creatorScore)
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {isEligible(creatorScore) ? "Eligible" : "Not Eligible"}
-                  </span>
-                </>
-              ) : (
-                <span className="text-sm text-gray-600">-</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            score={creatorScore ?? 0}
+            avatarUrl={user.pfpUrl}
+            name={user.displayName || user.username || "Unknown user"}
+            isLoading={loading || statsLoading || top200Loading}
+            rank={userTop200Entry?.rank}
+            pointsToTop200={pointsToTop200}
+            onHowToEarnClick={() => setHowToEarnOpen(true)}
+          />
+        </div>
+      )}
 
-        {/* Eligible Creators - Bottom Right */}
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-4">Eligible Creators</p>
-            {statsLoading ? (
-              <Skeleton className="h-8 w-20 rounded" />
-            ) : (
-              <>
-                <p className="text-2xl font-bold">
-                  {stats.eligibleCreators !== null
-                    ? formatWithK(stats.eligibleCreators)
-                    : "-"}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {stats.totalCreators !== null
-                    ? `${formatWithK(stats.totalCreators)} total`
-                    : "-"}
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+      {/* How to Earn Modal */}
+      <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
+
+      {/* Simplified Stat Cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <StatCard
+          title="Rewards Pool"
+          value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
+        />
+        <StatCard
+          title="Rewards Distribution"
+          value={`${countdown.days}d ${countdown.hours}h`}
+        />
       </div>
 
       {/* Tabs */}
       <TabNavigation
-        tabs={tabs}
+        tabs={[
+          {
+            id: "creators",
+            label: "Leaderboard",
+            count: 200,
+          },
+          {
+            id: "sponsors",
+            label: "Sponsors",
+            count: SPONSORS.length,
+          },
+        ]}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
       {/* Leaderboard */}
-      <div className="space-y-2">
+      <div className="space-y-2 -mt-4">
         {error && <div className="text-destructive text-sm px-2">{error}</div>}
 
         {activeTab === "creators" && (
           <>
-            {/* User pinned entry always on top */}
-            {pinnedUserEntry && (
-              <LeaderboardRow
-                rank={pinnedUserEntry.rank}
-                name={pinnedUserEntry.name}
-                avatarUrl={pinnedUserEntry.pfp}
-                score={pinnedUserEntry.score}
-                rewards={getUsdcRewards(pinnedUserEntry.score)}
-                isPinned={true}
-                onClick={handlePinnedUserClick}
-              />
-            )}
-            {/* Leaderboard list (user filtered out to avoid duplicates) */}
+            {/* Leaderboard list */}
             <div className="overflow-hidden rounded-lg bg-gray-50">
-              {filteredEntries.map((user, index) => (
+              {entries.map((user, index) => (
                 <div key={user.id}>
                   <LeaderboardRow
                     rank={user.rank}
                     name={user.name}
                     avatarUrl={user.pfp}
                     score={user.score}
-                    rewards={getUsdcRewards(user.score)}
+                    rewards={getUsdcRewards(user.score, user.rank)}
                     onClick={() => handleEntryClick(user)}
+                    rewardsLoading={top200Loading}
                   />
-                  {index < filteredEntries.length - 1 && (
+                  {index < entries.length - 1 && (
                     <div className="h-px bg-gray-200" />
                   )}
                 </div>
               ))}
             </div>
-            {/* Only show Load More if there are more entries available */}
-            {hasMore && (
+
+            {/* Load More button - only show if there are more entries and we haven't reached 200 */}
+            {hasMore && entries.length < 200 && (
               <Button
                 variant="outline"
-                className="w-full mt-2 flex items-center justify-center"
+                className="w-full flex items-center justify-center"
                 onClick={loadMore}
                 disabled={loading}
               >
@@ -489,19 +362,9 @@ export default function LeaderboardPage() {
                   </Avatar>
                   <div className="flex-1">
                     <p className="font-medium text-sm">{sponsor.name}</p>
-                    <div className="flex items-center gap-1">
-                      <p className="text-xs text-gray-600">
-                        {formatDate(sponsor.date)}
-                      </p>
-                      <a
-                        href={`https://basescan.org/tx/${sponsor.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
+                    <p className="text-xs text-gray-600">
+                      {formatDate(sponsor.date)}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-sm font-medium">
