@@ -5,37 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
-
-// Mock sponsor data (top 3 only)
-const SPONSORS = [
-  {
-    id: "base",
-    name: "Base",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2F7Q0QBrm.jpg",
-    amount: 5000,
-    date: "2025-07-15",
-    rank: 1,
-  },
-  {
-    id: "zora",
-    name: "Zora",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/1b471987-45b1-48e3-6af4-44929b6e4900/anim=false,fit=contain,f=auto,w=576",
-    amount: 2500,
-    date: "2025-07-18",
-    rank: 2,
-  },
-  {
-    id: "farcaster",
-    name: "Farcaster",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2FI2rEbPF.png",
-    amount: 2500,
-    date: "2025-07-12",
-    rank: 3,
-  },
-];
+import { ACTIVE_SPONSORS } from "@/lib/constants";
 
 interface TopSponsorsCardProps {
   loading?: boolean;
@@ -82,7 +52,7 @@ export function TopSponsorsCard({ loading }: TopSponsorsCardProps) {
       </div>
 
       <div className="space-y-3">
-        {SPONSORS.map((sponsor) => (
+        {ACTIVE_SPONSORS.map((sponsor) => (
           <div key={sponsor.id} className="flex items-center gap-3">
             <span className="text-sm font-medium w-4 text-muted-foreground">
               #{sponsor.rank}

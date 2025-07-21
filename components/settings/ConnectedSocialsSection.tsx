@@ -10,6 +10,7 @@ import {
   FileText,
   Heart,
 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
 import type {
@@ -97,7 +98,6 @@ export function ConnectedSocialsSection({
     <div className="space-y-3">
       {socialPlatforms.map((platform) => {
         const connectedAccount = getConnectedAccount(platform.source);
-        const Icon = platform.icon;
 
         return (
           <div
@@ -105,7 +105,7 @@ export function ConnectedSocialsSection({
             className="flex items-center justify-between p-4 bg-background border rounded-lg"
           >
             <div className="flex items-center gap-3">
-              <Icon className={`h-5 w-5 ${platform.color}`} />
+              <Icon icon={platform.icon} size="md" color="muted" />
               <div>
                 <div className="font-medium text-sm">{platform.name}</div>
                 {connectedAccount && (
@@ -119,38 +119,13 @@ export function ConnectedSocialsSection({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {platform.comingSoon ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={true}
-                >
-                  Coming Soon
-                </Button>
-              ) : connectedAccount ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDisconnect}
-                  disabled={false}
-                >
-                  Disconnect
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleConnect}
-                  disabled={false}
-                >
-                  Connect
-                </Button>
-              )}
-            </div>
+            <Button
+              onClick={connectedAccount ? handleDisconnect : handleConnect}
+              variant="outline"
+              size="sm"
+            >
+              {connectedAccount ? "Disconnect" : "Connect"}
+            </Button>
           </div>
         );
       })}

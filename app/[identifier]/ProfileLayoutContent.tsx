@@ -12,7 +12,8 @@ import {
   calculateTotalFollowers,
 } from "@/lib/utils";
 import { useProfileActions } from "@/hooks/useProfileActions";
-
+import { PageContainer } from "@/components/common/PageContainer";
+import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { Share, RotateCcw, Loader2 } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
@@ -95,19 +96,20 @@ function ProfileLayoutContentInner({
   // Profile data comes from server-side, no loading state needed
   if (!profile) {
     return (
-      <main className="flex-1 overflow-y-auto relative">
-        <div className="max-w-xl mx-auto px-4 py-6">
+      <PageContainer noPadding>
+        <Section variant="content">
           <Callout>
             <strong>Error loading profile:</strong> Profile not found
           </Callout>
-        </div>
-      </main>
+        </Section>
+      </PageContainer>
     );
   }
 
   return (
-    <main className="flex-1 overflow-y-auto relative">
-      <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+    <PageContainer noPadding>
+      {/* Header section */}
+      <Section variant="header">
         <ProfileHeader
           followers={formatK(totalFollowers)}
           displayName={profile.display_name || undefined}
@@ -121,20 +123,20 @@ function ProfileLayoutContentInner({
         />
 
         {/* Action buttons - show for all profiles */}
-        <div className="flex flex-row gap-4 w-full -mb-2">
+        <div className="flex flex-row gap-4 w-full mt-6">
           <Button
             onClick={handleShareStats}
-            className="flex-1 bg-black text-white hover:bg-gray-800 border-0 shadow-none"
-            disabled={false}
+            variant="special"
+            className="flex-1"
           >
             <Share className="w-4 h-4 mr-2" />
             Share Stats
           </Button>
           <Button
             onClick={handleRefreshScore}
-            variant="outline"
-            className={`flex-1 bg-white border-gray-300 hover:bg-gray-50 shadow-none ${
-              refreshError ? "border-red-300 text-red-500 hover:bg-red-25" : ""
+            variant="default"
+            className={`flex-1 ${
+              refreshError ? "text-red-700 hover:border-red-400" : ""
             }`}
             disabled={
               isCalculatingOrRefreshing || !!refreshError || isInCooldown
@@ -147,7 +149,7 @@ function ProfileLayoutContentInner({
               </>
             ) : refreshError ? (
               <>
-                <RotateCcw className="w-4 h-4 mr-2 text-red-500" />
+                <RotateCcw className="w-4 h-4 mr-2" />
                 {failedText}
               </>
             ) : (
@@ -160,7 +162,7 @@ function ProfileLayoutContentInner({
         </div>
 
         {/* Profile stat cards */}
-        <div className="flex flex-row gap-4 w-full">
+        <div className="flex flex-row gap-4 w-full mt-6">
           <StatCard
             title="Total Earnings"
             value={
@@ -182,10 +184,18 @@ function ProfileLayoutContentInner({
             }}
           />
         </div>
+      </Section>
+
+      {/* Full width tabs */}
+      <Section variant="full-width">
         <ProfileTabs talentUUID={talentUUID} identifier={identifier} />
-        <div className="mt-6">{children}</div>
-      </div>
-    </main>
+      </Section>
+
+      {/* Content section */}
+      <Section variant="content" animate>
+        {children}
+      </Section>
+    </PageContainer>
   );
 }
 

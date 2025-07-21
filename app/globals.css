@@ -10,8 +10,6 @@ body {
   font-size: 80%;
 }
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -39,7 +37,17 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Holographic gradient colors */
+    --gradient-light-blue: #dceeff;
+    --gradient-light-cyan: #f0f8ff;
+    --gradient-near-white-violet: #fdf6ff;
+    --gradient-soft-pink: #fff0f0;
+    --gradient-near-white-green: #f8fff8;
+    --gradient-icy-blue: #e0f5ff;
+    --gradient-soft-lavender: #f4f4ff;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -68,8 +76,6 @@ body {
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
@@ -82,5 +88,21 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .bg-holographic {
+    background: conic-gradient(
+      from 90deg at 50% 50%,
+      #dceeff,
+      #f0f8ff,
+      #fdf6ff,
+      #fff0f0,
+      #f8fff8,
+      #e0f5ff,
+      #f4f4ff,
+      #dceeff
+    );
+    background-attachment: local;
+    background-size: 100% 100%;
   }
 }

@@ -10,6 +10,8 @@ import {
   LoadingState,
   ErrorState,
 } from "@/components/badges";
+import { PageContainer } from "@/components/common/PageContainer";
+import { Section } from "@/components/common/Section";
 
 export default function BadgesPage() {
   const { data: badges, loading, error } = useBadges();
@@ -36,25 +38,29 @@ export default function BadgesPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto w-full p-4 space-y-6 pb-24">
-      <div className="space-y-1">
+    <PageContainer noPadding>
+      {/* Header section */}
+      <Section variant="header">
         <h1 className="text-2xl font-bold">Badges</h1>
         <p className="text-muted-foreground">
           Track your progress and unlock achievements
         </p>
-      </div>
+      </Section>
 
-      <Accordion type="multiple" className="w-full space-y-2">
-        {badges.map((section) => (
-          <BadgeSectionComponent
-            key={section.id}
-            section={section}
-            onBadgeClick={handleBadgeClick}
-          />
-        ))}
-      </Accordion>
+      {/* Content section */}
+      <Section variant="content">
+        <Accordion type="multiple" className="w-full space-y-2">
+          {badges.map((section) => (
+            <BadgeSectionComponent
+              key={section.id}
+              section={section}
+              onBadgeClick={handleBadgeClick}
+            />
+          ))}
+        </Accordion>
 
-      <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
-    </div>
+        <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
+      </Section>
+    </PageContainer>
   );
 }

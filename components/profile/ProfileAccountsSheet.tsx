@@ -9,7 +9,8 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
-import { Copy, ChevronDown, ExternalLink } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
 import { truncateAddress, formatK, openExternalUrl } from "@/lib/utils";
 import type { SocialAccount } from "@/app/services/types";
@@ -31,10 +32,7 @@ interface ProfileAccountsSheetProps {
   talentUUID?: string;
 }
 
-const platformIcons: Record<
-  string,
-  React.ComponentType<{ className?: string }>
-> = {
+const platformIcons: Record<string, typeof ChevronDown> = {
   base: WalletMinimal,
   ethereum: WalletMinimal,
   github: Github,
@@ -148,7 +146,7 @@ function SocialAccountsList({
   return (
     <div className="space-y-3">
       {processedAccounts.map((account, idx) => {
-        const Icon = platformIcons[account.source] || CircleUserRound;
+        const IconComponent = platformIcons[account.source] || CircleUserRound;
         const followers =
           account.followerCount !== null &&
           account.followerCount !== undefined &&
@@ -168,7 +166,7 @@ function SocialAccountsList({
                 : undefined
             }
           >
-            <Icon className="h-5 w-5 text-muted-foreground" />
+            <Icon icon={IconComponent} size="md" color="muted" />
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate">
                 {account.handle || "—"}
@@ -183,7 +181,7 @@ function SocialAccountsList({
               </div>
               {account.profileUrl && (
                 <div className="text-gray-600 p-1">
-                  <ExternalLink className="h-4 w-4" />
+                  <Icon icon={ExternalLink} size="sm" color="muted" />
                 </div>
               )}
             </div>
@@ -276,7 +274,7 @@ function WalletAddressesList({
         {copiedAddress === address ? (
           <span className="text-xs text-gray-500">Copied</span>
         ) : (
-          <Copy className="h-4 w-4" />
+          <Icon icon={ExternalLink} size="sm" color="muted" />
         )}
       </div>
     </div>

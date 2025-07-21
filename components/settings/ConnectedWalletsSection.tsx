@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { WalletMinimal } from "lucide-react";
+import { WalletMinimal, Loader2, LogOut } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { truncateAddress, openExternalUrl } from "@/lib/utils";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
@@ -26,6 +27,8 @@ export function ConnectedWalletsSection({
     null,
   );
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [isConnecting, setIsConnecting] = React.useState(false);
+  const [isDisconnecting, setIsDisconnecting] = React.useState(false);
 
   const handleSetPrimary = async (account: ConnectedAccount) => {
     // For Farcaster-verified wallets, always open Farcaster settings
@@ -49,6 +52,24 @@ export function ConnectedWalletsSection({
     }
   };
 
+  const handleConnectWallet = async () => {
+    setIsConnecting(true);
+    try {
+      // Implement the logic to connect a wallet
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnectWallet = async () => {
+    setIsDisconnecting(true);
+    try {
+      // Implement the logic to disconnect a wallet
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
   if (accounts.length === 0) {
     return (
       <div className="space-y-4">
@@ -59,12 +80,21 @@ export function ConnectedWalletsSection({
         {/* Add Wallet Button */}
         <Button
           onClick={() => setModalOpen(true)}
-          variant="outline"
+          variant="special"
           className="w-full"
-          size="sm"
-          type="button"
+          disabled={isConnecting}
         >
-          Verify New Wallet
+          {isConnecting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              <WalletMinimal className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </>
+          )}
         </Button>
 
         <AccountManagementModal
@@ -92,7 +122,7 @@ export function ConnectedWalletsSection({
               className="flex items-center justify-between p-4 bg-background border rounded-lg"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <WalletMinimal className="h-5 w-5 text-muted-foreground shrink-0" />
+                <Icon icon={WalletMinimal} size="sm" color="muted" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm">
@@ -123,13 +153,13 @@ export function ConnectedWalletsSection({
                   </Button>
                 ) : showSetPrimaryButton ? (
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
                     onClick={() => handleSetPrimary(account)}
-                    className="whitespace-nowrap min-w-[100px]"
+                    variant="default"
+                    size="sm"
+                    className="ml-auto"
+                    disabled={account.is_primary}
                   >
-                    Set Primary
+                    {account.is_primary ? "Primary" : "Set Primary"}
                   </Button>
                 ) : null}
               </div>
@@ -140,14 +170,45 @@ export function ConnectedWalletsSection({
 
       {/* Add Wallet Button */}
       <Button
-        onClick={() => setModalOpen(true)}
-        variant="outline"
+        onClick={handleConnectWallet}
+        variant="special"
         className="w-full"
-        size="sm"
-        type="button"
+        disabled={isConnecting}
       >
-        Verify New Wallet
+        {isConnecting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Connecting...
+          </>
+        ) : (
+          <>
+            <WalletMinimal className="w-4 h-4 mr-2" />
+            Connect Wallet
+          </>
+        )}
       </Button>
+
+      {/* Disconnect button */}
+      {accounts.length > 0 && (
+        <Button
+          onClick={handleDisconnectWallet}
+          variant="default"
+          className="w-full"
+          disabled={isDisconnecting}
+        >
+          {isDisconnecting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Disconnecting...
+            </>
+          ) : (
+            <>
+              <LogOut className="w-4 h-4 mr-2" />
+              Disconnect Wallet
+            </>
+          )}
+        </Button>
+      )}
 
       <AccountManagementModal
         open={modalOpen}

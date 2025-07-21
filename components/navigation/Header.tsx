@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { useBackButton } from "@/hooks/useBackButton";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
@@ -18,6 +19,7 @@ export function Header() {
   const [modalFeature, setModalFeature] = React.useState<
     "Profile" | "Settings"
   >("Profile");
+  const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
@@ -31,6 +33,7 @@ export function Header() {
     item: (typeof navItems)[0] | typeof settingsItem,
     e: React.MouseEvent,
   ) => {
+    setClickedIcon(item.href);
     // If user tries to access Profile or Settings without user context, show modal
     if (!user && (item.label === "Profile" || item.label === "Settings")) {
       e.preventDefault();
@@ -41,100 +44,128 @@ export function Header() {
     // Otherwise, navigate normally (Link component handles it)
   };
 
+  // Reset clicked state after navigation
+  React.useEffect(() => {
+    setClickedIcon(null);
+  }, [pathname]);
+
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white">
-        <div className="flex h-14 w-full items-center justify-between px-4 md:px-8 relative">
-          {shouldShowBackButton ? (
-            <button
-              type="button"
-              onClick={handleBack}
-              className="flex items-center justify-center h-10 w-10 rounded-full transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-              aria-label="Go back"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-          ) : (
-            <h1
-              className="text-lg font-semibold cursor-pointer hover:opacity-70 transition-opacity"
-              onClick={handleTitleClick}
-            >
-              Creator Score
-            </h1>
-          )}
+      <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="w-full flex items-center h-14">
+          {/* Left: Back button or title */}
+          <div className="flex-1 flex items-center md:justify-end">
+            <div className="px-4 md:max-w-xl md:w-full md:mx-auto">
+              {shouldShowBackButton ? (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="flex items-center justify-center h-10 w-10 -ml-2 group transition-colors"
+                  aria-label="Go back"
+                >
+                  <Icon
+                    icon={ChevronLeft}
+                    size="lg"
+                    className="transition-colors group-hover:text-foreground"
+                  />
+                </button>
+              ) : (
+                <button
+                  onClick={handleTitleClick}
+                  className="h-9 cursor-pointer"
+                  aria-label="Go to home"
+                >
+                  <img
+                    src="/cs-logo-header.svg"
+                    alt="Creator Score"
+                    className="h-full w-auto"
+                  />
+                </button>
+              )}
+            </div>
+          </div>
 
-          {/* Desktop nav icons - simplified responsive approach */}
-          <nav
-            className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2"
-            style={{ display: "none" }}
-          >
-            {mounted &&
-              navItems.map((item) => {
-                const isActive = pathname === item.href;
+          {/* Center: Desktop nav */}
+          {mounted && (
+            <nav className="hidden md:flex items-center gap-2 justify-center flex-1">
+              {navItems.map((item) => {
+                const isActive =
+                  item.href === "/"
+                    ? pathname === item.href
+                    : pathname.startsWith(item.href) ||
+                      (item.alternateHrefs?.some((href) =>
+                        pathname.startsWith(href),
+                      ) ??
+                        false);
+
+                const isClicked = clickedIcon === item.href;
+
                 if (item.disabled) {
                   return (
                     <span
                       key={item.label}
-                      className="flex items-center justify-center h-10 w-12 rounded-full text-muted-foreground opacity-50 cursor-not-allowed"
+                      className="flex items-center justify-center h-10 w-12"
                       aria-label={item.label}
                     >
-                      <item.icon className="h-6 w-6" />
+                      <Icon icon={item.icon} size="lg" disabled />
                     </span>
                   );
                 }
+
                 if (item.href) {
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={(e) => handleNavClick(item, e)}
-                      className={`flex items-center justify-center h-10 w-12 rounded-full transition-colors ${
-                        isActive
-                          ? "bg-muted text-primary"
-                          : "text-muted-foreground hover:bg-muted/50"
-                      }`}
+                      className="flex items-center justify-center h-10 w-12 group transition-colors"
                       aria-label={item.label}
                       aria-current={isActive ? "page" : undefined}
                     >
-                      <item.icon className="h-6 w-6" />
+                      <Icon
+                        icon={item.icon}
+                        size="lg"
+                        isActive={isActive || isClicked}
+                        color={isActive ? "default" : "muted"}
+                        className="transition-colors group-hover:text-foreground"
+                      />
                     </Link>
                   );
                 }
                 return null;
               })}
-          </nav>
+            </nav>
+          )}
 
-          {/* Settings link - right aligned */}
-          <div className="flex items-center">
-            {mounted && (
-              <Link
-                href={settingsItem.href}
-                onClick={(e) => handleNavClick(settingsItem, e)}
-                className={`flex items-center justify-center h-10 w-12 rounded-full transition-colors ${
-                  pathname === settingsItem.href
-                    ? "bg-muted text-primary"
-                    : "text-muted-foreground hover:bg-muted/50"
-                }`}
-                aria-label={settingsItem.label}
-                aria-current={
-                  pathname === settingsItem.href ? "page" : undefined
-                }
-              >
-                <settingsItem.icon className="h-6 w-6" />
-              </Link>
-            )}
+          {/* Right: Settings */}
+          <div className="flex-1 flex items-center justify-end">
+            <div className="px-4 md:max-w-xl md:w-full md:mx-auto md:flex md:justify-end">
+              {mounted && (
+                <Link
+                  href={settingsItem.href}
+                  onClick={(e) => handleNavClick(settingsItem, e)}
+                  className="flex items-center justify-center h-10 w-10 -mr-2 group transition-colors"
+                  aria-label={settingsItem.label}
+                  aria-current={
+                    pathname === settingsItem.href ? "page" : undefined
+                  }
+                >
+                  <Icon
+                    icon={settingsItem.icon}
+                    size="lg"
+                    isActive={
+                      pathname === settingsItem.href ||
+                      clickedIcon === settingsItem.href
+                    }
+                    color={pathname === settingsItem.href ? "default" : "muted"}
+                    className="transition-colors group-hover:text-foreground"
+                  />
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </header>
-
-      {/* CSS to show nav on desktop only */}
-      <style jsx>{`
-        @media (min-width: 768px) {
-          nav {
-            display: flex !important;
-          }
-        }
-      `}</style>
 
       <FarcasterAccessModal
         open={showModal}

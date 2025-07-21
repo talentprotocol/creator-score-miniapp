@@ -5,6 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { SearchBar } from "@/components/search";
 import { useSearch } from "@/hooks/useSearch";
+import { PageContainer } from "@/components/common/PageContainer";
+import { Section } from "@/components/common/Section";
 
 interface ExploreLayoutProps {
   children: (search: ReturnType<typeof useSearch>) => React.ReactNode;
@@ -35,23 +37,29 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
   };
 
   return (
-    <div className="max-w-xl mx-auto w-full p-4 space-y-6 pb-24">
-      {/* Search Bar */}
-      <SearchBar
-        value={search.query}
-        onChange={handleSearchChange}
-        placeholder="Search creators by name…"
-      />
+    <PageContainer noPadding>
+      {/* Header section */}
+      <Section variant="header">
+        <SearchBar
+          value={search.query}
+          onChange={handleSearchChange}
+          placeholder="Search creators by name…"
+        />
+      </Section>
 
-      {/* Tabs */}
-      <TabNavigation
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-      />
+      {/* Full width tabs */}
+      <Section variant="full-width">
+        <TabNavigation
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
+      </Section>
 
-      {/* Tab Content */}
-      {children(search)}
-    </div>
+      {/* Content section */}
+      <Section variant="content" animate>
+        {children(search)}
+      </Section>
+    </PageContainer>
   );
 }
