@@ -30,7 +30,7 @@ export function TabNavigation({
 }: TabNavigationProps) {
   return (
     <div
-      className={`flex border-b border-gray-200 bg-white overflow-x-auto ${className}`}
+      className={`flex border-b border-border bg-background overflow-x-auto ${className}`}
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;
@@ -40,10 +40,10 @@ export function TabNavigation({
           tabs.length <= 3 ? "flex-1" : "min-w-0"
         } ${
           tab.disabled
-            ? "text-gray-400 cursor-not-allowed"
+            ? "text-muted-foreground cursor-not-allowed"
             : isActive
-              ? "text-gray-900"
-              : "text-gray-500"
+              ? "text-foreground"
+              : "text-muted-foreground"
         }`;
 
         const content = (
@@ -56,14 +56,14 @@ export function TabNavigation({
 
             {/* Count badge - only for sponsors */}
             {showCounts && tab.count !== undefined && (
-              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full font-normal flex-shrink-0 min-w-[20px] text-center">
+              <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-normal flex-shrink-0 min-w-[20px] text-center">
                 {tab.count}
               </span>
             )}
 
             {/* Active indicator line */}
             {isActive && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
             )}
           </>
         );

@@ -57,6 +57,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: pageMetadata.title,
     description: pageMetadata.description,
+    icons: {
+      icon: "/favicon-64.png",
+      shortcut: "/favicon-64.png",
+      apple: "/favicon-64.png",
+    },
     other: {
       "fc:frame": frameMetadata,
       "og:title": pageMetadata.ogTitle,
@@ -105,7 +110,7 @@ export default function RootLayout({
           <Providers>
             <ErrorBoundary>
               <Header />
-              <SwipeWrapper className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
+              <SwipeWrapper className="flex-1 flex flex-col w-full relative overflow-y-auto">
                 <main className="flex-1 flex flex-col w-full relative">
                   <ErrorBoundary>{children}</ErrorBoundary>
                 </main>

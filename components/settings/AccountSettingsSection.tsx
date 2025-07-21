@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Mail, Trash2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type {
@@ -32,7 +33,7 @@ export function AccountSettingsSection({
       <div className="bg-background border rounded-lg p-4">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <Icon icon={Mail} size="sm" color="muted" />
             <div className="flex-1">
               <h4 className="font-medium">Email Address</h4>
               <p className="text-xs text-muted-foreground">Coming soon</p>
@@ -73,7 +74,7 @@ export function AccountSettingsSection({
       <div className="bg-background border rounded-lg p-4">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Trash2 className="h-4 w-4 text-muted-foreground" />
+            <Icon icon={Trash2} size="sm" color="muted" />
             <div className="flex-1">
               <h4 className="font-medium">Delete Account</h4>
               <p className="text-xs text-muted-foreground">Coming soon</p>

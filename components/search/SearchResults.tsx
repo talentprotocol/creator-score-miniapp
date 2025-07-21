@@ -6,6 +6,7 @@ import { SearchResultRow } from "./SearchResultRow";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SearchResult } from "@/app/services/types";
+import { Loader2, Search } from "lucide-react";
 
 interface SearchResultsProps {
   results: SearchResult[];
@@ -111,12 +112,19 @@ export function SearchResults({
           {onRetry && !isRateLimited && (
             <div className="space-y-2">
               <Button
-                variant="outline"
+                variant="destructive"
                 onClick={onRetry}
                 disabled={loading}
                 className="w-full"
               >
-                {loading ? "Retrying..." : "Try Again"}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  "Try Again"
+                )}
               </Button>
               {retryCount > 0 && (
                 <p className="text-xs text-gray-500">
@@ -173,12 +181,22 @@ export function SearchResults({
       {hasMore && (
         <div className="flex justify-center pt-4">
           <Button
-            variant="outline"
             onClick={onLoadMore}
+            variant="default"
+            className="w-full"
             disabled={loading}
-            className="w-full max-w-sm"
           >
-            {loading ? "Loading..." : "Load more"}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Search className="w-4 h-4 mr-2" />
+                Load More Results
+              </>
+            )}
           </Button>
         </div>
       )}

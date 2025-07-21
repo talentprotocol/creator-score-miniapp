@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { BadgeItem } from "@/lib/badge-data";
+import { Icon } from "@/components/ui/icon";
 
 interface BadgeModalProps {
   badge: BadgeItem | null;
@@ -45,13 +46,14 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
       <div className="flex flex-col items-center gap-3">
         <div
           className={`p-3 rounded-full ${
-            badge.completed ? "bg-green-100" : "bg-gray-100"
+            badge.completed ? "bg-green-100" : "bg-muted"
           }`}
         >
-          <badge.icon
-            className={`w-6 h-6 ${
-              badge.completed ? "text-green-600" : "text-gray-400"
-            }`}
+          <Icon
+            icon={badge.icon}
+            size="md"
+            color={badge.completed ? "brand" : "muted"}
+            className={badge.completed ? "fill-current" : ""}
           />
         </div>
         <div>

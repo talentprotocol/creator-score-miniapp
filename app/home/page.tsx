@@ -12,7 +12,7 @@ import {
   PotentialRewardsCard,
   RewardsBoostsCard,
   TopSponsorsCard,
-} from "./components";
+} from "@/components/home";
 
 export default function HomePage() {
   const { context } = useMiniKit();

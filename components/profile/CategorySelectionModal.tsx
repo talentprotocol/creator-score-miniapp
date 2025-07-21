@@ -82,16 +82,17 @@ export function CategorySelectionModal({
         </div>
       </RadioGroup>
 
-      <div className="flex gap-3 pt-2">
-        <Button variant="outline" onClick={handleCancel} className="flex-1">
+      <div className="flex gap-4 mt-6">
+        <Button variant="default" onClick={handleCancel} className="flex-1">
           Cancel
         </Button>
         <Button
           onClick={handleConfirm}
           className="flex-1"
+          variant="special"
           disabled={!selectedCategory}
         >
-          Confirm
+          Save
         </Button>
       </div>
     </div>

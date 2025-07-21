@@ -76,11 +76,15 @@ export function AccountManagementModal({
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Button onClick={handleManageAccounts} className="w-full">
+            <Button
+              onClick={handleManageAccounts}
+              variant="special"
+              className="w-full"
+            >
               <ExternalLink className="w-4 h-4 mr-2" />
               Manage in Talent App
             </Button>
-            <Button variant="ghost" onClick={handleCancel} className="w-full">
+            <Button variant="default" onClick={handleCancel} className="w-full">
               Cancel
             </Button>
           </div>
@@ -101,11 +105,15 @@ export function AccountManagementModal({
         </DrawerHeader>
         <div className="px-2 pb-4">
           <div className="flex flex-col gap-2">
-            <Button onClick={handleManageAccounts} className="w-full">
+            <Button
+              onClick={handleManageAccounts}
+              variant="special"
+              className="w-full"
+            >
               <ExternalLink className="w-4 h-4 mr-2" />
               Manage in Talent App
             </Button>
-            <Button variant="ghost" onClick={handleCancel} className="w-full">
+            <Button variant="default" onClick={handleCancel} className="w-full">
               Cancel
             </Button>
           </div>

@@ -9,56 +9,7 @@ import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
 
 import { useUserResolution } from "@/hooks/useUserResolution";
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
-
-// Mock sponsor data (will be moved to a shared constants file)
-const SPONSORS = [
-  {
-    id: "base",
-    name: "Base",
-    amount: 5000,
-  },
-  {
-    id: "zora",
-    name: "Zora",
-    amount: 2500,
-  },
-  {
-    id: "farcaster",
-    name: "Farcaster",
-    amount: 2500,
-  },
-  {
-    id: "talent-protocol",
-    name: "Talent Protocol",
-    amount: 2500,
-  },
-  {
-    id: "noice",
-    name: "Noice",
-    amount: 1250,
-  },
-  {
-    id: "phi",
-    name: "Phi",
-    amount: 1250,
-  },
-  {
-    id: "coop-records",
-    name: "Coop Records",
-    amount: 1250,
-  },
-  {
-    id: "paragraph",
-    name: "Paragraph",
-    amount: 1250,
-  },
-];
-
-// Calculate total sponsors pool
-const TOTAL_SPONSORS_POOL = SPONSORS.reduce(
-  (sum, sponsor) => sum + sponsor.amount,
-  0,
-);
+import { TOTAL_SPONSORS_POOL } from "@/lib/constants";
 
 interface PotentialRewardsCardProps {
   score: number | null;

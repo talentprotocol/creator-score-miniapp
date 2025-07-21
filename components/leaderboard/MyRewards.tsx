@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { InfoIcon } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 interface MyRewardsProps {
   rewards: string;
@@ -41,7 +42,7 @@ export function MyRewards({
                 className="h-5 w-5 text-muted-foreground hover:text-primary"
                 onClick={onHowToEarnClick}
               >
-                <InfoIcon className="h-4 w-4" />
+                <Icon icon={InfoIcon} size="sm" color="muted" />
                 <span className="sr-only">How to earn</span>
               </Button>
             )}
