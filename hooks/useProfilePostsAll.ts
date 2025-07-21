@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Post } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
@@ -15,6 +15,44 @@ export function useProfilePostsAll(talentUUID: string) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchAllPosts = useCallback(async () => {
+    if (!talentUUID) return;
+
+    const cacheKey = `all_posts_${talentUUID}`;
+
+    // Check cache first
+    const cachedPosts = getCachedData<Post[]>(
+      cacheKey,
+      CACHE_DURATIONS.PROFILE_DATA,
+    );
+    if (cachedPosts) {
+      setPosts(cachedPosts);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const postsData = await getAllPostsForTalentId(talentUUID);
+      setPosts(postsData);
+
+      // Cache the posts data
+      setCachedData(cacheKey, postsData);
+    } catch (err) {
+      console.error("Error fetching all posts:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch posts");
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [talentUUID]); // Only depend on talentUUID
+
+  useEffect(() => {
+    fetchAllPosts();
+  }, [fetchAllPosts]); // Only depend on the memoized function
 
   // Process posts into yearly data for chart
   const yearlyData = useMemo((): YearlyPostData[] => {
@@ -61,44 +99,6 @@ export function useProfilePostsAll(talentUUID: string) {
       };
     });
   }, [posts]);
-
-  useEffect(() => {
-    async function fetchAllPosts() {
-      const cacheKey = `all_posts_${talentUUID}`;
-
-      // Check cache first
-      const cachedPosts = getCachedData<Post[]>(
-        cacheKey,
-        CACHE_DURATIONS.PROFILE_DATA,
-      );
-      if (cachedPosts) {
-        setPosts(cachedPosts);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const postsData = await getAllPostsForTalentId(talentUUID);
-        setPosts(postsData);
-
-        // Cache the posts data
-        setCachedData(cacheKey, postsData);
-      } catch (err) {
-        console.error("Error fetching all posts:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch posts");
-        setPosts([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (talentUUID) {
-      fetchAllPosts();
-    }
-  }, [talentUUID]);
 
   return { posts, yearlyData, loading, error };
 }

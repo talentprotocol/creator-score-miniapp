@@ -1,13 +1,8 @@
 "use client";
 
 import { SegmentedBar } from "@/components/common/SegmentedBar";
-import { useProfilePostsAll } from "@/hooks/useProfilePostsAll";
-import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
-import { useProfileEarningsBreakdown } from "@/hooks/useProfileEarningsBreakdown";
-import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
-import { CreatorCategoryCard } from "@/components/profile/CreatorCategoryCard";
-import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
+import { useProfileContext } from "@/contexts/ProfileContext";
 import type { SocialAccount } from "@/app/services/types";
 
 interface ProfileStatsPageProps {
@@ -36,38 +31,38 @@ const getPlatformUrl = (
   return undefined;
 };
 
-export default function ProfileStatsPage({ params }: ProfileStatsPageProps) {
-  const { profile } = useProfileHeaderData(params.identifier);
-  const talentUUID = profile?.id;
-  const {
-    posts,
-    loading: postsLoading,
-    error: postsError,
-  } = useProfilePostsAll(talentUUID || "");
-  const {
-    socialAccounts,
-    loading: socialAccountsLoading,
-    error: socialAccountsError,
-  } = useProfileSocialAccounts(talentUUID || "");
-  const {
-    breakdown: earningsBreakdown,
-    loading: earningsLoading,
-    error: earningsError,
-  } = useProfileEarningsBreakdown(talentUUID || "");
-  const { lastCalculatedAt } = useProfileCreatorScore(talentUUID || "");
+export default function ProfileStatsPage({}: ProfileStatsPageProps) {
+  const { profileData } = useProfileContext();
+
+  // Extract data from server-fetched profileData
+  const { posts, socialAccounts, earningsBreakdown } = profileData;
+
+  // No loading states needed - data comes from server
+  const postsLoading = false;
+  const socialAccountsLoading = false;
+  const earningsLoading = false;
+  const postsError = null;
+  const socialAccountsError = null;
+  const earningsError = null;
 
   const followersBreakdown = () => {
     if (!socialAccounts?.length) return { totalFollowers: 0, segments: [] };
-    const totalFollowers = calculateTotalFollowers(socialAccounts);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const totalFollowers = calculateTotalFollowers(socialAccounts as any);
     if (totalFollowers === 0) return { totalFollowers: 0, segments: [] };
 
     const accountGroups = new Map<
       string,
       { count: number; profileUrl?: string }
     >();
-    socialAccounts
-      .filter((account) => account.followerCount && account.followerCount > 0)
-      .forEach((account) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (socialAccounts as any[])
+      .filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (account: any) => account.followerCount && account.followerCount > 0,
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .forEach((account: any) => {
         const name = account.displayName || account.source;
         const existing = accountGroups.get(name) || {
           count: 0,
@@ -107,17 +102,22 @@ export default function ProfileStatsPage({ params }: ProfileStatsPageProps) {
     earningsBreakdown && socialAccounts
       ? {
           ...earningsBreakdown,
-          segments: earningsBreakdown.segments.map((segment) => ({
-            ...segment,
-            url: getPlatformUrl(segment.name, socialAccounts),
-          })),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          segments: (earningsBreakdown as any).segments.map(
+            (segment: { name: string; [key: string]: unknown }) => ({
+              ...segment,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              url: getPlatformUrl(segment.name, socialAccounts as any),
+            }),
+          ),
         }
       : earningsBreakdown;
 
   const postsBreakdown = () => {
     if (!posts?.length) return { totalPosts: 0, segments: [] };
     const platformCounts = new Map<string, number>();
-    posts.forEach((post) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (posts as any[]).forEach((post: any) =>
       platformCounts.set(
         post.platform,
         (platformCounts.get(post.platform) || 0) + 1,
@@ -147,10 +147,6 @@ export default function ProfileStatsPage({ params }: ProfileStatsPageProps) {
 
   return (
     <div className="space-y-6">
-      <CreatorCategoryCard
-        talentUUID={talentUUID}
-        lastCalculatedAt={lastCalculatedAt}
-      />
       <SegmentedBar
         title="Total Earnings"
         total={earningsBreakdownWithUrls?.totalEarnings || 0}

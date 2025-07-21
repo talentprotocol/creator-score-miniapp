@@ -1,13 +1,8 @@
 "use client";
 
 import { SegmentedBar } from "@/components/common/SegmentedBar";
-import { useProfilePostsAll } from "@/hooks/useProfilePostsAll";
-import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
-import { useProfileEarningsBreakdown } from "@/hooks/useProfileEarningsBreakdown";
-import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
-import { CreatorCategoryCard } from "@/components/profile/CreatorCategoryCard";
-import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
+import { useProfileContext } from "@/contexts/ProfileContext";
 import type { SocialAccount } from "@/app/services/types";
 
 interface StatsTabContentProps {
@@ -74,30 +69,28 @@ const getPlatformUrl = (
   return undefined;
 };
 
-export function StatsTabContent({ identifier }: StatsTabContentProps) {
-  const { profile } = useProfileHeaderData(identifier);
-  const talentUUID = profile?.id;
+export function StatsTabContent({}: StatsTabContentProps) {
+  const { profileData } = useProfileContext();
 
-  const {
-    posts,
-    loading: postsLoading,
-    error: postsError,
-  } = useProfilePostsAll(talentUUID || "");
-  const {
-    socialAccounts,
-    loading: socialAccountsLoading,
-    error: socialAccountsError,
-  } = useProfileSocialAccounts(talentUUID || "");
-  const {
-    breakdown: earningsBreakdown,
-    loading: earningsLoading,
-    error: earningsError,
-  } = useProfileEarningsBreakdown(talentUUID || "");
-  const { lastCalculatedAt } = useProfileCreatorScore(talentUUID || "");
+  // Extract data from server-fetched profileData
+  const { posts, socialAccounts, earningsBreakdown } = profileData;
 
-  if (!talentUUID) {
-    return <div>Loading...</div>;
-  }
+  // Type assertions for server data
+  const typedSocialAccounts = socialAccounts as SocialAccount[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typedPosts = posts as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typedEarningsBreakdown = earningsBreakdown as any;
+
+  // No loading states needed - data comes from server
+  const postsLoading = false;
+  const socialAccountsLoading = false;
+  const earningsLoading = false;
+  const postsError = null;
+  const socialAccountsError = null;
+  const earningsError = null;
+
+  // Data comes from server, no loading check needed
 
   // Process followers breakdown with URLs
   const processFollowersBreakdown = () => {
@@ -108,7 +101,8 @@ export function StatsTabContent({ identifier }: StatsTabContentProps) {
       };
     }
 
-    const totalFollowers = calculateTotalFollowers(socialAccounts);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const totalFollowers = calculateTotalFollowers(socialAccounts as any);
 
     if (totalFollowers === 0) {
       return {
@@ -123,7 +117,7 @@ export function StatsTabContent({ identifier }: StatsTabContentProps) {
       { count: number; profileUrl?: string }
     >();
 
-    socialAccounts
+    typedSocialAccounts
       .filter((account) => account.followerCount && account.followerCount > 0)
       .forEach((account) => {
         const name = account.displayName || account.source;
@@ -170,24 +164,26 @@ export function StatsTabContent({ identifier }: StatsTabContentProps) {
 
   // Process earnings breakdown with URLs
   const processEarningsBreakdown = () => {
-    if (!earningsBreakdown || !socialAccounts) {
-      return earningsBreakdown;
+    if (!typedEarningsBreakdown || !typedSocialAccounts) {
+      return typedEarningsBreakdown;
     }
 
-    const segmentsWithUrls = earningsBreakdown.segments.map((segment) => ({
-      ...segment,
-      url: getPlatformUrl(segment.name, socialAccounts),
-    }));
+    const segmentsWithUrls = typedEarningsBreakdown.segments.map(
+      (segment: { name: string; [key: string]: unknown }) => ({
+        ...segment,
+        url: getPlatformUrl(segment.name, typedSocialAccounts),
+      }),
+    );
 
     return {
-      ...earningsBreakdown,
+      ...typedEarningsBreakdown,
       segments: segmentsWithUrls,
     };
   };
 
   // Process posts breakdown by platform
   const processPostsBreakdown = () => {
-    if (!posts || posts.length === 0) {
+    if (!typedPosts || typedPosts.length === 0) {
       return {
         totalPosts: 0,
         segments: [],
@@ -196,12 +192,12 @@ export function StatsTabContent({ identifier }: StatsTabContentProps) {
 
     // Group posts by platform
     const platformCounts = new Map<string, number>();
-    posts.forEach((post) => {
+    typedPosts.forEach((post) => {
       const platform = post.platform;
       platformCounts.set(platform, (platformCounts.get(platform) || 0) + 1);
     });
 
-    const totalPosts = posts.length;
+    const totalPosts = typedPosts.length;
 
     // Convert to segments format, only include platforms that have posts
     const segments = Array.from(platformCounts.entries())
@@ -236,10 +232,6 @@ export function StatsTabContent({ identifier }: StatsTabContentProps) {
 
   return (
     <div className="space-y-6">
-      <CreatorCategoryCard
-        talentUUID={talentUUID}
-        lastCalculatedAt={lastCalculatedAt}
-      />
       <SegmentedBar
         title="Total Earnings"
         total={earningsBreakdownWithUrls?.totalEarnings || 0}

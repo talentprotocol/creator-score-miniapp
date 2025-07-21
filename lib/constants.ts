@@ -83,8 +83,6 @@ export function validateEnvironmentVariables() {
 
   const optional = [
     "NEYNAR_API_KEY",
-    "REDIS_URL",
-    "REDIS_TOKEN",
     "FARCASTER_HEADER",
     "FARCASTER_PAYLOAD",
     "FARCASTER_SIGNATURE",

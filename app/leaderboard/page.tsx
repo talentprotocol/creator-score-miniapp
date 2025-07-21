@@ -5,19 +5,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { resolveFidToTalentUuid } from "@/lib/user-resolver";
+import { useUserResolution } from "@/hooks/useUserResolution";
 import type { LeaderboardEntry } from "@/app/services/types";
 import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
-import { useLeaderboard } from "@/hooks/useLeaderboard";
-import { useLeaderboardStats } from "@/hooks/useLeaderboardStats";
+import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
 import { useRouter } from "next/navigation";
 import { generateProfileUrl } from "@/lib/utils";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
-import { useTop200Scores } from "@/hooks/useTop200Scores";
 
 const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
@@ -152,43 +150,41 @@ export default function LeaderboardPage() {
   const user = getUserContext(context);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
-  const [userTalentUuid, setUserTalentUuid] = useState<string | null>(null);
+  const { talentUuid: userTalentUuid } = useUserResolution();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
+  const [visibleEntries, setVisibleEntries] = useState<LeaderboardEntry[]>([]);
 
-  // Static total of all eligible creators' scores (calculated once via script)
-  const TOTAL_ELIGIBLE_SCORES = 54279;
+  // Initial fast load of first 10 entries
+  // Use optimized leaderboard hook for all data
+  const {
+    top10: initialEntries,
+    top200: top200Entries,
+
+    loading: {
+      top10: initialLoading,
+      top200: top200Loading,
+      stats: statsLoading,
+    },
+    error: top200Error,
+    totalScores: totalTop200Scores,
+  } = useLeaderboardOptimized();
 
   // Use hooks for data fetching
   const { creatorScore } = useUserCreatorScore(user?.fid);
-  const { entries, loading, error, hasMore, loadMore } = useLeaderboard(10);
-  const { loading: statsLoading } = useLeaderboardStats();
-  const {
-    entries: top200Entries,
-    totalScores: totalTop200Scores,
-    loading: top200Loading,
-  } = useTop200Scores();
 
   // Countdown state
   const [countdown, setCountdown] = useState(() =>
     getCountdownParts(ROUND_ENDS_AT),
   );
 
-  // Resolve user's FID to Talent UUID for proper identification
+  // Update visible entries when data changes
   useEffect(() => {
-    async function resolveUserTalentUuid() {
-      if (user?.fid) {
-        try {
-          const uuid = await resolveFidToTalentUuid(user.fid);
-          setUserTalentUuid(uuid);
-        } catch (error) {
-          console.error("Error resolving user talent UUID:", error);
-          setUserTalentUuid(null);
-        }
-      }
+    if (initialEntries.length > 0) {
+      setVisibleEntries(initialEntries);
+    } else if (top200Entries.length > 0) {
+      setVisibleEntries(top200Entries.slice(0, 10));
     }
-
-    resolveUserTalentUuid();
-  }, [user?.fid]);
+  }, [initialEntries, top200Entries]);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -204,9 +200,10 @@ export default function LeaderboardPage() {
   }, []);
 
   // Find user entry in top 200 data for accurate rewards
-  const userTop200Entry = userTalentUuid
-    ? top200Entries.find((e) => e.talent_protocol_id === userTalentUuid)
-    : null;
+  const userTop200Entry =
+    userTalentUuid && top200Entries.length > 0
+      ? top200Entries.find((e) => e.talent_protocol_id === userTalentUuid)
+      : null;
 
   // Get the 200th position score
   const lastTop200Score = top200Entries[199]?.score ?? 0;
@@ -220,7 +217,7 @@ export default function LeaderboardPage() {
   // Helper to calculate USDC rewards using top 200 scores
   function getUsdcRewards(score: number, rank?: number): string {
     // Only top 200 creators earn rewards
-    if (!rank || rank > 200) return "$0";
+    if (!rank || rank > 200 || !totalTop200Scores) return "$0";
 
     // Calculate multiplier based on total top 200 scores
     const multiplier = TOTAL_SPONSORS_POOL / totalTop200Scores;
@@ -246,6 +243,22 @@ export default function LeaderboardPage() {
     }
   }
 
+  // Determine loading and pagination state
+  const hasMore =
+    initialEntries.length > 0
+      ? initialEntries.length < 200
+      : visibleEntries.length < top200Entries.length;
+  const loading =
+    initialLoading || (initialEntries.length === 0 && top200Loading);
+
+  // Handler to load more entries
+  const loadMore = () => {
+    // Load more from top200Entries
+    const currentLength = visibleEntries.length;
+    const nextEntries = top200Entries.slice(currentLength, currentLength + 10);
+    setVisibleEntries([...visibleEntries, ...nextEntries]);
+  };
+
   return (
     <div className="max-w-xl mx-auto w-full p-4 space-y-6 pb-24">
       {/* My Rewards Hero - Only show if user is logged in */}
@@ -260,7 +273,7 @@ export default function LeaderboardPage() {
             score={creatorScore ?? 0}
             avatarUrl={user.pfpUrl}
             name={user.displayName || user.username || "Unknown user"}
-            isLoading={loading || statsLoading || top200Loading}
+            isLoading={statsLoading || (top200Loading && !userTop200Entry)}
             rank={userTop200Entry?.rank}
             pointsToTop200={pointsToTop200}
             onHowToEarnClick={() => setHowToEarnOpen(true)}
@@ -303,13 +316,15 @@ export default function LeaderboardPage() {
 
       {/* Leaderboard */}
       <div className="space-y-2 -mt-4">
-        {error && <div className="text-destructive text-sm px-2">{error}</div>}
+        {initialLoading && top200Error && (
+          <div className="text-destructive text-sm px-2">{top200Error}</div>
+        )}
 
         {activeTab === "creators" && (
           <>
             {/* Leaderboard list */}
             <div className="overflow-hidden rounded-lg bg-gray-50">
-              {entries.map((user, index) => (
+              {visibleEntries.map((user, index) => (
                 <div key={user.id}>
                   <LeaderboardRow
                     rank={user.rank}
@@ -318,9 +333,9 @@ export default function LeaderboardPage() {
                     score={user.score}
                     rewards={getUsdcRewards(user.score, user.rank)}
                     onClick={() => handleEntryClick(user)}
-                    rewardsLoading={top200Loading}
+                    rewardsLoading={!userTop200Entry && top200Loading}
                   />
-                  {index < entries.length - 1 && (
+                  {index < visibleEntries.length - 1 && (
                     <div className="h-px bg-gray-200" />
                   )}
                 </div>
@@ -328,7 +343,7 @@ export default function LeaderboardPage() {
             </div>
 
             {/* Load More button - only show if there are more entries and we haven't reached 200 */}
-            {hasMore && entries.length < 200 && (
+            {hasMore && visibleEntries.length < 200 && (
               <Button
                 variant="outline"
                 className="w-full flex items-center justify-center"

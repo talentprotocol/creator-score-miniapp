@@ -16,6 +16,8 @@ export function useProfileCreatorScore(talentUUID: string) {
   const [hasNoScore, setHasNoScore] = useState<boolean>(false);
 
   const fetchScore = useCallback(async () => {
+    if (!talentUUID) return;
+
     const cacheKey = `creator_score_data_${talentUUID}`;
 
     // TEMPORARILY DISABLE CACHE - Check cache first
@@ -79,13 +81,15 @@ export function useProfileCreatorScore(talentUUID: string) {
     } finally {
       setLoading(false);
     }
-  }, [talentUUID]);
+  }, [talentUUID]); // Only depend on talentUUID
 
   useEffect(() => {
-    if (talentUUID) {
-      fetchScore();
-    }
-  }, [talentUUID, fetchScore]);
+    fetchScore();
+  }, [fetchScore]); // Only depend on the memoized function
+
+  const refetch = useCallback(() => {
+    fetchScore();
+  }, [fetchScore]);
 
   return {
     creatorScore,
@@ -95,6 +99,6 @@ export function useProfileCreatorScore(talentUUID: string) {
     loading,
     error,
     hasNoScore,
-    refetch: fetchScore,
+    refetch,
   };
 }

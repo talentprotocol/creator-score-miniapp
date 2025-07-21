@@ -3,7 +3,7 @@
 import * as React from "react";
 import { WalletMinimal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { truncateAddress } from "@/lib/utils";
+import { truncateAddress, openExternalUrl } from "@/lib/utils";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
 import type {
   ConnectedAccount,
@@ -27,29 +27,27 @@ export function ConnectedWalletsSection({
   );
   const [modalOpen, setModalOpen] = React.useState(false);
 
-  const handleSetPrimary = async (identifier: string) => {
-    _setLoadingAction(`primary-${identifier}`);
+  const handleSetPrimary = async (account: ConnectedAccount) => {
+    // For Farcaster-verified wallets, always open Farcaster settings
+    if (account.imported_from === "farcaster") {
+      await openExternalUrl(
+        "https://farcaster.xyz/~/settings/verified-addresses",
+      );
+      return;
+    }
+
+    // For Talent-verified wallets, perform the API action (though button should be hidden)
+    _setLoadingAction(`primary-${account.identifier}`);
     try {
       await onAction({
         action: "set_primary",
         account_type: "wallet",
-        identifier,
+        identifier: account.identifier,
       });
     } finally {
       _setLoadingAction(null);
     }
   };
-
-  // Find the primary wallet - the one with the oldest connected_at date
-  const primaryWallet = React.useMemo(() => {
-    if (accounts.length === 0) return null;
-
-    return accounts.reduce((oldest, current) => {
-      const oldestDate = new Date(oldest.connected_at);
-      const currentDate = new Date(current.connected_at);
-      return currentDate < oldestDate ? current : oldest;
-    });
-  }, [accounts]);
 
   if (accounts.length === 0) {
     return (
@@ -83,7 +81,10 @@ export function ConnectedWalletsSection({
       {/* Wallet List */}
       <div className="space-y-3">
         {accounts.map((account) => {
-          const isPrimary = primaryWallet?.identifier === account.identifier;
+          const isPrimary = account.is_primary === true;
+          const showSetPrimaryButton =
+            !isPrimary && account.imported_from === "farcaster";
+          const showPrimaryLabel = isPrimary;
 
           return (
             <div
@@ -111,7 +112,7 @@ export function ConnectedWalletsSection({
 
               <div className="flex items-center gap-2 shrink-0">
                 {/* Primary/Set Primary Button */}
-                {isPrimary ? (
+                {showPrimaryLabel ? (
                   <Button
                     type="button"
                     variant="default"
@@ -120,18 +121,17 @@ export function ConnectedWalletsSection({
                   >
                     Primary
                   </Button>
-                ) : (
+                ) : showSetPrimaryButton ? (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSetPrimary(account.identifier)}
-                    disabled={true}
+                    onClick={() => handleSetPrimary(account)}
                     className="whitespace-nowrap min-w-[100px]"
                   >
                     Set Primary
                   </Button>
-                )}
+                ) : null}
               </div>
             </div>
           );

@@ -3,7 +3,6 @@ import type {
   GroupedWalletAccounts,
   WalletAccountsResponse,
 } from "./types";
-import { getLocalBaseUrl } from "@/lib/constants";
 
 /**
  * Fetches wallet accounts for a given Talent Protocol ID and groups them by verification source
@@ -12,20 +11,34 @@ export async function getWalletAccountsForTalentId(
   talentId: string | number,
 ): Promise<GroupedWalletAccounts> {
   try {
-    let baseUrl = "";
-    if (typeof window === "undefined") {
-      baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
+    let data: WalletAccountsResponse;
+
+    if (typeof window !== "undefined") {
+      // Client-side: use API route
+      const baseUrl = "";
+      const response = await fetch(
+        `${baseUrl}/api/talent-accounts?id=${talentId}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      data = await response.json();
+    } else {
+      // Server-side: call Talent API directly
+      const { talentApiClient } = await import("@/lib/talent-api-client");
+
+      const response = await talentApiClient.getAccounts({
+        id: String(talentId),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Talent API error: ${response.status}`);
+      }
+
+      data = await response.json();
     }
-
-    const response = await fetch(
-      `${baseUrl}/api/talent-accounts?id=${talentId}`,
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data: WalletAccountsResponse = await response.json();
 
     // Filter only wallet accounts and group by verification source
     const walletAccounts = data.accounts.filter(

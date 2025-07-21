@@ -5,6 +5,7 @@ import type {
   UserSettings,
   AccountManagementAction,
   HumanityCredentialsResponse,
+  ProfileResponse,
 } from "./types";
 import { getLocalBaseUrl } from "@/lib/constants";
 
@@ -15,42 +16,89 @@ export async function getConnectedAccountsForTalentId(
   talentId: string | number,
 ): Promise<GroupedConnectedAccounts> {
   try {
-    let baseUrl = "";
-    if (typeof window === "undefined") {
-      baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
+    let accountsData: ConnectedAccountsResponse;
+    let profileData: ProfileResponse | null = null;
+
+    if (typeof window !== "undefined") {
+      // Client-side: use API routes
+      const baseUrl = "";
+      const [accountsResponse, profileResponse] = await Promise.all([
+        fetch(`${baseUrl}/api/talent-accounts?id=${talentId}`),
+        fetch(`${baseUrl}/api/talent-user?id=${talentId}`),
+      ]);
+
+      if (!accountsResponse.ok) {
+        throw new Error(
+          `HTTP ${accountsResponse.status}: ${accountsResponse.statusText}`,
+        );
+      }
+
+      accountsData = await accountsResponse.json();
+
+      // Get profile data for primary wallet information
+      if (profileResponse.ok) {
+        profileData = await profileResponse.json();
+      }
+    } else {
+      // Server-side: call Talent API directly
+      const { talentApiClient } = await import("@/lib/talent-api-client");
+
+      const [accountsResponse, profileResponse] = await Promise.all([
+        talentApiClient.getAccounts({ id: String(talentId) }),
+        talentApiClient.getProfile({ talent_protocol_id: String(talentId) }),
+      ]);
+
+      if (!accountsResponse.ok) {
+        throw new Error(`Talent API error: ${accountsResponse.status}`);
+      }
+
+      accountsData = await accountsResponse.json();
+
+      // Get profile data for primary wallet information
+      if (profileResponse.ok) {
+        profileData = await profileResponse.json();
+      }
     }
 
-    const response = await fetch(
-      `${baseUrl}/api/talent-accounts?id=${talentId}`,
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data: ConnectedAccountsResponse = await response.json();
+    // Determine the primary wallet address (Farcaster first, then Talent)
+    const primaryWalletAddress =
+      profileData?.farcaster_primary_wallet_address ||
+      profileData?.main_wallet_address ||
+      null;
 
     // Group accounts by type for settings management
-    const socialAccounts = data.accounts.filter(
+    const socialAccounts = accountsData.accounts.filter(
       (account: ConnectedAccount) =>
         account.source === "github" ||
         account.source === "twitter" ||
         account.source === "x_twitter",
     );
 
-    const walletAccounts = data.accounts.filter(
-      (account: ConnectedAccount) => account.source === "wallet",
-    );
+    const walletAccounts = accountsData.accounts
+      .filter((account: ConnectedAccount) => account.source === "wallet")
+      .map((account: ConnectedAccount) => ({
+        ...account,
+        is_primary: account.identifier === primaryWalletAddress,
+      }));
 
     return {
       social: socialAccounts,
       wallet: walletAccounts,
+      primaryWalletInfo: {
+        main_wallet_address: profileData?.main_wallet_address || null,
+        farcaster_primary_wallet_address:
+          profileData?.farcaster_primary_wallet_address || null,
+      },
     };
   } catch (error) {
     console.error("Error fetching connected accounts:", error);
     return {
       social: [],
       wallet: [],
+      primaryWalletInfo: {
+        main_wallet_address: null,
+        farcaster_primary_wallet_address: null,
+      },
     };
   }
 }

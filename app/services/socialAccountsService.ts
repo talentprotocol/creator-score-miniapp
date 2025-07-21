@@ -32,13 +32,26 @@ export async function getSocialAccountsForTalentId(
   talentId: string | number,
 ): Promise<SocialAccount[]> {
   try {
-    const baseUrl = "/api/talent-socials";
-    const params = new URLSearchParams({
-      talent_protocol_id: String(talentId),
-    });
-    const response = await fetch(`${baseUrl}?${params.toString()}`);
-    if (!response.ok) throw new Error(`Talent API error: ${response.status}`);
-    const data = await response.json();
+    let data;
+
+    if (typeof window !== "undefined") {
+      // Client-side: use API route
+      const params = new URLSearchParams({
+        talent_protocol_id: String(talentId),
+      });
+      const response = await fetch(`/api/talent-socials?${params.toString()}`);
+      if (!response.ok) throw new Error(`Talent API error: ${response.status}`);
+      data = await response.json();
+    } else {
+      // Server-side: call Talent API directly
+      const { talentApiClient } = await import("@/lib/talent-api-client");
+      const params = {
+        talent_protocol_id: String(talentId),
+      };
+      const response = await talentApiClient.getSocials(params);
+      if (!response.ok) throw new Error(`Talent API error: ${response.status}`);
+      data = await response.json();
+    }
     if (!Array.isArray(data.socials)) return [];
 
     // Process social accounts without merging EFP and ENS

@@ -10,12 +10,17 @@ import {
   calculateScoreProgress,
   calculatePointsToNextLevel,
 } from "@/lib/utils";
-import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
+import { useProfileContext } from "@/contexts/ProfileContext";
 import { LEVEL_RANGES } from "@/lib/constants";
 
-export function ScoreProgressAccordion({ talentUUID }: { talentUUID: string }) {
-  const { creatorScore, lastCalculatedAt, loading } =
-    useProfileCreatorScore(talentUUID);
+export function ScoreProgressAccordion() {
+  const { profileData } = useProfileContext();
+
+  // Extract data from server-fetched profileData
+  const { creatorScore, lastCalculatedAt } = profileData;
+
+  // No loading state needed - data comes from server
+  const loading = false;
 
   const score = typeof creatorScore === "number" ? creatorScore : null;
 

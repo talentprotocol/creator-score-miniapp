@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getWalletAccountsForTalentId } from "@/app/services/walletAccountsService";
 import type { GroupedWalletAccounts } from "@/app/services/types";
@@ -10,7 +10,7 @@ export function useProfileWalletAccounts(talentUUID: string | undefined) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
-  const fetchWalletData = async () => {
+  const fetchWalletData = useCallback(async () => {
     if (!talentUUID) return;
 
     const cacheKey = `talent_wallet_accounts_${talentUUID}`;
@@ -43,11 +43,11 @@ export function useProfileWalletAccounts(talentUUID: string | undefined) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [talentUUID]);
 
   useEffect(() => {
     fetchWalletData();
-  }, [talentUUID]);
+  }, [fetchWalletData]);
 
   return { walletData, loading, error, refetch: fetchWalletData };
 }

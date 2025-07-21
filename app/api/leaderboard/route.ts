@@ -6,17 +6,17 @@ type Profile = {
   display_name?: string;
   name?: string;
   image_url?: string;
-  scores?: { slug: string; points?: number }[];
+  scores?: Array<{ slug: string; points?: number }>;
 };
 
 // Cache keys
 const CACHE_KEYS = {
-  TOP_200: "leaderboard:top_200",
-  TOP_200_TOTAL_SCORES: "leaderboard:top_200:total_scores",
+  TOP_200: "cache:leaderboard:top_200",
+  TOP_200_TOTAL_SCORES: "cache:leaderboard:top_200_total_scores",
 } as const;
 
 // Cache duration
-const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
+const CACHE_DURATION = 3600; // 1 hour in seconds
 
 async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
   const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
@@ -91,13 +91,52 @@ export async function GET(req: NextRequest) {
   );
   const statsOnly = searchParams.get("statsOnly") === "true";
 
+  // For stats-only request, we only need the first page to get min score
+  if (statsOnly) {
+    try {
+      const res = await fetch(
+        `https://api.talentprotocol.com/search/advanced/profiles?page=1&per_page=1&scorer=creator_score&min_score=1`,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-API-KEY": apiKey,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      const json = await res.json();
+      const totalCreators = json.pagination?.total || 0;
+      const eligibleCreators = json.pagination?.total || 0;
+      const minScore =
+        json.profiles?.[0]?.scores?.find(
+          (s: { slug: string; points?: number }) => s.slug === "creator_score",
+        )?.points || 0;
+
+      return NextResponse.json({
+        minScore,
+        totalCreators,
+        eligibleCreators,
+      });
+    } catch (error) {
+      console.error("API error:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch leaderboard stats" },
+        { status: 500 },
+      );
+    }
+  }
+
   // For top 200 request, try to get from cache first
   if (page === 1 && perPage === 200) {
     try {
-      const cachedData = await redis.get(CACHE_KEYS.TOP_200);
-      const cachedTotalScores = await redis.get(
-        CACHE_KEYS.TOP_200_TOTAL_SCORES,
-      );
+      const [cachedData, cachedTotalScores] = await Promise.all([
+        redis.get<string>(CACHE_KEYS.TOP_200),
+        redis.get<string>(CACHE_KEYS.TOP_200_TOTAL_SCORES),
+      ]);
 
       if (cachedData && cachedTotalScores) {
         return NextResponse.json({
@@ -106,7 +145,7 @@ export async function GET(req: NextRequest) {
         });
       }
     } catch (error) {
-      console.error("Redis error:", error);
+      console.error("Cache error:", error);
       // Continue with normal flow if cache fails
     }
   }
@@ -207,18 +246,20 @@ export async function GET(req: NextRequest) {
     if (page === 1 && perPage === 200) {
       try {
         const totalScores = ranked.reduce((sum, entry) => sum + entry.score, 0);
-        await redis.setex(
-          CACHE_KEYS.TOP_200,
-          CACHE_DURATION,
-          JSON.stringify(ranked),
-        );
-        await redis.setex(
-          CACHE_KEYS.TOP_200_TOTAL_SCORES,
-          CACHE_DURATION,
-          totalScores.toString(),
-        );
+        await Promise.all([
+          redis.setex(
+            CACHE_KEYS.TOP_200,
+            CACHE_DURATION,
+            JSON.stringify(ranked),
+          ),
+          redis.setex(
+            CACHE_KEYS.TOP_200_TOTAL_SCORES,
+            CACHE_DURATION,
+            totalScores.toString(),
+          ),
+        ]);
       } catch (error) {
-        console.error("Redis cache error:", error);
+        console.error("Cache error:", error);
         // Continue even if caching fails
       }
     }

@@ -12,6 +12,12 @@ export async function GET(req: NextRequest) {
     searchParams.delete("uuid");
   }
 
+  // If we have a numeric ID, assume it's a Farcaster FID
+  const id = searchParams.get("talent_protocol_id") || searchParams.get("id");
+  if (id && !isNaN(Number(id))) {
+    searchParams.set("account_source", "farcaster");
+  }
+
   const params = extractTalentProtocolParams(searchParams);
 
   // Default to creator_score if no scorer_slug is provided

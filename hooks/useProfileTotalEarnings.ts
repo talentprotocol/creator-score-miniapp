@@ -6,7 +6,7 @@ import {
   setCachedData,
   CACHE_DURATIONS,
 } from "@/lib/utils";
-import { getCredentialsForTalentId } from "@/app/services/credentialsService";
+import { useProfileCredentials } from "./useProfileCredentials";
 
 export function useProfileTotalEarnings(talentUUID: string) {
   const [totalEarnings, setTotalEarnings] = useState<number | undefined>(
@@ -15,11 +15,36 @@ export function useProfileTotalEarnings(talentUUID: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Use the existing credentials hook instead of making our own API call
+  const {
+    credentials: credentialsGroups,
+    loading: credentialsLoading,
+    error: credentialsError,
+  } = useProfileCredentials(talentUUID);
+
   useEffect(() => {
-    async function fetchTotalEarnings() {
-      const cacheKey = `total_earnings_${talentUUID}`;
+    async function calculateEarnings() {
+      if (!talentUUID) {
+        setLoading(false);
+        return;
+      }
+
+      // Wait for credentials to load
+      if (credentialsLoading) {
+        setLoading(true);
+        return;
+      }
+
+      // Handle credentials error
+      if (credentialsError) {
+        setError(credentialsError);
+        setTotalEarnings(undefined);
+        setLoading(false);
+        return;
+      }
 
       // Check cache first
+      const cacheKey = `total_earnings_${talentUUID}`;
       const cachedEarnings = getCachedData<number>(
         cacheKey,
         CACHE_DURATIONS.PROFILE_DATA,
@@ -33,8 +58,6 @@ export function useProfileTotalEarnings(talentUUID: string) {
       try {
         setLoading(true);
         setError(null);
-
-        const credentialsGroups = await getCredentialsForTalentId(talentUUID);
 
         // Transform grouped credentials into the structure expected by calculateTotalRewards
         const credentials = credentialsGroups.flatMap((group) =>
@@ -60,9 +83,11 @@ export function useProfileTotalEarnings(talentUUID: string) {
         // Cache the total earnings
         setCachedData(cacheKey, total);
       } catch (err) {
-        console.error("Error fetching total earnings:", err);
+        console.error("Error calculating total earnings:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to fetch total earnings",
+          err instanceof Error
+            ? err.message
+            : "Failed to calculate total earnings",
         );
         setTotalEarnings(undefined); // Use undefined to indicate error, not 0
       } finally {
@@ -70,10 +95,8 @@ export function useProfileTotalEarnings(talentUUID: string) {
       }
     }
 
-    if (talentUUID) {
-      fetchTotalEarnings();
-    }
-  }, [talentUUID]);
+    calculateEarnings();
+  }, [talentUUID, credentialsGroups, credentialsLoading, credentialsError]);
 
   return { totalEarnings, loading, error };
 }

@@ -11,48 +11,63 @@ import {
   formatK,
   calculateTotalFollowers,
 } from "@/lib/utils";
-import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
-import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
-import { useProfileSocialAccounts } from "@/hooks/useProfileSocialAccounts";
-import { useProfileTotalEarnings } from "@/hooks/useProfileTotalEarnings";
 import { useProfileActions } from "@/hooks/useProfileActions";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { Callout } from "@/components/common/Callout";
 import { Share, RotateCcw, Loader2 } from "lucide-react";
+import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
+
+interface ProfileData {
+  creatorScore: number | undefined;
+  lastCalculatedAt: string | null;
+  calculating: boolean;
+  socialAccounts: unknown[];
+  totalEarnings: number | undefined;
+  posts: unknown[];
+  yearlyData: { year: number; months: number[]; total: number }[];
+  credentials: unknown[];
+  earningsBreakdown: { totalEarnings: number; segments: unknown[] };
+}
 
 interface ProfileLayoutContentProps {
   talentUUID: string;
   identifier: string;
   children: React.ReactNode;
+  profile: unknown | null; // Profile from server-side
+  profileData: ProfileData; // All profile data from server-side
 }
 
-export function ProfileLayoutContent({
+function ProfileLayoutContentInner({
   talentUUID,
   identifier,
   children,
-}: ProfileLayoutContentProps) {
+}: {
+  talentUUID: string;
+  identifier: string;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
+  const { profile, profileData, refetchScore } = useProfileContext();
 
-  // Use hooks to fetch all data
-  const {
-    profile,
-    loading: profileLoading,
-    error: profileError,
-  } = useProfileHeaderData(talentUUID);
+  // Extract data from server-fetched profileData
   const {
     creatorScore,
     lastCalculatedAt,
     calculating,
-    loading: scoreLoading,
-    refetch: refetchScore,
-    hasNoScore,
-  } = useProfileCreatorScore(talentUUID);
-  const { socialAccounts } = useProfileSocialAccounts(talentUUID);
-  const { totalEarnings, loading: earningsLoading } =
-    useProfileTotalEarnings(talentUUID);
+    socialAccounts,
+    totalEarnings,
+  } = profileData;
+
+  // No loading states needed - data comes from server
+  const scoreLoading = false;
+  const earningsLoading = false;
 
   // Calculate total followers
-  const totalFollowers = calculateTotalFollowers(socialAccounts);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const totalFollowers = calculateTotalFollowers(socialAccounts as any);
+
+  // Check if user has score
+  const hasNoScore = !creatorScore || creatorScore === 0;
 
   // Use profile actions hook for buttons and user logic
   const {
@@ -77,33 +92,13 @@ export function ProfileLayoutContent({
     totalEarnings,
   });
 
-  if (profileLoading) {
-    return (
-      <main className="flex-1 overflow-y-auto relative">
-        <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
-          <div className="flex items-center justify-between w-full gap-4">
-            <div className="flex-1 min-w-0">
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-            <Skeleton className="h-16 w-16 rounded-full" />
-          </div>
-          <div className="flex flex-row gap-4 w-full">
-            <Skeleton className="h-20 flex-1 rounded-xl" />
-            <Skeleton className="h-20 flex-1 rounded-xl" />
-          </div>
-          <Skeleton className="h-96 w-full rounded-xl" />
-        </div>
-      </main>
-    );
-  }
-
-  if (profileError) {
+  // Profile data comes from server-side, no loading state needed
+  if (!profile) {
     return (
       <main className="flex-1 overflow-y-auto relative">
         <div className="max-w-xl mx-auto px-4 py-6">
           <Callout>
-            <strong>Error loading profile:</strong> {profileError}
+            <strong>Error loading profile:</strong> Profile not found
           </Callout>
         </div>
       </main>
@@ -115,10 +110,11 @@ export function ProfileLayoutContent({
       <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
         <ProfileHeader
           followers={formatK(totalFollowers)}
-          displayName={profile?.display_name}
-          profileImage={profile?.image_url}
-          bio={profile?.bio}
-          socialAccounts={socialAccounts}
+          displayName={profile.display_name || undefined}
+          profileImage={profile.image_url || undefined}
+          bio={profile.bio || undefined}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          socialAccounts={socialAccounts as any}
           talentUUID={talentUUID}
           isOwnProfile={!!isOwnProfile}
           hasCreatorScore={!hasNoScore}
@@ -190,5 +186,31 @@ export function ProfileLayoutContent({
         <div className="mt-6">{children}</div>
       </div>
     </main>
+  );
+}
+
+// Export the main component that wraps with ProfileProvider
+export function ProfileLayoutContent({
+  talentUUID,
+  identifier,
+  children,
+  profile,
+  profileData,
+}: ProfileLayoutContentProps) {
+  return (
+    <ProfileProvider
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      profile={profile as any}
+      talentUUID={talentUUID}
+      identifier={identifier}
+      profileData={profileData}
+    >
+      <ProfileLayoutContentInner
+        talentUUID={talentUUID}
+        identifier={identifier}
+      >
+        {children}
+      </ProfileLayoutContentInner>
+    </ProfileProvider>
   );
 }

@@ -2,9 +2,9 @@
 
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { resolveFidToTalentUuid } from "@/lib/user-resolver";
+import { useUserResolution } from "@/hooks/useUserResolution";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -39,19 +39,7 @@ export default function SettingsPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const router = useRouter();
-  const [talentUuid, setTalentUuid] = useState<string | null>(null);
-
-  // Resolve FID to Talent UUID
-  useEffect(() => {
-    async function resolveTalentUuid() {
-      if (user?.fid) {
-        const uuid = await resolveFidToTalentUuid(user.fid);
-        setTalentUuid(uuid);
-      }
-    }
-
-    resolveTalentUuid();
-  }, [user?.fid]);
+  const { talentUuid } = useUserResolution();
 
   const {
     accounts,

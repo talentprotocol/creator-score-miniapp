@@ -2,22 +2,21 @@
 
 import { PostsList } from "@/components/profile/PostsList";
 import { PostsChart } from "@/components/profile/PostsChart";
-import { useProfilePostsAll } from "@/hooks/useProfilePostsAll";
-import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
+import { useProfileContext } from "@/contexts/ProfileContext";
 
 interface ProfilePostsPageProps {
   params: { identifier: string };
 }
 
-export default function ProfilePostsPage({ params }: ProfilePostsPageProps) {
-  const { profile } = useProfileHeaderData(params.identifier);
-  const talentUUID = profile?.id;
-  const {
-    posts,
-    yearlyData,
-    loading: postsLoading,
-    error: postsError,
-  } = useProfilePostsAll(talentUUID || "");
+export default function ProfilePostsPage({}: ProfilePostsPageProps) {
+  const { profileData } = useProfileContext();
+
+  // Extract data from server-fetched profileData
+  const { posts, yearlyData } = profileData;
+
+  // No loading states needed - data comes from server
+  const postsLoading = false;
+  const postsError = null;
 
   return (
     <div className="space-y-6">
@@ -26,7 +25,12 @@ export default function ProfilePostsPage({ params }: ProfilePostsPageProps) {
         loading={postsLoading}
         error={postsError}
       />
-      <PostsList posts={posts} loading={postsLoading} error={postsError} />
+      <PostsList
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        posts={posts as any}
+        loading={postsLoading}
+        error={postsError}
+      />
     </div>
   );
 }

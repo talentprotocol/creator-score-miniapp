@@ -6,8 +6,9 @@ import { ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { ProfileAccountsSheet } from "./ProfileAccountsSheet";
-import { useCreatorCategory } from "@/hooks/useCreatorCategory";
 import { useUserCategory } from "@/hooks/useUserCategory";
+import { useProfileContext } from "@/contexts/ProfileContext";
+import { processCreatorCategories } from "@/lib/credentialUtils";
 import { CategorySelectionModal } from "./CategorySelectionModal";
 
 import type { SocialAccount } from "@/app/services/types";
@@ -35,7 +36,12 @@ export function ProfileHeader({
 }) {
   const { context } = useMiniKit();
   const currentUser = getUserContext(context);
-  const { data: categoryData } = useCreatorCategory(talentUUID || "");
+  // Get category data from ProfileContext instead of making API calls
+  const { profileData } = useProfileContext();
+  const categoryData = profileData?.credentials
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      processCreatorCategories(profileData.credentials as any)
+    : null;
   const { userCategory, updateCategory } = useUserCategory(talentUUID || "");
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
   const [pendingCategory, setPendingCategory] =
@@ -56,7 +62,8 @@ export function ProfileHeader({
       pendingCategory || userCategory || categoryData.primaryCategory.name;
     return {
       name: categoryName,
-      emoji: CREATOR_CATEGORIES[categoryName],
+      emoji:
+        CREATOR_CATEGORIES[categoryName as keyof typeof CREATOR_CATEGORIES],
     };
   }, [pendingCategory, userCategory, categoryData?.primaryCategory]);
 

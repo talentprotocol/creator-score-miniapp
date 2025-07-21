@@ -1,121 +1,53 @@
-# MiniKit Template
+# Creator Score MiniApp
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-onchain --mini`](), configured with:
+A Farcaster Frame MiniApp that shows creator scores, leaderboards, and rewards.
 
-- [MiniKit](https://docs.base.org/builderkits/minikit/overview)
-- [OnchainKit](https://www.base.org/builders/onchainkit)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Next.js](https://nextjs.org/docs)
+## Features
 
-## Getting Started
+- **Creator Score Display** - View your creator score and ranking
+- **Leaderboard** - See top creators and sponsors
+- **Rewards Calculation** - Calculate potential rewards based on leaderboard position
+- **Profile Management** - Connect wallets and social accounts
+- **Account association** - Allows users to add your frame to their account, enables notifications
 
-1. Install dependencies:
+## Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```bash
+# Required
+NEXT_PUBLIC_URL=http://localhost:3000
+NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_onchainkit_api_key
+TALENT_API_KEY=your_talent_protocol_api_key
+
+# Optional
+NEYNAR_API_KEY=your_neynar_api_key
+FARCASTER_HEADER=your_farcaster_header
+FARCASTER_PAYLOAD=your_farcaster_payload
+FARCASTER_SIGNATURE=your_farcaster_signature
+```
+
+## Development
+
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
-# or
-bun install
-```
-
-2. Verify environment variables, these will be set up by the `npx create-onchain --mini` command:
-
-You can regenerate the FARCASTER Account Association environment variables by running `npx create-onchain --manifest` in your project directory.
-
-The environment variables enable the following features:
-
-- Frame metadata - Sets up the Frame Embed that will be shown when you cast your frame
-- Account association - Allows users to add your frame to their account, enables notifications
-- Redis API keys - Enable Webhooks and background notifications for your application by storing users notification details
-
-## Metadata Configuration
-
-This app uses a hybrid approach for metadata configuration:
-
-- **Static metadata** (name, description, colors, etc.) is defined in `lib/app-metadata.ts` and version controlled
-- **Environment-specific values** (image URLs, API keys) use environment variables for flexibility between deployments
-
-**Benefits:**
-- Fewer environment variables to manage (reduced from 12+ to 4)
-- Version controlled metadata changes
-- TypeScript type safety and validation
-- Consistent with existing config patterns in the codebase
-
-The optional image URL environment variables allow you to override the default URLs for different environments (e.g., different CDNs for staging vs production).
-
-```bash
-# Shared/OnchainKit variables
-NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME=
-NEXT_PUBLIC_URL=
-NEXT_PUBLIC_ICON_URL=
-NEXT_PUBLIC_ONCHAINKIT_API_KEY=
-
-# Frame metadata
-FARCASTER_HEADER=
-FARCASTER_PAYLOAD=
-FARCASTER_SIGNATURE=
-# Optional: Environment-specific image URL overrides
-NEXT_PUBLIC_APP_ICON=
-NEXT_PUBLIC_APP_SPLASH_IMAGE=
-NEXT_PUBLIC_APP_HERO_IMAGE=
-NEXT_PUBLIC_APP_OG_IMAGE=
-
-# Redis config
-REDIS_URL=
-REDIS_TOKEN=
-```
-
-3. Start the development server:
-```bash
 npm run dev
 ```
 
-## Template Features
+## Features
 
-### Frame Configuration
-- `.well-known/farcaster.json` endpoint configured for Frame metadata and account association
-- Frame metadata automatically added to page headers in `layout.tsx`
+### Core Functionality
+- Creator score display and ranking
+- Leaderboard with pagination
+- Reward calculations
+- Profile management
 
-### Background Notifications
-- Redis-backed notification system using Upstash
+### Account Management
+- Wallet connection (Ethereum, Base, etc.)
+- Social account linking (Farcaster, Lens, etc.)
+- Credential management
+
+### Notifications
+- In-app notification system
 - Ready-to-use notification endpoints in `api/notify` and `api/webhook`
 - Notification client utilities in `lib/notification-client.ts`
-
-### Theming
-- Custom theme defined in `theme.css` with OnchainKit variables
-- Pixel font integration with Pixelify Sans
-- Dark/light mode support through OnchainKit
-
-### MiniKit Provider
-The app is wrapped with `MiniKitProvider` in `providers.tsx`, configured with:
-- OnchainKit integration
-- Access to Frames context
-- Sets up Wagmi Connectors
-- Sets up Frame SDK listeners
-- Applies Safe Area Insets
-
-## Customization
-
-To get started building your own frame, follow these steps:
-
-1. Remove the DemoComponents:
-   - Delete `components/DemoComponents.tsx`
-   - Remove demo-related imports from `page.tsx`
-
-2. Start building your Frame:
-   - Modify `page.tsx` to create your Frame UI
-   - Update theme variables in `theme.css`
-   - Adjust MiniKit configuration in `providers.tsx`
-
-3. Add your frame to your account:
-   - Cast your frame to see it in action
-   - Share your frame with others to start building your community
-
-## Learn More
-
-- [MiniKit Documentation](https://docs.base.org/builderkits/minikit/overview)
-- [OnchainKit Documentation](https://docs.base.org/builderkits/onchainkit/getting-started)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)

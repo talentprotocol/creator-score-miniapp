@@ -153,26 +153,26 @@ export async function getCreatorScoreForTalentId(
   talentId: string | number,
 ): Promise<CreatorScore> {
   try {
-    // Always use relative path to avoid CORS issues and ensure we use our API routes
-    let baseUrl = "";
+    let data;
+
     if (typeof window !== "undefined") {
-      // Client-side: use relative path to ensure we call our own API routes
-      baseUrl = "";
+      // Client-side: use API route
+      const params = new URLSearchParams({
+        talent_protocol_id: String(talentId),
+        scorer_slug: SCORER_SLUGS.CREATOR,
+      });
+      const response = await fetch(`/api/talent-score?${params.toString()}`);
+      data = await response.json();
     } else {
-      // Server-side: use the current origin
-      baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_URL || "";
+      // Server-side: call Talent API directly
+      const { talentApiClient } = await import("@/lib/talent-api-client");
+      const params = {
+        talent_protocol_id: String(talentId),
+        scorer_slug: SCORER_SLUGS.CREATOR,
+      };
+      const response = await talentApiClient.getScore(params);
+      data = await response.json();
     }
-    const params = new URLSearchParams({
-      talent_protocol_id: String(talentId),
-      scorer_slug: SCORER_SLUGS.CREATOR,
-    });
-    const response = await fetch(
-      `${baseUrl}/api/talent-score?${params.toString()}`,
-      { method: "GET" },
-    );
-    const data = await response.json();
     if (data.error) {
       return {
         score: 0,

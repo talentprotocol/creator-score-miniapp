@@ -311,6 +311,7 @@ export function setCachedData<T>(key: string, data: T): void {
 export const CACHE_DURATIONS = {
   PROFILE_DATA: 5 * 60 * 1000, // 5 minutes
   SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
+  EXPENSIVE_COMPUTATION: 30 * 60 * 1000, // 30 minutes for expensive computations
   ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours
 } as const;
 

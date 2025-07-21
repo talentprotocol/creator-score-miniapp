@@ -1,8 +1,14 @@
-import { resolveTalentUser } from "@/lib/user-resolver";
+import { getTalentUserService } from "@/app/services/userService";
 import { redirect } from "next/navigation";
 import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
+import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
+import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
+import { getCredentialsForTalentId } from "@/app/services/credentialsService";
+import { getAllPostsForTalentId } from "@/app/services/postsService";
+import { isEarningsCredential } from "@/lib/total-earnings-config";
+import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
 
 export default async function ProfileLayout({
   children,
@@ -15,8 +21,8 @@ export default async function ProfileLayout({
     return <CreatorNotFoundCard />;
   }
 
-  // Resolve user
-  const user = await resolveTalentUser(params.identifier);
+  // Resolve user using direct service call
+  const user = await getTalentUserService(params.identifier);
 
   if (!user || !user.id) {
     return <CreatorNotFoundCard />;
@@ -41,8 +47,142 @@ export default async function ProfileLayout({
     }
   }
 
+  // 🚀 FETCH ALL PROFILE DATA HERE (server-side, once)
+  const [creatorScoreData, socialAccounts, credentials, posts] =
+    await Promise.all([
+      getCreatorScoreForTalentId(user.id).catch(() => ({
+        score: 0,
+        level: 1,
+        levelName: "Level 1",
+        lastCalculatedAt: null,
+        calculating: false,
+      })),
+      getSocialAccountsForTalentId(user.id).catch(() => []),
+      getCredentialsForTalentId(user.id).catch(() => []),
+      getAllPostsForTalentId(user.id).catch(() => []),
+    ]);
+
+  // Process posts into yearly data (same logic as hooks)
+  const yearlyDataMap = posts.reduce(
+    (acc: Record<number, number[]>, post: { onchain_created_at: string }) => {
+      const date = new Date(post.onchain_created_at);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+
+      if (!acc[year]) {
+        acc[year] = new Array(12).fill(0);
+      }
+      acc[year][month]++;
+      return acc;
+    },
+    {},
+  );
+
+  // Convert to YearlyPostData format
+  const yearlyData = Object.entries(yearlyDataMap).map(([year, months]) => ({
+    year: parseInt(year),
+    months: months as number[],
+    total: (months as number[]).reduce((sum, count) => sum + count, 0),
+  }));
+
+  // Calculate total earnings using the same sophisticated logic as the original system
+  const ethPrice = await getEthUsdcPrice();
+  const issuerTotals = new Map<string, number>();
+
+  // Process each credential group (same logic as useProfileEarningsBreakdown)
+  credentials.forEach((credentialGroup) => {
+    // Check if any point in this group is earnings-related
+    const hasEarningsCredentials = credentialGroup.points.some((point) =>
+      isEarningsCredential(point.slug || ""),
+    );
+
+    if (!hasEarningsCredentials) {
+      return;
+    }
+
+    let issuerTotal = 0;
+
+    // Calculate total for this issuer
+    credentialGroup.points.forEach((point) => {
+      if (!isEarningsCredential(point.slug || "")) {
+        return;
+      }
+
+      if (!point.readable_value || !point.uom) {
+        return;
+      }
+
+      // Parse the value (same logic as useProfileEarningsBreakdown)
+      const cleanValue = point.readable_value;
+      let value: number;
+      const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+      if (numericValue.includes("K")) {
+        value = parseFloat(numericValue.replace("K", "")) * 1000;
+      } else if (numericValue.includes("M")) {
+        value = parseFloat(numericValue.replace("M", "")) * 1000000;
+      } else {
+        value = parseFloat(numericValue);
+      }
+
+      if (isNaN(value)) {
+        return;
+      }
+
+      // Convert to USD (same logic as useProfileEarningsBreakdown)
+      let usdValue = 0;
+      if (point.uom === "ETH") {
+        usdValue = convertEthToUsdc(value, ethPrice);
+      } else if (point.uom === "USDC") {
+        usdValue = value;
+      }
+
+      issuerTotal += usdValue;
+    });
+
+    if (issuerTotal > 0) {
+      issuerTotals.set(credentialGroup.issuer, issuerTotal);
+    }
+  });
+
+  // Calculate total earnings from earnings-related credentials only
+  const totalEarnings = Array.from(issuerTotals.values()).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+
+  // Create earnings breakdown (only from earnings-related credentials)
+  const sortedIssuers = Array.from(issuerTotals.entries()).sort(
+    ([, a], [, b]) => b - a,
+  );
+
+  const earningsBreakdown = {
+    totalEarnings,
+    segments: sortedIssuers.map(([issuer, value]) => ({
+      name: issuer,
+      value,
+      percentage: totalEarnings > 0 ? (value / totalEarnings) * 100 : 0,
+    })),
+  };
+
   return (
-    <ProfileLayoutContent talentUUID={user.id} identifier={canonical}>
+    <ProfileLayoutContent
+      talentUUID={user.id}
+      identifier={canonical}
+      profile={user}
+      // 🎯 PASS ALL DATA AS PROPS (no more API calls needed)
+      profileData={{
+        creatorScore: creatorScoreData.score,
+        lastCalculatedAt: creatorScoreData.lastCalculatedAt,
+        calculating: creatorScoreData.calculating || false,
+        socialAccounts,
+        totalEarnings,
+        posts,
+        yearlyData,
+        credentials,
+        earningsBreakdown,
+      }}
+    >
       {children}
     </ProfileLayoutContent>
   );

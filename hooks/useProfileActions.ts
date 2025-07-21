@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { resolveFidToTalentUuid } from "@/lib/user-resolver";
+import { useUserResolution } from "@/hooks/useUserResolution";
 import { useScoreRefresh } from "@/hooks/useScoreRefresh";
-import { useCreatorCategory } from "@/hooks/useCreatorCategory";
+// Removed useCreatorCategory - data now comes from ProfileContext
 import { formatNumberWithSuffix, formatK } from "@/lib/utils";
+import type { ProfileData } from "@/contexts/ProfileContext";
 
 interface UseProfileActionsProps {
   talentUUID: string;
   refetchScore?: () => void;
-  profile?: {
-    bio?: string;
-  };
+  profile?: ProfileData | null;
   creatorScore?: number;
   lastCalculatedAt?: string | null;
   calculating?: boolean;
@@ -31,26 +30,8 @@ export function useProfileActions({
 }: UseProfileActionsProps) {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const [currentUserTalentUuid, setCurrentUserTalentUuid] = useState<
-    string | null
-  >(null);
+  const { talentUuid: currentUserTalentUuid } = useUserResolution();
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
-
-  // Resolve current user's Talent UUID
-  useEffect(() => {
-    async function resolveCurrentUserTalentUuid() {
-      if (user?.fid) {
-        try {
-          const uuid = await resolveFidToTalentUuid(user.fid);
-          setCurrentUserTalentUuid(uuid);
-        } catch (error) {
-          setCurrentUserTalentUuid(null);
-        }
-      }
-    }
-
-    resolveCurrentUserTalentUuid();
-  }, [user?.fid]);
 
   // Cooldown detection and countdown logic
   useEffect(() => {
@@ -83,8 +64,8 @@ export function useProfileActions({
     return () => clearInterval(interval);
   }, [lastCalculatedAt]);
 
-  // Get creator category data
-  const { data: categoryData } = useCreatorCategory(talentUUID);
+  // Category data no longer needed in useProfileActions
+  // (It was only used for share stats, which can work without it)
 
   // Score refresh hook
   const {
@@ -117,9 +98,7 @@ export function useProfileActions({
   // Handle share stats action
   const handleShareStats = useCallback(() => {
     // Get creator category from data, fallback to bio, then "Creator"
-    const creatorType = categoryData?.primaryCategory
-      ? `${categoryData.primaryCategory.name} ${categoryData.primaryCategory.emoji}`
-      : profile?.bio || "Creator";
+    const creatorType = profile?.bio || "Creator"; // Simplified - no category data needed
     const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
     const followersText = formatK(totalFollowers || 0);
     const earningsText = totalEarnings
@@ -156,7 +135,7 @@ export function useProfileActions({
       const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}`;
       window.open(warpcastUrl, "_blank");
     }
-  }, [categoryData, profile, creatorScore, totalFollowers, totalEarnings]);
+  }, [profile, creatorScore, totalFollowers, totalEarnings]); // Removed categoryData dependency
 
   // Handle refresh/calculate score action
   const handleRefreshScore = useCallback(() => {

@@ -12,44 +12,44 @@ export function useProfileCredentials(talentUUID: string) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    async function fetchCredentials() {
-      if (!talentUUID) return;
+  const fetchCredentials = React.useCallback(async () => {
+    if (!talentUUID) return;
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        const cacheKey = `credentials-${talentUUID}`;
-        const cached = getCachedData<IssuerCredentialGroup[]>(
-          cacheKey,
-          CACHE_DURATIONS.PROFILE_DATA,
-        );
+      const cacheKey = `credentials-${talentUUID}`;
+      const cached = getCachedData<IssuerCredentialGroup[]>(
+        cacheKey,
+        CACHE_DURATIONS.PROFILE_DATA,
+      );
 
-        if (cached) {
-          setCredentials(cached);
-          setLoading(false);
-          return;
-        }
-
-        const credentialsData = await getCredentialsForTalentId(talentUUID);
-
-        setCredentials(credentialsData);
-
-        // Cache the credentials data
-        setCachedData(cacheKey, credentialsData);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch credentials",
-        );
-        setCredentials([]);
-      } finally {
+      if (cached) {
+        setCredentials(cached);
         setLoading(false);
+        return;
       }
-    }
 
-    fetchCredentials();
+      const credentialsData = await getCredentialsForTalentId(talentUUID);
+
+      setCredentials(credentialsData);
+
+      // Cache the credentials data
+      setCachedData(cacheKey, credentialsData);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch credentials",
+      );
+      setCredentials([]);
+    } finally {
+      setLoading(false);
+    }
   }, [talentUUID]);
+
+  React.useEffect(() => {
+    fetchCredentials();
+  }, [fetchCredentials]);
 
   return { credentials, loading, error };
 }

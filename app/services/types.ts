@@ -152,6 +152,20 @@ export interface ConnectedAccount {
   image_url?: string | null;
 }
 
+// Profile response types with new primary wallet fields
+export interface ProfileResponse {
+  id: string;
+  fid: number | null;
+  wallet: string | null;
+  github: string | null;
+  fname: string | null;
+  display_name: string | null;
+  image_url: string | null;
+  main_wallet_address: string | null;
+  farcaster_primary_wallet_address: string | null;
+  [key: string]: unknown;
+}
+
 export interface ConnectedAccountsResponse {
   accounts: ConnectedAccount[];
 }
@@ -159,6 +173,10 @@ export interface ConnectedAccountsResponse {
 export interface GroupedConnectedAccounts {
   social: ConnectedAccount[]; // GitHub, Twitter, etc.
   wallet: ConnectedAccount[]; // Wallet addresses
+  primaryWalletInfo?: {
+    main_wallet_address: string | null;
+    farcaster_primary_wallet_address: string | null;
+  };
 }
 
 // Settings specific types

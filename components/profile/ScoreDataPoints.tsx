@@ -12,22 +12,29 @@ import {
 } from "@/lib/utils";
 import { sdk } from "@farcaster/frame-sdk";
 import { COMING_SOON_CREDENTIALS } from "./comingSoonCredentials";
-import { useProfileCredentials } from "@/hooks/useProfileCredentials";
+import { useProfileContext } from "@/contexts/ProfileContext";
 import {
   mergeCredentialsWithComingSoon,
   sortCredentialsByTotal,
 } from "@/lib/credentialUtils";
 
-export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
-  const {
-    credentials,
-    loading: isLoading,
-    error,
-  } = useProfileCredentials(talentUUID);
+export function ScoreDataPoints() {
+  const { profileData } = useProfileContext();
+
+  // Extract data from server-fetched profileData
+  const { credentials } = profileData;
+
+  // No loading states needed - data comes from server
+  const isLoading = false;
+  const error = null;
+
+  // Type assertion for server data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typedCredentials = credentials as any;
 
   // Merge credentials with coming soon credentials using utility
   const allCredentials = mergeCredentialsWithComingSoon(
-    credentials,
+    typedCredentials,
     COMING_SOON_CREDENTIALS,
   );
 
@@ -50,7 +57,7 @@ export function ScoreDataPoints({ talentUUID }: { talentUUID: string }) {
     );
   }
 
-  if (!credentials || credentials.length === 0) {
+  if (!typedCredentials || typedCredentials.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <span className="text-muted-foreground text-sm">

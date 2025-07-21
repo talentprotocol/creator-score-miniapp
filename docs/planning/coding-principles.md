@@ -17,6 +17,13 @@
 - **Navigation:** Mobile-first with a fixed top header and bottom navigation bar. 
 - **Modals:** All secondary flows (menus, about, eligibility, score breakdown, profile overlays, etc.) are implemented responsively: draggable bottom sheets on mobile (with drag handle), centered dialogs on desktop (sm+ breakpoint).
 - **Color System:** We use a minimal, neutral palette with a single vibrant accent color, applied sparingly and strategically for clarity and focus.
+  - **Semantic Colors**: Always prefer semantic color classes (e.g., text-muted-foreground, bg-muted) over hardcoded colors for better theme support and consistency. Exceptions are allowed for intentional, brand-specific design elements (e.g., bg-purple-50 for rewards card).
+  - **Theme Support**: All components should work seamlessly in both light and dark themes by using semantic color classes.
+  - **Color Hierarchy**: Use semantic classes to maintain consistent visual hierarchy:
+    - text-primary: Main headings and important text
+    - text-muted-foreground: Secondary and supporting text
+    - bg-muted: Background for interactive elements
+    - bg-muted/50: Hover states for non-card elements
 - **Typographic Hierarchy:** Typography follows a clear, documented scale for all text elements, ensuring visual consistency and fast building.
 - **Mobile:** The mobile experience is the primary focus, with all layouts and interactions optimized for touch and small screens.
 - **Desktop:** The desktop experience is a minimal adaptation: content is centered with max width (all pages use `max-w-xl mx-auto w-full p-4`), bottom nav is hidden, and modals become centered dialogs.
@@ -87,8 +94,10 @@ External APIs → API Clients → Services → API Routes → Hooks → Pure UI 
 - **Canonical ID**: Talent UUID is the primary identifier for all users
 - **Multi-identifier Support**: Users found via Farcaster, GitHub, wallet, or UUID
 - **Universal Resolver**: Single abstraction handles all identifier types
+- **Server-Side Resolution**: Server components use direct API calls, client components use hooks with caching
+- **Clear Separation**: Server and client resolvers are separate to prevent architecture violations
 - **Unified Authentication**: Automatic detection between Farcaster (MiniApp) and Dynamic (browser) contexts with seamless user experience
-- **Development Mode**: Environment-based authentication bypass implemented in `lib/user-context.ts` at the lowest level for minimal impact and maximum development speed
+- **Development Mode**: Environment-based authentication bypass implemented at the lowest level for minimal impact and maximum development speed
 
 ### Tech Stack & Performance
 

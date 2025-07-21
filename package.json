@@ -24,7 +24,6 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@shadcn/ui": "^0.0.4",
     "@tanstack/react-query": "^5",
-    "@upstash/redis": "^1.34.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",

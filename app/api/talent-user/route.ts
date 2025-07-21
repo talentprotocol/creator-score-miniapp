@@ -12,8 +12,11 @@ export async function GET(req: NextRequest) {
 
   const account_source = getAccountSource(id);
 
-  return talentApiClient.getProfile({
-    id,
-    account_source,
-  });
+  // For UUIDs, use talent_protocol_id to avoid account_source logic
+  const params =
+    account_source === null
+      ? { talent_protocol_id: id }
+      : { id, account_source };
+
+  return talentApiClient.getProfile(params);
 }

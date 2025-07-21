@@ -8,30 +8,30 @@ export async function getCredentialsForTalentId(
   talentId: string | number,
 ): Promise<IssuerCredentialGroup[]> {
   try {
-    // Always use relative path to avoid CORS issues and ensure we use our API routes
-    let baseUrl = "";
+    let data;
+
     if (typeof window !== "undefined") {
-      // Client-side: use relative path to ensure we call our own API routes
-      baseUrl = "";
+      // Client-side: use API route
+      const params = new URLSearchParams({
+        talent_protocol_id: String(talentId),
+        scorer_slug: SCORER_SLUGS.CREATOR,
+      });
+      const response = await fetch(
+        `/api/talent-credentials?${params.toString()}`,
+      );
+      if (!response.ok) return [];
+      data = await response.json();
     } else {
-      // Server-side: use the current origin
-      baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_URL || "";
+      // Server-side: call Talent API directly
+      const { talentApiClient } = await import("@/lib/talent-api-client");
+      const params = {
+        talent_protocol_id: String(talentId),
+        scorer_slug: SCORER_SLUGS.CREATOR,
+      };
+      const response = await talentApiClient.getCredentials(params);
+      if (!response.ok) return [];
+      data = await response.json();
     }
-    const params = new URLSearchParams({
-      talent_protocol_id: String(talentId),
-      scorer_slug: SCORER_SLUGS.CREATOR,
-    });
-    const url = `${baseUrl}/api/talent-credentials?${params.toString()}`;
-
-    const response = await fetch(url, { method: "GET" });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
 
     if (data.error) {
       return [];

@@ -141,17 +141,12 @@ export class TalentApiClient {
   }
 
   async refreshScore(params: TalentProtocolParams): Promise<NextResponse> {
-    console.log("🔧 refreshScore called with params:", params);
-
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {
-      console.log("❌ API key validation failed:", apiKeyError);
       return createServerErrorResponse(apiKeyError);
     }
-    console.log("✅ API key validation passed");
 
     if (!params.talent_protocol_id && !params.id) {
-      console.log("❌ Missing talent_protocol_id or id");
       return createBadRequestResponse("Missing talent_protocol_id or id");
     }
 
@@ -165,40 +160,27 @@ export class TalentApiClient {
       }
 
       const url = `${TALENT_API_BASE}/score/refresh_scorer?${urlParams.toString()}`;
-      console.log("📤 Making PUT request to:", url);
-      console.log("📤 Headers:", createTalentApiHeaders(this.apiKey));
 
       const response = await fetch(url, {
         method: "PUT",
         headers: createTalentApiHeaders(this.apiKey),
       });
 
-      console.log("📥 Response status:", response.status, response.statusText);
-      console.log(
-        "📥 Response headers:",
-        Object.fromEntries(response.headers.entries()),
-      );
-
       if (!validateJsonResponse(response)) {
-        console.log("❌ Invalid response format from Talent API");
         throw new Error("Invalid response format from Talent API");
       }
 
       const data = await response.json();
-      console.log("📥 Response data:", data);
 
       if (!response.ok) {
-        console.log("❌ Response not ok:", response.status, data);
         throw new Error(
           data.error || `HTTP ${response.status}: ${response.statusText}`,
         );
       }
 
-      console.log("✅ refreshScore successful");
       return NextResponse.json(data);
     } catch (error) {
       const identifier = params.talent_protocol_id || params.id;
-      console.log("❌ Exception in refreshScore:", error);
       logApiError(
         "refreshScore",
         identifier || "unknown",
@@ -286,16 +268,21 @@ export class TalentApiClient {
       return createServerErrorResponse(apiKeyError);
     }
 
-    if (!params.id) {
+    if (!params.id && !params.talent_protocol_id) {
       return createBadRequestResponse("No identifier provided");
     }
 
     try {
       const urlParams = new URLSearchParams();
-      urlParams.append("id", params.id);
 
-      if (params.account_source) {
-        urlParams.append("account_source", params.account_source);
+      // Handle talent_protocol_id (UUID) vs id (account lookup)
+      if (params.talent_protocol_id) {
+        urlParams.append("id", params.talent_protocol_id);
+      } else {
+        urlParams.append("id", params.id!);
+        if (params.account_source) {
+          urlParams.append("account_source", params.account_source);
+        }
       }
 
       const data = await this.makeRequest("/profile", urlParams);
@@ -341,6 +328,9 @@ export class TalentApiClient {
         fname,
         display_name: profile.display_name || profile.name || null,
         image_url: profile.image_url || null,
+        main_wallet_address: profile.main_wallet_address || null,
+        farcaster_primary_wallet_address:
+          profile.farcaster_primary_wallet_address || null,
         ...profile,
       });
     } catch (error) {

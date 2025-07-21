@@ -2,33 +2,13 @@
 
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { resolveFidToTalentUuid } from "@/lib/user-resolver";
+import { useUserResolution } from "@/hooks/useUserResolution";
 import { User, Trophy, Settings, Search } from "lucide-react";
-import { useState, useEffect } from "react";
 
 export function useUserNavigation() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const [talentUuid, setTalentUuid] = useState<string | null>(null);
-
-  // Resolve FID to Talent UUID for navigation
-  useEffect(() => {
-    async function resolveTalentUuid() {
-      if (user?.fid) {
-        try {
-          const uuid = await resolveFidToTalentUuid(user.fid);
-          setTalentUuid(uuid);
-        } catch (error) {
-          console.error("Error resolving talent UUID:", error);
-          setTalentUuid(null);
-        }
-      }
-    }
-
-    resolveTalentUuid().catch((error) => {
-      console.error("Unhandled error in resolveTalentUuid:", error);
-    });
-  }, [user?.fid]);
+  const { talentUuid } = useUserResolution();
 
   // Determine canonical identifier for navigation
   // Priority: Talent UUID > Farcaster username > fallback to /profile
