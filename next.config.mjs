@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false, // Disable React Strict Mode to prevent duplicate renders
+  // reactStrictMode: false, // TODO: Uncomment this to test duplicated requests
   // Silence warnings
   // https://github.com/WalletConnect/walletconnect-monorepo/issues/1908
   webpack: (config) => {

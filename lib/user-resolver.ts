@@ -1,5 +1,9 @@
 // Shared user/account resolver logic for Talent Protocol users
 import { getLocalBaseUrl } from "./constants";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "./utils";
+
+// In-flight request tracking to prevent duplicate concurrent calls
+const inFlightRequests = new Map<number, Promise<string | null>>();
 
 export function getAccountSource(id: string): "wallet" | "farcaster" | null {
   if (id.startsWith("0x") && id.length === 42) return "wallet";
@@ -16,6 +20,37 @@ export function getAccountSource(id: string): "wallet" | "farcaster" | null {
 export async function resolveFidToTalentUuid(
   fid: number,
 ): Promise<string | null> {
+  const cacheKey = `fid_to_talent_uuid_${fid}`;
+
+  // Check cache first
+  const cachedUuid = getCachedData<string>(
+    cacheKey,
+    CACHE_DURATIONS.PROFILE_DATA,
+  );
+  if (cachedUuid !== null) {
+    return cachedUuid;
+  }
+
+  // Check if there's already a request in flight for this FID
+  if (inFlightRequests.has(fid)) {
+    return inFlightRequests.get(fid)!;
+  }
+
+  // Create the request promise
+  const requestPromise = performFidRequest(fid, cacheKey);
+  
+  // Store it in the in-flight map
+  inFlightRequests.set(fid, requestPromise);
+  
+  // Clean up when done
+  requestPromise.finally(() => {
+    inFlightRequests.delete(fid);
+  });
+  
+  return requestPromise;
+}
+
+async function performFidRequest(fid: number, cacheKey: string): Promise<string | null> {
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
@@ -28,6 +63,8 @@ export async function resolveFidToTalentUuid(
     if (res.ok) {
       const user = await res.json();
       if (user && user.id) {
+        // Cache the result
+        setCachedData(cacheKey, user.id);
         return user.id;
       }
     }
@@ -35,6 +72,8 @@ export async function resolveFidToTalentUuid(
     console.error("[resolveFidToTalentUuid] Error:", error);
   }
 
+  // Cache null result to prevent repeated failed requests
+  setCachedData(cacheKey, null);
   return null;
 }
 

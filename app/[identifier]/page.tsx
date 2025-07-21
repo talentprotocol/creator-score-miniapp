@@ -6,6 +6,6 @@ export default async function PublicProfilePage({
   params: { identifier: string };
 }) {
   // Always redirect to stats tab by default
-  // User resolution and canonical redirects are handled by layout.tsx
+  // Layout already handles user resolution and canonical redirects
   redirect(`/${params.identifier}/stats`);
 }
