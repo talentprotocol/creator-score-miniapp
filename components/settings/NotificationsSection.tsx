@@ -4,12 +4,15 @@ import * as React from "react";
 import { Bell, Mail } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import type { UserSettings } from "@/app/services/types";
-import {
-  checkFarcasterNotificationState,
-  triggerFarcasterNotificationModal,
-  listenForNotificationChanges,
-  type FarcasterNotificationState,
-} from "@/lib/farcaster-notifications";
+
+// Extend Window interface for Farcaster frame API
+declare global {
+  interface Window {
+    farcaster?: {
+      showInstallPrompt: () => Promise<void>;
+    };
+  }
+}
 
 interface NotificationsSectionProps {
   settings: UserSettings | null;
@@ -27,36 +30,6 @@ export function NotificationsSection({
   const [localSettings, setLocalSettings] = React.useState(
     settings?.notifications || { farcaster: false, email: false },
   );
-  const [farcasterState, setFarcasterState] =
-    React.useState<FarcasterNotificationState>({
-      isEnabled: false,
-      isSupported: false,
-    });
-
-  // Check Farcaster notification state on mount and when settings change
-  React.useEffect(() => {
-    const state = checkFarcasterNotificationState();
-    setFarcasterState(state);
-
-    // Update local settings if Farcaster notifications are enabled
-    if (state.isEnabled && !localSettings.farcaster) {
-      setLocalSettings((prev) => ({ ...prev, farcaster: true }));
-    }
-  }, [localSettings.farcaster]);
-
-  // Listen for notification permission changes
-  React.useEffect(() => {
-    const cleanup = listenForNotificationChanges((state) => {
-      setFarcasterState(state);
-
-      // Update local settings if permission changed
-      if (state.isEnabled !== localSettings.farcaster) {
-        setLocalSettings((prev) => ({ ...prev, farcaster: state.isEnabled }));
-      }
-    });
-
-    return cleanup;
-  }, [localSettings.farcaster]);
 
   // Update local state when settings change
   React.useEffect(() => {
@@ -66,13 +39,8 @@ export function NotificationsSection({
   }, [settings?.notifications]);
 
   const handleFarcasterToggle = async () => {
-    if (!farcasterState.isSupported) {
-      console.log("Farcaster notifications not supported in this environment");
-      return;
-    }
-
-    if (farcasterState.isEnabled) {
-      // If already enabled, just update the local state
+    if (localSettings.farcaster) {
+      // If already enabled, disable it
       const newSettings = { ...localSettings, farcaster: false };
       setLocalSettings(newSettings);
 
@@ -84,21 +52,35 @@ export function NotificationsSection({
         setLocalSettings(localSettings);
       }
     } else {
-      // If not enabled, trigger the modal
+      // If not enabled, show install modal for first-time users
       setIsLoading(true);
 
       try {
-        const success = await triggerFarcasterNotificationModal();
+        // Check if we're in a Farcaster frame environment
+        const isInFrame =
+          typeof window !== "undefined" &&
+          (window.location.href.includes("warpcast.com") ||
+            window.location.href.includes("farcaster.xyz") ||
+            window.location.href.includes("farcaster.com"));
 
-        if (success) {
-          // The modal was triggered, but we need to wait for the user's response
-          // The permission change listener will handle updating the state
-          console.log("Farcaster notification modal triggered successfully");
+        if (isInFrame) {
+          // In Farcaster frame - show install modal
+          if (typeof window !== "undefined" && window.farcaster) {
+            try {
+              await window.farcaster.showInstallPrompt();
+              console.log("Install modal shown successfully");
+            } catch (error) {
+              console.error("Error showing install modal:", error);
+            }
+          }
         } else {
-          console.error("Failed to trigger Farcaster notification modal");
+          // Not in Farcaster frame - just enable the setting
+          const newSettings = { ...localSettings, farcaster: true };
+          setLocalSettings(newSettings);
+          await onUpdateNotifications(newSettings);
         }
       } catch (error) {
-        console.error("Error triggering Farcaster notification modal:", error);
+        console.error("Error handling Farcaster toggle:", error);
       } finally {
         setIsLoading(false);
       }
@@ -144,18 +126,14 @@ export function NotificationsSection({
             <div>
               <h4 className="font-medium">Farcaster Notifications</h4>
               <p className="text-xs text-muted-foreground">
-                {farcasterState.isSupported
-                  ? farcasterState.isEnabled
-                    ? "Enabled"
-                    : "Tap to enable"
-                  : "Not available in this environment"}
+                {localSettings.farcaster ? "Enabled" : "Tap to enable"}
               </p>
             </div>
           </div>
           <ToggleSwitch
-            enabled={farcasterState.isEnabled}
+            enabled={localSettings.farcaster}
             onToggle={handleFarcasterToggle}
-            disabled={!farcasterState.isSupported || isLoading}
+            disabled={isLoading}
           />
         </div>
       </div>

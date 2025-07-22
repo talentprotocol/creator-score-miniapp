@@ -16,20 +16,6 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
     talentUUID: talentUuid || "",
   });
 
-  const handleNotifications = async () => {
-    try {
-      // Use window.parent.postMessage for Farcaster notifications
-      window.parent.postMessage(
-        {
-          type: "enableNotifications",
-        },
-        "*",
-      );
-    } catch (error) {
-      console.error("Error enabling notifications:", error);
-    }
-  };
-
   return (
     <Card className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -39,23 +25,23 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
       </div>
 
       <div className="space-y-3">
-        <button
-          onClick={handleNotifications}
+        <Link
+          href="/settings"
           className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
         >
           <Icon icon={Bell} size="sm" color="muted" />
           <span className="flex-1 text-sm text-left">Enable Notifications</span>
           <span className="text-xs text-muted-foreground">+10%</span>
-        </button>
+        </Link>
 
-        <button
-          onClick={handleNotifications}
+        <Link
+          href="/settings"
           className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
         >
           <Icon icon={Plus} size="sm" color="muted" />
           <span className="flex-1 text-sm text-left">Add to Farcaster</span>
           <span className="text-xs text-muted-foreground">+15%</span>
-        </button>
+        </Link>
 
         <Link
           href="/settings"

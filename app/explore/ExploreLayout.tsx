@@ -42,7 +42,7 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
   return (
     <PageContainer noPadding>
       {/* Header section */}
-      <Section variant="header" className="pb-3">
+      <Section variant="header">
         <SearchBar
           value={search.query}
           onChange={handleSearchChange}

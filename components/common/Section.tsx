@@ -29,7 +29,8 @@ export function Section({
         "w-full",
         // Variant styles
         variant === "full-width" && "w-full",
-        variant !== "full-width" && "px-4 py-6",
+        variant === "header" && "px-4 pt-6 pb-3",
+        variant === "content" && "px-4 py-4",
         className,
       )}
       {...props}

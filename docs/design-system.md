@@ -101,8 +101,9 @@ Every page follows a consistent layout pattern using the `PageContainer` and `Se
    - Content sections: `px-4 py-6` with optional animation
 
 3. **Section Spacing**
-   - Consistent `py-6` (24px) vertical padding in header and content sections
-   - No padding in full-width sections
+   - Header sections: `px-4 pt-6 pb-3` (24px top, 12px bottom)
+   - Content sections: `px-4 py-4` (16px top and bottom)
+   - Full-width sections: No padding, spans entire container width
    - Content-specific spacing handled within sections
 
 4. **Transitions**

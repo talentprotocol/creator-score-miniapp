@@ -127,6 +127,7 @@ export const EXCLUDED_CREDENTIAL_SLUGS = [
   "onchain_eth_balance",
   "onchain_out_transactions",
   "ens_account_age",
+  "linkedin_followers", // Hidden due to API issues
 ] as const;
 
 // Category definitions with emojis
