@@ -107,35 +107,32 @@ export async function GET(req: NextRequest) {
               },
             },
           );
-          return result;
+
+          if (!result.ok) {
+            throw new Error(await result.text());
+          }
+
+          const json = await result.json();
+          return {
+            totalCreators: json.pagination?.total || 0,
+            eligibleCreators: json.pagination?.total || 0,
+            minScore:
+              json.profiles?.[0]?.scores?.find(
+                (s: { slug: string; points?: number }) =>
+                  s.slug === "creator_score",
+              )?.points || 0,
+          };
         },
         [CACHE_KEYS.LEADERBOARD_STATS_ONLY], // Cache key
         { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
       );
 
-      const res = await cachedStatsResponse();
-
-      if (!res.ok) {
-        // if we find an error, we need to revalidate the cache so we can try again
-        revalidateTag(CACHE_KEYS.LEADERBOARD_STATS_ONLY);
-        throw new Error(await res.text());
-      }
-
-      const json = await res.json();
-      const totalCreators = json.pagination?.total || 0;
-      const eligibleCreators = json.pagination?.total || 0;
-      const minScore =
-        json.profiles?.[0]?.scores?.find(
-          (s: { slug: string; points?: number }) => s.slug === "creator_score",
-        )?.points || 0;
-
-      return NextResponse.json({
-        minScore,
-        totalCreators,
-        eligibleCreators,
-      });
+      const statsData = await cachedStatsResponse();
+      return NextResponse.json(statsData);
     } catch (error) {
       console.error("API error:", error);
+      // Revalidate cache on error
+      revalidateTag(CACHE_KEYS.LEADERBOARD_STATS_ONLY);
       return NextResponse.json(
         { error: "Failed to fetch leaderboard stats" },
         { status: 500 },
@@ -190,6 +187,8 @@ export async function GET(req: NextRequest) {
 
       const cachedTop10Response = unstable_cache(
         async () => {
+          console.log("fetching top 10 entries start");
+          console.log("current time", new Date().toISOString());
           const result = await fetch(
             `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
             {
@@ -199,22 +198,25 @@ export async function GET(req: NextRequest) {
               },
             },
           );
-          return result;
+          console.log(
+            "Request URL: ",
+            `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
+          );
+          console.log("fetching top 10 entries end");
+          console.log("current time", new Date().toISOString());
+
+          if (!result.ok) {
+            throw new Error(await result.text());
+          }
+
+          const json = await result.json();
+          return json.profiles || [];
         },
-        [`${CACHE_KEYS.PROFILE_SEARCH}-${perPage}-${page}`], // Cache key
+        [`${CACHE_KEYS.PROFILE_SEARCH}-${queryString}`], // Cache key
         { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
       );
 
-      const res = await cachedTop10Response();
-
-      if (!res.ok) {
-        // if we find an error, we need to revalidate the cache so we can try again
-        revalidateTag(`${CACHE_KEYS.PROFILE_SEARCH}-${perPage}-${page}`);
-        throw new Error(await res.text());
-      }
-
-      const json = await res.json();
-      profiles = json.profiles || [];
+      profiles = await cachedTop10Response();
     }
 
     // Map and rank the entries
@@ -236,13 +238,15 @@ export async function GET(req: NextRequest) {
     });
 
     // Sort by score
-    mapped.sort((a, b) => b.score - a.score);
+    mapped.sort(
+      (a: (typeof mapped)[0], b: (typeof mapped)[0]) => b.score - a.score,
+    );
 
     // Assign ranks
     let lastScore: number | null = null;
     let lastRank = 0;
     let ties = 0;
-    const ranked = mapped.map((entry, idx) => {
+    const ranked = mapped.map((entry: (typeof mapped)[0], idx: number) => {
       let rank;
       if (entry.score === lastScore) {
         rank = lastRank;

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { SearchResult } from "@/app/services/types";
 import { searchProfiles, getTopCreators } from "@/app/services/searchService";
 
-export function useSearch() {
+export function useSearch(loadSearch: boolean) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true); // Start with loading for initial top creators
@@ -211,8 +211,10 @@ export function useSearch() {
 
   // Load top creators on mount
   useEffect(() => {
-    loadTopCreators();
-  }, []); // Only run once on mount
+    if (loadSearch) {
+      loadTopCreators();
+    }
+  }, [loadSearch]); // Only run once on mount
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
