@@ -42,6 +42,8 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
 
     console.log("fetching top 200 entries start");
     console.log("current time", new Date().toISOString());
+
+    console.log("Request URL: ", `${baseUrl}?${queryString}`);
     const res = await fetch(`${baseUrl}?${queryString}`, {
       headers: {
         Accept: "application/json",
@@ -57,7 +59,6 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
     }
 
     const json = await res.json();
-    console.log("json", json);
     const profiles = json.profiles || [];
     allProfiles = [...allProfiles, ...profiles];
 
