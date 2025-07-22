@@ -84,7 +84,11 @@ export function Header() {
           </div>
 
           {/* Center: Desktop nav */}
-          <nav className="hidden md:flex items-center gap-2 justify-center flex-1">
+
+          <nav
+            className="flex items-center gap-2 justify-center flex-1"
+            style={{ display: "none" }}
+          >
             {navItems.map((item) => {
               const isActive =
                 item.href === "/"
@@ -133,6 +137,14 @@ export function Header() {
               return null;
             })}
           </nav>
+
+          <style jsx>{`
+            @media (min-width: 768px) {
+              nav {
+                display: flex !important;
+              }
+            }
+          `}</style>
 
           {/* Right: Settings */}
           <div className="flex-1 flex items-center justify-end">
