@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreatorCategoryType } from "@/lib/credentialUtils";
+import type { CreatorCategory } from "@/lib/types/user-preferences";
 
 export function useUserCategory(talentUUID: string) {
-  const [userCategory, setUserCategory] = useState<CreatorCategoryType | null>(
+  const [userCategory, setUserCategory] = useState<CreatorCategory | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load category from API on mount
   useEffect(() => {
@@ -18,17 +19,21 @@ export function useUserCategory(talentUUID: string) {
 
     async function loadCategory() {
       try {
+        setError(null);
         const response = await fetch(
           `/api/user-preferences?talent_uuid=${talentUUID}`,
         );
+
         if (response.ok) {
           const data = await response.json();
-          if (data.creator_category) {
-            setUserCategory(data.creator_category as CreatorCategoryType);
-          }
+          setUserCategory(data.creator_category);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || "Failed to load category");
         }
       } catch (error) {
         console.error("Error loading user category:", error);
+        setError("Network error. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -38,10 +43,11 @@ export function useUserCategory(talentUUID: string) {
   }, [talentUUID]);
 
   // Update category via API
-  const updateCategory = async (category: CreatorCategoryType) => {
+  const updateCategory = async (category: CreatorCategory) => {
     if (!talentUUID) return;
 
     try {
+      setError(null);
       const response = await fetch("/api/user-preferences", {
         method: "POST",
         headers: {
@@ -56,10 +62,18 @@ export function useUserCategory(talentUUID: string) {
       if (response.ok) {
         setUserCategory(category);
       } else {
-        console.error("Failed to update category");
+        const errorData = await response.json();
+        setError(errorData.error || "Failed to update category");
+        throw new Error(errorData.error || "Failed to update category");
       }
     } catch (error) {
       console.error("Error saving user category:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to save category");
+      }
+      throw error;
     }
   };
 
@@ -68,6 +82,7 @@ export function useUserCategory(talentUUID: string) {
     if (!talentUUID) return;
 
     try {
+      setError(null);
       const response = await fetch("/api/user-preferences", {
         method: "POST",
         headers: {
@@ -81,15 +96,26 @@ export function useUserCategory(talentUUID: string) {
 
       if (response.ok) {
         setUserCategory(null);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "Failed to clear category");
+        throw new Error(errorData.error || "Failed to clear category");
       }
     } catch (error) {
       console.error("Error clearing user category:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to clear category");
+      }
+      throw error;
     }
   };
 
   return {
     userCategory,
     loading,
+    error,
     updateCategory,
     clearCategory,
   };

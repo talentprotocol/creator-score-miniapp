@@ -1,48 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase-client";
+import {
+  validateCreatorCategory,
+  validateTalentUUID,
+  getCreatorCategoryErrorMessage,
+} from "@/lib/validation";
+import type {
+  UserPreferencesResponse,
+  UserPreferencesUpdateRequest,
+  UserPreferencesError,
+  UserPreferencesSuccess,
+} from "@/lib/types/user-preferences";
 
-// Simple direct database connection for now
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+): Promise<NextResponse<UserPreferencesResponse | UserPreferencesError>> {
   const { searchParams } = req.nextUrl;
   const talentUUID = searchParams.get("talent_uuid");
 
   if (!talentUUID) {
-    return NextResponse.json({ error: "Missing talent_uuid" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing talent_uuid parameter" },
+      { status: 400 },
+    );
   }
 
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error("Missing Supabase configuration");
+  if (!validateTalentUUID(talentUUID)) {
     return NextResponse.json(
-      { error: "Server configuration error" },
-      { status: 500 },
+      { error: "Invalid talent_uuid format" },
+      { status: 400 },
     );
   }
 
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/user_preferences?talent_uuid=eq.${talentUUID}&select=creator_category`,
-      {
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    const { data, error } = await supabase
+      .from("user_preferences")
+      .select("creator_category")
+      .eq("talent_uuid", talentUUID)
+      .single();
 
-    if (!response.ok) {
-      if (response.status === 404 || response.status === 401) {
+    if (error) {
+      if (error.code === "PGRST116") {
+        // No rows returned - user has no preferences
         return NextResponse.json({ creator_category: null });
       }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      throw error;
     }
 
-    const data = await response.json();
-    const category = data.length > 0 ? data[0].creator_category : null;
-
-    return NextResponse.json({ creator_category: category });
+    return NextResponse.json({
+      creator_category: data?.creator_category || null,
+    });
   } catch (error) {
     console.error("Error fetching user preferences:", error);
     return NextResponse.json(
@@ -52,9 +59,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest,
+): Promise<NextResponse<UserPreferencesSuccess | UserPreferencesError>> {
   try {
-    const { talent_uuid, creator_category } = await req.json();
+    const { talent_uuid, creator_category }: UserPreferencesUpdateRequest =
+      await req.json();
 
     if (!talent_uuid) {
       return NextResponse.json(
@@ -63,62 +73,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!validateTalentUUID(talent_uuid)) {
+      return NextResponse.json(
+        { error: "Invalid talent_uuid format" },
+        { status: 400 },
+      );
+    }
+
     // Allow null to clear the category
     if (creator_category !== null) {
-      // Validate category
-      const validCategories = [
-        "Artist",
-        "Video",
-        "Writer",
-        "Social",
-        "Music",
-        "Podcast",
-        "Curator",
-      ];
-      if (!validCategories.includes(creator_category)) {
+      if (!validateCreatorCategory(creator_category)) {
         return NextResponse.json(
-          { error: "Invalid creator_category" },
+          { error: getCreatorCategoryErrorMessage(creator_category) },
           { status: 400 },
         );
       }
     }
 
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      console.error("Missing Supabase configuration");
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 },
-      );
-    }
+    const { data, error } = await supabase
+      .from("user_preferences")
+      .upsert(
+        {
+          talent_uuid,
+          creator_category,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "talent_uuid",
+        },
+      )
+      .select()
+      .single();
 
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/user_preferences`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates",
-      },
-      body: JSON.stringify({
-        talent_uuid,
-        creator_category,
-        updated_at: new Date().toISOString(),
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    // Supabase upsert might return empty response, which is normal
-    let data = null;
-    const responseText = await response.text();
-    if (responseText.trim()) {
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        // Supabase upsert returns empty response, which is normal
-      }
+    if (error) {
+      throw error;
     }
 
     return NextResponse.json({ success: true, data });

@@ -120,19 +120,30 @@ export function useProfileActions({
         // Check user agent for Farcaster
         navigator.userAgent.includes("Farcaster"));
 
-    if (isInFarcaster && window?.parent?.postMessage) {
-      window.parent.postMessage(
-        {
-          type: "createCast",
-          data: {
-            cast: {
+    if (isInFarcaster) {
+      // Use Farcaster SDK for proper cast creation
+      import("@farcaster/frame-sdk")
+        .then(({ sdk }) => {
+          sdk.actions
+            .composeCast({
               text: shareText,
-              embeds: [{ url: imageUrl }], // Add the generated image
-            },
-          },
-        },
-        "*",
-      );
+              embeds: [imageUrl],
+            })
+            .catch((error: unknown) => {
+              console.error("Failed to create cast with Farcaster SDK:", error);
+              // Fallback to Warpcast intent URL
+              const encodedText = encodeURIComponent(shareText);
+              const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}`;
+              window.open(warpcastUrl, "_blank");
+            });
+        })
+        .catch((error: unknown) => {
+          console.error("Failed to load Farcaster SDK:", error);
+          // Fallback to Warpcast intent URL
+          const encodedText = encodeURIComponent(shareText);
+          const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}`;
+          window.open(warpcastUrl, "_blank");
+        });
     } else {
       // Use Warpcast intent URL when not in Farcaster
       const encodedText = encodeURIComponent(shareText);

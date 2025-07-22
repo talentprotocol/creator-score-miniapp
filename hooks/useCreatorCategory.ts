@@ -7,8 +7,8 @@ import {
   processCreatorCategories,
   CreatorCategoryBreakdown,
   CREATOR_CATEGORIES,
-  type CreatorCategoryType,
 } from "@/lib/credentialUtils";
+import type { CreatorCategory } from "@/lib/types/user-preferences";
 
 export function useCreatorCategory(talentUUID: string) {
   // If no talentUUID, don't make any API calls
@@ -65,7 +65,9 @@ export function useCreatorCategory(talentUUID: string) {
       hasSavedAlgorithmic.current = true;
       // Use setTimeout to avoid blocking the render
       setTimeout(() => {
-        updateCategory(algorithmicData.primaryCategory!.name);
+        updateCategory(
+          algorithmicData.primaryCategory!.name as CreatorCategory,
+        );
       }, 0);
     }
 
