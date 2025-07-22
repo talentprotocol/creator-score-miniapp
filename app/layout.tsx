@@ -57,15 +57,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: pageMetadata.title,
     description: pageMetadata.description,
+    icons: {
+      icon: "/favicon-64.png",
+      shortcut: "/favicon-64.png",
+      apple: "/favicon-64.png",
+    },
     other: {
       "fc:frame": frameMetadata,
-      "og:title": pageMetadata.ogTitle,
-      "og:description": pageMetadata.ogDescription,
-      "og:image": pageMetadata.ogImage,
-      "twitter:card": "summary_large_image",
-      "twitter:title": pageMetadata.twitterTitle,
-      "twitter:description": pageMetadata.twitterDescription,
-      "twitter:image": pageMetadata.twitterImage,
     },
   };
 }
@@ -97,6 +95,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
+      <head>
+        <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
+      </head>
       <body className="min-h-full bg-white flex flex-col">
         <script
           dangerouslySetInnerHTML={{ __html: globalErrorHandlingScript }}
@@ -105,7 +106,7 @@ export default function RootLayout({
           <Providers>
             <ErrorBoundary>
               <Header />
-              <SwipeWrapper className="flex-1 flex flex-col w-full relative pb-32 overflow-y-auto">
+              <SwipeWrapper className="flex-1 flex flex-col w-full relative overflow-y-auto">
                 <main className="flex-1 flex flex-col w-full relative">
                   <ErrorBoundary>{children}</ErrorBoundary>
                 </main>

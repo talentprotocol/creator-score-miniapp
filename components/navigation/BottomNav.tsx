@@ -3,8 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
@@ -14,12 +13,14 @@ export function BottomNav() {
   const { navItems, user } = useUserNavigation();
   const [showModal, setShowModal] = React.useState(false);
   const [modalFeature, setModalFeature] = React.useState<"Profile">("Profile");
+  const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
+    setClickedIcon(item.href);
     // If user tries to access Profile without user context, show modal
     if (!user && item.label === "Profile") {
       e.preventDefault();
@@ -30,18 +31,25 @@ export function BottomNav() {
     // Otherwise, navigate normally (Link component handles it)
   };
 
+  // Reset clicked state after navigation
+  React.useEffect(() => {
+    setClickedIcon(null);
+  }, [pathname]);
+
   // Prevent hydration mismatch by not rendering pathname-dependent content until mounted
   if (!mounted) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 pb-safe">
-        <div className="grid grid-cols-3 gap-1">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t pb-safe md:hidden">
+        <div className="max-w-xl mx-auto flex items-center justify-around h-[88px]">
           {navItems.map((item) => (
             <div
               key={item.label}
-              className="flex flex-col items-center justify-center py-2 px-4 min-h-[60px]"
+              className="flex flex-col items-center justify-center h-[64px] w-[68px]"
             >
-              <item.icon className="w-5 h-5 text-gray-400" />
-              <span className="text-xs mt-1 text-gray-400">{item.label}</span>
+              <Icon icon={item.icon} size="lg" />
+              <span className="text-xs mt-1 text-muted-foreground">
+                {item.label}
+              </span>
             </div>
           ))}
         </div>
@@ -51,55 +59,69 @@ export function BottomNav() {
 
   return (
     <>
-      {/* Mobile: bottom fixed full width */}
-      <Card className="fixed bottom-0 left-0 right-0 w-full p-0 bg-white backdrop-blur supports-[backdrop-filter]:bg-white rounded-none shadow-lg border-t z-50 md:hidden">
-        <nav
-          className="flex items-center justify-around"
-          style={{
-            height: "88px", // Fixed height - cannot be compressed
-            paddingTop: "12px",
-            paddingBottom:
-              "max(20px, calc(env(safe-area-inset-bottom) + 12px))",
-          }}
-        >
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t pb-safe md:hidden">
+        <div className="max-w-xl mx-auto flex items-center justify-around h-[88px]">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              item.href === "/"
+                ? pathname === item.href
+                : pathname.startsWith(item.href) ||
+                  (item.alternateHrefs?.some((href) =>
+                    pathname.startsWith(href),
+                  ) ??
+                    false);
+
+            const isClicked = clickedIcon === item.href;
+
             if (item.disabled) {
               return (
                 <span
                   key={item.label}
-                  className={cn(
-                    "flex items-center justify-center h-14 px-4 flex-1 text-muted-foreground opacity-50 cursor-not-allowed",
-                  )}
+                  className="flex flex-col items-center justify-center h-[64px] w-[68px]"
                   aria-label={item.label}
                 >
-                  <item.icon className="h-6 w-6" />
+                  <Icon icon={item.icon} size="lg" disabled />
+                  <span className="text-xs mt-1 text-muted-foreground">
+                    {item.label}
+                  </span>
                 </span>
               );
             }
+
             if (item.href) {
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={(e) => handleNavClick(item, e)}
-                  className={cn(
-                    "flex items-center justify-center h-14 px-4 flex-1 transition-colors",
-                    "hover:bg-muted/50",
-                    isActive ? "text-primary" : "text-muted-foreground",
-                  )}
+                  className="flex flex-col items-center justify-center h-[64px] w-[68px] group transition-colors"
                   aria-label={item.label}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  <item.icon className="h-6 w-6" />
+                  <Icon
+                    icon={item.icon}
+                    size="lg"
+                    isActive={isActive || isClicked}
+                    color={isActive ? "default" : "muted"}
+                    className="transition-colors group-hover:text-foreground"
+                  />
+                  <span
+                    className={`text-xs mt-1 transition-colors ${
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground group-hover:text-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               );
             }
             return null;
           })}
-        </nav>
-      </Card>
-      {/* Desktop: nothing rendered here, handled in Header */}
+        </div>
+      </nav>
+
       <FarcasterAccessModal
         open={showModal}
         onOpenChange={setShowModal}

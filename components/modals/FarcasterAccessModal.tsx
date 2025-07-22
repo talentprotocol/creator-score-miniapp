@@ -98,12 +98,16 @@ export function FarcasterAccessModal({
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Button onClick={handleFarcasterClick} className="w-full">
+            <Button
+              onClick={handleFarcasterClick}
+              variant="special"
+              className="w-full"
+            >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={handleContinueBrowsing}
               className="w-full"
             >
@@ -131,12 +135,16 @@ export function FarcasterAccessModal({
           tabIndex={-1}
         >
           <div className="flex flex-col gap-2">
-            <Button onClick={handleFarcasterClick} className="w-full">
+            <Button
+              onClick={handleFarcasterClick}
+              variant="special"
+              className="w-full"
+            >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={handleContinueBrowsing}
               className="w-full"
             >

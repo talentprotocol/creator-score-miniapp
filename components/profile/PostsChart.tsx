@@ -29,18 +29,17 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
     }
   }, [yearlyData, currentYear]);
 
-  // Solid colors for different years using app's existing palette
+  // Solid colors for different years using brand colors
   const getSolidColor = (year: number) => {
     const colors = {
-      0: "bg-purple-500",
-      1: "bg-blue-500",
-      2: "bg-green-500",
-      3: "bg-pink-500",
-      4: "bg-red-500",
+      0: "bg-purple-500", // Primary brand color
+      1: "bg-green-500", // Secondary brand color
+      2: "bg-blue-500", // Secondary brand color
+      3: "bg-pink-500", // Secondary brand color
     };
     const index = yearlyData.findIndex((d) => d.year === year);
-    const colorIndex = index % 5;
-    return colors[colorIndex as keyof typeof colors] || "bg-blue-500";
+    const colorIndex = index % 4; // Now 4 colors instead of 5
+    return colors[colorIndex as keyof typeof colors] || "bg-purple-500";
   };
 
   if (loading) {
@@ -94,7 +93,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
           {yearlyData.map((yearData) => (
             <Button
               key={yearData.year}
-              variant={selectedYear === yearData.year ? "default" : "outline"}
+              variant={selectedYear === yearData.year ? "special" : "default"}
               size="sm"
               onClick={() => setSelectedYear(yearData.year)}
               className="transition-all duration-200"

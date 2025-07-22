@@ -1,4 +1,5 @@
 import { BadgeItem } from "@/lib/badge-data";
+import { Icon } from "@/components/ui/icon";
 
 interface BadgeCardProps {
   badge: BadgeItem;
@@ -6,8 +7,6 @@ interface BadgeCardProps {
 }
 
 export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
-  const IconComponent = badge.icon;
-
   return (
     <div
       className="flex flex-col items-center gap-1 cursor-pointer transition-all hover:opacity-80"
@@ -15,10 +14,11 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
     >
       {/* Badge Icon */}
       <div className="w-12 h-12 flex items-center justify-center">
-        <IconComponent
-          className={`w-8 h-8 ${
-            badge.completed ? "text-black" : "text-gray-300"
-          }`}
+        <Icon
+          icon={badge.icon}
+          size="lg"
+          color={badge.completed ? "default" : "muted"}
+          className={badge.completed ? "fill-current" : ""}
         />
       </div>
 
@@ -26,7 +26,7 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
       <div className="text-center">
         <span
           className={`text-sm font-medium ${
-            badge.completed ? "text-gray-900" : "text-gray-300"
+            badge.completed ? "text-foreground" : "text-muted-foreground"
           }`}
         >
           {badge.name}

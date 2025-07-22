@@ -29,7 +29,7 @@ export function BadgeSectionComponent({
       <AccordionTrigger className="px-6 py-4 hover:no-underline">
         <div className="flex items-center gap-3">
           <span className="font-medium">{section.title}</span>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="default" className="text-xs">
             {completedCount}/{totalCount}
           </Badge>
         </div>

@@ -25,6 +25,7 @@
     "@shadcn/ui": "^0.0.4",
     "@supabase/supabase-js": "^2.52.0",
     "@tanstack/react-query": "^5",
+    "canvas": "^3.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",

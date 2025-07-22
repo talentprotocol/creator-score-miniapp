@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import type { HumanityCredential } from "@/app/services/types";
 
 interface ProofOfHumanitySectionProps {
@@ -61,7 +62,7 @@ export function ProofOfHumanitySection({
   if (credentials === null) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Icon icon={Loader2} size="md" color="muted" className="animate-spin" />
       </div>
     );
   }
@@ -117,9 +118,19 @@ export function ProofOfHumanitySection({
 
             <div className="flex items-center gap-2 shrink-0">
               {isVerified ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <Icon
+                  icon={CheckCircle}
+                  size="sm"
+                  color="default"
+                  className="text-green-600"
+                />
               ) : (
-                <XCircle className="h-5 w-5 text-muted-foreground/50" />
+                <Icon
+                  icon={XCircle}
+                  size="sm"
+                  color="muted"
+                  className="opacity-50"
+                />
               )}
             </div>
           </div>

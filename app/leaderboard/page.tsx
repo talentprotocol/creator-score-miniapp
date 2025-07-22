@@ -11,103 +11,23 @@ import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
 import { useRouter } from "next/navigation";
-import { generateProfileUrl } from "@/lib/utils";
+import {
+  generateProfileUrl,
+  formatWithK,
+  formatDate,
+  formatCurrency,
+} from "@/lib/utils";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
-
-const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
-
-// Mock sponsor data
-const SPONSORS = [
-  {
-    id: "base",
-    name: "Base",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2F7Q0QBrm.jpg",
-    amount: 5000,
-    date: "2025-07-15",
-    rank: 1,
-    txHash: "0x1234567890abcdef1234567890abcdef12345678",
-  },
-  {
-    id: "zora",
-    name: "Zora",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/1b471987-45b1-48e3-6af4-44929b6e4900/anim=false,fit=contain,f=auto,w=576",
-    amount: 2500,
-    date: "2025-07-18",
-    rank: 2,
-    txHash: "0x2345678901bcdef12345678901bcdef23456789",
-  },
-  {
-    id: "farcaster",
-    name: "Farcaster",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2FI2rEbPF.png",
-    amount: 2500,
-    date: "2025-07-12",
-    rank: 3,
-    txHash: "0x3456789012cdef123456789012cdef3456789a",
-  },
-  {
-    id: "talent-protocol",
-    name: "Talent Protocol",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/002f0efe-2513-41e7-3d89-d38875d76800/anim=false,f=auto,w=288",
-    amount: 2500,
-    date: "2025-07-25",
-    rank: 4,
-    txHash: "0x456789013def23456789013def456789ab",
-  },
-  {
-    id: "noice",
-    name: "Noice",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/96aabcca-a8ce-47d6-b6f6-d2b6d1272500/anim=false,fit=contain,f=auto,w=576",
-    amount: 1250,
-    date: "2025-07-08",
-    rank: 5,
-    txHash: "0x56789014ef3456789014ef56789abc",
-  },
-  {
-    id: "phi",
-    name: "Phi",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/9b5ad594-f3e9-4160-9c33-4e0eeaf28500/anim=false,fit=contain,f=auto,w=576",
-    amount: 1250,
-    date: "2025-07-22",
-    rank: 6,
-    txHash: "0x6789015f456789015f6789abcd",
-  },
-  {
-    id: "coop-records",
-    name: "Coop Records",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2FYZRdO5m.jpg",
-    amount: 1250,
-    date: "2025-07-10",
-    rank: 7,
-    txHash: "0x789016056789016056789abcde",
-  },
-  {
-    id: "paragraph",
-    name: "Paragraph",
-    avatar:
-      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/4855b0cc-c1da-482c-de24-962162497200/anim=false,fit=contain,f=auto,w=576",
-    amount: 1250,
-    date: "2025-07-28",
-    rank: 8,
-    txHash: "0x89017067890170567890abcdef",
-  },
-];
-
-// Calculate total sponsors pool
-const TOTAL_SPONSORS_POOL = SPONSORS.reduce(
-  (sum, sponsor) => sum + sponsor.amount,
-  0,
-);
+import {
+  ACTIVE_SPONSORS,
+  TOTAL_SPONSORS_POOL,
+  ROUND_ENDS_AT,
+} from "@/lib/constants";
+import { PageContainer } from "@/components/common/PageContainer";
+import { Section } from "@/components/common/Section";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -118,31 +38,6 @@ function getCountdownParts(target: Date) {
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
   return { days, hours };
-}
-
-// Helper to format numbers with K notation (2 decimals)
-function formatWithK(value: number): string {
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(2)}K`;
-  }
-  return value.toString();
-}
-
-// Helper to format date
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-// Helper to format currency
-function formatCurrency(amount: number): string {
-  if (amount >= 1000) {
-    return `$${formatWithK(amount)}`;
-  }
-  return `$${amount}`;
 }
 
 export default function LeaderboardPage() {
@@ -157,14 +52,8 @@ export default function LeaderboardPage() {
   // Initial fast load of first 10 entries
   // Use optimized leaderboard hook for all data
   const {
-    top10: initialEntries,
     top200: top200Entries,
-
-    loading: {
-      top10: initialLoading,
-      top200: top200Loading,
-      stats: statsLoading,
-    },
+    loading: { top200: top200Loading, stats: statsLoading },
     error: top200Error,
     totalScores: totalTop200Scores,
   } = useLeaderboardOptimized();
@@ -179,12 +68,10 @@ export default function LeaderboardPage() {
 
   // Update visible entries when data changes
   useEffect(() => {
-    if (initialEntries.length > 0) {
-      setVisibleEntries(initialEntries);
-    } else if (top200Entries.length > 0) {
-      setVisibleEntries(top200Entries.slice(0, 10));
+    if (top200Entries.length > 0) {
+      setVisibleEntries(top200Entries);
     }
-  }, [initialEntries, top200Entries]);
+  }, [top200Entries]);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -245,11 +132,10 @@ export default function LeaderboardPage() {
 
   // Determine loading and pagination state
   const hasMore =
-    initialEntries.length > 0
-      ? initialEntries.length < 200
+    top200Entries.length > 0
+      ? top200Entries.length < 200
       : visibleEntries.length < top200Entries.length;
-  const loading =
-    initialLoading || (initialEntries.length === 0 && top200Loading);
+  const loading = top200Loading;
 
   // Handler to load more entries
   const loadMore = () => {
@@ -260,10 +146,11 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto w-full p-4 space-y-6 pb-24">
-      {/* My Rewards Hero - Only show if user is logged in */}
-      {user && (
-        <div className="mt-4">
+    <PageContainer noPadding>
+      {/* Header section */}
+      <Section variant="header">
+        {/* My Rewards Hero - Only show if user is logged in */}
+        {user && (
           <MyRewards
             rewards={
               creatorScore
@@ -278,45 +165,47 @@ export default function LeaderboardPage() {
             pointsToTop200={pointsToTop200}
             onHowToEarnClick={() => setHowToEarnOpen(true)}
           />
+        )}
+
+        {/* How to Earn Modal */}
+        <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
+
+        {/* Simplified Stat Cards */}
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <StatCard
+            title="Rewards Pool"
+            value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
+          />
+          <StatCard
+            title="Rewards Distribution"
+            value={`${countdown.days}d ${countdown.hours}h`}
+          />
         </div>
-      )}
+      </Section>
 
-      {/* How to Earn Modal */}
-      <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
-
-      {/* Simplified Stat Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <StatCard
-          title="Rewards Pool"
-          value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
+      {/* Full width tabs */}
+      <Section variant="full-width">
+        <TabNavigation
+          tabs={[
+            {
+              id: "creators",
+              label: "Leaderboard",
+              count: 200,
+            },
+            {
+              id: "sponsors",
+              label: "Sponsors",
+              count: ACTIVE_SPONSORS.length,
+            },
+          ]}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
-        <StatCard
-          title="Rewards Distribution"
-          value={`${countdown.days}d ${countdown.hours}h`}
-        />
-      </div>
+      </Section>
 
-      {/* Tabs */}
-      <TabNavigation
-        tabs={[
-          {
-            id: "creators",
-            label: "Leaderboard",
-            count: 200,
-          },
-          {
-            id: "sponsors",
-            label: "Sponsors",
-            count: SPONSORS.length,
-          },
-        ]}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      {/* Leaderboard */}
-      <div className="space-y-2 -mt-4">
-        {initialLoading && top200Error && (
+      {/* Content section */}
+      <Section variant="content" animate>
+        {loading && top200Error && (
           <div className="text-destructive text-sm px-2">{top200Error}</div>
         )}
 
@@ -345,8 +234,8 @@ export default function LeaderboardPage() {
             {/* Load More button - only show if there are more entries and we haven't reached 200 */}
             {hasMore && visibleEntries.length < 200 && (
               <Button
-                variant="outline"
-                className="w-full flex items-center justify-center"
+                variant="default"
+                className="w-full flex items-center justify-center mt-4"
                 onClick={loadMore}
                 disabled={loading}
               >
@@ -365,7 +254,7 @@ export default function LeaderboardPage() {
 
         {activeTab === "sponsors" && (
           <div className="overflow-hidden rounded-lg bg-gray-50">
-            {SPONSORS.map((sponsor, index, array) => (
+            {ACTIVE_SPONSORS.map((sponsor, index, array) => (
               <div key={sponsor.id}>
                 <div className="flex items-center gap-3 p-3">
                   <span className="text-sm font-medium w-6">
@@ -394,7 +283,7 @@ export default function LeaderboardPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </Section>
+    </PageContainer>
   );
 }

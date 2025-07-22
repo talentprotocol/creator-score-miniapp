@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { useProfileActions } from "@/hooks/useProfileActions";
-
+import { Icon } from "@/components/ui/icon";
 import { Bell, Twitter, Share2 } from "lucide-react";
 
 interface RewardsBoostsCardProps {
@@ -43,7 +43,7 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
           onClick={handleNotifications}
           className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
         >
-          <Bell className="h-4 w-4 text-muted-foreground" />
+          <Icon icon={Bell} size="sm" color="muted" />
           <span className="flex-1 text-sm text-left">Enable Notifications</span>
           <span className="text-xs text-muted-foreground">+10%</span>
         </button>
@@ -52,7 +52,7 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
           href="/settings"
           className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
         >
-          <Twitter className="h-4 w-4 text-muted-foreground" />
+          <Icon icon={Twitter} size="sm" color="muted" />
           <span className="flex-1 text-sm text-left">Connect X</span>
           <span className="text-xs text-muted-foreground">+10%</span>
         </Link>
@@ -61,7 +61,7 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
           onClick={handleShareStats}
           className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
         >
-          <Share2 className="h-4 w-4 text-muted-foreground" />
+          <Icon icon={Share2} size="sm" color="muted" />
           <span className="flex-1 text-sm text-left">Share Score</span>
           <span className="text-xs text-muted-foreground">+10%</span>
         </button>

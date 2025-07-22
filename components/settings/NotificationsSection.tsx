@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Bell, Mail } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import type { UserSettings } from "@/app/services/types";
 
 interface NotificationsSectionProps {
@@ -87,7 +88,7 @@ export function NotificationsSection({
       <div className="bg-background border rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Bell className="h-4 w-4 text-muted-foreground" />
+            <Icon icon={Bell} size="sm" color="muted" />
             <div>
               <h4 className="font-medium">Farcaster Notifications</h4>
               <p className="text-xs text-muted-foreground">Coming soon</p>
@@ -101,7 +102,7 @@ export function NotificationsSection({
       <div className="bg-background border rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <Icon icon={Mail} size="sm" color="muted" />
             <div>
               <h4 className="font-medium">Email Notifications</h4>
               <p className="text-xs text-muted-foreground">Coming soon</p>

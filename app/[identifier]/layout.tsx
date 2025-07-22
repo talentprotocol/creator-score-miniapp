@@ -8,7 +8,143 @@ import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsServi
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
-import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
+import {
+  getEthUsdcPrice,
+  convertEthToUsdc,
+  formatK,
+  formatNumberWithSuffix,
+} from "@/lib/utils";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { identifier: string };
+}): Promise<Metadata> {
+  if (RESERVED_WORDS.includes(params.identifier)) {
+    return {
+      title: "Creator Not Found - Creator Score",
+      description: "This creator could not be found.",
+    };
+  }
+
+  try {
+    // Resolve user
+    const user = await getTalentUserService(params.identifier);
+
+    if (!user || !user.id) {
+      return {
+        title: "Creator Not Found - Creator Score",
+        description: "This creator could not be found.",
+      };
+    }
+
+    // Determine canonical identifier
+    const canonical = user.fname || user.wallet || user.id;
+
+    // Fetch basic data for metadata
+    const [creatorScoreData, socialAccounts, credentials] = await Promise.all([
+      getCreatorScoreForTalentId(user.id).catch(() => ({ score: 0 })),
+      getSocialAccountsForTalentId(user.id).catch(() => []),
+      getCredentialsForTalentId(user.id).catch(() => []),
+    ]);
+
+    // Calculate total followers
+    const totalFollowers = socialAccounts.reduce((sum, account) => {
+      return sum + (account.followerCount || 0);
+    }, 0);
+
+    // Calculate total earnings (simplified version for metadata)
+    const ethPrice = await getEthUsdcPrice();
+    const issuerTotals = new Map<string, number>();
+
+    credentials.forEach((credentialGroup) => {
+      const hasEarningsCredentials = credentialGroup.points.some((point) =>
+        isEarningsCredential(point.slug || ""),
+      );
+
+      if (!hasEarningsCredentials) return;
+
+      let issuerTotal = 0;
+      credentialGroup.points.forEach((point) => {
+        if (
+          !isEarningsCredential(point.slug || "") ||
+          !point.readable_value ||
+          !point.uom
+        ) {
+          return;
+        }
+
+        const cleanValue = point.readable_value;
+        let value: number;
+        const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+        if (numericValue.includes("K")) {
+          value = parseFloat(numericValue.replace("K", "")) * 1000;
+        } else if (numericValue.includes("M")) {
+          value = parseFloat(numericValue.replace("M", "")) * 1000000;
+        } else {
+          value = parseFloat(numericValue);
+        }
+
+        if (isNaN(value)) return;
+
+        let usdValue = 0;
+        if (point.uom === "ETH") {
+          usdValue = convertEthToUsdc(value, ethPrice);
+        } else if (point.uom === "USDC") {
+          usdValue = value;
+        }
+
+        issuerTotal += usdValue;
+      });
+
+      if (issuerTotal > 0) {
+        issuerTotals.set(credentialGroup.issuer, issuerTotal);
+      }
+    });
+
+    const totalEarnings = Array.from(issuerTotals.values()).reduce(
+      (sum, value) => sum + value,
+      0,
+    );
+
+    const creatorScore = creatorScoreData.score || 0;
+    const displayName = user.display_name || user.name || "Creator";
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+
+    return {
+      title: `${displayName} - Creator Score`,
+      description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
+      openGraph: {
+        title: `${displayName} - Creator Score`,
+        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
+        images: [
+          {
+            url: `${baseUrl}/api/share-image/${user.id}`,
+            width: 1600,
+            height: 900,
+            alt: `${displayName} Creator Score Card`,
+          },
+        ],
+        type: "website",
+        url: `${baseUrl}/${canonical}`,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `${displayName} - Creator Score`,
+        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
+        images: [`${baseUrl}/api/share-image/${user.id}`],
+      },
+    };
+  } catch (error) {
+    console.error("Error generating metadata:", error);
+    return {
+      title: "Creator Score",
+      description: "Track your creator score and earnings onchain.",
+    };
+  }
+}
 
 export default async function ProfileLayout({
   children,
@@ -30,6 +166,7 @@ export default async function ProfileLayout({
 
   // Determine canonical human-readable identifier: Farcaster, Wallet, else UUID
   const canonical = user.fname || user.wallet || user.id;
+  const rank = user.rank as number | null;
 
   if (
     canonical &&
@@ -181,6 +318,7 @@ export default async function ProfileLayout({
         yearlyData,
         credentials,
         earningsBreakdown,
+        rank,
       }}
     >
       {children}

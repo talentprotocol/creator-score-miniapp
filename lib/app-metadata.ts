@@ -31,7 +31,7 @@ export const APP_METADATA: AppMetadata = {
     "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens, and start earning rewards in USDC.",
   tagline: "Create Onchain. Earn Rewards.",
 
-  iconUrl: "https://www.creatorscore.app/icon.png",
+  iconUrl: "/favicon-64.png",
   splashImageUrl: "https://www.creatorscore.app/splash.png",
   heroImageUrl: "https://www.creatorscore.app/hero.png",
 

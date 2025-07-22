@@ -3,7 +3,7 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useUserResolution } from "@/hooks/useUserResolution";
-import { User, Trophy, Settings, Search } from "lucide-react";
+import { User, Trophy, Settings2, Search } from "lucide-react";
 
 export function useUserNavigation() {
   const { context } = useMiniKit();
@@ -14,12 +14,21 @@ export function useUserNavigation() {
   // Priority: Talent UUID > Farcaster username > fallback to /profile
   const canonical = talentUuid || user?.username;
 
+  // Store both possible profile paths for active state check
+  const profilePaths = [
+    canonical ? `/${canonical}` : "/profile",
+    user?.username ? `/${user.username}` : null,
+    talentUuid ? `/${talentUuid}` : null,
+  ].filter(Boolean) as string[];
+
   const navItems = [
     {
-      href: canonical ? `/${canonical}` : "/profile",
+      href: profilePaths[0], // Use first path (canonical) for navigation
       icon: User,
       label: "Profile",
       disabled: false,
+      // Store all possible paths for active state check
+      alternateHrefs: profilePaths.slice(1),
     },
     {
       href: "/leaderboard",
@@ -36,7 +45,7 @@ export function useUserNavigation() {
   // Settings item for top nav
   const settingsItem = {
     href: "/settings",
-    icon: Settings,
+    icon: Settings2,
     label: "Settings",
   };
 

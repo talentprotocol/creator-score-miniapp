@@ -107,6 +107,9 @@ export function useProfileActions({
 
     const shareText = `🎯 ${creatorType}\n📊 Creator Score: ${scoreText}\n👥 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nCheck out my full profile on Talent Protocol!`;
 
+    // Add image URL
+    const imageUrl = `${window.location.origin}/api/share-image/${talentUUID}`;
+
     // Proper Farcaster environment detection (like in lib/utils.ts)
     const isInFarcaster =
       typeof window !== "undefined" &&
@@ -124,6 +127,7 @@ export function useProfileActions({
           data: {
             cast: {
               text: shareText,
+              embeds: [{ url: imageUrl }], // Add the generated image
             },
           },
         },
@@ -135,7 +139,7 @@ export function useProfileActions({
       const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}`;
       window.open(warpcastUrl, "_blank");
     }
-  }, [profile, creatorScore, totalFollowers, totalEarnings]); // Removed categoryData dependency
+  }, [profile, creatorScore, totalFollowers, totalEarnings, talentUUID]); // Added talentUUID dependency
 
   // Handle refresh/calculate score action
   const handleRefreshScore = useCallback(() => {

@@ -16,14 +16,43 @@
 
 - **Navigation:** Mobile-first with a fixed top header and bottom navigation bar. 
 - **Modals:** All secondary flows (menus, about, eligibility, score breakdown, profile overlays, etc.) are implemented responsively: draggable bottom sheets on mobile (with drag handle), centered dialogs on desktop (sm+ breakpoint).
-- **Color System:** We use a minimal, neutral palette with a single vibrant accent color, applied sparingly and strategically for clarity and focus.
-  - **Semantic Colors**: Always prefer semantic color classes (e.g., text-muted-foreground, bg-muted) over hardcoded colors for better theme support and consistency. Exceptions are allowed for intentional, brand-specific design elements (e.g., bg-purple-50 for rewards card).
+- **Color System:** Use a minimal, neutral palette with strategic brand color application for clarity and focus.
+  - **Semantic Colors**: Always prefer semantic color classes (e.g., text-muted-foreground, bg-muted) over hardcoded colors for better theme support and consistency.
   - **Theme Support**: All components should work seamlessly in both light and dark themes by using semantic color classes.
-  - **Color Hierarchy**: Use semantic classes to maintain consistent visual hierarchy:
-    - text-primary: Main headings and important text
-    - text-muted-foreground: Secondary and supporting text
-    - bg-muted: Background for interactive elements
-    - bg-muted/50: Hover states for non-card elements
+  - **Brand Integration**: Reserve specific brand colors for intentional moments while maintaining semantic defaults.
+  - **Documentation**: See `docs/design-system.md` for app-specific color values and usage patterns.
+
+### Color Usage Standards
+
+**1. Semantic-First Approach:**
+```tsx
+// ✅ GOOD: Use semantic classes for theme consistency
+<div className="bg-muted text-muted-foreground border-border">
+<p className="text-foreground">Main content</p>
+<span className="text-muted-foreground">Secondary text</span>
+```
+
+**2. Brand-Specific Moments:**
+```tsx
+// ✅ GOOD: Use specific colors for intentional brand elements
+<div className="bg-brand-50">Brand moments (rewards, CTAs)</div>
+<div className="border-brand-200 bg-brand-50 text-brand-700">Brand callouts</div>
+```
+
+**3. Consistent Component Patterns:**
+- **Data Visualization**: Use consistent color mapping across similar components
+- **Interactive Elements**: Prefer semantic variants over custom colors
+- **Brand Elements**: Reserve specific colors for intentional brand moments
+
+**4. Avoid:**
+```tsx
+// ❌ BAD: Hardcoded colors instead of semantic classes
+<div className="text-gray-500 bg-gray-100 border-gray-200">
+
+// ❌ BAD: Inconsistent color usage across components
+<div className="bg-random-color">
+```
+
 - **Typographic Hierarchy:** Typography follows a clear, documented scale for all text elements, ensuring visual consistency and fast building.
 - **Mobile:** The mobile experience is the primary focus, with all layouts and interactions optimized for touch and small screens.
 - **Desktop:** The desktop experience is a minimal adaptation: content is centered with max width (all pages use `max-w-xl mx-auto w-full p-4`), bottom nav is hidden, and modals become centered dialogs.
