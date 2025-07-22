@@ -5,14 +5,8 @@ import { Bell, Mail } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import type { UserSettings } from "@/app/services/types";
 
-// Extend Window interface for Farcaster frame API
-declare global {
-  interface Window {
-    farcaster?: {
-      showInstallPrompt: () => Promise<void>;
-    };
-  }
-}
+// TODO: Re-enable notification logic when notification system is ready for production
+// This component currently only contains UI elements for future implementation
 
 interface NotificationsSectionProps {
   settings: UserSettings | null;
@@ -26,66 +20,11 @@ export function NotificationsSection({
   settings,
   onUpdateNotifications,
 }: NotificationsSectionProps) {
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [localSettings, setLocalSettings] = React.useState(
-    settings?.notifications || { farcaster: false, email: false },
-  );
-
-  // Update local state when settings change
-  React.useEffect(() => {
-    if (settings?.notifications) {
-      setLocalSettings(settings.notifications);
-    }
-  }, [settings?.notifications]);
-
-  const handleFarcasterToggle = async () => {
-    if (localSettings.farcaster) {
-      // If already enabled, disable it
-      const newSettings = { ...localSettings, farcaster: false };
-      setLocalSettings(newSettings);
-
-      try {
-        await onUpdateNotifications(newSettings);
-      } catch (error) {
-        console.error("Error updating notification settings:", error);
-        // Revert on error
-        setLocalSettings(localSettings);
-      }
-    } else {
-      // If not enabled, show install modal for first-time users
-      setIsLoading(true);
-
-      try {
-        // Check if we're in a Farcaster frame environment
-        const isInFrame =
-          typeof window !== "undefined" &&
-          (window.location.href.includes("warpcast.com") ||
-            window.location.href.includes("farcaster.xyz") ||
-            window.location.href.includes("farcaster.com"));
-
-        if (isInFrame) {
-          // In Farcaster frame - show install modal
-          if (typeof window !== "undefined" && window.farcaster) {
-            try {
-              await window.farcaster.showInstallPrompt();
-              console.log("Install modal shown successfully");
-            } catch (error) {
-              console.error("Error showing install modal:", error);
-            }
-          }
-        } else {
-          // Not in Farcaster frame - just enable the setting
-          const newSettings = { ...localSettings, farcaster: true };
-          setLocalSettings(newSettings);
-          await onUpdateNotifications(newSettings);
-        }
-      } catch (error) {
-        console.error("Error handling Farcaster toggle:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
+  // TODO: Add notification state management logic here when ready
+  // - Check Farcaster frame environment
+  // - Handle notification permissions
+  // - Show install modal for first-time users
+  // - Manage notification settings
 
   const ToggleSwitch = ({
     enabled,
@@ -125,16 +64,10 @@ export function NotificationsSection({
             <Icon icon={Bell} size="sm" color="muted" />
             <div>
               <h4 className="font-medium">Farcaster Notifications</h4>
-              <p className="text-xs text-muted-foreground">
-                {localSettings.farcaster ? "Enabled" : "Tap to enable"}
-              </p>
+              <p className="text-xs text-muted-foreground">Coming soon</p>
             </div>
           </div>
-          <ToggleSwitch
-            enabled={localSettings.farcaster}
-            onToggle={handleFarcasterToggle}
-            disabled={isLoading}
-          />
+          <ToggleSwitch enabled={false} onToggle={() => {}} disabled={true} />
         </div>
       </div>
 
@@ -151,13 +84,6 @@ export function NotificationsSection({
           <ToggleSwitch enabled={false} onToggle={() => {}} disabled={true} />
         </div>
       </div>
-
-      {/* Global Loading State */}
-      {isLoading && (
-        <div className="text-sm text-muted-foreground">
-          Updating preferences...
-        </div>
-      )}
     </div>
   );
 }

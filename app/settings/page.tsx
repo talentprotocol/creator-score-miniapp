@@ -29,7 +29,6 @@ import {
   LogOut,
   Users,
   Wallet,
-  Bell,
   Settings,
   Info,
   CheckCircle,
@@ -171,7 +170,9 @@ export default function SettingsPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Notifications */}
+          {/* Notifications - Temporarily hidden while focusing on core functionality */}
+          {/* TODO: Re-enable when notification system is ready for production */}
+          {/* 
           <AccordionItem
             value="notifications"
             className="bg-muted rounded-xl border-0 shadow-none"
@@ -189,6 +190,7 @@ export default function SettingsPage() {
               />
             </AccordionContent>
           </AccordionItem>
+          */}
 
           {/* Account Settings */}
           <AccordionItem
