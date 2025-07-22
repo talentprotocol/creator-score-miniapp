@@ -7,6 +7,7 @@ import { SearchBar } from "@/components/search";
 import { useSearch } from "@/hooks/useSearch";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
+import { useState, useEffect } from "react";
 
 interface ExploreLayoutProps {
   children: (search: ReturnType<typeof useSearch>) => React.ReactNode;
@@ -15,7 +16,12 @@ interface ExploreLayoutProps {
 export function ExploreLayout({ children }: ExploreLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const search = useSearch();
+  const [loadSearch, setLoadSearch] = useState(false);
+  const search = useSearch(loadSearch);
+
+  useEffect(() => {
+    setLoadSearch(true);
+  }, []);
 
   const tabs = [
     { id: "all", label: "All" },
