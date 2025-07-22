@@ -22,6 +22,7 @@ export interface ServerProfileData {
   calculating: boolean;
   socialAccounts: unknown[];
   totalEarnings: number | undefined;
+  rank: number | null;
   posts: unknown[];
   yearlyData: { year: number; months: number[]; total: number }[];
   credentials: unknown[];
