@@ -456,10 +456,33 @@ export async function composeCast(
   embeds?: string[],
   context?: unknown,
 ): Promise<void> {
-  const client = detectClient(context);
-  console.log("🎯 composeCast - detected client:", client);
   console.log("🎯 composeCast - text:", text);
   console.log("🎯 composeCast - embeds:", embeds);
+  console.log("🎯 composeCast - context:", context);
+
+  // Try Farcaster SDK first (most reliable for Farcaster environments)
+  try {
+    const { sdk } = await import("@farcaster/frame-sdk");
+    console.log("🎯 composeCast - Farcaster SDK imported successfully");
+
+    // Farcaster SDK expects embeds as limited array
+    const limitedEmbeds = embeds
+      ? (embeds.slice(0, 2) as [] | [string] | [string, string])
+      : undefined;
+
+    await sdk.actions.composeCast({ text, embeds: limitedEmbeds });
+    console.log("🎯 composeCast - Farcaster SDK composeCast successful");
+    return;
+  } catch (error) {
+    console.log(
+      "🎯 composeCast - Farcaster SDK failed, trying client detection:",
+      error,
+    );
+  }
+
+  // If Farcaster SDK fails, try client detection
+  const client = detectClient(context);
+  console.log("🎯 composeCast - detected client:", client);
 
   if (client === "base") {
     try {
@@ -472,32 +495,23 @@ export async function composeCast(
       console.error("Failed to compose cast with Base SDK:", error);
       // Fall through to Warpcast intent URL
     }
-  } else if (client === "farcaster") {
-    try {
-      const { sdk } = await import("@farcaster/frame-sdk");
-      // Farcaster SDK expects embeds as limited array
-      const limitedEmbeds = embeds
-        ? (embeds.slice(0, 2) as [] | [string] | [string, string])
-        : undefined;
-      await sdk.actions.composeCast({ text, embeds: limitedEmbeds });
-      return;
-    } catch (error) {
-      console.error("Failed to compose cast with Farcaster SDK:", error);
-      // Fall through to Warpcast intent URL
-    }
   }
 
-  // Fallback to Warpcast intent URL for browser or when SDKs fail
+  // Fallback to Farcaster/Warpcast intent URL for browser or when SDKs fail
+  console.log("🎯 composeCast - using Farcaster URL fallback");
   const encodedText = encodeURIComponent(text);
-  let warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}`;
+
+  // Try farcaster.xyz first (as seen in the working URL), then fallback to warpcast.com
+  let farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodedText}`;
 
   if (embeds && embeds.length > 0) {
     embeds.forEach((embed) => {
-      warpcastUrl += `&embeds[]=${encodeURIComponent(embed)}`;
+      farcasterUrl += `&embeds[]=${encodeURIComponent(embed)}`;
     });
   }
 
-  window.open(warpcastUrl, "_blank");
+  console.log("🎯 composeCast - opening Farcaster URL:", farcasterUrl);
+  window.open(farcasterUrl, "_blank");
 }
 
 /**
