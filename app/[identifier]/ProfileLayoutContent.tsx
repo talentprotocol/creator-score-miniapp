@@ -108,8 +108,6 @@ function ProfileLayoutContentInner({
     );
   }
 
-  console.log("User rank:", rank);
-
   return (
     <PageContainer noPadding>
       {/* Header section */}
@@ -124,6 +122,7 @@ function ProfileLayoutContentInner({
           talentUUID={talentUUID}
           isOwnProfile={!!isOwnProfile}
           hasCreatorScore={!hasNoScore}
+          rank={rank || undefined}
         />
 
         {/* Action buttons - show for all profiles */}

@@ -25,6 +25,7 @@ export function ProfileHeader({
   talentUUID,
   isOwnProfile = false,
   hasCreatorScore = false,
+  rank,
 }: {
   followers?: string;
   displayName?: string;
@@ -34,6 +35,7 @@ export function ProfileHeader({
   talentUUID?: string;
   isOwnProfile?: boolean;
   hasCreatorScore?: boolean;
+  rank?: number;
 }) {
   const { context } = useMiniKit();
   const currentUser = getUserContext(context);
@@ -127,6 +129,14 @@ export function ProfileHeader({
             <div className="mt-1 flex flex-col gap-0.5">
               <span className="text-muted-foreground text-sm">
                 {followers ?? "—"} total followers
+                {rank && (
+                  <>
+                    {" • "}
+                    <span className="text-muted-foreground text-sm">
+                      Rank #{rank}
+                    </span>
+                  </>
+                )}
                 {shouldShowCategory && (
                   <>
                     {" • "}
