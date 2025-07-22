@@ -72,7 +72,8 @@ export class TalentApiClient {
     const url = buildApiUrl(`${TALENT_API_BASE}${endpoint}`, params);
     const headers = createTalentApiHeaders(this.apiKey);
 
-    const response = await fetch(url, { headers });
+    // make sure we don't cache the request
+    const response = await fetch(url, { headers, cache: "no-store" });
 
     if (!validateJsonResponse(response)) {
       throw new Error("Invalid response format from Talent API");
