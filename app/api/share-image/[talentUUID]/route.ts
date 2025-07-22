@@ -11,26 +11,24 @@ import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 import { unstable_cache } from "next/cache";
-import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
+import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { talentUUID: string } },
 ) {
   try {
-    // Wrap the data fetching and calculation in unstable_cache with a key including the talentUUID
-    // Import unstable_cache at the top if not already imported:
-
-    const getShareImageData = unstable_cache(
-      async (talentUUID: string) => {
+    // Cache the data fetching and image generation
+    const cachedShareImage = unstable_cache(
+      async () => {
         // Fetch user data
         const profileResponse = await talentApiClient.getProfile({
-          talent_protocol_id: talentUUID,
+          talent_protocol_id: params.talentUUID,
         });
 
         // Check if profile exists
         if (!profileResponse.ok) {
-          return { error: "Profile not found", notFound: true };
+          return { error: "Profile not found", status: 404 };
         }
 
         // Parse the profile data from the response
@@ -39,9 +37,11 @@ export async function GET(
         // Fetch additional data
         const [socialAccounts, credentials, creatorScoreData] =
           await Promise.all([
-            getSocialAccountsForTalentId(talentUUID).catch(() => []),
-            getCredentialsForTalentId(talentUUID).catch(() => []),
-            getCreatorScoreForTalentId(talentUUID).catch(() => ({ score: 0 })),
+            getSocialAccountsForTalentId(params.talentUUID).catch(() => []),
+            getCredentialsForTalentId(params.talentUUID).catch(() => []),
+            getCreatorScoreForTalentId(params.talentUUID).catch(() => ({
+              score: 0,
+            })),
           ]);
 
         // Calculate stats
@@ -112,36 +112,32 @@ export async function GET(
           0,
         );
 
-        return {
-          profileData,
+        // Generate image
+        const imageBuffer = await generateShareImage({
+          avatar: profileData.image_url,
+          name: profileData.display_name || profileData.name || "Creator",
           totalFollowers,
           creatorScore,
           totalEarnings,
-        };
+        });
+
+        return { imageBuffer };
       },
-      [`${CACHE_KEYS.SHARE_IMAGE_DATA}-${params.talentUUID}`],
-      { revalidate: CACHE_DURATION_1_HOUR },
+      [`${CACHE_KEYS.SHARE_IMAGE_DATA}-${params.talentUUID}`], // Cache key
+      { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
     );
 
-    const shareImageData = await getShareImageData(params.talentUUID);
+    const result = await cachedShareImage();
 
-    if (shareImageData?.notFound) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    // Handle error case
+    if ("error" in result) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.status },
+      );
     }
 
-    const { profileData, totalFollowers, creatorScore, totalEarnings } =
-      shareImageData;
-
-    // Generate image
-    const imageBuffer = await generateShareImage({
-      avatar: profileData.image_url,
-      name: profileData.display_name || profileData.name || "Creator",
-      totalFollowers: totalFollowers || 0,
-      creatorScore: creatorScore || 0,
-      totalEarnings: totalEarnings || 0,
-    });
-
-    return new NextResponse(imageBuffer, {
+    return new NextResponse(result.imageBuffer, {
       headers: {
         "Content-Type": "image/png",
         "Cache-Control": "public, max-age=3600",
