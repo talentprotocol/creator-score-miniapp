@@ -166,6 +166,7 @@ export default async function ProfileLayout({
 
   // Determine canonical human-readable identifier: Farcaster, Wallet, else UUID
   const canonical = user.fname || user.wallet || user.id;
+  const rank = user.rank as number | null;
 
   if (
     canonical &&
@@ -317,6 +318,7 @@ export default async function ProfileLayout({
         yearlyData,
         credentials,
         earningsBreakdown,
+        rank,
       }}
     >
       {children}

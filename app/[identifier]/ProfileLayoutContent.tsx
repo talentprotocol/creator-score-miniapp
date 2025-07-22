@@ -24,6 +24,7 @@ interface ProfileData {
   calculating: boolean;
   socialAccounts: unknown[];
   totalEarnings: number | undefined;
+  rank: number | null;
   posts: unknown[];
   yearlyData: { year: number; months: number[]; total: number }[];
   credentials: unknown[];
@@ -57,6 +58,7 @@ function ProfileLayoutContentInner({
     calculating,
     socialAccounts,
     totalEarnings,
+    rank,
   } = profileData;
 
   // No loading states needed - data comes from server
@@ -105,6 +107,8 @@ function ProfileLayoutContentInner({
       </PageContainer>
     );
   }
+
+  console.log("User rank:", rank);
 
   return (
     <PageContainer noPadding>

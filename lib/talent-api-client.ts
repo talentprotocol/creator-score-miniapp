@@ -286,6 +286,7 @@ export class TalentApiClient {
           urlParams.append("account_source", params.account_source);
         }
       }
+      urlParams.append("scorer_slug", "creator_score");
 
       const data = await this.makeRequest("/profile", urlParams);
 
@@ -321,6 +322,7 @@ export class TalentApiClient {
       const fname = farcasterAccount?.username || null;
       const github = githubAccount ? githubAccount.username : null;
       const talentUuid: string | null = profile.id || null;
+      const rank = profile.rank_position || null;
 
       return NextResponse.json({
         id: talentUuid,
@@ -328,6 +330,7 @@ export class TalentApiClient {
         wallet,
         github,
         fname,
+        rank,
         display_name: profile.display_name || profile.name || null,
         image_url: profile.image_url || null,
         main_wallet_address: profile.main_wallet_address || null,
