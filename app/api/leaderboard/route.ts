@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { redis } from "@/lib/redis";
+import {
+  CACHE_KEYS,
+  CACHE_DURATION_1_HOUR,
+  CACHE_DURATION_10_MINUTES,
+} from "@/lib/cache-keys";
 
 type Profile = {
   id: string;
@@ -8,15 +14,6 @@ type Profile = {
   image_url?: string;
   scores?: Array<{ slug: string; points?: number }>;
 };
-
-// Cache keys
-const CACHE_KEYS = {
-  TOP_200: "cache:leaderboard:top_200",
-  TOP_200_TOTAL_SCORES: "cache:leaderboard:top_200_total_scores",
-} as const;
-
-// Cache duration
-const CACHE_DURATION = 3600; // 1 hour in seconds
 
 async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
   const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
@@ -91,18 +88,26 @@ export async function GET(req: NextRequest) {
   );
   const statsOnly = searchParams.get("statsOnly") === "true";
 
-  // For stats-only request, we only need the first page to get min score
+  // For stats-only request, we only need the first page and just a single result to get min score
   if (statsOnly) {
     try {
-      const res = await fetch(
-        `https://api.talentprotocol.com/search/advanced/profiles?page=1&per_page=1&scorer=creator_score&min_score=1`,
-        {
-          headers: {
-            Accept: "application/json",
-            "X-API-KEY": apiKey,
-          },
+      const cachedStatsResponse = unstable_cache(
+        async () => {
+          return await fetch(
+            `https://api.talentprotocol.com/search/advanced/profiles?page=1&per_page=1&scorer=creator_score&min_score=1`,
+            {
+              headers: {
+                Accept: "application/json",
+                "X-API-KEY": apiKey,
+              },
+            },
+          );
         },
+        [CACHE_KEYS.LEADERBOARD_STATS_ONLY], // Cache key
+        { revalidate: CACHE_DURATION_1_HOUR }, // Revalidate every 60 seconds
       );
+
+      const res = await cachedStatsResponse();
 
       if (!res.ok) {
         throw new Error(await res.text());
@@ -130,33 +135,20 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // For top 200 request, try to get from cache first
-  if (page === 1 && perPage === 200) {
-    try {
-      const [cachedData, cachedTotalScores] = await Promise.all([
-        redis.get<string>(CACHE_KEYS.TOP_200),
-        redis.get<string>(CACHE_KEYS.TOP_200_TOTAL_SCORES),
-      ]);
-
-      if (cachedData && cachedTotalScores) {
-        return NextResponse.json({
-          entries: JSON.parse(cachedData),
-          totalScores: parseInt(cachedTotalScores, 10),
-        });
-      }
-    } catch (error) {
-      console.error("Cache error:", error);
-      // Continue with normal flow if cache fails
-    }
-  }
-
   // For regular requests or if cache miss
   try {
     let profiles: Profile[];
 
     if (page === 1 && perPage === 200) {
       // Fetch all 200 entries in batches
-      profiles = await fetchTop200Entries(apiKey);
+      const cachedProfilesResponse = unstable_cache(
+        async () => {
+          return await fetchTop200Entries(apiKey);
+        },
+        [CACHE_KEYS.LEADERBOARD_TOP_200], // Cache key
+        { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 60 seconds
+      );
+      profiles = await cachedProfilesResponse();
     } else {
       // Regular paginated request
       const data = {
@@ -181,15 +173,23 @@ export async function GET(req: NextRequest) {
         `per_page=${perPage}`,
       ].join("&");
 
-      const res = await fetch(
-        `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
-        {
-          headers: {
-            Accept: "application/json",
-            "X-API-KEY": apiKey,
-          },
+      const cachedProfilesResponse = unstable_cache(
+        async () => {
+          return await fetch(
+            `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
+            {
+              headers: {
+                Accept: "application/json",
+                "X-API-KEY": apiKey,
+              },
+            },
+          );
         },
+        [`${CACHE_KEYS.PROFILE_SEARCH}-${queryString}`], // Cache key
+        { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
       );
+
+      const res = await cachedProfilesResponse();
 
       if (!res.ok) {
         throw new Error(await res.text());
@@ -241,28 +241,6 @@ export async function GET(req: NextRequest) {
         rank,
       };
     });
-
-    // If this is a top 200 request, cache the results
-    if (page === 1 && perPage === 200) {
-      try {
-        const totalScores = ranked.reduce((sum, entry) => sum + entry.score, 0);
-        await Promise.all([
-          redis.setex(
-            CACHE_KEYS.TOP_200,
-            CACHE_DURATION,
-            JSON.stringify(ranked),
-          ),
-          redis.setex(
-            CACHE_KEYS.TOP_200_TOTAL_SCORES,
-            CACHE_DURATION,
-            totalScores.toString(),
-          ),
-        ]);
-      } catch (error) {
-        console.error("Cache error:", error);
-        // Continue even if caching fails
-      }
-    }
 
     return NextResponse.json({ entries: ranked });
   } catch (error) {

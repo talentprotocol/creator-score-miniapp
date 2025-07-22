@@ -164,3 +164,5 @@ export const TOTAL_SPONSORS_POOL = ACTIVE_SPONSORS.reduce(
   (sum, sponsor) => sum + sponsor.amount,
   0,
 );
+
+export const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)

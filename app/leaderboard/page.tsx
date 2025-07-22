@@ -11,16 +11,23 @@ import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
 import { useRouter } from "next/navigation";
-import { generateProfileUrl } from "@/lib/utils";
+import {
+  generateProfileUrl,
+  formatWithK,
+  formatDate,
+  formatCurrency,
+} from "@/lib/utils";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
-import { ACTIVE_SPONSORS, TOTAL_SPONSORS_POOL } from "@/lib/constants";
+import {
+  ACTIVE_SPONSORS,
+  TOTAL_SPONSORS_POOL,
+  ROUND_ENDS_AT,
+} from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
-
-const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -31,31 +38,6 @@ function getCountdownParts(target: Date) {
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
   return { days, hours };
-}
-
-// Helper to format numbers with K notation (2 decimals)
-function formatWithK(value: number): string {
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(2)}K`;
-  }
-  return value.toString();
-}
-
-// Helper to format date
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-// Helper to format currency
-function formatCurrency(amount: number): string {
-  if (amount >= 1000) {
-    return `$${formatWithK(amount)}`;
-  }
-  return `$${amount}`;
 }
 
 export default function LeaderboardPage() {
