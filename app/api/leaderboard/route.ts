@@ -37,14 +37,20 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
       `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
       `page=${page}`,
       `per_page=${batchSize}`,
+      `view=scores_minimal`,
     ].join("&");
 
+    console.log("fetching top 200 entries start");
+    console.log("current time", new Date().toISOString());
     const res = await fetch(`${baseUrl}?${queryString}`, {
       headers: {
         Accept: "application/json",
         "X-API-KEY": apiKey,
       },
     });
+
+    console.log("fetching top 200 entries end");
+    console.log("current time", new Date().toISOString());
 
     if (!res.ok) {
       throw new Error(`Failed to fetch page ${page}`);
@@ -177,6 +183,7 @@ export async function GET(req: NextRequest) {
         `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
         `page=${page}`,
         `per_page=${perPage}`,
+        `view=scores_minimal`,
       ].join("&");
 
       const cachedTop10Response = unstable_cache(

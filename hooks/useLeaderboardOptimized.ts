@@ -39,7 +39,6 @@ export function useLeaderboardOptimized(): UseLeaderboardOptimizedReturn {
     if (alreadyFetching) return;
     setAlreadyFetching(true);
     try {
-      console.log("loading leaderboard");
       const data = await getLeaderboardCreators({ page: 1, perPage: 200 });
       const totalScores = data.reduce((sum, entry) => sum + entry.score, 0);
 

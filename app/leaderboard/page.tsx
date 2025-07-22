@@ -51,7 +51,6 @@ export default function LeaderboardPage() {
 
   // Initial fast load of first 10 entries
   // Use optimized leaderboard hook for all data
-  console.log("rendering leaderboard page");
   const {
     top200: top200Entries,
     loading: { top200: top200Loading, stats: statsLoading },
