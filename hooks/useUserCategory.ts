@@ -3,55 +3,87 @@
 import { useState, useEffect } from "react";
 import { CreatorCategoryType } from "@/lib/credentialUtils";
 
-const STORAGE_KEY = "user_creator_category";
-
 export function useUserCategory(talentUUID: string) {
   const [userCategory, setUserCategory] = useState<CreatorCategoryType | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
 
-  // Load category from localStorage on mount
+  // Load category from API on mount
   useEffect(() => {
     if (!talentUUID) {
       setLoading(false);
       return;
     }
 
-    try {
-      const stored = localStorage.getItem(`${STORAGE_KEY}_${talentUUID}`);
-      if (stored) {
-        const category = stored as CreatorCategoryType;
-        setUserCategory(category);
+    async function loadCategory() {
+      try {
+        const response = await fetch(
+          `/api/user-preferences?talent_uuid=${talentUUID}`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.creator_category) {
+            setUserCategory(data.creator_category as CreatorCategoryType);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading user category:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading user category from localStorage:", error);
-    } finally {
-      setLoading(false);
     }
+
+    loadCategory();
   }, [talentUUID]);
 
-  // Update category in localStorage
-  const updateCategory = (category: CreatorCategoryType) => {
+  // Update category via API
+  const updateCategory = async (category: CreatorCategoryType) => {
     if (!talentUUID) return;
 
     try {
-      localStorage.setItem(`${STORAGE_KEY}_${talentUUID}`, category);
-      setUserCategory(category);
+      const response = await fetch("/api/user-preferences", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          talent_uuid: talentUUID,
+          creator_category: category,
+        }),
+      });
+
+      if (response.ok) {
+        setUserCategory(category);
+      } else {
+        console.error("Failed to update category");
+      }
     } catch (error) {
-      console.error("Error saving user category to localStorage:", error);
+      console.error("Error saving user category:", error);
     }
   };
 
-  // Clear category from localStorage
-  const clearCategory = () => {
+  // Clear category (set to null in database)
+  const clearCategory = async () => {
     if (!talentUUID) return;
 
     try {
-      localStorage.removeItem(`${STORAGE_KEY}_${talentUUID}`);
-      setUserCategory(null);
+      const response = await fetch("/api/user-preferences", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          talent_uuid: talentUUID,
+          creator_category: null,
+        }),
+      });
+
+      if (response.ok) {
+        setUserCategory(null);
+      }
     } catch (error) {
-      console.error("Error clearing user category from localStorage:", error);
+      console.error("Error clearing user category:", error);
     }
   };
 

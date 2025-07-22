@@ -14,11 +14,8 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "API key not configured" }, { status: 500 });
   }
 
-  console.log(`Fetching humanity credentials for talent_id: ${id}`);
-
   try {
     const url = `https://api.talentprotocol.com/human_checkmark/data_points?id=${id}`;
-    console.log(`Making request to: ${url}`);
 
     const response = await fetch(url, {
       headers: {
@@ -26,8 +23,6 @@ export async function GET(request: NextRequest) {
         "X-API-KEY": apiKey,
       },
     });
-
-    console.log(`Response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -40,7 +35,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log(`Received ${data.credentials?.length || 0} credentials`);
 
     return Response.json(data);
   } catch (error: unknown) {
