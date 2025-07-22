@@ -102,6 +102,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
+      <head>
+        <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
+      </head>
       <body className="min-h-full bg-white flex flex-col">
         <script
           dangerouslySetInnerHTML={{ __html: globalErrorHandlingScript }}
