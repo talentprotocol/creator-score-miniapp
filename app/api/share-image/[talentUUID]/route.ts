@@ -10,110 +10,134 @@ import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsServi
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
+import { unstable_cache } from "next/cache";
+import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { talentUUID: string } },
 ) {
   try {
-    // Fetch user data
-    const profileResponse = await talentApiClient.getProfile({
-      talent_protocol_id: params.talentUUID,
-    });
+    // Cache the data fetching and image generation
+    const cachedShareImage = unstable_cache(
+      async () => {
+        // Fetch user data
+        const profileResponse = await talentApiClient.getProfile({
+          talent_protocol_id: params.talentUUID,
+        });
 
-    // Check if profile exists
-    if (!profileResponse.ok) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
-    // Parse the profile data from the response
-    const profileData = await profileResponse.json();
-
-    // Fetch additional data
-    const [socialAccounts, credentials, creatorScoreData] = await Promise.all([
-      getSocialAccountsForTalentId(params.talentUUID).catch(() => []),
-      getCredentialsForTalentId(params.talentUUID).catch(() => []),
-      getCreatorScoreForTalentId(params.talentUUID).catch(() => ({ score: 0 })),
-    ]);
-
-    // Calculate stats
-    const totalFollowers = calculateTotalFollowers(socialAccounts);
-    const creatorScore = creatorScoreData.score || 0;
-
-    // Calculate total earnings (same logic as layout.tsx)
-    const ethPrice = await getEthUsdcPrice();
-    const issuerTotals = new Map<string, number>();
-
-    credentials.forEach((credentialGroup) => {
-      // Check if any point in this group is earnings-related
-      const hasEarningsCredentials = credentialGroup.points.some((point) =>
-        isEarningsCredential(point.slug || ""),
-      );
-
-      if (!hasEarningsCredentials) {
-        return;
-      }
-
-      let issuerTotal = 0;
-
-      // Calculate total for this issuer
-      credentialGroup.points.forEach((point) => {
-        if (!isEarningsCredential(point.slug || "")) {
-          return;
+        // Check if profile exists
+        if (!profileResponse.ok) {
+          return { error: "Profile not found", status: 404 };
         }
 
-        if (!point.readable_value || !point.uom) {
-          return;
-        }
+        // Parse the profile data from the response
+        const profileData = await profileResponse.json();
 
-        // Parse the value
-        const cleanValue = point.readable_value;
-        let value: number;
-        const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+        // Fetch additional data
+        const [socialAccounts, credentials, creatorScoreData] =
+          await Promise.all([
+            getSocialAccountsForTalentId(params.talentUUID).catch(() => []),
+            getCredentialsForTalentId(params.talentUUID).catch(() => []),
+            getCreatorScoreForTalentId(params.talentUUID).catch(() => ({
+              score: 0,
+            })),
+          ]);
 
-        if (numericValue.includes("K")) {
-          value = parseFloat(numericValue.replace("K", "")) * 1000;
-        } else if (numericValue.includes("M")) {
-          value = parseFloat(numericValue.replace("M", "")) * 1000000;
-        } else {
-          value = parseFloat(numericValue);
-        }
+        // Calculate stats
+        const totalFollowers = calculateTotalFollowers(socialAccounts);
+        const creatorScore = creatorScoreData.score || 0;
 
-        if (isNaN(value)) {
-          return;
-        }
+        // Calculate total earnings (same logic as layout.tsx)
+        const ethPrice = await getEthUsdcPrice();
+        const issuerTotals = new Map<string, number>();
 
-        // Convert to USD
-        let usdValue = 0;
-        if (point.uom === "ETH") {
-          usdValue = convertEthToUsdc(value, ethPrice);
-        } else if (point.uom === "USDC") {
-          usdValue = value;
-        }
+        credentials.forEach((credentialGroup) => {
+          // Check if any point in this group is earnings-related
+          const hasEarningsCredentials = credentialGroup.points.some((point) =>
+            isEarningsCredential(point.slug || ""),
+          );
 
-        issuerTotal += usdValue;
-      });
+          if (!hasEarningsCredentials) {
+            return;
+          }
 
-      if (issuerTotal > 0) {
-        issuerTotals.set(credentialGroup.issuer, issuerTotal);
-      }
-    });
+          let issuerTotal = 0;
 
-    const totalEarnings = Array.from(issuerTotals.values()).reduce(
-      (sum, value) => sum + value,
-      0,
+          // Calculate total for this issuer
+          credentialGroup.points.forEach((point) => {
+            if (!isEarningsCredential(point.slug || "")) {
+              return;
+            }
+
+            if (!point.readable_value || !point.uom) {
+              return;
+            }
+
+            // Parse the value
+            const cleanValue = point.readable_value;
+            let value: number;
+            const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+            if (numericValue.includes("K")) {
+              value = parseFloat(numericValue.replace("K", "")) * 1000;
+            } else if (numericValue.includes("M")) {
+              value = parseFloat(numericValue.replace("M", "")) * 1000000;
+            } else {
+              value = parseFloat(numericValue);
+            }
+
+            if (isNaN(value)) {
+              return;
+            }
+
+            // Convert to USD
+            let usdValue = 0;
+            if (point.uom === "ETH") {
+              usdValue = convertEthToUsdc(value, ethPrice);
+            } else if (point.uom === "USDC") {
+              usdValue = value;
+            }
+
+            issuerTotal += usdValue;
+          });
+
+          if (issuerTotal > 0) {
+            issuerTotals.set(credentialGroup.issuer, issuerTotal);
+          }
+        });
+
+        const totalEarnings = Array.from(issuerTotals.values()).reduce(
+          (sum, value) => sum + value,
+          0,
+        );
+
+        // Generate image
+        const imageBuffer = await generateShareImage({
+          avatar: profileData.image_url,
+          name: profileData.display_name || profileData.name || "Creator",
+          totalFollowers,
+          creatorScore,
+          totalEarnings,
+        });
+
+        return { imageBuffer };
+      },
+      [`${CACHE_KEYS.SHARE_IMAGE_DATA}-${params.talentUUID}`], // Cache key
+      { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
     );
 
-    // Generate image
-    const imageBuffer = await generateShareImage({
-      avatar: profileData.image_url,
-      name: profileData.display_name || profileData.name || "Creator",
-      totalFollowers,
-      creatorScore,
-      totalEarnings,
-    });
+    const result = await cachedShareImage();
 
-    return new NextResponse(imageBuffer, {
+    // Handle error case
+    if ("error" in result) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.status },
+      );
+    }
+
+    return new NextResponse(result.imageBuffer, {
       headers: {
         "Content-Type": "image/png",
         "Cache-Control": "public, max-age=3600",
