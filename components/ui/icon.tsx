@@ -8,6 +8,7 @@ export interface IconProps extends React.ComponentPropsWithoutRef<"svg"> {
   color?: "default" | "muted" | "brand" | "error";
   disabled?: boolean;
   isActive?: boolean;
+  fillOnActive?: boolean;
 }
 
 const iconSizes = {
@@ -29,6 +30,7 @@ export function Icon({
   color = "muted",
   disabled = false,
   isActive = false,
+  fillOnActive = true,
   className,
   ...props
 }: IconProps) {
@@ -42,8 +44,8 @@ export function Icon({
 
         // States
         disabled && "opacity-20 cursor-not-allowed",
-        !disabled && "active:scale-110 active:fill-current",
-        !disabled && isActive && "fill-current text-foreground",
+        !disabled && "active:scale-110",
+        !disabled && isActive && fillOnActive && "fill-current text-foreground",
         !disabled && !isActive && iconColors[color],
 
         className,

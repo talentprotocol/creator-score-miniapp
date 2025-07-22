@@ -123,6 +123,7 @@ export function Header() {
                       icon={item.icon}
                       size="lg"
                       isActive={isActive || isClicked}
+                      fillOnActive={false}
                       color={isActive ? "default" : "muted"}
                       className="transition-colors group-hover:text-foreground"
                     />
