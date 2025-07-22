@@ -57,6 +57,7 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
     }
 
     const json = await res.json();
+    console.log("json", json);
     const profiles = json.profiles || [];
     allProfiles = [...allProfiles, ...profiles];
 
