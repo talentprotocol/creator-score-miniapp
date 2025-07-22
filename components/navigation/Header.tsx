@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -75,9 +76,11 @@ export function Header() {
                   className="h-9 cursor-pointer"
                   aria-label="Go to home"
                 >
-                  <img
+                  <Image
                     src="/cs-logo-header.svg"
                     alt="Creator Score"
+                    width={120}
+                    height={36}
                     className="h-full w-auto"
                   />
                 </button>
