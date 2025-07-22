@@ -2,6 +2,7 @@ export const CACHE_KEYS = {
   LEADERBOARD_STATS_ONLY: "leaderboard-stats-only",
   LEADERBOARD_TOP_200: "leaderboard-top-200",
   PROFILE_SEARCH: "profile-search",
+  SHARE_IMAGE_DATA: "share-image-data",
 };
 
 export const CACHE_DURATION_1_SECOND = 1; // 1 second
