@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { TabNavigation } from "@/components/common/tabs-navigation";
 import { SearchBar } from "@/components/search";
 import { useSearch } from "@/hooks/useSearch";
 import { PageContainer } from "@/components/common/PageContainer";
@@ -14,8 +12,6 @@ interface ExploreLayoutProps {
 }
 
 export function ExploreLayout({ children }: ExploreLayoutProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const [loadSearch, setLoadSearch] = useState(false);
   const search = useSearch(loadSearch);
 
@@ -23,19 +19,20 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
     setLoadSearch(true);
   }, []);
 
-  const tabs = [
-    { id: "all", label: "All" },
-    { id: "friends", label: "Friends", disabled: true },
-    { id: "featured", label: "Featured", disabled: true },
-  ];
+  // TODO: Re-enable tab system when Friends and Featured tabs are ready for development
+  // const tabs = [
+  //   { id: "all", label: "All" },
+  //   { id: "friends", label: "Friends", disabled: true },
+  //   { id: "featured", label: "Featured", disabled: true },
+  // ];
 
-  // Determine active tab from pathname
-  const activeTab = pathname.split("/").pop() || "all";
+  // // Determine active tab from pathname
+  // const activeTab = pathname.split("/").pop() || "all";
 
-  const handleTabChange = (tabId: string) => {
-    // Navigate to the selected tab (even if disabled for now)
-    router.push(`/explore/${tabId}`);
-  };
+  // const handleTabChange = (tabId: string) => {
+  //   // Navigate to the selected tab (even if disabled for now)
+  //   router.push(`/explore/${tabId}`);
+  // };
 
   // TODO: Track search queries for PostHog
   const handleSearchChange = (query: string) => {
@@ -45,7 +42,7 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
   return (
     <PageContainer noPadding>
       {/* Header section */}
-      <Section variant="header">
+      <Section variant="header" className="pb-3">
         <SearchBar
           value={search.query}
           onChange={handleSearchChange}
@@ -53,14 +50,15 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
         />
       </Section>
 
+      {/* TODO: Re-enable tab navigation when Friends and Featured tabs are ready for development */}
       {/* Full width tabs */}
-      <Section variant="full-width">
+      {/* <Section variant="full-width">
         <TabNavigation
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
-      </Section>
+      </Section> */}
 
       {/* Content section */}
       <Section variant="content" animate>

@@ -270,6 +270,22 @@ export default function SettingsPage() {
             </Button>
           </div>
 
+          {/* Test Frame Link - Temporary */}
+          <div className="bg-muted rounded-xl border-0 shadow-none">
+            <Button
+              type="button"
+              variant="default"
+              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              onClick={() => router.push("/test-frame")}
+            >
+              <div className="flex items-center gap-3">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Test Frame</span>
+              </div>
+              <span className="text-xs text-muted-foreground">Debug</span>
+            </Button>
+          </div>
+
           {/* Log Out - with extra spacing above */}
           <div className="bg-muted rounded-xl border-0 shadow-none mt-6">
             <Button

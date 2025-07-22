@@ -4,6 +4,12 @@ import * as React from "react";
 import { Bell, Mail } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import type { UserSettings } from "@/app/services/types";
+import {
+  checkFarcasterNotificationState,
+  triggerFarcasterNotificationModal,
+  listenForNotificationChanges,
+  type FarcasterNotificationState,
+} from "@/lib/farcaster-notifications";
 
 interface NotificationsSectionProps {
   settings: UserSettings | null;
@@ -21,6 +27,36 @@ export function NotificationsSection({
   const [localSettings, setLocalSettings] = React.useState(
     settings?.notifications || { farcaster: false, email: false },
   );
+  const [farcasterState, setFarcasterState] =
+    React.useState<FarcasterNotificationState>({
+      isEnabled: false,
+      isSupported: false,
+    });
+
+  // Check Farcaster notification state on mount and when settings change
+  React.useEffect(() => {
+    const state = checkFarcasterNotificationState();
+    setFarcasterState(state);
+
+    // Update local settings if Farcaster notifications are enabled
+    if (state.isEnabled && !localSettings.farcaster) {
+      setLocalSettings((prev) => ({ ...prev, farcaster: true }));
+    }
+  }, [localSettings.farcaster]);
+
+  // Listen for notification permission changes
+  React.useEffect(() => {
+    const cleanup = listenForNotificationChanges((state) => {
+      setFarcasterState(state);
+
+      // Update local settings if permission changed
+      if (state.isEnabled !== localSettings.farcaster) {
+        setLocalSettings((prev) => ({ ...prev, farcaster: state.isEnabled }));
+      }
+    });
+
+    return cleanup;
+  }, [localSettings.farcaster]);
 
   // Update local state when settings change
   React.useEffect(() => {
@@ -29,27 +65,43 @@ export function NotificationsSection({
     }
   }, [settings?.notifications]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleToggle = async (type: "farcaster" | "email") => {
-    const newValue = !localSettings[type];
-    const newSettings = { ...localSettings, [type]: newValue };
+  const handleFarcasterToggle = async () => {
+    if (!farcasterState.isSupported) {
+      console.log("Farcaster notifications not supported in this environment");
+      return;
+    }
 
-    setLocalSettings(newSettings);
-    setIsLoading(true);
+    if (farcasterState.isEnabled) {
+      // If already enabled, just update the local state
+      const newSettings = { ...localSettings, farcaster: false };
+      setLocalSettings(newSettings);
 
-    try {
-      const result = await onUpdateNotifications(newSettings);
-
-      if (!result.success) {
-        // Revert on failure
+      try {
+        await onUpdateNotifications(newSettings);
+      } catch (error) {
+        console.error("Error updating notification settings:", error);
+        // Revert on error
         setLocalSettings(localSettings);
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      // Revert on error
-      setLocalSettings(localSettings);
-    } finally {
-      setIsLoading(false);
+    } else {
+      // If not enabled, trigger the modal
+      setIsLoading(true);
+
+      try {
+        const success = await triggerFarcasterNotificationModal();
+
+        if (success) {
+          // The modal was triggered, but we need to wait for the user's response
+          // The permission change listener will handle updating the state
+          console.log("Farcaster notification modal triggered successfully");
+        } else {
+          console.error("Failed to trigger Farcaster notification modal");
+        }
+      } catch (error) {
+        console.error("Error triggering Farcaster notification modal:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -91,10 +143,20 @@ export function NotificationsSection({
             <Icon icon={Bell} size="sm" color="muted" />
             <div>
               <h4 className="font-medium">Farcaster Notifications</h4>
-              <p className="text-xs text-muted-foreground">Coming soon</p>
+              <p className="text-xs text-muted-foreground">
+                {farcasterState.isSupported
+                  ? farcasterState.isEnabled
+                    ? "Enabled"
+                    : "Tap to enable"
+                  : "Not available in this environment"}
+              </p>
             </div>
           </div>
-          <ToggleSwitch enabled={false} onToggle={() => {}} disabled={true} />
+          <ToggleSwitch
+            enabled={farcasterState.isEnabled}
+            onToggle={handleFarcasterToggle}
+            disabled={!farcasterState.isSupported || isLoading}
+          />
         </div>
       </div>
 

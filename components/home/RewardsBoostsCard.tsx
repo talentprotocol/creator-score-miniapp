@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { useProfileActions } from "@/hooks/useProfileActions";
 import { Icon } from "@/components/ui/icon";
-import { Bell, Twitter, Share2 } from "lucide-react";
+import { Bell, Twitter, Share2, Plus } from "lucide-react";
 
 interface RewardsBoostsCardProps {
   talentUuid?: string | null;
@@ -26,7 +26,7 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
         "*",
       );
     } catch (error) {
-      console.error("Failed to enable notifications:", error);
+      console.error("Error enabling notifications:", error);
     }
   };
 
@@ -46,6 +46,15 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
           <Icon icon={Bell} size="sm" color="muted" />
           <span className="flex-1 text-sm text-left">Enable Notifications</span>
           <span className="text-xs text-muted-foreground">+10%</span>
+        </button>
+
+        <button
+          onClick={handleNotifications}
+          className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
+        >
+          <Icon icon={Plus} size="sm" color="muted" />
+          <span className="flex-1 text-sm text-left">Add to Farcaster</span>
+          <span className="text-xs text-muted-foreground">+15%</span>
         </button>
 
         <Link
