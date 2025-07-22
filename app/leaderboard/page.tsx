@@ -69,7 +69,7 @@ export default function LeaderboardPage() {
   // Update visible entries when data changes
   useEffect(() => {
     if (top200Entries.length > 0) {
-      setVisibleEntries(top200Entries.slice(0, 10));
+      setVisibleEntries(top200Entries);
     }
   }, [top200Entries]);
 
