@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     if (responseText.trim()) {
       try {
         data = JSON.parse(responseText);
-      } catch (e) {
+      } catch {
         // Supabase upsert returns empty response, which is normal
       }
     }

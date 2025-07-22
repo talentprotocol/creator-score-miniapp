@@ -47,9 +47,8 @@ export function ProfileHeader({
   const { userCategory, updateCategory } = useUserCategory(
     isOwnProfile ? talentUUID || "" : "",
   );
-  const { data: creatorCategoryData } = useCreatorCategory(
-    isOwnProfile ? talentUUID || "" : "",
-  );
+  // This hook handles automatic saving of algorithmic categories
+  useCreatorCategory(isOwnProfile ? talentUUID || "" : "");
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
   const [pendingCategory, setPendingCategory] =
     React.useState<CreatorCategoryType | null>(null);
