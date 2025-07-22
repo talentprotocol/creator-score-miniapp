@@ -205,7 +205,7 @@ export default function LeaderboardPage() {
 
       {/* Content section */}
       <Section variant="content" animate>
-        {initialLoading && top200Error && (
+        {loading && top200Error && (
           <div className="text-destructive text-sm px-2">{top200Error}</div>
         )}
 
