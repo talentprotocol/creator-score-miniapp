@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 import { base } from "wagmi/chains";
 import { MiniKitProvider } from "@coinbase/onchainkit/minikit";
 import { getMiniKitConfig } from "@/lib/app-metadata";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 export function Providers(props: { children: ReactNode }) {
   const miniKitConfig = getMiniKitConfig();
@@ -15,19 +16,21 @@ export function Providers(props: { children: ReactNode }) {
   }
 
   return (
-    <MiniKitProvider
-      apiKey={apiKey || ""}
-      chain={base}
-      config={{
-        appearance: {
-          mode: "auto",
-          theme: "mini-app-theme",
-          name: miniKitConfig.name,
-          logo: miniKitConfig.logo,
-        },
-      }}
-    >
-      {props.children}
-    </MiniKitProvider>
+    <PostHogProvider>
+      <MiniKitProvider
+        apiKey={apiKey || ""}
+        chain={base}
+        config={{
+          appearance: {
+            mode: "auto",
+            theme: "mini-app-theme",
+            name: miniKitConfig.name,
+            logo: miniKitConfig.logo,
+          },
+        }}
+      >
+        {props.children}
+      </MiniKitProvider>
+    </PostHogProvider>
   );
 }
