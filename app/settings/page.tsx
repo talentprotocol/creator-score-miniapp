@@ -16,7 +16,7 @@ import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
 import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
-import { NotificationsSection } from "@/components/settings/NotificationsSection";
+
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
 import { Button } from "@/components/ui/button";
 import { getVersionDisplay } from "@/lib/version";
@@ -49,7 +49,6 @@ export default function SettingsPage() {
     loading,
     error,
     performAction,
-    updateNotifications,
   } = useConnectedAccounts(talentUuid || undefined);
 
   // Check if any humanity credentials are verified (must be before early returns)

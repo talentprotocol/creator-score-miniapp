@@ -3,23 +3,20 @@
 import * as React from "react";
 import { Bell, Mail } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
-import type { UserSettings } from "@/app/services/types";
 
 // TODO: Re-enable notification logic when notification system is ready for production
 // This component currently only contains UI elements for future implementation
 
-interface NotificationsSectionProps {
-  settings: UserSettings | null;
-  onUpdateNotifications: (notifications: {
-    farcaster: boolean;
-    email: boolean;
-  }) => Promise<{ success: boolean; message: string }>;
-}
+// TODO: Re-add interface when notification logic is re-implemented
+// interface NotificationsSectionProps {
+//   settings: UserSettings | null;
+//   onUpdateNotifications: (notifications: {
+//     farcaster: boolean;
+//     email: boolean;
+//   }) => Promise<{ success: boolean; message: string }>;
+// }
 
-export function NotificationsSection({
-  settings,
-  onUpdateNotifications,
-}: NotificationsSectionProps) {
+export function NotificationsSection() {
   // TODO: Add notification state management logic here when ready
   // - Check Farcaster frame environment
   // - Handle notification permissions
