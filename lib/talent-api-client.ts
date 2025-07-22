@@ -11,6 +11,8 @@ import {
   createNotFoundResponse,
 } from "./api-utils";
 import { NextResponse } from "next/server";
+import { unstable_cache, revalidateTag } from "next/cache";
+import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "./cache-keys";
 
 // API endpoints
 const TALENT_API_BASE = "https://api.talentprotocol.com";
@@ -502,12 +504,11 @@ export class TalentApiClient {
           identity: params.query.trim(),
         },
         sort: {
-          score: {
-            order: "desc",
-          },
+          score: { order: "desc", scorer: "Creator Score" },
+          id: { order: "desc" },
         },
         page: params.page || 1,
-        per_page: Math.min(params.per_page || 10, 25), // API limit is 25 for free users
+        per_page: Math.min(params.per_page || 10, 25), // API limit is 25 for free user
       };
 
       // Convert request data to URL-encoded query parameters as per API docs
@@ -519,22 +520,40 @@ export class TalentApiClient {
         );
       });
 
-      const url = `${TALENT_API_BASE}/search/advanced/profiles?${queryParams.toString()}`;
+      const queryString = queryParams.toString();
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "X-API-Key": this.apiKey,
+      const cachedSearchProfiles = unstable_cache(
+        async () => {
+          const url = `${TALENT_API_BASE}/search/advanced/profiles?${queryString}&view=scores_minimal`;
+
+          console.log("Starting searchProfiles request");
+          console.log("current time", new Date().toISOString());
+          console.log("Request URL: ", url);
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              "X-API-Key": this.apiKey,
+            },
+          });
+          console.log("searchProfiles request end");
+          console.log("current time", new Date().toISOString());
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+              `Talent API error (${response.status}): ${errorText}`,
+            );
+          }
+
+          const data = await response.json();
+          return data;
         },
-      });
+        [`${CACHE_KEYS.PROFILE_SEARCH}-${queryString}`], // Cache key
+        { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
+      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Talent API error (${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
+      const data = await cachedSearchProfiles();
       return NextResponse.json(data, { status: 200 });
     } catch (error) {
       logApiError(
@@ -542,6 +561,29 @@ export class TalentApiClient {
         params.query,
         error instanceof Error ? error.message : "Unknown error",
       );
+
+      // Revalidate cache on error
+      const requestData = {
+        query: {
+          identity: params.query.trim(),
+        },
+        sort: {
+          score: {
+            order: "desc",
+          },
+        },
+        page: params.page || 1,
+        per_page: Math.min(params.per_page || 10, 25),
+        view: "scores_minimal",
+      };
+      const queryParams = new URLSearchParams();
+      Object.keys(requestData).forEach((key) => {
+        queryParams.append(
+          key,
+          JSON.stringify(requestData[key as keyof typeof requestData]),
+        );
+      });
+      revalidateTag(`${CACHE_KEYS.PROFILE_SEARCH}-${queryParams.toString()}`);
 
       return createServerErrorResponse(
         `Failed to search profiles: ${error instanceof Error ? error.message : "Unknown error"}`,
