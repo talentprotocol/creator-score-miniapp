@@ -64,13 +64,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     other: {
       "fc:frame": frameMetadata,
-      "og:title": pageMetadata.ogTitle,
-      "og:description": pageMetadata.ogDescription,
-      "og:image": pageMetadata.ogImage,
-      "twitter:card": "summary_large_image",
-      "twitter:title": pageMetadata.twitterTitle,
-      "twitter:description": pageMetadata.twitterDescription,
-      "twitter:image": pageMetadata.twitterImage,
     },
   };
 }
