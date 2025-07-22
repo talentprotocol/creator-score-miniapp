@@ -105,13 +105,16 @@ export function useProfileActions({
       ? formatNumberWithSuffix(totalEarnings)
       : "—";
 
-    const shareText = `🎯 ${creatorType}\n📊 Creator Score: ${scoreText}\n👥 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nCheck out my full profile on Talent Protocol!`;
+    // Get Farcaster handle for the share text
+    const farcasterHandle = profile?.fname || "creator";
 
-    // Add image URL
-    const imageUrl = `${window.location.origin}/api/share-image/${talentUUID}`;
+    const shareText = `Check @${farcasterHandle}'s reputation as a creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent`;
+
+    // Use profile URL instead of static image for better engagement
+    const profileUrl = `${window.location.origin}/${talentUUID}`;
 
     // Use the new cross-platform composeCast function
-    await composeCast(shareText, [imageUrl], context);
+    await composeCast(shareText, [profileUrl], context);
   }, [
     profile,
     creatorScore,
