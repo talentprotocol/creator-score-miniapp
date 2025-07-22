@@ -121,7 +121,7 @@ export function ConnectedSocialsSection({
 
             <Button
               onClick={connectedAccount ? handleDisconnect : handleConnect}
-              variant="outline"
+              variant="ghost"
               size="sm"
             >
               {connectedAccount ? "Disconnect" : "Connect"}

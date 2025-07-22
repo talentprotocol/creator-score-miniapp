@@ -1,19 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  Heart,
-  Star,
-  Circle,
-  Bell,
-  Home,
-  Search,
-  Trophy,
-  Settings,
-  Loader2,
-  Info,
-} from "lucide-react";
+import { Heart, Home, Search, Trophy, Settings, Info } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
