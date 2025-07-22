@@ -1,7 +1,8 @@
 import * as React from "react";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { cn, openExternalUrl } from "@/lib/utils";
 
 interface CalloutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface CalloutProps {
 }
 
 export function Callout({ children, href, className }: CalloutProps) {
+  const { context } = useMiniKit();
   const isExternal = href?.startsWith("http");
   const Icon = isExternal ? ExternalLink : ArrowRight;
 
@@ -26,16 +28,18 @@ export function Callout({ children, href, className }: CalloutProps) {
     className,
   );
 
+  const handleClick = async (e: React.MouseEvent) => {
+    if (isExternal && href) {
+      e.preventDefault();
+      await openExternalUrl(href, context);
+    }
+  };
+
   if (href) {
     return isExternal ? (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={styles}
-      >
+      <button onClick={handleClick} className={styles}>
         {content}
-      </a>
+      </button>
     ) : (
       <Link href={href} className={styles}>
         {content}

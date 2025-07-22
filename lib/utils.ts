@@ -336,20 +336,65 @@ export function generateProfileUrl(params: {
 }
 
 /**
- * Open external URL with environment detection
+ * Client environment types
  */
-export async function openExternalUrl(url: string): Promise<void> {
+export type ClientEnvironment = "farcaster" | "base" | "browser";
+
+/**
+ * Detect the current client environment
+ */
+export function detectClient(context?: unknown): ClientEnvironment {
+  // Check for Base App first - clientFid 399519 indicates Base app
+  if (
+    context &&
+    typeof context === "object" &&
+    "client" in context &&
+    context.client &&
+    typeof context.client === "object" &&
+    "clientFid" in context.client &&
+    context.client.clientFid === 399519
+  ) {
+    return "base";
+  }
+
   // Check if we're in a Farcaster environment
-  const isInFarcaster =
-    typeof window !== "undefined" &&
-    (window.location.hostname.includes("farcaster") ||
+  if (typeof window !== "undefined") {
+    const isInFarcaster =
+      window.location.hostname.includes("farcaster") ||
       window.location.hostname.includes("warpcast") ||
       // Check for Farcaster-specific globals
       "farcasterFrame" in window ||
       // Check user agent for Farcaster
-      navigator.userAgent.includes("Farcaster"));
+      navigator.userAgent.includes("Farcaster");
 
-  if (isInFarcaster) {
+    if (isInFarcaster) {
+      return "farcaster";
+    }
+  }
+
+  // Default to browser environment
+  return "browser";
+}
+
+/**
+ * Open external URL with environment detection
+ */
+export async function openExternalUrl(
+  url: string,
+  context?: unknown,
+): Promise<void> {
+  const client = detectClient(context);
+
+  if (client === "base") {
+    try {
+      // Use Base Mini App SDK - note: actual API methods need to be verified
+      // For now, falling through to window.open as Base Mini App SDK methods are not confirmed
+      console.log("Base Mini App detected - using window.open fallback");
+    } catch (error) {
+      console.error("Failed to open external URL with Base SDK:", error);
+      // Fall through to regular window.open
+    }
+  } else if (client === "farcaster") {
     try {
       const { sdk } = await import("@farcaster/frame-sdk");
       await sdk.actions.openUrl(url);
@@ -374,6 +419,55 @@ export async function openExternalUrl(url: string): Promise<void> {
     console.debug("window.open failed:", error);
     // Don't throw error - this is expected in some environments
   }
+}
+
+/**
+ * Compose a cast with environment detection
+ */
+export async function composeCast(
+  text: string,
+  embeds?: string[],
+  context?: unknown,
+): Promise<void> {
+  const client = detectClient(context);
+
+  if (client === "base") {
+    try {
+      // Use Base Mini App SDK - note: actual API methods need to be verified
+      // For now, falling through to Warpcast intent URL as Base Mini App SDK methods are not confirmed
+      console.log(
+        "Base Mini App detected - using Warpcast intent URL fallback",
+      );
+    } catch (error) {
+      console.error("Failed to compose cast with Base SDK:", error);
+      // Fall through to Warpcast intent URL
+    }
+  } else if (client === "farcaster") {
+    try {
+      const { sdk } = await import("@farcaster/frame-sdk");
+      // Farcaster SDK expects embeds as limited array
+      const limitedEmbeds = embeds
+        ? (embeds.slice(0, 2) as [] | [string] | [string, string])
+        : undefined;
+      await sdk.actions.composeCast({ text, embeds: limitedEmbeds });
+      return;
+    } catch (error) {
+      console.error("Failed to compose cast with Farcaster SDK:", error);
+      // Fall through to Warpcast intent URL
+    }
+  }
+
+  // Fallback to Warpcast intent URL for browser or when SDKs fail
+  const encodedText = encodeURIComponent(text);
+  let warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}`;
+
+  if (embeds && embeds.length > 0) {
+    embeds.forEach((embed) => {
+      warpcastUrl += `&embeds[]=${encodeURIComponent(embed)}`;
+    });
+  }
+
+  window.open(warpcastUrl, "_blank");
 }
 
 /**
