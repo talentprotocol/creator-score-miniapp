@@ -39,9 +39,20 @@ export async function GET() {
     frame: withValidProperties({
       version: "1",
       name: frameMetadata.name,
+      subtitle: frameMetadata.subtitle,
+      description: frameMetadata.description,
       iconUrl: frameMetadata.iconUrl, // Now guaranteed to be absolute
+      splashImageUrl: frameMetadata.splashImageUrl,
+      splashBackgroundColor: frameMetadata.splashBackgroundColor,
       homeUrl: baseUrl,
       webhookUrl: `${baseUrl}/api/webhook`,
+      primaryCategory: frameMetadata.primaryCategory,
+      tags: frameMetadata.tags,
+      heroImageUrl: frameMetadata.heroImageUrl,
+      tagline: frameMetadata.tagline,
+      ogTitle: frameMetadata.ogTitle,
+      ogDescription: frameMetadata.ogDescription,
+      ogImageUrl: frameMetadata.ogImageUrl,
     }),
   });
 }
