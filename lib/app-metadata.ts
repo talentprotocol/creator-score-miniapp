@@ -24,16 +24,12 @@ export interface AppMetadata {
 }
 
 // Static metadata configuration (version controlled)
-export const APP_METADATA: AppMetadata = {
+export const APP_METADATA = {
   name: "Creator Score Mini App",
   subtitle: "Create Onchain. Earn Rewards.",
   description:
     "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens, and start earning rewards in USDC.",
   tagline: "Create Onchain. Earn Rewards.",
-
-  iconUrl: "/favicon-64.png",
-  splashImageUrl: "https://www.creatorscore.app/splash.png",
-  heroImageUrl: "https://www.creatorscore.app/hero.png",
 
   splashBackgroundColor: "#C79AF6",
 
@@ -43,47 +39,23 @@ export const APP_METADATA: AppMetadata = {
   ogTitle: "Creator Score Mini App",
   ogDescription:
     "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens.",
-  ogImageUrl: "https://www.creatorscore.app/hero.png",
 };
 
-/**
- * Get app metadata with environment-specific overrides
- * Only uses env vars for values that might differ between environments
- */
 export function getAppMetadata(): AppMetadata {
+  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
+
   return {
     ...APP_METADATA,
-    // Override with env vars only for environment-specific values
-    iconUrl: process.env.NEXT_PUBLIC_APP_ICON || APP_METADATA.iconUrl,
-    splashImageUrl:
-      process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE || APP_METADATA.splashImageUrl,
-    heroImageUrl:
-      process.env.NEXT_PUBLIC_APP_HERO_IMAGE || APP_METADATA.heroImageUrl,
-    ogImageUrl: process.env.NEXT_PUBLIC_APP_OG_IMAGE || APP_METADATA.ogImageUrl,
+    // All URLs are now absolute and environment-aware
+    iconUrl: `${baseUrl}/icon.png`,
+    splashImageUrl: `${baseUrl}/splash.png`,
+    heroImageUrl: `${baseUrl}/hero.png`,
+    ogImageUrl: `${baseUrl}/hero.png`,
   };
 }
 
-/**
- * Get frame metadata for Farcaster frame configuration
- */
-export function getFrameMetadata() {
-  const metadata = getAppMetadata();
-  return {
-    name: metadata.name,
-    subtitle: metadata.subtitle,
-    description: metadata.description,
-    iconUrl: metadata.iconUrl,
-    splashImageUrl: metadata.splashImageUrl,
-    splashBackgroundColor: metadata.splashBackgroundColor,
-    primaryCategory: metadata.primaryCategory,
-    tags: metadata.tags,
-    heroImageUrl: metadata.heroImageUrl,
-    tagline: metadata.tagline,
-    ogTitle: metadata.ogTitle,
-    ogDescription: metadata.ogDescription,
-    ogImageUrl: metadata.ogImageUrl,
-  };
-}
+// Alias for clarity - returns the same data
+export const getFrameMetadata = getAppMetadata;
 
 /**
  * Get MiniKit provider configuration
@@ -92,7 +64,7 @@ export function getMiniKitConfig() {
   const metadata = getAppMetadata();
   return {
     name: metadata.name,
-    logo: process.env.NEXT_PUBLIC_ICON_URL || metadata.iconUrl,
+    logo: metadata.iconUrl,
   };
 }
 

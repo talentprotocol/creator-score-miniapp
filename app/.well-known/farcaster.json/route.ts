@@ -14,8 +14,8 @@ function withValidProperties(
 }
 
 export async function GET() {
-  const URL = process.env.NEXT_PUBLIC_URL;
   const frameMetadata = getFrameMetadata();
+  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
 
   // Ensure environment variables are defined
   const farcasterHeader = process.env.FARCASTER_HEADER;
@@ -24,34 +24,24 @@ export async function GET() {
 
   if (!farcasterHeader || !farcasterPayload || !farcasterSignature) {
     console.error("Missing Farcaster environment variables");
+    return Response.json(
+      { error: "Missing Farcaster account association data" },
+      { status: 500 },
+    );
   }
 
   return Response.json({
     accountAssociation: {
-      header: farcasterHeader || "",
-      payload: farcasterPayload || "",
-      signature: farcasterSignature || "",
+      header: farcasterHeader,
+      payload: farcasterPayload,
+      signature: farcasterSignature,
     },
     frame: withValidProperties({
       version: "1",
       name: frameMetadata.name,
-      subtitle: frameMetadata.subtitle,
-      description: frameMetadata.description,
-      screenshotUrls: [],
-      iconUrl: frameMetadata.iconUrl,
-      splashImageUrl: frameMetadata.splashImageUrl,
-      splashBackgroundColor: frameMetadata.splashBackgroundColor,
-      homeUrl: URL || "",
-      webhookUrl: URL ? `${URL}/api/webhook` : "",
-      primaryCategory: frameMetadata.primaryCategory,
-      tags: frameMetadata.tags,
-      heroImageUrl: frameMetadata.heroImageUrl,
-      tagline: frameMetadata.tagline,
-      ogTitle: frameMetadata.ogTitle,
-      ogDescription: frameMetadata.ogDescription,
-      ogImageUrl: frameMetadata.ogImageUrl,
-      // imageUrl: process.env.NEXT_PUBLIC_APP_IMAGE_URL,
-      // buttonTitle: process.env.NEXT_PUBLIC_APP_BUTTON_TITLE,
+      iconUrl: frameMetadata.iconUrl, // Now guaranteed to be absolute
+      homeUrl: baseUrl,
+      webhookUrl: `${baseUrl}/api/webhook`,
     }),
   });
 }
