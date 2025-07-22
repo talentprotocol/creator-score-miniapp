@@ -4,6 +4,7 @@ export const CACHE_KEYS = {
   PROFILE_SEARCH: "profile-search",
 };
 
+export const CACHE_DURATION_1_SECOND = 1; // 1 second
 export const CACHE_DURATION_1_MINUTE = 60; // 1 minute
 export const CACHE_DURATION_10_MINUTES = 600; // 10 minutes
 export const CACHE_DURATION_1_HOUR = 3600; // 1 hour

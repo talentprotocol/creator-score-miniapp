@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { redis } from "@/lib/redis";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_1_HOUR,
-  CACHE_DURATION_10_MINUTES,
-} from "@/lib/cache-keys";
+import { revalidateTag, unstable_cache } from "next/cache";
+import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
 
 type Profile = {
   id: string;
@@ -17,7 +12,7 @@ type Profile = {
 
 async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
   const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
-  const batchSize = 25; // API limit
+  const batchSize = 200; // API limit
   const totalNeeded = 200;
   let allProfiles: Profile[] = [];
 
@@ -71,6 +66,8 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
   return allProfiles.slice(0, totalNeeded);
 }
 
+// initial load can take up to 60 seconds
+export const maxDuration = 60;
 export async function GET(req: NextRequest) {
   const apiKey = process.env.TALENT_API_KEY;
   if (!apiKey) {
@@ -93,7 +90,7 @@ export async function GET(req: NextRequest) {
     try {
       const cachedStatsResponse = unstable_cache(
         async () => {
-          return await fetch(
+          const result = await fetch(
             `https://api.talentprotocol.com/search/advanced/profiles?page=1&per_page=1&scorer=creator_score&min_score=1`,
             {
               headers: {
@@ -102,14 +99,17 @@ export async function GET(req: NextRequest) {
               },
             },
           );
+          return result;
         },
         [CACHE_KEYS.LEADERBOARD_STATS_ONLY], // Cache key
-        { revalidate: CACHE_DURATION_1_HOUR }, // Revalidate every 60 seconds
+        { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
       );
 
       const res = await cachedStatsResponse();
 
       if (!res.ok) {
+        // if we find an error, we need to revalidate the cache so we can try again
+        revalidateTag(CACHE_KEYS.LEADERBOARD_STATS_ONLY);
         throw new Error(await res.text());
       }
 
@@ -146,11 +146,17 @@ export async function GET(req: NextRequest) {
           return await fetchTop200Entries(apiKey);
         },
         [CACHE_KEYS.LEADERBOARD_TOP_200], // Cache key
-        { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 60 seconds
+        { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
       );
       profiles = await cachedProfilesResponse();
+
+      if (profiles.length !== 200) {
+        // if we find an error, we need to revalidate the cache so we can try again
+        revalidateTag(CACHE_KEYS.LEADERBOARD_TOP_200);
+      }
     } else {
       // Regular paginated request
+      // if you update this, you need to update the cache key, right now only perPage and page are used
       const data = {
         query: {
           score: {
@@ -173,9 +179,9 @@ export async function GET(req: NextRequest) {
         `per_page=${perPage}`,
       ].join("&");
 
-      const cachedProfilesResponse = unstable_cache(
+      const cachedTop10Response = unstable_cache(
         async () => {
-          return await fetch(
+          const result = await fetch(
             `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
             {
               headers: {
@@ -184,14 +190,17 @@ export async function GET(req: NextRequest) {
               },
             },
           );
+          return result;
         },
-        [`${CACHE_KEYS.PROFILE_SEARCH}-${queryString}`], // Cache key
+        [`${CACHE_KEYS.PROFILE_SEARCH}-${perPage}-${page}`], // Cache key
         { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
       );
 
-      const res = await cachedProfilesResponse();
+      const res = await cachedTop10Response();
 
       if (!res.ok) {
+        // if we find an error, we need to revalidate the cache so we can try again
+        revalidateTag(`${CACHE_KEYS.PROFILE_SEARCH}-${perPage}-${page}`);
         throw new Error(await res.text());
       }
 

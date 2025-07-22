@@ -21,6 +21,7 @@ export function PotentialRewardsCard({
   loading,
 }: PotentialRewardsCardProps) {
   const { talentUuid } = useUserResolution();
+  console.log("rendering potential rewards card");
   const {
     stats,
     top200: top200Entries,

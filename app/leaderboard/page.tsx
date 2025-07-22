@@ -51,15 +51,10 @@ export default function LeaderboardPage() {
 
   // Initial fast load of first 10 entries
   // Use optimized leaderboard hook for all data
+  console.log("rendering leaderboard page");
   const {
-    top10: initialEntries,
     top200: top200Entries,
-
-    loading: {
-      top10: initialLoading,
-      top200: top200Loading,
-      stats: statsLoading,
-    },
+    loading: { top200: top200Loading, stats: statsLoading },
     error: top200Error,
     totalScores: totalTop200Scores,
   } = useLeaderboardOptimized();
@@ -74,12 +69,10 @@ export default function LeaderboardPage() {
 
   // Update visible entries when data changes
   useEffect(() => {
-    if (initialEntries.length > 0) {
-      setVisibleEntries(initialEntries);
-    } else if (top200Entries.length > 0) {
+    if (top200Entries.length > 0) {
       setVisibleEntries(top200Entries.slice(0, 10));
     }
-  }, [initialEntries, top200Entries]);
+  }, [top200Entries]);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -140,11 +133,10 @@ export default function LeaderboardPage() {
 
   // Determine loading and pagination state
   const hasMore =
-    initialEntries.length > 0
-      ? initialEntries.length < 200
+    top200Entries.length > 0
+      ? top200Entries.length < 200
       : visibleEntries.length < top200Entries.length;
-  const loading =
-    initialLoading || (initialEntries.length === 0 && top200Loading);
+  const loading = top200Loading;
 
   // Handler to load more entries
   const loadMore = () => {

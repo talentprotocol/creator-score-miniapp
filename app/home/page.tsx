@@ -21,9 +21,10 @@ export default function HomePage() {
   const { creatorScore, loading: scoreLoading } = useUserCreatorScore(
     user?.fid,
   );
+
   const {
-    top10: topCreators,
-    loading: { top10: creatorsLoading },
+    top200: topCreators,
+    loading: { top200: creatorsLoading },
   } = useLeaderboardOptimized();
 
   return (
@@ -38,7 +39,10 @@ export default function HomePage() {
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <TopCreatorsCard creators={topCreators} loading={creatorsLoading} />
+          <TopCreatorsCard
+            creators={topCreators.slice(0, 10)}
+            loading={creatorsLoading}
+          />
         </ErrorBoundary>
 
         <ErrorBoundary>
