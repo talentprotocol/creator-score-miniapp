@@ -393,3 +393,28 @@ export function formatPostDate(dateString: string): string {
     year: "numeric",
   });
 }
+
+// Helper to format numbers with K notation (2 decimals)
+export function formatWithK(value: number): string {
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(2)}K`;
+  }
+  return value.toString();
+}
+
+// Helper to format date
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+// Helper to format currency
+export function formatCurrency(amount: number): string {
+  if (amount >= 1000) {
+    return `$${formatWithK(amount)}`;
+  }
+  return `$${amount}`;
+}

@@ -11,16 +11,23 @@ import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
 import { useRouter } from "next/navigation";
-import { generateProfileUrl } from "@/lib/utils";
+import {
+  generateProfileUrl,
+  formatWithK,
+  formatDate,
+  formatCurrency,
+} from "@/lib/utils";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
-import { ACTIVE_SPONSORS, TOTAL_SPONSORS_POOL } from "@/lib/constants";
+import {
+  ACTIVE_SPONSORS,
+  TOTAL_SPONSORS_POOL,
+  ROUND_ENDS_AT,
+} from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
-
-const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -31,31 +38,6 @@ function getCountdownParts(target: Date) {
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
   return { days, hours };
-}
-
-// Helper to format numbers with K notation (2 decimals)
-function formatWithK(value: number): string {
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(2)}K`;
-  }
-  return value.toString();
-}
-
-// Helper to format date
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-// Helper to format currency
-function formatCurrency(amount: number): string {
-  if (amount >= 1000) {
-    return `$${formatWithK(amount)}`;
-  }
-  return `$${amount}`;
 }
 
 export default function LeaderboardPage() {
@@ -70,14 +52,8 @@ export default function LeaderboardPage() {
   // Initial fast load of first 10 entries
   // Use optimized leaderboard hook for all data
   const {
-    top10: initialEntries,
     top200: top200Entries,
-
-    loading: {
-      top10: initialLoading,
-      top200: top200Loading,
-      stats: statsLoading,
-    },
+    loading: { top200: top200Loading, stats: statsLoading },
     error: top200Error,
     totalScores: totalTop200Scores,
   } = useLeaderboardOptimized();
@@ -92,12 +68,10 @@ export default function LeaderboardPage() {
 
   // Update visible entries when data changes
   useEffect(() => {
-    if (initialEntries.length > 0) {
-      setVisibleEntries(initialEntries);
-    } else if (top200Entries.length > 0) {
-      setVisibleEntries(top200Entries.slice(0, 10));
+    if (top200Entries.length > 0) {
+      setVisibleEntries(top200Entries);
     }
-  }, [initialEntries, top200Entries]);
+  }, [top200Entries]);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -158,11 +132,10 @@ export default function LeaderboardPage() {
 
   // Determine loading and pagination state
   const hasMore =
-    initialEntries.length > 0
-      ? initialEntries.length < 200
+    top200Entries.length > 0
+      ? top200Entries.length < 200
       : visibleEntries.length < top200Entries.length;
-  const loading =
-    initialLoading || (initialEntries.length === 0 && top200Loading);
+  const loading = top200Loading;
 
   // Handler to load more entries
   const loadMore = () => {
@@ -232,7 +205,7 @@ export default function LeaderboardPage() {
 
       {/* Content section */}
       <Section variant="content" animate>
-        {initialLoading && top200Error && (
+        {loading && top200Error && (
           <div className="text-destructive text-sm px-2">{top200Error}</div>
         )}
 
