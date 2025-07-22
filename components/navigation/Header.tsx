@@ -84,7 +84,7 @@ export function Header() {
           </div>
 
           {/* Center: Desktop nav */}
-          <nav className="hidden md:flex items-center gap-2 justify-center flex-1">
+          <nav className="flex items-center gap-2 justify-center flex-1 md:flex md:!flex md:!block">
             {navItems.map((item) => {
               const isActive =
                 item.href === "/"
