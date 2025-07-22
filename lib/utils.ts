@@ -344,6 +344,14 @@ export type ClientEnvironment = "farcaster" | "base" | "browser";
  * Detect the current client environment
  */
 export function detectClient(context?: unknown): ClientEnvironment {
+  // Debug logging to understand the context
+  console.log("🔍 detectClient - context:", context);
+  console.log("🔍 detectClient - window.location:", window.location?.href);
+  console.log("🔍 detectClient - userAgent:", navigator.userAgent);
+  console.log(
+    "🔍 detectClient - is iframe:",
+    typeof window !== "undefined" ? window.self !== window.top : "no window",
+  );
   // Check for Base App first - clientFid 399519 indicates Base app
   if (
     context &&
@@ -354,25 +362,44 @@ export function detectClient(context?: unknown): ClientEnvironment {
     "clientFid" in context.client &&
     context.client.clientFid === 399519
   ) {
+    console.log("🔍 detectClient - detected: base");
     return "base";
   }
 
   // Check if we're in a Farcaster environment
   if (typeof window !== "undefined") {
+    // More comprehensive Farcaster detection
     const isInFarcaster =
+      // Check URL patterns
       window.location.hostname.includes("farcaster") ||
       window.location.hostname.includes("warpcast") ||
-      // Check for Farcaster-specific globals
+      window.location.href.includes("farcaster") ||
+      window.location.href.includes("warpcast") ||
+      // Check for Farcaster-specific globals and properties
       "farcasterFrame" in window ||
+      "farcaster" in window ||
+      // Check for Farcaster SDK availability
+      "farcaster" in window ||
       // Check user agent for Farcaster
-      navigator.userAgent.includes("Farcaster");
+      navigator.userAgent.includes("Farcaster") ||
+      navigator.userAgent.includes("Warpcast") ||
+      // Check if we're in an iframe (common for mini apps)
+      window.self !== window.top ||
+      // Check for Farcaster-specific context properties
+      (context &&
+        typeof context === "object" &&
+        ("farcaster" in context ||
+          "warpcast" in context ||
+          "isFarcaster" in context));
 
     if (isInFarcaster) {
+      console.log("🔍 detectClient - detected: farcaster");
       return "farcaster";
     }
   }
 
   // Default to browser environment
+  console.log("🔍 detectClient - detected: browser");
   return "browser";
 }
 
@@ -430,6 +457,9 @@ export async function composeCast(
   context?: unknown,
 ): Promise<void> {
   const client = detectClient(context);
+  console.log("🎯 composeCast - detected client:", client);
+  console.log("🎯 composeCast - text:", text);
+  console.log("🎯 composeCast - embeds:", embeds);
 
   if (client === "base") {
     try {
