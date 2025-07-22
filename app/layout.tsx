@@ -7,7 +7,7 @@ import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
-import { getAppMetadata, getPageMetadata } from "@/lib/app-metadata";
+import { getPageMetadata } from "@/lib/app-metadata";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -15,44 +15,7 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const URL = process.env.NEXT_PUBLIC_URL;
-  const appMetadata = getAppMetadata();
   const pageMetadata = getPageMetadata();
-
-  let frameMetadata;
-  try {
-    frameMetadata = JSON.stringify({
-      version: "next",
-      imageUrl: appMetadata.heroImageUrl,
-      button: {
-        title: `Launch ${appMetadata.name}`,
-        action: {
-          type: "launch_frame",
-          name: appMetadata.name,
-          url: URL,
-          splashImageUrl: appMetadata.splashImageUrl,
-          splashBackgroundColor: appMetadata.splashBackgroundColor,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Error generating frame metadata:", error);
-    // Fallback to a minimal valid frame metadata
-    frameMetadata = JSON.stringify({
-      version: "next",
-      imageUrl: appMetadata.heroImageUrl || "",
-      button: {
-        title: "Check Score",
-        action: {
-          type: "launch_frame",
-          name: "Creator Score",
-          url: URL || "https://www.creatorscore.app",
-          splashImageUrl: appMetadata.splashImageUrl || "",
-          splashBackgroundColor: appMetadata.splashBackgroundColor || "#C79AF6",
-        },
-      },
-    });
-  }
 
   return {
     title: pageMetadata.title,
@@ -61,9 +24,6 @@ export async function generateMetadata(): Promise<Metadata> {
       icon: "/favicon-64.png",
       shortcut: "/favicon-64.png",
       apple: "/favicon-64.png",
-    },
-    other: {
-      "fc:frame": frameMetadata,
     },
   };
 }

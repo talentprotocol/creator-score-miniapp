@@ -7,6 +7,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { ProfileAccountsSheet } from "./ProfileAccountsSheet";
 import { useUserCategory } from "@/hooks/useUserCategory";
+import { useCreatorCategory } from "@/hooks/useCreatorCategory";
 import { useProfileContext } from "@/contexts/ProfileContext";
 import { processCreatorCategories } from "@/lib/credentialUtils";
 import { CategorySelectionModal } from "./CategorySelectionModal";
@@ -42,7 +43,12 @@ export function ProfileHeader({
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
       processCreatorCategories(profileData.credentials as any)
     : null;
-  const { userCategory, updateCategory } = useUserCategory(talentUUID || "");
+  // Only run category logic for own profile to avoid unnecessary DB queries
+  const { userCategory, updateCategory } = useUserCategory(
+    isOwnProfile ? talentUUID || "" : "",
+  );
+  // This hook handles automatic saving of algorithmic categories
+  useCreatorCategory(isOwnProfile ? talentUUID || "" : "");
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
   const [pendingCategory, setPendingCategory] =
     React.useState<CreatorCategoryType | null>(null);
@@ -56,16 +62,25 @@ export function ProfileHeader({
 
   // Get the category to display (pending takes priority for immediate feedback)
   const displayCategory = React.useMemo(() => {
-    if (!categoryData?.primaryCategory) return null;
+    // For own profile: use pending, manual, or algorithmic category
+    // For public profiles: only use algorithmic category (no manual data)
+    const categoryName = isOwnProfile
+      ? pendingCategory || userCategory || categoryData?.primaryCategory?.name
+      : categoryData?.primaryCategory?.name;
 
-    const categoryName =
-      pendingCategory || userCategory || categoryData.primaryCategory.name;
+    if (!categoryName) return null;
+
     return {
       name: categoryName,
       emoji:
         CREATOR_CATEGORIES[categoryName as keyof typeof CREATOR_CATEGORIES],
     };
-  }, [pendingCategory, userCategory, categoryData?.primaryCategory]);
+  }, [
+    isOwnProfile,
+    pendingCategory,
+    userCategory,
+    categoryData?.primaryCategory,
+  ]);
 
   const name =
     displayName ||
@@ -180,7 +195,7 @@ export function ProfileHeader({
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         onSelectCategory={handleCategorySelect}
-        currentCategory={displayCategory?.name}
+        currentCategory={displayCategory?.name || undefined}
       />
     </>
   );

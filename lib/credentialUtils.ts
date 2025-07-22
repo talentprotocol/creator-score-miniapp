@@ -151,7 +151,7 @@ export interface CreatorCategoryData {
 }
 
 export interface CreatorCategoryBreakdown {
-  primaryCategory: CreatorCategoryData;
+  primaryCategory: CreatorCategoryData | null;
   categories: CreatorCategoryData[];
   totalPoints: number;
   totalMaxPoints: number;
@@ -248,13 +248,8 @@ export function processCreatorCategories(
   categories.sort((a, b) => b.completionPercentage - a.completionPercentage);
 
   // Primary category is the one with the highest completion percentage
-  const primaryCategory = categories[0] || {
-    name: "Artist" as CreatorCategoryType,
-    emoji: "🎨",
-    points: 0,
-    maxPoints: 0,
-    completionPercentage: 0,
-  };
+  // If no categories have points, return null (no category)
+  const primaryCategory = categories[0] || null;
 
   return {
     primaryCategory,

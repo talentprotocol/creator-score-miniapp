@@ -59,7 +59,6 @@ export function ProfileProvider({
   const refetchScore = () => {
     // For now, just a placeholder
     // In a real implementation, this could trigger a server action or router.refresh()
-    console.log("Score refetch requested - would trigger server refresh");
   };
 
   return (

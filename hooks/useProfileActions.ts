@@ -4,7 +4,7 @@ import { getUserContext } from "@/lib/user-context";
 import { useUserResolution } from "@/hooks/useUserResolution";
 import { useScoreRefresh } from "@/hooks/useScoreRefresh";
 // Removed useCreatorCategory - data now comes from ProfileContext
-import { formatNumberWithSuffix, formatK } from "@/lib/utils";
+import { formatNumberWithSuffix, formatK, composeCast } from "@/lib/utils";
 import type { ProfileData } from "@/contexts/ProfileContext";
 
 interface UseProfileActionsProps {
@@ -96,7 +96,7 @@ export function useProfileActions({
   const failedText = "Refresh Failed";
 
   // Handle share stats action
-  const handleShareStats = useCallback(() => {
+  const handleShareStats = useCallback(async () => {
     // Get creator category from data, fallback to bio, then "Creator"
     const creatorType = profile?.bio || "Creator"; // Simplified - no category data needed
     const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
@@ -110,36 +110,16 @@ export function useProfileActions({
     // Add image URL
     const imageUrl = `${window.location.origin}/api/share-image/${talentUUID}`;
 
-    // Proper Farcaster environment detection (like in lib/utils.ts)
-    const isInFarcaster =
-      typeof window !== "undefined" &&
-      (window.location.hostname.includes("farcaster") ||
-        window.location.hostname.includes("warpcast") ||
-        // Check for Farcaster-specific globals
-        "farcasterFrame" in window ||
-        // Check user agent for Farcaster
-        navigator.userAgent.includes("Farcaster"));
-
-    if (isInFarcaster && window?.parent?.postMessage) {
-      window.parent.postMessage(
-        {
-          type: "createCast",
-          data: {
-            cast: {
-              text: shareText,
-              embeds: [{ url: imageUrl }], // Add the generated image
-            },
-          },
-        },
-        "*",
-      );
-    } else {
-      // Use Warpcast intent URL when not in Farcaster
-      const encodedText = encodeURIComponent(shareText);
-      const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}`;
-      window.open(warpcastUrl, "_blank");
-    }
-  }, [profile, creatorScore, totalFollowers, totalEarnings, talentUUID]); // Added talentUUID dependency
+    // Use the new cross-platform composeCast function
+    await composeCast(shareText, [imageUrl], context);
+  }, [
+    profile,
+    creatorScore,
+    totalFollowers,
+    totalEarnings,
+    talentUUID,
+    context,
+  ]);
 
   // Handle refresh/calculate score action
   const handleRefreshScore = useCallback(() => {

@@ -112,6 +112,7 @@ export async function generateMetadata({
     const creatorScore = creatorScoreData.score || 0;
     const displayName = user.display_name || user.name || "Creator";
     const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    const dynamicImageUrl = `${baseUrl}/api/share-image/${user.id}`;
 
     return {
       title: `${displayName} - Creator Score`,
@@ -121,7 +122,7 @@ export async function generateMetadata({
         description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
         images: [
           {
-            url: `${baseUrl}/api/share-image/${user.id}`,
+            url: dynamicImageUrl,
             width: 1600,
             height: 900,
             alt: `${displayName} Creator Score Card`,
@@ -134,7 +135,24 @@ export async function generateMetadata({
         card: "summary_large_image",
         title: `${displayName} - Creator Score`,
         description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
-        images: [`${baseUrl}/api/share-image/${user.id}`],
+        images: [dynamicImageUrl],
+      },
+      // Add Farcaster frame metadata for profile pages
+      other: {
+        "fc:frame": JSON.stringify({
+          version: "next",
+          imageUrl: dynamicImageUrl, // Use the custom card!
+          button: {
+            title: "Launch Creator Score Mini App",
+            action: {
+              type: "launch_frame",
+              name: "Creator Score Mini App",
+              url: baseUrl,
+              splashImageUrl: `${baseUrl}/splash.png`,
+              splashBackgroundColor: "#C79AF6",
+            },
+          },
+        }),
       },
     };
   } catch (error) {
