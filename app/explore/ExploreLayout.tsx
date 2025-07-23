@@ -47,6 +47,7 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
           value={search.query}
           onChange={handleSearchChange}
           placeholder="Search creators by name…"
+          disabled={true}
         />
       </Section>
 
