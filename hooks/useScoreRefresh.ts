@@ -17,8 +17,6 @@ export function useScoreRefresh(
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasCalledSuccessRef = useRef(false);
 
   const clearError = () => {
@@ -49,19 +47,9 @@ export function useScoreRefresh(
               await onSuccess();
             } catch (error) {
               console.error("Error during score refetch:", error);
-            } finally {
-              // Keep isRefreshing true for a bit longer after refetch completes
-              // to prevent flickering between states
-              setTimeout(() => {
-                setIsRefreshing(false);
-              }, 500);
             }
           }, 1000);
-        } else {
-          // If no onSuccess callback, reset immediately
-          setIsRefreshing(false);
         }
-        // No auto-clear of success message
       } else {
         const errorMessage = result.error || "Failed to trigger calculation";
         setError(errorMessage);
