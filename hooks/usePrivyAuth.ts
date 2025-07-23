@@ -1,6 +1,7 @@
 "use client";
 
 import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const getInitialTalentUserId = () => {
@@ -15,6 +16,7 @@ export const usePrivyAuth = ({
 }: {
   onLoginComplete?: () => void;
 }) => {
+  const router = useRouter();
   const { ready, authenticated, user: privyUser, logout } = usePrivy();
   const { login } = useLogin({
     onComplete: () => {
@@ -40,6 +42,7 @@ export const usePrivyAuth = ({
       localStorage.removeItem("talentUserId");
     }
     logout();
+    router.push("/leaderboard");
   };
 
   useEffect(() => {

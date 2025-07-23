@@ -21,7 +21,6 @@ export default function ProfilePage() {
         return;
       }
     } else if (talentId) {
-      console.log("[INSIDE HOOK] redirecting to /talentId:", talentId);
       router.push(`/${talentId}`);
     } else {
       router.push("/leaderboard");

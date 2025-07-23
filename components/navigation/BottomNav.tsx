@@ -23,6 +23,7 @@ export function BottomNav() {
 
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
     setClickedIcon(item.href);
+
     // If user tries to access Profile without user context, show modal
     if ((!talentUuid || !talentId) && item.label === "Profile") {
       e.preventDefault();

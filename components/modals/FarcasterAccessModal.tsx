@@ -55,8 +55,10 @@ export function FarcasterAccessModal({
   const router = useRouter();
   const { login } = useLogin({
     onComplete: () => {
-      router.push("/profile");
-      onOpenChange(false);
+      if (open) {
+        onOpenChange(false);
+        router.push("/profile");
+      }
     },
   });
 
@@ -65,11 +67,6 @@ export function FarcasterAccessModal({
       "https://farcaster.xyz/miniapps/WSqcbI1uxFJo/creator-score-mini-app",
       "_blank",
     );
-  };
-
-  const handleContinueBrowsing = () => {
-    // Just close the modal, keeping user on current page
-    onOpenChange(false);
   };
 
   // Handle focus management for mobile drawer
@@ -117,13 +114,6 @@ export function FarcasterAccessModal({
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
             </Button>
-            <Button
-              variant="default"
-              onClick={handleContinueBrowsing}
-              className="w-full"
-            >
-              Continue Browsing
-            </Button>
 
             <Button
               variant="default"
@@ -143,10 +133,10 @@ export function FarcasterAccessModal({
     <Drawer open={open} onOpenChange={onOpenChange} modal={true}>
       <DrawerContent className="max-w-sm mx-auto w-full p-4 rounded-t-2xl">
         <DrawerHeader>
-          <DrawerTitle>Access {feature} in Farcaster</DrawerTitle>
+          <DrawerTitle>Check your Creator Score</DrawerTitle>
           <DrawerDescription>
-            To view your {feature.toLowerCase()} and access all features, please
-            open this app in Farcaster.
+            To view your score and access all features, please login with Privy
+            or use our Mini App.
           </DrawerDescription>
         </DrawerHeader>
         <div
@@ -162,13 +152,6 @@ export function FarcasterAccessModal({
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleContinueBrowsing}
-              className="w-full"
-            >
-              Continue Browsing
             </Button>
             <Button
               variant="default"
