@@ -21,7 +21,6 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const pageMetadata = getPageMetadata();
   const frameMetadata = getFrameMetadata();
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
 
   return {
     title: pageMetadata.title,
