@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
 import { getPageMetadata, getFrameMetadata } from "@/lib/app-metadata";
+import { FrameMetaTags } from "@/components/common/FrameMetaTags";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -75,6 +76,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
       </head>
       <body className="min-h-full bg-white flex flex-col">
+        <FrameMetaTags />
         <script
           dangerouslySetInnerHTML={{ __html: globalErrorHandlingScript }}
         />
