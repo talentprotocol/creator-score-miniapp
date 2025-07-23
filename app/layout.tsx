@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: "/favicon-64.png",
     },
     other: {
-      "fc:miniapp": "vNext",
+      "fc:miniapp": "true",
       "fc:miniapp:image": frameMetadata.ogImageUrl,
       "fc:miniapp:button:1": "Open App",
       "fc:miniapp:post_url": baseUrl,

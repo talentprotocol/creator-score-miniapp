@@ -30,7 +30,7 @@ export function FrameMetaTags() {
     };
 
     // Farcaster Mini App Meta Tags - Required for embed functionality
-    setMetaTag('fc:miniapp', 'vNext');
+    setMetaTag('fc:miniapp', 'true');
     setMetaTag('fc:miniapp:image', frameMetadata.ogImageUrl);
     setMetaTag('fc:miniapp:button:1', 'Open App');
     setMetaTag('fc:miniapp:post_url', baseUrl);

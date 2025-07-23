@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: pageMetadata.title,
     description: pageMetadata.description,
     other: {
-      "fc:miniapp": "vNext",
+      "fc:miniapp": "true",
       "fc:miniapp:image": frameMetadata.ogImageUrl,
       "fc:miniapp:button:1": "Open App",
       "fc:miniapp:post_url": baseUrl,
