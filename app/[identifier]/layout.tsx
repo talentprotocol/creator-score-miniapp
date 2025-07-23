@@ -111,8 +111,10 @@ export async function generateMetadata({
 
     const creatorScore = creatorScoreData.score || 0;
     const displayName = user.display_name || user.name || "Creator";
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
-    const dynamicImageUrl = `${baseUrl}/api/share-image/${user.id}`;
+
+    // Always use canonical URL for Open Graph metadata (not localhost)
+    const canonicalUrl = "https://creatorscore.app";
+    const dynamicImageUrl = `${canonicalUrl}/api/share-image/${user.id}`;
 
     return {
       title: `${displayName} - Creator Score`,
@@ -129,7 +131,7 @@ export async function generateMetadata({
           },
         ],
         type: "website",
-        url: `${baseUrl}/${canonical}`,
+        url: `${canonicalUrl}/${canonical}`,
       },
       twitter: {
         card: "summary_large_image",
@@ -147,8 +149,8 @@ export async function generateMetadata({
             action: {
               type: "launch_frame",
               name: "Creator Score Mini App",
-              url: baseUrl,
-              splashImageUrl: `${baseUrl}/splash.png`,
+              url: canonicalUrl,
+              splashImageUrl: `${canonicalUrl}/splash.png`,
               splashBackgroundColor: "#C79AF6",
             },
           },
