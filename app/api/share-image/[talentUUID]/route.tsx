@@ -155,6 +155,7 @@ export async function GET(
         >
           {/* Avatar - using exact Figma coordinates */}
           {avatar && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatar}
               alt="Creator avatar"

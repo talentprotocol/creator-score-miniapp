@@ -475,7 +475,7 @@ export async function composeCast(
         embeds: limitedEmbeds,
       });
       return;
-    } catch (error) {
+    } catch {
       // Fall through to URL-based sharing
     }
   }
@@ -485,7 +485,7 @@ export async function composeCast(
     try {
       // Use Base Mini App SDK - note: actual API methods need to be verified
       // For now, falling through to Twitter/X as Base Mini App SDK methods are not confirmed
-    } catch (error) {
+    } catch {
       // Fall through to Twitter/X
     }
   }
