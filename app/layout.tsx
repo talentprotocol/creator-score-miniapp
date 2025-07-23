@@ -20,6 +20,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: pageMetadata.title,
     description: pageMetadata.description,
+    openGraph: {
+      title: pageMetadata.ogTitle,
+      description: pageMetadata.ogDescription,
+      images: [pageMetadata.ogImage],
+      type: "website",
+      url: "https://www.creatorscore.app",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pageMetadata.title,
+      description: pageMetadata.description,
+      images: [pageMetadata.ogImage],
+    },
     icons: {
       icon: "/favicon-64.png",
       shortcut: "/favicon-64.png",
