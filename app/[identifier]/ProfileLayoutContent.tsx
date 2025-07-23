@@ -268,7 +268,7 @@ function ProfileLayoutContentInner({
         {isOwnProfile && !hasNoScore && (
           <div className="mt-4">
             <Callout variant="brand" href="/settings">
-              Connect accounts to increase your Creator Score
+              Connect more accounts to increase your Creator Score
             </Callout>
           </div>
         )}
