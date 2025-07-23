@@ -20,6 +20,7 @@ export function useCreatorCategory(talentUUID: string) {
   );
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const hasSavedAlgorithmic = useRef(false);
+  const hasClearedCategory = useRef(false);
 
   // Auto-refresh when userCategory changes
   useEffect(() => {
@@ -31,44 +32,64 @@ export function useCreatorCategory(talentUUID: string) {
     setRefreshTrigger((prev) => prev + 1);
   }, []);
 
+  // Handle clearing category when no credentials exist
+  useEffect(() => {
+    if (!credentials || credentials.length === 0) {
+      if (userCategory && !hasClearedCategory.current) {
+        hasClearedCategory.current = true;
+        clearCategory();
+      }
+    } else {
+      hasClearedCategory.current = false;
+    }
+  }, [credentials, userCategory, clearCategory]);
+
+  // Handle clearing category when no algorithmic category exists
+  useEffect(() => {
+    if (credentials && credentials.length > 0) {
+      const algorithmicData = processCreatorCategories(credentials);
+      if (
+        !algorithmicData.primaryCategory &&
+        userCategory &&
+        !hasClearedCategory.current
+      ) {
+        hasClearedCategory.current = true;
+        clearCategory();
+      }
+    }
+  }, [credentials, userCategory, clearCategory]);
+
+  // Handle saving algorithmic category
+  useEffect(() => {
+    if (credentials && credentials.length > 0) {
+      const algorithmicData = processCreatorCategories(credentials);
+
+      // Save algorithmic category to database if:
+      // 1. No manual category exists
+      // 2. Algorithmic category has meaningful points (not null)
+      // 3. Haven't already saved this algorithmic category
+      if (
+        !userCategory &&
+        !hasSavedAlgorithmic.current &&
+        algorithmicData.primaryCategory &&
+        algorithmicData.primaryCategory.points > 0
+      ) {
+        hasSavedAlgorithmic.current = true;
+        updateCategory(algorithmicData.primaryCategory.name as CreatorCategory);
+      }
+    }
+  }, [credentials, userCategory, updateCategory]);
+
   const data = useMemo(() => {
     if (!credentials || credentials.length === 0) {
-      // If no credentials, clear any existing category
-      if (userCategory) {
-        setTimeout(() => {
-          clearCategory();
-        }, 0);
-      }
       return null;
     }
 
     const algorithmicData = processCreatorCategories(credentials);
 
-    // If no algorithmic category (no points), clear any existing category
-    if (!algorithmicData.primaryCategory && userCategory) {
-      setTimeout(() => {
-        clearCategory();
-      }, 0);
+    // If no algorithmic category (no points), return null
+    if (!algorithmicData.primaryCategory) {
       return null;
-    }
-
-    // Save algorithmic category to database if:
-    // 1. No manual category exists
-    // 2. Algorithmic category has meaningful points (not null)
-    // 3. Haven't already saved this algorithmic category
-    if (
-      !userCategory &&
-      !hasSavedAlgorithmic.current &&
-      algorithmicData.primaryCategory &&
-      algorithmicData.primaryCategory.points > 0
-    ) {
-      hasSavedAlgorithmic.current = true;
-      // Use setTimeout to avoid blocking the render
-      setTimeout(() => {
-        updateCategory(
-          algorithmicData.primaryCategory!.name as CreatorCategory,
-        );
-      }, 0);
     }
 
     // If user has self-reported a category, use that as primary
@@ -89,13 +110,7 @@ export function useCreatorCategory(talentUUID: string) {
     }
 
     return algorithmicData;
-  }, [
-    credentials,
-    userCategory,
-    refreshTrigger,
-    updateCategory,
-    clearCategory,
-  ]);
+  }, [credentials, userCategory, refreshTrigger]);
 
   return { data, loading, error, refresh };
 }

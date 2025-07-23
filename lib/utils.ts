@@ -452,66 +452,90 @@ export async function openExternalUrl(
  * Compose a cast with environment detection
  */
 export async function composeCast(
-  text: string,
+  farcasterText: string,
+  twitterText: string,
   embeds?: string[],
   context?: unknown,
 ): Promise<void> {
-  console.log("🎯 composeCast - text:", text);
+  console.log("🎯 composeCast - farcasterText:", farcasterText);
+  console.log("🎯 composeCast - twitterText:", twitterText);
   console.log("🎯 composeCast - embeds:", embeds);
   console.log("🎯 composeCast - context:", context);
 
-  // Try Farcaster SDK first (most reliable for Farcaster environments)
-  try {
-    const { sdk } = await import("@farcaster/frame-sdk");
-    console.log("🎯 composeCast - Farcaster SDK imported successfully");
-
-    // Farcaster SDK expects embeds as limited array
-    const limitedEmbeds = embeds
-      ? (embeds.slice(0, 2) as [] | [string] | [string, string])
-      : undefined;
-
-    await sdk.actions.composeCast({ text, embeds: limitedEmbeds });
-    console.log("🎯 composeCast - Farcaster SDK composeCast successful");
-    return;
-  } catch (error) {
-    console.log(
-      "🎯 composeCast - Farcaster SDK failed, trying client detection:",
-      error,
-    );
-  }
-
-  // If Farcaster SDK fails, try client detection
+  // First, detect the client environment
   const client = detectClient(context);
   console.log("🎯 composeCast - detected client:", client);
 
-  if (client === "base") {
+  // Handle Farcaster environment
+  if (client === "farcaster") {
     try {
-      // Use Base Mini App SDK - note: actual API methods need to be verified
-      // For now, falling through to Warpcast intent URL as Base Mini App SDK methods are not confirmed
-      console.log(
-        "Base Mini App detected - using Warpcast intent URL fallback",
-      );
+      const { sdk } = await import("@farcaster/frame-sdk");
+      console.log("🎯 composeCast - Farcaster SDK imported successfully");
+
+      // Farcaster SDK expects embeds as limited array
+      const limitedEmbeds = embeds
+        ? (embeds.slice(0, 2) as [] | [string] | [string, string])
+        : undefined;
+
+      await sdk.actions.composeCast({
+        text: farcasterText,
+        embeds: limitedEmbeds,
+      });
+      console.log("🎯 composeCast - Farcaster SDK composeCast successful");
+      return;
     } catch (error) {
-      console.error("Failed to compose cast with Base SDK:", error);
-      // Fall through to Warpcast intent URL
+      console.log(
+        "🎯 composeCast - Farcaster SDK failed, falling back to URL:",
+        error,
+      );
+      // Fall through to URL-based sharing
     }
   }
 
-  // Fallback to Farcaster/Warpcast intent URL for browser or when SDKs fail
-  console.log("🎯 composeCast - using Farcaster URL fallback");
-  const encodedText = encodeURIComponent(text);
-
-  // Try farcaster.xyz first (as seen in the working URL), then fallback to warpcast.com
-  let farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodedText}`;
-
-  if (embeds && embeds.length > 0) {
-    embeds.forEach((embed) => {
-      farcasterUrl += `&embeds[]=${encodeURIComponent(embed)}`;
-    });
+  // Handle Base app environment
+  if (client === "base") {
+    try {
+      // Use Base Mini App SDK - note: actual API methods need to be verified
+      // For now, falling through to Twitter/X as Base Mini App SDK methods are not confirmed
+      console.log("Base Mini App detected - using Twitter/X fallback");
+    } catch (error) {
+      console.error("Failed to compose cast with Base SDK:", error);
+      // Fall through to Twitter/X
+    }
   }
 
-  console.log("🎯 composeCast - opening Farcaster URL:", farcasterUrl);
-  window.open(farcasterUrl, "_blank");
+  // Fallback to Twitter/X for browser or when SDKs fail
+  console.log("🎯 composeCast - using Twitter/X URL fallback");
+  const encodedText = encodeURIComponent(twitterText);
+
+  // Build Twitter/X share URL
+  let twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+
+  if (embeds && embeds.length > 0) {
+    // For Twitter, use the profile page URL which has proper Open Graph meta tags
+    // Twitter will automatically fetch and display the image via the meta tags
+    const profileUrl = embeds[0];
+    twitterUrl += `&url=${encodeURIComponent(profileUrl)}`;
+  }
+
+  console.log("🎯 composeCast - opening Twitter/X URL:", twitterUrl);
+  window.open(twitterUrl, "_blank");
+
+  // COMMENTED OUT: Farcaster URL fallback (keeping for future use)
+  // console.log("🎯 composeCast - using Farcaster URL fallback");
+  // const encodedText = encodeURIComponent(farcasterText);
+  //
+  // // Try farcaster.xyz first (as seen in the working URL), then fallback to warpcast.com
+  // let farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodedText}`;
+  //
+  // if (embeds && embeds.length > 0) {
+  //   embeds.forEach((embed) => {
+  //     farcasterUrl += `&embeds[]=${encodeURIComponent(embed)}`;
+  //   });
+  // }
+  //
+  // console.log("🎯 composeCast - opening Farcaster URL:", farcasterUrl);
+  // window.open(farcasterUrl, "_blank");
 }
 
 /**

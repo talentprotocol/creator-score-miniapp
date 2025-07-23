@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { CreatorCategory } from "@/lib/types/user-preferences";
 
 export function useUserCategory(talentUUID: string) {
@@ -43,42 +43,45 @@ export function useUserCategory(talentUUID: string) {
   }, [talentUUID]);
 
   // Update category via API
-  const updateCategory = async (category: CreatorCategory) => {
-    if (!talentUUID) return;
+  const updateCategory = useCallback(
+    async (category: CreatorCategory) => {
+      if (!talentUUID) return;
 
-    try {
-      setError(null);
-      const response = await fetch("/api/user-preferences", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          talent_uuid: talentUUID,
-          creator_category: category,
-        }),
-      });
+      try {
+        setError(null);
+        const response = await fetch("/api/user-preferences", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            talent_uuid: talentUUID,
+            creator_category: category,
+          }),
+        });
 
-      if (response.ok) {
-        setUserCategory(category);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Failed to update category");
-        throw new Error(errorData.error || "Failed to update category");
+        if (response.ok) {
+          setUserCategory(category);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || "Failed to update category");
+          throw new Error(errorData.error || "Failed to update category");
+        }
+      } catch (error) {
+        console.error("Error saving user category:", error);
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("Failed to save category");
+        }
+        throw error;
       }
-    } catch (error) {
-      console.error("Error saving user category:", error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Failed to save category");
-      }
-      throw error;
-    }
-  };
+    },
+    [talentUUID],
+  );
 
   // Clear category (set to null in database)
-  const clearCategory = async () => {
+  const clearCategory = useCallback(async () => {
     if (!talentUUID) return;
 
     try {
@@ -110,7 +113,7 @@ export function useUserCategory(talentUUID: string) {
       }
       throw error;
     }
-  };
+  }, [talentUUID]);
 
   return {
     userCategory,

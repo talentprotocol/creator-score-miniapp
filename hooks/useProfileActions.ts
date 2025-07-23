@@ -107,14 +107,25 @@ export function useProfileActions({
 
     // Get Farcaster handle for the share text
     const farcasterHandle = profile?.fname || "creator";
+    const displayName = profile?.display_name || profile?.name || "Creator";
 
-    const shareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent`;
+    // Create separate copy for Farcaster and Twitter
+    const farcasterShareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
 
-    // Use profile URL instead of static image for better engagement
-    const profileUrl = `${window.location.origin}/${talentUUID}`;
+    const twitterShareText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
+
+    // Use canonical public URL format for sharing
+    // Always use https://creatorscore.app/[farcaster%20handle] format
+    const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
 
     // Use the new cross-platform composeCast function
-    await composeCast(shareText, [profileUrl], context);
+    // The composeCast function will choose the appropriate text based on the platform
+    await composeCast(
+      farcasterShareText,
+      twitterShareText,
+      [profileUrl],
+      context,
+    );
   }, [
     profile,
     creatorScore,
