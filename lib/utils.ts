@@ -457,20 +457,13 @@ export async function composeCast(
   embeds?: string[],
   context?: unknown,
 ): Promise<void> {
-  console.log("🎯 composeCast - farcasterText:", farcasterText);
-  console.log("🎯 composeCast - twitterText:", twitterText);
-  console.log("🎯 composeCast - embeds:", embeds);
-  console.log("🎯 composeCast - context:", context);
-
   // First, detect the client environment
   const client = detectClient(context);
-  console.log("🎯 composeCast - detected client:", client);
 
   // Handle Farcaster environment
   if (client === "farcaster") {
     try {
       const { sdk } = await import("@farcaster/frame-sdk");
-      console.log("🎯 composeCast - Farcaster SDK imported successfully");
 
       // Farcaster SDK expects embeds as limited array
       const limitedEmbeds = embeds
@@ -481,13 +474,8 @@ export async function composeCast(
         text: farcasterText,
         embeds: limitedEmbeds,
       });
-      console.log("🎯 composeCast - Farcaster SDK composeCast successful");
       return;
     } catch (error) {
-      console.log(
-        "🎯 composeCast - Farcaster SDK failed, falling back to URL:",
-        error,
-      );
       // Fall through to URL-based sharing
     }
   }
@@ -497,15 +485,12 @@ export async function composeCast(
     try {
       // Use Base Mini App SDK - note: actual API methods need to be verified
       // For now, falling through to Twitter/X as Base Mini App SDK methods are not confirmed
-      console.log("Base Mini App detected - using Twitter/X fallback");
     } catch (error) {
-      console.error("Failed to compose cast with Base SDK:", error);
       // Fall through to Twitter/X
     }
   }
 
   // Fallback to Twitter/X for browser or when SDKs fail
-  console.log("🎯 composeCast - using Twitter/X URL fallback");
   const encodedText = encodeURIComponent(twitterText);
 
   // Build Twitter/X share URL
@@ -518,7 +503,6 @@ export async function composeCast(
     twitterUrl += `&url=${encodeURIComponent(profileUrl)}`;
   }
 
-  console.log("🎯 composeCast - opening Twitter/X URL:", twitterUrl);
   window.open(twitterUrl, "_blank");
 
   // COMMENTED OUT: Farcaster URL fallback (keeping for future use)
