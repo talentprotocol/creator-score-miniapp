@@ -3,7 +3,7 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export default function ProfilePage() {
