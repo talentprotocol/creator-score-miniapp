@@ -222,8 +222,9 @@ export default function LeaderboardPage() {
                     avatarUrl={user.pfp}
                     score={user.score}
                     rewards={getUsdcRewards(user.score, user.rank)}
-                    onClick={() => handleEntryClick(user)}
+                    // onClick={() => handleEntryClick(user)}
                     rewardsLoading={!userTop200Entry && top200Loading}
+                    talentUuid={user.talent_protocol_id}
                   />
                   {index < visibleEntries.length - 1 && (
                     <div className="h-px bg-gray-200" />
