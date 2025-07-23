@@ -1,15 +1,13 @@
 import { NextRequest } from "next/server";
 import { talentApiClient } from "@/lib/talent-api-client";
 
-const DISABLE_SEARCH = true;
-
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const query = searchParams.get("query");
   const page = parseInt(searchParams.get("page") || "1", 10);
   const perPage = parseInt(searchParams.get("per_page") || "10", 10);
 
-  if (!query || query.trim().length < 2 || DISABLE_SEARCH) {
+  if (!query || query.trim().length < 2) {
     return new Response(
       JSON.stringify({ error: "Query must be at least 2 characters long" }),
       { status: 400, headers: { "Content-Type": "application/json" } },
