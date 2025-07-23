@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { getUserContext } from "@/lib/user-context";
 import { useUserResolution } from "@/hooks/useUserResolution";
 import { useScoreRefresh } from "@/hooks/useScoreRefresh";
 // Removed useCreatorCategory - data now comes from ProfileContext
@@ -28,6 +29,7 @@ export function useProfileActions({
   totalEarnings,
 }: UseProfileActionsProps) {
   const { context } = useMiniKit();
+  const user = getUserContext(context);
   const { talentUuid: currentUserTalentUuid } = useUserResolution();
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
 
@@ -71,6 +73,7 @@ export function useProfileActions({
     successMessage,
     error: refreshError,
     refreshScore,
+    clearError,
   } = useScoreRefresh(talentUUID, refetchScore);
 
   // Don't auto-reset error state - let user see the error until page refresh
@@ -89,7 +92,7 @@ export function useProfileActions({
     : isInCooldown
       ? `Refresh in ${cooldownMinutes}min`
       : "Refresh Score";
-  const pendingText = "Refreshing...";
+  const pendingText = "Refresh Pending";
   const failedText = "Refresh Failed";
 
   // Handle share stats action
@@ -104,14 +107,25 @@ export function useProfileActions({
 
     // Get Farcaster handle for the share text
     const farcasterHandle = profile?.fname || "creator";
+    const displayName = profile?.display_name || profile?.name || "Creator";
 
-    const shareText = `Check @${farcasterHandle}'s reputation as a creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent`;
+    // Use canonical public URL format for sharing
+    // Always use https://creatorscore.app/[farcaster%20handle] format
+    const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
 
-    // Use profile URL instead of static image for better engagement
-    const profileUrl = `${window.location.origin}/${talentUUID}`;
+    // Create separate copy for Farcaster and Twitter
+    const farcasterShareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+
+    const twitterShareText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
 
     // Use the new cross-platform composeCast function
-    await composeCast(shareText, [profileUrl], context);
+    // The composeCast function will choose the appropriate text based on the platform
+    await composeCast(
+      farcasterShareText,
+      twitterShareText,
+      [profileUrl],
+      context,
+    );
   }, [
     profile,
     creatorScore,

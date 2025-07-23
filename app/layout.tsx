@@ -20,7 +20,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: pageMetadata.title,
     description: pageMetadata.description,
-    manifest: "/manifest.json",
     icons: {
       icon: "/favicon-64.png",
       shortcut: "/favicon-64.png",
