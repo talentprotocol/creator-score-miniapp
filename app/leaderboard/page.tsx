@@ -10,13 +10,7 @@ import type { LeaderboardEntry } from "@/app/services/types";
 import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
-import { useRouter } from "next/navigation";
-import {
-  generateProfileUrl,
-  formatWithK,
-  formatDate,
-  formatCurrency,
-} from "@/lib/utils";
+import { formatWithK, formatDate, formatCurrency } from "@/lib/utils";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
@@ -44,7 +38,6 @@ function getCountdownParts(target: Date) {
 export default function LeaderboardPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
   const { talentUuid: userTalentUuid } = useUserResolution();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
@@ -120,16 +113,16 @@ export default function LeaderboardPage() {
   }
 
   // Handler to navigate to profile page for a leaderboard entry
-  function handleEntryClick(entry: LeaderboardEntry) {
-    const url = generateProfileUrl({
-      farcasterHandle: null, // We don't have farcaster handle from leaderboard data
-      talentId: entry.talent_protocol_id,
-    });
+  // function handleEntryClick(entry: LeaderboardEntry) {
+  //   const url = generateProfileUrl({
+  //     farcasterHandle: null, // We don't have farcaster handle from leaderboard data
+  //     talentId: entry.talent_protocol_id,
+  //   });
 
-    if (url) {
-      router.push(url);
-    }
-  }
+  //   if (url) {
+  //     router.push(url);
+  //   }
+  // }
 
   // Determine loading and pagination state
   const hasMore =
