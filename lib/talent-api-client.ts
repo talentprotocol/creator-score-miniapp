@@ -140,7 +140,7 @@ export class TalentApiClient {
         identifier || "unknown",
         error instanceof Error ? error.message : String(error),
       );
-      return createServerErrorResponse("Failed to fetch talent score");
+      return createNotFoundResponse("Score not found");
     }
   }
 
