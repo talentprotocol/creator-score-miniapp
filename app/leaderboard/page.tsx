@@ -146,9 +146,6 @@ export default function LeaderboardPage() {
     setVisibleEntries([...visibleEntries, ...nextEntries]);
   };
 
-  console.log("visibleEntries", visibleEntries.length);
-  console.log("hasMore", hasMore);
-
   return (
     <PageContainer noPadding>
       {/* Header section */}
