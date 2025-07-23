@@ -13,8 +13,8 @@ type Profile = {
 
 async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
   const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
-  const batchSize = 200; // API limit
-  const totalNeeded = 200;
+  const batchSize = 200 + PROJECT_ACCOUNTS_TO_EXCLUDE.length; // API limit
+  const totalNeeded = 200 + PROJECT_ACCOUNTS_TO_EXCLUDE.length;
   let allProfiles: Profile[] = [];
 
   for (let page = 1; allProfiles.length < totalNeeded; page++) {
@@ -156,6 +156,8 @@ export async function GET(req: NextRequest) {
       );
       profiles = await cachedProfilesResponse();
 
+      console.log("profiles", profiles.length);
+
       if (profiles.length !== 200) {
         // if we find an error, we need to revalidate the cache so we can try again
         revalidateTag(CACHE_KEYS.LEADERBOARD_TOP_200);
@@ -175,14 +177,14 @@ export async function GET(req: NextRequest) {
           id: { order: "desc" },
         },
         page,
-        per_page: perPage,
+        per_page: perPage + PROJECT_ACCOUNTS_TO_EXCLUDE.length,
       };
 
       const queryString = [
         `query=${encodeURIComponent(JSON.stringify(data.query))}`,
         `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
         `page=${page}`,
-        `per_page=${perPage}`,
+        `per_page=${perPage + PROJECT_ACCOUNTS_TO_EXCLUDE.length}`,
         `view=scores_minimal`,
       ].join("&");
 
