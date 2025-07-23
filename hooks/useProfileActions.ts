@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { getUserContext } from "@/lib/user-context";
 import { useUserResolution } from "@/hooks/useUserResolution";
 import { useScoreRefresh } from "@/hooks/useScoreRefresh";
 // Removed useCreatorCategory - data now comes from ProfileContext
@@ -29,7 +28,6 @@ export function useProfileActions({
   totalEarnings,
 }: UseProfileActionsProps) {
   const { context } = useMiniKit();
-  const user = getUserContext(context);
   const { talentUuid: currentUserTalentUuid } = useUserResolution();
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
 
@@ -73,7 +71,6 @@ export function useProfileActions({
     successMessage,
     error: refreshError,
     refreshScore,
-    clearError,
   } = useScoreRefresh(talentUUID, refetchScore);
 
   // Don't auto-reset error state - let user see the error until page refresh
@@ -92,7 +89,7 @@ export function useProfileActions({
     : isInCooldown
       ? `Refresh in ${cooldownMinutes}min`
       : "Refresh Score";
-  const pendingText = "Refresh Pending";
+  const pendingText = "Refreshing...";
   const failedText = "Refresh Failed";
 
   // Handle share stats action
