@@ -35,6 +35,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
+import { TestShareScoreButton } from "@/components/settings/TestShareScoreButton";
 
 export default function SettingsPage() {
   const { context } = useMiniKit();
@@ -282,6 +283,13 @@ export default function SettingsPage() {
             </Button>
           </div>
         </Accordion>
+
+        {/* Test Share Score Modal - Development Only */}
+        {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
+          <div className="mt-6">
+            <TestShareScoreButton />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-8 pt-6 border-t border-muted text-center space-y-1">

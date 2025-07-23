@@ -108,7 +108,7 @@ export function useProfileActions({
     // Get Farcaster handle for the share text
     const farcasterHandle = profile?.fname || "creator";
 
-    const shareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent`;
+    const shareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
 
     // Use profile URL instead of static image for better engagement
     const profileUrl = `${window.location.origin}/${talentUUID}`;

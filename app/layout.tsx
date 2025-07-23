@@ -7,6 +7,7 @@ import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
+import { WelcomeModalHandler } from "@/components/common/WelcomeModalHandler";
 import { getPageMetadata } from "@/lib/app-metadata";
 
 export const viewport: Viewport = {
@@ -72,6 +73,7 @@ export default function RootLayout({
                 </main>
               </SwipeWrapper>
               <BottomNav />
+              <WelcomeModalHandler />
             </ErrorBoundary>
           </Providers>
         </div>
