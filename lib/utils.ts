@@ -343,7 +343,9 @@ export type ClientEnvironment = "farcaster" | "base" | "browser";
 /**
  * Detect the current client environment
  */
-export function detectClient(context?: unknown): ClientEnvironment {
+export async function detectClient(
+  context?: unknown,
+): Promise<ClientEnvironment> {
   // Check for Base App first - clientFid 399519 indicates Base app
   if (
     context &&
@@ -357,26 +359,28 @@ export function detectClient(context?: unknown): ClientEnvironment {
     return "base";
   }
 
-  // Check if we're in a Farcaster environment
+  // Use Farcaster SDK's own detection methods
   if (typeof window !== "undefined") {
-    // More specific Farcaster detection - avoid false positives
-    const isInFarcaster =
-      // Check URL patterns (most reliable)
-      window.location.hostname.includes("farcaster.xyz") ||
-      window.location.hostname.includes("warpcast.com") ||
-      // Check for Farcaster-specific globals and properties
-      "farcasterFrame" in window ||
-      // Check user agent for Farcaster
-      navigator.userAgent.includes("Farcaster") ||
-      navigator.userAgent.includes("Warpcast") ||
-      // Check for Farcaster-specific context properties
-      (context &&
-        typeof context === "object" &&
-        ("farcaster" in context ||
-          "warpcast" in context ||
-          "isFarcaster" in context));
+    try {
+      const { sdk } = await import("@farcaster/frame-sdk");
 
-    if (isInFarcaster) {
+      // Check if Farcaster context is available using the SDK
+      const farcasterContext = await sdk.context;
+      if (farcasterContext && farcasterContext.client) {
+        return "farcaster";
+      }
+    } catch {
+      // SDK not available or failed to load, continue with fallback detection
+    }
+
+    // Fallback: Check for Farcaster-specific context properties
+    if (
+      context &&
+      typeof context === "object" &&
+      ("farcaster" in context ||
+        "warpcast" in context ||
+        "isFarcaster" in context)
+    ) {
       return "farcaster";
     }
   }
@@ -392,7 +396,7 @@ export async function openExternalUrl(
   url: string,
   context?: unknown,
 ): Promise<void> {
-  const client = detectClient(context);
+  const client = await detectClient(context);
 
   if (client === "base") {
     try {
@@ -435,7 +439,7 @@ export async function composeCast(
   context?: unknown,
 ): Promise<void> {
   // First, detect the client environment
-  const client = detectClient(context);
+  const client = await detectClient(context);
 
   // Handle Farcaster environment
   if (client === "farcaster") {
@@ -457,28 +461,31 @@ export async function composeCast(
     }
   }
 
-  // Handle Base app environment
+  // Handle Base app environment - use same composeCast as Farcaster
   if (client === "base") {
     try {
-      // Use Base Mini App SDK - note: actual API methods need to be verified
-      // For now, falling through to Twitter/X as Base Mini App SDK methods are not confirmed
+      const { sdk } = await import("@farcaster/frame-sdk");
+
+      // Base app uses the same Farcaster SDK composeCast functionality
+      const limitedEmbeds = embeds
+        ? (embeds.slice(0, 2) as [] | [string] | [string, string])
+        : undefined;
+
+      await sdk.actions.composeCast({
+        text: farcasterText,
+        embeds: limitedEmbeds,
+      });
+      return;
     } catch {
-      // Fall through to Twitter/X
+      // Fall through to Twitter/X only if SDK fails
     }
   }
 
   // Fallback to Twitter/X for browser or when SDKs fail
   const encodedText = encodeURIComponent(twitterText);
 
-  // Build Twitter/X share URL
-  let twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
-
-  if (embeds && embeds.length > 0) {
-    // For Twitter, use the profile page URL which has proper Open Graph meta tags
-    // Twitter will automatically fetch and display the image via the meta tags
-    const profileUrl = embeds[0];
-    twitterUrl += `&url=${encodeURIComponent(profileUrl)}`;
-  }
+  // Build Twitter/X share URL (URL is included in the text content for better reliability)
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
 
   window.open(twitterUrl, "_blank");
 }
