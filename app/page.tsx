@@ -13,17 +13,28 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: pageMetadata.title,
     description: pageMetadata.description,
+    openGraph: {
+      title: frameMetadata.ogTitle,
+      description: frameMetadata.ogDescription,
+      images: [
+        {
+          url: frameMetadata.ogImageUrl,
+          width: 1600,
+          height: 900,
+          alt: "Creator Score Mini App",
+        },
+      ],
+      type: "website",
+      url: baseUrl,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: frameMetadata.ogTitle,
+      description: frameMetadata.ogDescription,
+      images: [frameMetadata.ogImageUrl],
+    },
     other: {
       "fc:frame": JSON.stringify(creatorScoreFrame),
-      "og:title": frameMetadata.ogTitle,
-      "og:description": frameMetadata.ogDescription,
-      "og:image": frameMetadata.ogImageUrl,
-      "og:url": baseUrl,
-      "og:type": "website",
-      "twitter:card": "summary_large_image",
-      "twitter:title": frameMetadata.ogTitle,
-      "twitter:description": frameMetadata.ogDescription,
-      "twitter:image": frameMetadata.ogImageUrl,
     },
   };
 }

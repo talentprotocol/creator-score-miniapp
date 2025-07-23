@@ -25,13 +25,13 @@ export interface AppMetadata {
 
 // Frame object for fc:frame meta tag
 export const creatorScoreFrame = {
-  version: "1",
+  version: "next",
   imageUrl: "https://www.creatorscore.app/hero.png",
   button: {
-    title: "Open Creator Score",
+    title: "Launch Creator Score",
     action: {
       type: "launch_frame",
-      name: "Creator Score",
+      name: "Creator Score Mini App",
       url: "https://www.creatorscore.app",
       splashImageUrl: "https://www.creatorscore.app/splash.png",
       splashBackgroundColor: "#C79AF6",
