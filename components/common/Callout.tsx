@@ -25,27 +25,23 @@ export function Callout({
     <>
       <div className="flex-1 text-left">{children}</div>
       {href && (
-        <Icon className="size-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5" />
+        <Icon className="size-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
       )}
     </>
   );
 
   const baseStyles =
-    "w-full rounded-xl px-6 py-4 my-1 flex items-center text-xs transition-all duration-300";
+    "w-full rounded-xl px-6 py-4 my-1 flex items-center text-xs transition-colors duration-150";
 
   const variantStyles = {
     brand: "bg-purple-100 text-purple-700",
     neutral: "bg-muted text-muted-foreground",
   };
 
-  const interactiveStyles = href
-    ? "hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-    : "";
-
   const hoverStyles = href
     ? {
-        brand: "hover:bg-purple-200/80",
-        neutral: "hover:bg-muted/90",
+        brand: "hover:bg-purple-200",
+        neutral: "hover:bg-muted/80",
       }
     : {};
 
@@ -53,8 +49,7 @@ export function Callout({
     baseStyles,
     variantStyles[variant],
     href && hoverStyles[variant],
-    interactiveStyles,
-    href && "group",
+    href && "group cursor-pointer",
     className,
   );
 
