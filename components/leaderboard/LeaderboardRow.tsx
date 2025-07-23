@@ -1,7 +1,8 @@
 import React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { cn, generateProfileUrl } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 interface LeaderboardRowProps {
   rank: number | string;
@@ -10,8 +11,8 @@ interface LeaderboardRowProps {
   score: number;
   rewards: string;
   isPinned?: boolean;
-  onClick?: () => void;
   rewardsLoading?: boolean;
+  talentUuid: string | number;
 }
 
 export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
@@ -21,18 +22,24 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   score,
   rewards,
   isPinned = false,
-  onClick,
   rewardsLoading = false,
+  talentUuid,
 }) => {
+  const url = generateProfileUrl({
+    farcasterHandle: null, // We don't have farcaster handle from leaderboard data
+    talentId: talentUuid,
+  });
+
   return (
-    <div
+    <Link
+      href={url || ""}
+      rel="noopener noreferrer"
       className={cn(
         "flex items-center gap-3 p-3 cursor-pointer transition-colors",
         isPinned
           ? "rounded-lg bg-muted hover:bg-muted/80 mb-2"
           : "hover:bg-muted/50",
       )}
-      onClick={onClick}
     >
       <span className="text-sm font-medium w-6">#{rank}</span>
       <Avatar className="h-8 w-8">
@@ -53,6 +60,6 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           <span className="text-sm font-medium">{rewards}</span>
         )}
       </div>
-    </div>
+    </Link>
   );
 };
