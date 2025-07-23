@@ -28,6 +28,7 @@ import {
 } from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
+import { Callout } from "@/components/common/Callout";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -281,6 +282,15 @@ export default function LeaderboardPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Sponsor Callout */}
+        {activeTab === "sponsors" && (
+          <div className="mt-4">
+            <Callout variant="brand" href="https://farcaster.xyz/juampi">
+              Want to join as a sponsor? Reach out to @juampi
+            </Callout>
           </div>
         )}
       </Section>

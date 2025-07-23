@@ -276,12 +276,58 @@ export default function DesignPage() {
             </Section>
 
             <Section title="Callouts">
-              <div className="space-y-4">
-                <Callout>
-                  This is our default callout component with brand styling
-                </Callout>
-                <div className="text-xs text-muted-foreground font-mono">
-                  bg-purple-100 text-purple-700
+              <div className="space-y-6">
+                {/* Not Clickable */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Not Clickable</h3>
+                  <div className="space-y-3">
+                    <Callout variant="brand">
+                      Brand callout - not clickable
+                    </Callout>
+                    <Callout variant="neutral">
+                      Neutral callout - not clickable
+                    </Callout>
+                  </div>
+                </div>
+
+                {/* External Links */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">External Links</h3>
+                  <div className="space-y-3">
+                    <Callout variant="brand" href="https://example.com">
+                      Brand callout - external link
+                    </Callout>
+                    <Callout variant="neutral" href="https://example.com">
+                      Neutral callout - external link
+                    </Callout>
+                  </div>
+                </div>
+
+                {/* Internal Links */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Internal Links</h3>
+                  <div className="space-y-3">
+                    <Callout variant="brand" href="/profile">
+                      Brand callout - internal link
+                    </Callout>
+                    <Callout variant="neutral" href="/profile">
+                      Neutral callout - internal link
+                    </Callout>
+                  </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground font-mono space-y-1">
+                  <div>
+                    Brand: bg-purple-100 text-purple-700 hover:bg-purple-200
+                  </div>
+                  <div>
+                    Neutral: bg-muted text-muted-foreground hover:bg-muted/80
+                  </div>
+                  <div>
+                    Interactive: hover:scale-[1.02] active:scale-[0.98]
+                    cursor-pointer
+                  </div>
+                  <div>Icon animation: group-hover:translate-x-0.5</div>
                 </div>
               </div>
             </Section>

@@ -263,6 +263,15 @@ function ProfileLayoutContentInner({
             }}
           />
         </div>
+
+        {/* Increase Score Callout - Only show for own profile */}
+        {isOwnProfile && !hasNoScore && (
+          <div className="mt-4">
+            <Callout variant="brand" href="/settings">
+              Connect accounts to increase your Creator Score
+            </Callout>
+          </div>
+        )}
       </Section>
 
       {/* Full width tabs */}
