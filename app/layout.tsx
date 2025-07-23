@@ -7,7 +7,7 @@ import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
-import { getPageMetadata } from "@/lib/app-metadata";
+import { getPageMetadata, getFrameMetadata } from "@/lib/app-metadata";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -16,6 +16,8 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const pageMetadata = getPageMetadata();
+  const frameMetadata = getFrameMetadata();
+  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
 
   return {
     title: pageMetadata.title,
@@ -24,6 +26,20 @@ export async function generateMetadata(): Promise<Metadata> {
       icon: "/favicon-64.png",
       shortcut: "/favicon-64.png",
       apple: "/favicon-64.png",
+    },
+    other: {
+      "fc:frame": "vNext",
+      "fc:frame:image": frameMetadata.ogImageUrl,
+      "fc:frame:button:1": "Open App",
+      "fc:frame:post_url": baseUrl,
+      "fc:frame:image:aspect_ratio": "1.91:1",
+      "og:title": frameMetadata.ogTitle,
+      "og:description": frameMetadata.ogDescription,
+      "og:image": frameMetadata.ogImageUrl,
+      "twitter:card": "summary_large_image",
+      "twitter:title": frameMetadata.ogTitle,
+      "twitter:description": frameMetadata.ogDescription,
+      "twitter:image": frameMetadata.ogImageUrl,
     },
   };
 }
