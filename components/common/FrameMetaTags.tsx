@@ -8,7 +8,7 @@ export function FrameMetaTags() {
   const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
 
   useEffect(() => {
-    // Set Farcaster Frame Meta Tags dynamically
+    // Set Farcaster Mini App Meta Tags dynamically
     const setMetaTag = (name: string, content: string) => {
       let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
       if (!meta) {
@@ -29,12 +29,12 @@ export function FrameMetaTags() {
       meta.content = content;
     };
 
-    // Farcaster Frame Meta Tags - Required for embed functionality
-    setMetaTag('fc:frame', 'vNext');
-    setMetaTag('fc:frame:image', frameMetadata.ogImageUrl);
-    setMetaTag('fc:frame:button:1', 'Open App');
-    setMetaTag('fc:frame:post_url', baseUrl);
-    setMetaTag('fc:frame:image:aspect_ratio', '1.91:1');
+    // Farcaster Mini App Meta Tags - Required for embed functionality
+    setMetaTag('fc:miniapp', 'vNext');
+    setMetaTag('fc:miniapp:image', frameMetadata.ogImageUrl);
+    setMetaTag('fc:miniapp:button:1', 'Open App');
+    setMetaTag('fc:miniapp:post_url', baseUrl);
+    setMetaTag('fc:miniapp:image:aspect_ratio', '1.91:1');
 
     // Open Graph Meta Tags
     setPropertyMetaTag('og:title', frameMetadata.ogTitle);
