@@ -13,6 +13,7 @@ import {
 import { NextResponse } from "next/server";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "./cache-keys";
+import { validateTalentUUID } from "./validation";
 
 // API endpoints
 const TALENT_API_BASE = "https://api.talentprotocol.com";
@@ -279,7 +280,10 @@ export class TalentApiClient {
       const urlParams = new URLSearchParams();
 
       // Handle talent_protocol_id (UUID) vs id (account lookup)
-      if (params.talent_protocol_id) {
+      if (
+        params.talent_protocol_id &&
+        validateTalentUUID(params.talent_protocol_id)
+      ) {
         urlParams.append("id", params.talent_protocol_id);
       } else {
         urlParams.append("id", params.id!);
@@ -345,7 +349,7 @@ export class TalentApiClient {
         params.id || "unknown",
         error instanceof Error ? error.message : String(error),
       );
-      return createServerErrorResponse("Failed to fetch user data");
+      return createNotFoundResponse("Profile not found");
     }
   }
 
