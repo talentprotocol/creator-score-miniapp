@@ -344,14 +344,6 @@ export type ClientEnvironment = "farcaster" | "base" | "browser";
  * Detect the current client environment
  */
 export function detectClient(context?: unknown): ClientEnvironment {
-  // Debug logging to understand the context
-  console.log("🔍 detectClient - context:", context);
-  console.log("🔍 detectClient - window.location:", window.location?.href);
-  console.log("🔍 detectClient - userAgent:", navigator.userAgent);
-  console.log(
-    "🔍 detectClient - is iframe:",
-    typeof window !== "undefined" ? window.self !== window.top : "no window",
-  );
   // Check for Base App first - clientFid 399519 indicates Base app
   if (
     context &&
@@ -362,29 +354,21 @@ export function detectClient(context?: unknown): ClientEnvironment {
     "clientFid" in context.client &&
     context.client.clientFid === 399519
   ) {
-    console.log("🔍 detectClient - detected: base");
     return "base";
   }
 
   // Check if we're in a Farcaster environment
   if (typeof window !== "undefined") {
-    // More comprehensive Farcaster detection
+    // More specific Farcaster detection - avoid false positives
     const isInFarcaster =
-      // Check URL patterns
-      window.location.hostname.includes("farcaster") ||
-      window.location.hostname.includes("warpcast") ||
-      window.location.href.includes("farcaster") ||
-      window.location.href.includes("warpcast") ||
+      // Check URL patterns (most reliable)
+      window.location.hostname.includes("farcaster.xyz") ||
+      window.location.hostname.includes("warpcast.com") ||
       // Check for Farcaster-specific globals and properties
       "farcasterFrame" in window ||
-      "farcaster" in window ||
-      // Check for Farcaster SDK availability
-      "farcaster" in window ||
       // Check user agent for Farcaster
       navigator.userAgent.includes("Farcaster") ||
       navigator.userAgent.includes("Warpcast") ||
-      // Check if we're in an iframe (common for mini apps)
-      window.self !== window.top ||
       // Check for Farcaster-specific context properties
       (context &&
         typeof context === "object" &&
@@ -393,13 +377,11 @@ export function detectClient(context?: unknown): ClientEnvironment {
           "isFarcaster" in context));
 
     if (isInFarcaster) {
-      console.log("🔍 detectClient - detected: farcaster");
       return "farcaster";
     }
   }
 
   // Default to browser environment
-  console.log("🔍 detectClient - detected: browser");
   return "browser";
 }
 
@@ -416,9 +398,7 @@ export async function openExternalUrl(
     try {
       // Use Base Mini App SDK - note: actual API methods need to be verified
       // For now, falling through to window.open as Base Mini App SDK methods are not confirmed
-      console.log("Base Mini App detected - using window.open fallback");
-    } catch (error) {
-      console.error("Failed to open external URL with Base SDK:", error);
+    } catch {
       // Fall through to regular window.open
     }
   } else if (client === "farcaster") {
@@ -426,8 +406,7 @@ export async function openExternalUrl(
       const { sdk } = await import("@farcaster/frame-sdk");
       await sdk.actions.openUrl(url);
       return;
-    } catch (error) {
-      console.error("Failed to open external URL with Farcaster SDK:", error);
+    } catch {
       // Fall through to regular window.open
     }
   }
@@ -436,14 +415,12 @@ export async function openExternalUrl(
   try {
     const newWindow = window.open(url, "_blank", "noopener,noreferrer");
     if (!newWindow) {
-      console.debug("Failed to open new window - popup may be blocked");
       // Don't throw error - popups being blocked is expected behavior
       return;
     }
     // Focus the new window if it opened successfully
     newWindow.focus();
-  } catch (error) {
-    console.debug("window.open failed:", error);
+  } catch {
     // Don't throw error - this is expected in some environments
   }
 }
@@ -504,22 +481,6 @@ export async function composeCast(
   }
 
   window.open(twitterUrl, "_blank");
-
-  // COMMENTED OUT: Farcaster URL fallback (keeping for future use)
-  // console.log("🎯 composeCast - using Farcaster URL fallback");
-  // const encodedText = encodeURIComponent(farcasterText);
-  //
-  // // Try farcaster.xyz first (as seen in the working URL), then fallback to warpcast.com
-  // let farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodedText}`;
-  //
-  // if (embeds && embeds.length > 0) {
-  //   embeds.forEach((embed) => {
-  //     farcasterUrl += `&embeds[]=${encodeURIComponent(embed)}`;
-  //   });
-  // }
-  //
-  // console.log("🎯 composeCast - opening Farcaster URL:", farcasterUrl);
-  // window.open(farcasterUrl, "_blank");
 }
 
 /**
