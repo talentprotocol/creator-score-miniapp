@@ -156,8 +156,6 @@ export async function GET(req: NextRequest) {
       );
       profiles = await cachedProfilesResponse();
 
-      console.log("profiles", profiles.length);
-
       if (profiles.length !== 200) {
         // if we find an error, we need to revalidate the cache so we can try again
         revalidateTag(CACHE_KEYS.LEADERBOARD_TOP_200);
