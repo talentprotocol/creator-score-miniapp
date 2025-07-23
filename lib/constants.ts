@@ -73,6 +73,19 @@ export const RESERVED_WORDS = [
   // Add more as needed
 ];
 
+/**
+ * Project accounts to exclude from leaderboard rankings
+ */
+export const PROJECT_ACCOUNTS_TO_EXCLUDE = [
+  "cf0a0516-b68c-49a5-b17e-4bf9361535b7", // moonwell
+  "20d5bcc9-88c2-40ae-965d-9c857b9ce9d7", // talent
+  "887c2f4e-2d15-4f0d-ba69-fcef946a7002", // base.base.eth
+  "4217c910-9179-4d77-b4c6-eff8be5d8c02", // cooprecs
+  "aa08b53c-622f-49f0-ba70-46bb1dabcfc1", // matchaxyz
+  "09b20fc9-a28d-4477-8103-f9f195ec76b1", // rainbow
+  "1b04461c-0160-487e-8022-d2b59d4a05ec", // walletconnect
+];
+
 // Environment variable validation
 export function validateEnvironmentVariables() {
   const requiredVars = [

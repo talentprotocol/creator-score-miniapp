@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
+import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 
 type Profile = {
   id: string;
@@ -218,6 +219,11 @@ export async function GET(req: NextRequest) {
 
       profiles = await cachedTop10Response();
     }
+
+    // Filter out project accounts
+    profiles = profiles.filter(
+      (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
+    );
 
     // Map and rank the entries
     const mapped = profiles.map((profile: Profile) => {
