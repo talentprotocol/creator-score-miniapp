@@ -29,7 +29,13 @@ export const creatorScoreFrame = {
   imageUrl: "https://www.creatorscore.app/hero.png",
   button: {
     title: "Open Creator Score",
-    action: "launch_frame",
+    action: {
+      type: "launch_frame",
+      name: "Creator Score",
+      url: "https://www.creatorscore.app",
+      splashImageUrl: "https://www.creatorscore.app/splash.png",
+      splashBackgroundColor: "#C79AF6",
+    },
   },
 };
 
