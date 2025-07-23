@@ -6,14 +6,16 @@ import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
+import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export function BottomNav() {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
-  const { navItems, user } = useUserNavigation();
+  const { navItems, talentUuid } = useUserNavigation();
   const [showModal, setShowModal] = React.useState(false);
   const [modalFeature, setModalFeature] = React.useState<"Profile">("Profile");
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
+  const { talentId } = usePrivyAuth({});
 
   React.useEffect(() => {
     setMounted(true);
@@ -22,7 +24,7 @@ export function BottomNav() {
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
     setClickedIcon(item.href);
     // If user tries to access Profile without user context, show modal
-    if (!user && item.label === "Profile") {
+    if ((!talentUuid || !talentId) && item.label === "Profile") {
       e.preventDefault();
       setModalFeature("Profile");
       setShowModal(true);

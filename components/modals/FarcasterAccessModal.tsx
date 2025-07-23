@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
+import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = React.useState(false);
@@ -48,6 +50,15 @@ export function FarcasterAccessModal({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const drawerContentRef = React.useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = React.useRef<HTMLElement | null>(null);
+  const { ready } = usePrivy();
+
+  const router = useRouter();
+  const { login } = useLogin({
+    onComplete: () => {
+      router.push("/profile");
+      onOpenChange(false);
+    },
+  });
 
   const handleFarcasterClick = () => {
     window.open(
@@ -113,6 +124,15 @@ export function FarcasterAccessModal({
             >
               Continue Browsing
             </Button>
+
+            <Button
+              variant="default"
+              onClick={() => login({ walletChainType: "ethereum-only" })}
+              className="w-full"
+              disabled={!ready}
+            >
+              Login with Privy
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -149,6 +169,14 @@ export function FarcasterAccessModal({
               className="w-full"
             >
               Continue Browsing
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => login({ walletChainType: "ethereum-only" })}
+              className="w-full"
+              disabled={!ready}
+            >
+              Login with Privy
             </Button>
           </div>
         </div>

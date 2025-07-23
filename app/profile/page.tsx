@@ -3,11 +3,13 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export default function ProfilePage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
+  const { talentId } = usePrivyAuth({});
   const router = useRouter();
 
   useEffect(() => {
@@ -18,11 +20,13 @@ export default function ProfilePage() {
         router.push(`/${canonical}`);
         return;
       }
+    } else if (talentId) {
+      console.log("[INSIDE HOOK] redirecting to /talentId:", talentId);
+      router.push(`/${talentId}`);
     } else {
-      // If no user context, redirect to leaderboard
       router.push("/leaderboard");
     }
-  }, [user, router]);
+  }, [user, router, talentId]);
 
   return (
     <main className="flex-1 overflow-y-auto relative">

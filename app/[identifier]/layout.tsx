@@ -207,6 +207,9 @@ export default async function ProfileLayout({
   // Resolve user using direct service call
   const user = await getTalentUserService(params.identifier);
 
+  console.log("[LAYOUT] user", user);
+  console.log("[LAYOUT] params", params);
+
   if (!user || !user.id) {
     return <CreatorNotFoundCard />;
   }
