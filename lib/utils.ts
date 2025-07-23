@@ -484,8 +484,14 @@ export async function composeCast(
   // Fallback to Twitter/X for browser or when SDKs fail
   const encodedText = encodeURIComponent(twitterText);
 
-  // Build Twitter/X share URL (URL is included in the text content for better reliability)
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+  // Build Twitter/X share URL with URL parameter (for testing)
+  let twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+
+  if (embeds && embeds.length > 0) {
+    // Add URL as parameter - Twitter should show as link preview
+    const profileUrl = embeds[0];
+    twitterUrl += `&url=${encodeURIComponent(profileUrl)}`;
+  }
 
   window.open(twitterUrl, "_blank");
 }
