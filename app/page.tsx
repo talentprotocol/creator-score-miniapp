@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import { getPageMetadata, getFrameMetadata } from "@/lib/app-metadata";
 
@@ -45,7 +44,9 @@ export default function Home() {
       />
       <noscript>
         <meta httpEquiv="refresh" content="0; url=/leaderboard" />
-        <p>Redirecting to <a href="/leaderboard">leaderboard</a>...</p>
+        <p>
+          Redirecting to <a href="/leaderboard">leaderboard</a>...
+        </p>
       </noscript>
     </div>
   );
