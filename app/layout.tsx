@@ -12,8 +12,6 @@ import { getPageMetadata } from "@/lib/app-metadata";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#C79AF6",
-  colorScheme: "light",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,15 +25,6 @@ export async function generateMetadata(): Promise<Metadata> {
       icon: "/favicon-64.png",
       shortcut: "/favicon-64.png",
       apple: "/favicon-64.png",
-    },
-    other: {
-      "apple-mobile-web-app-capable": "yes",
-      "apple-mobile-web-app-status-bar-style": "default",
-      "apple-mobile-web-app-title": "Creator Score",
-      "mobile-web-app-capable": "yes",
-      "application-name": "Creator Score",
-      "msapplication-TileColor": "#C79AF6",
-      "msapplication-config": "/browserconfig.xml",
     },
   };
 }

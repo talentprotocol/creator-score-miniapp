@@ -433,8 +433,7 @@ export async function openExternalUrl(
  * Compose a cast with environment detection
  */
 export async function composeCast(
-  farcasterText: string,
-  twitterText: string,
+  text: string,
   embeds?: string[],
   context?: unknown,
 ): Promise<void> {
@@ -452,7 +451,7 @@ export async function composeCast(
         : undefined;
 
       await sdk.actions.composeCast({
-        text: farcasterText,
+        text: text,
         embeds: limitedEmbeds,
       });
       return;
@@ -472,7 +471,7 @@ export async function composeCast(
         : undefined;
 
       await sdk.actions.composeCast({
-        text: farcasterText,
+        text: text,
         embeds: limitedEmbeds,
       });
       return;
@@ -482,7 +481,7 @@ export async function composeCast(
   }
 
   // Fallback to Twitter/X for browser or when SDKs fail
-  const encodedText = encodeURIComponent(twitterText);
+  const encodedText = encodeURIComponent(text);
 
   // Build Twitter/X share URL with URL parameter (for testing)
   let twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
