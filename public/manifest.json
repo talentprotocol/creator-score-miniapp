@@ -1,0 +1,27 @@
+{
+  "name": "Creator Score Mini App",
+  "short_name": "Creator Score",
+  "description": "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens, and start earning rewards in USDC.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#C79AF6",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["social", "productivity"],
+  "lang": "en",
+  "orientation": "portrait",
+  "scope": "/",
+  "id": "creator-score-miniapp"
+}

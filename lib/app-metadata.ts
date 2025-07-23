@@ -65,6 +65,8 @@ export function getMiniKitConfig() {
   return {
     name: metadata.name,
     logo: metadata.iconUrl,
+    description: metadata.description,
+    categories: metadata.tags,
   };
 }
 
