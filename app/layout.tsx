@@ -7,8 +7,11 @@ import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
-import { getPageMetadata, getFrameMetadata } from "@/lib/app-metadata";
-import { FrameMetaTags } from "@/components/common/FrameMetaTags";
+import {
+  getPageMetadata,
+  getFrameMetadata,
+  creatorScoreFrame,
+} from "@/lib/app-metadata";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -29,11 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: "/favicon-64.png",
     },
     other: {
-      "fc:miniapp": "true",
-      "fc:miniapp:image": frameMetadata.ogImageUrl,
-      "fc:miniapp:button:1": "Open App",
-      "fc:miniapp:post_url": baseUrl,
-      "fc:miniapp:image:aspect_ratio": "1.91:1",
+      "fc:frame": JSON.stringify(creatorScoreFrame),
       "og:title": frameMetadata.ogTitle,
       "og:description": frameMetadata.ogDescription,
       "og:image": frameMetadata.ogImageUrl,
@@ -76,7 +75,6 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
       </head>
       <body className="min-h-full bg-white flex flex-col">
-        <FrameMetaTags />
         <script
           dangerouslySetInnerHTML={{ __html: globalErrorHandlingScript }}
         />

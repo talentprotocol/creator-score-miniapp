@@ -1,5 +1,9 @@
 import { Metadata } from "next";
-import { getPageMetadata, getFrameMetadata } from "@/lib/app-metadata";
+import {
+  getPageMetadata,
+  getFrameMetadata,
+  creatorScoreFrame,
+} from "@/lib/app-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
   const pageMetadata = getPageMetadata();
@@ -10,11 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: pageMetadata.title,
     description: pageMetadata.description,
     other: {
-      "fc:miniapp": "true",
-      "fc:miniapp:image": frameMetadata.ogImageUrl,
-      "fc:miniapp:button:1": "Open App",
-      "fc:miniapp:post_url": baseUrl,
-      "fc:miniapp:image:aspect_ratio": "1.91:1",
+      "fc:frame": JSON.stringify(creatorScoreFrame),
       "og:title": frameMetadata.ogTitle,
       "og:description": frameMetadata.ogDescription,
       "og:image": frameMetadata.ogImageUrl,

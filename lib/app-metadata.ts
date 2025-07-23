@@ -23,6 +23,16 @@ export interface AppMetadata {
   ogImageUrl: string;
 }
 
+// Frame object for fc:frame meta tag
+export const creatorScoreFrame = {
+  version: "1",
+  imageUrl: "https://www.creatorscore.app/hero.png",
+  button: {
+    title: "Open Creator Score",
+    action: "launch_frame",
+  },
+};
+
 // Static metadata configuration (version controlled)
 export const APP_METADATA = {
   name: "Creator Score Mini App",
