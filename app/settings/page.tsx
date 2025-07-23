@@ -40,8 +40,6 @@ export default function SettingsPage() {
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useUserResolution();
 
-  console.log("[SETTINGS PAGE] talentUuid", talentUuid);
-
   const {
     accounts,
     settings,

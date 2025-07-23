@@ -17,6 +17,8 @@ export function useUserResolution() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log("[USE USER RESOLUTION] talentUuid", talentUuid);
+
   useEffect(() => {
     async function resolveUserTalentUuid() {
       if (talentId) {
@@ -61,7 +63,7 @@ export function useUserResolution() {
     }
 
     resolveUserTalentUuid();
-  }, [user?.fid]);
+  }, [user?.fid, talentId]);
 
   return { talentUuid, loading, error };
 }

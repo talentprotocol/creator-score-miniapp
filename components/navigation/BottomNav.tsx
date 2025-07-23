@@ -13,7 +13,6 @@ export function BottomNav() {
   const pathname = usePathname();
   const { navItems, talentUuid } = useUserNavigation();
   const [showModal, setShowModal] = React.useState(false);
-  const [modalFeature, setModalFeature] = React.useState<"Profile">("Profile");
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
   const { talentId } = usePrivyAuth({});
 
@@ -27,7 +26,6 @@ export function BottomNav() {
     // If user tries to access Profile without user context, show modal
     if ((!talentUuid || !talentId) && item.label === "Profile") {
       e.preventDefault();
-      setModalFeature("Profile");
       setShowModal(true);
       return;
     }
@@ -125,11 +123,7 @@ export function BottomNav() {
         </div>
       </nav>
 
-      <FarcasterAccessModal
-        open={showModal}
-        onOpenChange={setShowModal}
-        feature={modalFeature}
-      />
+      <FarcasterAccessModal open={showModal} onOpenChange={setShowModal} />
     </>
   );
 }

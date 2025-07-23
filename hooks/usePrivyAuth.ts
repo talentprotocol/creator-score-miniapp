@@ -30,6 +30,10 @@ export const usePrivyAuth = ({
     getInitialTalentUserId(),
   );
 
+  useEffect(() => {
+    console.log("talentUserId", talentUserId);
+  }, [talentUserId]);
+
   const handleLogin = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("talentUserId");
@@ -38,9 +42,13 @@ export const usePrivyAuth = ({
   };
 
   const handleLogout = () => {
+    console.log("handleLogout");
     if (typeof window !== "undefined") {
+      console.log("removing talentUserId");
       localStorage.removeItem("talentUserId");
+      setTalentUserId(null);
     }
+    console.log("logging out");
     logout();
     router.push("/leaderboard");
   };
@@ -54,6 +62,7 @@ export const usePrivyAuth = ({
         privyUser.wallet &&
         !talentUserId
       ) {
+        console.log("[FETCH REQUEST] INSIDE PRIVY");
         const request = await fetch(
           `/api/talent-user?id=${privyUser.wallet.address}`,
         );
@@ -71,7 +80,7 @@ export const usePrivyAuth = ({
     } else {
       getUserFromPrivy();
     }
-  }, [ready, authenticated, privyUser, talentUserId]);
+  }, [authenticated]);
 
   return {
     ready,

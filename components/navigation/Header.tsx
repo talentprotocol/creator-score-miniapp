@@ -17,9 +17,6 @@ export function Header() {
   const { navItems, settingsItem, talentUuid } = useUserNavigation();
   const { shouldShowBackButton, handleBack } = useBackButton();
   const [showModal, setShowModal] = React.useState(false);
-  const [modalFeature, setModalFeature] = React.useState<
-    "Profile" | "Settings"
-  >("Profile");
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
   const { talentId } = usePrivyAuth({});
 
@@ -38,7 +35,6 @@ export function Header() {
       (item.label === "Profile" || item.label === "Settings")
     ) {
       e.preventDefault();
-      setModalFeature(item.label as "Profile" | "Settings");
       setShowModal(true);
       return;
     }
@@ -178,11 +174,7 @@ export function Header() {
         </div>
       </header>
 
-      <FarcasterAccessModal
-        open={showModal}
-        onOpenChange={setShowModal}
-        feature={modalFeature}
-      />
+      <FarcasterAccessModal open={showModal} onOpenChange={setShowModal} />
     </>
   );
 }

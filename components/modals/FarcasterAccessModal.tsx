@@ -39,13 +39,11 @@ function useMediaQuery(query: string) {
 interface FarcasterAccessModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  feature: "Profile" | "Settings";
 }
 
 export function FarcasterAccessModal({
   open,
   onOpenChange,
-  feature,
 }: FarcasterAccessModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const drawerContentRef = React.useRef<HTMLDivElement>(null);
@@ -55,7 +53,10 @@ export function FarcasterAccessModal({
   const router = useRouter();
   const { login } = useLogin({
     onComplete: () => {
+      console.log("open", open);
+      console.log("[FarcasterAccessModal] onComplete");
       if (open) {
+        console.log("[FarcasterAccessModal] redirecting to /profile");
         onOpenChange(false);
         router.push("/profile");
       }
@@ -97,12 +98,12 @@ export function FarcasterAccessModal({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" disableOutsideClick={true}>
           <DialogHeader>
-            <DialogTitle>Access {feature} in Farcaster</DialogTitle>
+            <DialogTitle>Check your Creator Score</DialogTitle>
             <DialogDescription>
-              To view your {feature.toLowerCase()} and access all features,
-              please open this app in Farcaster.
+              To view your score and access all features, please login with
+              Privy or use our Mini App.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
