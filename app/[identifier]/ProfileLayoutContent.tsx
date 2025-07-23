@@ -10,6 +10,7 @@ import {
   formatNumberWithSuffix,
   formatK,
   calculateTotalFollowers,
+  detectClient,
 } from "@/lib/utils";
 import { useProfileActions } from "@/hooks/useProfileActions";
 import { PageContainer } from "@/components/common/PageContainer";
@@ -17,6 +18,8 @@ import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { Share, RotateCcw, Loader2 } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
+import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -50,6 +53,8 @@ function ProfileLayoutContentInner({
 }) {
   const router = useRouter();
   const { profile, profileData, refetchScore } = useProfileContext();
+  const { context } = useMiniKit();
+  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
 
   // Extract data from server-fetched profileData
   const {
@@ -82,7 +87,6 @@ function ProfileLayoutContentInner({
     pendingText,
     failedText,
     refreshError,
-    handleShareStats,
     handleRefreshScore,
   } = useProfileActions({
     talentUUID,
@@ -94,6 +98,78 @@ function ProfileLayoutContentInner({
     totalFollowers,
     totalEarnings,
   });
+
+  // Main share stats handler - detects environment and either opens modal or shares directly
+  const handleShareStats = React.useCallback(async () => {
+    const client = await detectClient(context);
+
+    if (client === "browser") {
+      // In browser, open the modal for user to choose
+      setIsShareModalOpen(true);
+    } else {
+      // In Farcaster or Base app, use native composeCast directly
+      const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
+      const followersText = formatK(totalFollowers || 0);
+      const earningsText = totalEarnings
+        ? formatNumberWithSuffix(totalEarnings)
+        : "—";
+
+      const farcasterHandle = profile?.fname || "creator";
+      const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
+
+      const farcasterShareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+
+      try {
+        const { sdk } = await import("@farcaster/frame-sdk");
+
+        const limitedEmbeds = [profileUrl] as [] | [string] | [string, string];
+
+        await sdk.actions.composeCast({
+          text: farcasterShareText,
+          embeds: limitedEmbeds,
+        });
+      } catch (error) {
+        console.error("Failed to compose cast:", error);
+      }
+    }
+  }, [context, creatorScore, totalFollowers, totalEarnings, profile]);
+
+  // Handle Farcaster sharing from modal (browser only)
+  const handleShareFarcaster = React.useCallback(() => {
+    const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
+    const followersText = formatK(totalFollowers || 0);
+    const earningsText = totalEarnings
+      ? formatNumberWithSuffix(totalEarnings)
+      : "—";
+
+    const farcasterHandle = profile?.fname || "creator";
+    const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
+
+    const farcasterShareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+
+    // Open Farcaster web app with pre-filled cast
+    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterShareText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
+    window.open(farcasterUrl, "_blank");
+  }, [profile, creatorScore, totalFollowers, totalEarnings]);
+
+  // Handle Twitter sharing from modal (browser only)
+  const handleShareTwitter = React.useCallback(() => {
+    const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
+    const followersText = formatK(totalFollowers || 0);
+    const earningsText = totalEarnings
+      ? formatNumberWithSuffix(totalEarnings)
+      : "—";
+
+    const displayName = profile?.display_name || profile?.name || "Creator";
+    const farcasterHandle = profile?.fname || "creator";
+    const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
+
+    const twitterShareText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
+
+    // Open Twitter web app with pre-filled tweet
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
+    window.open(twitterUrl, "_blank");
+  }, [profile, creatorScore, totalFollowers, totalEarnings]);
 
   // Profile data comes from server-side, no loading state needed
   if (!profile) {
@@ -198,6 +274,16 @@ function ProfileLayoutContentInner({
       <Section variant="content" animate>
         {children}
       </Section>
+
+      {/* Share Stats Modal - only shows in browser environment */}
+      <ShareStatsModal
+        open={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
+        talentUUID={talentUUID}
+        handle={profile?.fname || identifier}
+        onShareFarcaster={handleShareFarcaster}
+        onShareTwitter={handleShareTwitter}
+      />
     </PageContainer>
   );
 }

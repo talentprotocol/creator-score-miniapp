@@ -1,21 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { getUserContext } from "@/lib/user-context";
-import { useUserResolution } from "@/hooks/useUserResolution";
-import { useScoreRefresh } from "@/hooks/useScoreRefresh";
-// Removed useCreatorCategory - data now comes from ProfileContext
-import { formatNumberWithSuffix, formatK, composeCast } from "@/lib/utils";
+import { useCallback, useState, useEffect } from "react";
+import { useScoreRefresh } from "./useScoreRefresh";
+import { useUserResolution } from "./useUserResolution";
 import type { ProfileData } from "@/contexts/ProfileContext";
 
 interface UseProfileActionsProps {
   talentUUID: string;
   refetchScore?: () => void;
-  profile?: ProfileData | null;
+  profile?: ProfileData["profile"];
   creatorScore?: number;
   lastCalculatedAt?: string | null;
   calculating?: boolean;
   totalFollowers?: number;
-  totalEarnings?: number | null;
+  totalEarnings?: number;
 }
 
 export function useProfileActions({
@@ -28,8 +24,6 @@ export function useProfileActions({
   totalFollowers,
   totalEarnings,
 }: UseProfileActionsProps) {
-  const { context } = useMiniKit();
-  const user = getUserContext(context);
   const { talentUuid: currentUserTalentUuid } = useUserResolution();
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
 
@@ -95,46 +89,6 @@ export function useProfileActions({
   const pendingText = "Refresh Pending";
   const failedText = "Refresh Failed";
 
-  // Handle share stats action
-  const handleShareStats = useCallback(async () => {
-    // Get creator category from data, fallback to bio, then "Creator"
-    const creatorType = profile?.bio || "Creator"; // Simplified - no category data needed
-    const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
-    const followersText = formatK(totalFollowers || 0);
-    const earningsText = totalEarnings
-      ? formatNumberWithSuffix(totalEarnings)
-      : "—";
-
-    // Get Farcaster handle for the share text
-    const farcasterHandle = profile?.fname || "creator";
-    const displayName = profile?.display_name || profile?.name || "Creator";
-
-    // Use canonical public URL format for sharing
-    // Always use https://creatorscore.app/[farcaster%20handle] format
-    const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
-
-    // Create separate copy for Farcaster and Twitter
-    const farcasterShareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
-
-    const twitterShareText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
-
-    // Use the new cross-platform composeCast function
-    // The composeCast function will choose the appropriate text based on the platform
-    await composeCast(
-      farcasterShareText,
-      twitterShareText,
-      [profileUrl],
-      context,
-    );
-  }, [
-    profile,
-    creatorScore,
-    totalFollowers,
-    totalEarnings,
-    talentUUID,
-    context,
-  ]);
-
   // Handle refresh/calculate score action
   const handleRefreshScore = useCallback(() => {
     // Prevent refresh if in cooldown, calculating, refreshing, or has error
@@ -153,7 +107,6 @@ export function useProfileActions({
     failedText,
     refreshError,
     successMessage,
-    handleShareStats,
     handleRefreshScore,
   };
 }
