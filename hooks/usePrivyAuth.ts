@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 
 const getInitialTalentUserId = () => {
   if (typeof window !== "undefined") {
-    return localStorage.getItem("talentUserId") || null;
+    const id = localStorage.getItem("talentUserId");
+    return id || null;
   }
   return null;
 };
@@ -30,10 +31,6 @@ export const usePrivyAuth = ({
     getInitialTalentUserId(),
   );
 
-  useEffect(() => {
-    console.log("talentUserId", talentUserId);
-  }, [talentUserId]);
-
   const handleLogin = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("talentUserId");
@@ -41,19 +38,26 @@ export const usePrivyAuth = ({
     login({ walletChainType: "ethereum-only" });
   };
 
-  const handleLogout = () => {
-    console.log("handleLogout");
-    if (typeof window !== "undefined") {
-      console.log("removing talentUserId");
-      localStorage.removeItem("talentUserId");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("talentUserId");
+      }
       setTalentUserId(null);
+      router.push("/leaderboard");
+    } catch (error) {
+      console.error("Error during logout:", error);
     }
-    console.log("logging out");
-    logout();
-    router.push("/leaderboard");
   };
 
   useEffect(() => {
+    // Clear state when not authenticated
+    if (!authenticated) {
+      setTalentUserId(null);
+      return;
+    }
+
     async function getUserFromPrivy() {
       if (
         ready &&
@@ -62,15 +66,18 @@ export const usePrivyAuth = ({
         privyUser.wallet &&
         !talentUserId
       ) {
-        console.log("[FETCH REQUEST] INSIDE PRIVY");
-        const request = await fetch(
-          `/api/talent-user?id=${privyUser.wallet.address}`,
-        );
-        const data = await request.json();
-        if (typeof window !== "undefined") {
-          localStorage.setItem("talentUserId", data.id);
+        try {
+          const request = await fetch(
+            `/api/talent-user?id=${privyUser.wallet.address}`,
+          );
+          const data = await request.json();
+          if (typeof window !== "undefined") {
+            localStorage.setItem("talentUserId", data.id);
+          }
+          setTalentUserId(data.id);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
         }
-        setTalentUserId(data.id);
       }
     }
 
@@ -80,7 +87,7 @@ export const usePrivyAuth = ({
     } else {
       getUserFromPrivy();
     }
-  }, [authenticated]);
+  }, [authenticated, ready, privyUser]);
 
   return {
     ready,

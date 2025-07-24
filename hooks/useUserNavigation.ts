@@ -10,8 +10,6 @@ export function useUserNavigation() {
   const user = getUserContext(context);
   const { talentUuid } = useUserResolution();
 
-  console.log("[USE USER NAVIGATION] talentUuid", talentUuid);
-
   // Determine canonical identifier for navigation
   // Priority: Talent UUID > Farcaster username > fallback to /profile
   const canonical = talentUuid || user?.username;
