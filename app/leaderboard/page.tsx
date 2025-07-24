@@ -10,13 +10,7 @@ import type { LeaderboardEntry } from "@/app/services/types";
 import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
-import { useRouter } from "next/navigation";
-import {
-  generateProfileUrl,
-  formatWithK,
-  formatDate,
-  formatCurrency,
-} from "@/lib/utils";
+import { formatWithK, formatDate, formatCurrency } from "@/lib/utils";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
@@ -28,6 +22,8 @@ import {
 } from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
+import { Callout } from "@/components/common/Callout";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -43,7 +39,6 @@ function getCountdownParts(target: Date) {
 export default function LeaderboardPage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
   const { talentUuid: userTalentUuid } = useUserResolution();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
@@ -119,16 +114,16 @@ export default function LeaderboardPage() {
   }
 
   // Handler to navigate to profile page for a leaderboard entry
-  function handleEntryClick(entry: LeaderboardEntry) {
-    const url = generateProfileUrl({
-      farcasterHandle: null, // We don't have farcaster handle from leaderboard data
-      talentId: entry.talent_protocol_id,
-    });
+  // function handleEntryClick(entry: LeaderboardEntry) {
+  //   const url = generateProfileUrl({
+  //     farcasterHandle: null, // We don't have farcaster handle from leaderboard data
+  //     talentId: entry.talent_protocol_id,
+  //   });
 
-    if (url) {
-      router.push(url);
-    }
-  }
+  //   if (url) {
+  //     router.push(url);
+  //   }
+  // }
 
   // Determine loading and pagination state
   const hasMore =
@@ -211,6 +206,23 @@ export default function LeaderboardPage() {
 
         {activeTab === "creators" && (
           <>
+            {loading && visibleEntries.length === 0 && (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* Leaderboard list */}
             <div className="overflow-hidden rounded-lg bg-gray-50">
               {visibleEntries.map((user, index) => (
@@ -221,8 +233,9 @@ export default function LeaderboardPage() {
                     avatarUrl={user.pfp}
                     score={user.score}
                     rewards={getUsdcRewards(user.score, user.rank)}
-                    onClick={() => handleEntryClick(user)}
+                    // onClick={() => handleEntryClick(user)}
                     rewardsLoading={!userTop200Entry && top200Loading}
+                    talentUuid={user.talent_protocol_id}
                   />
                   {index < visibleEntries.length - 1 && (
                     <div className="h-px bg-gray-200" />
@@ -281,6 +294,15 @@ export default function LeaderboardPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Sponsor Callout */}
+        {activeTab === "sponsors" && (
+          <div className="mt-4">
+            <Callout variant="brand" href="https://farcaster.xyz/juampi">
+              Want to join as a sponsor? Reach out to @juampi
+            </Callout>
           </div>
         )}
       </Section>

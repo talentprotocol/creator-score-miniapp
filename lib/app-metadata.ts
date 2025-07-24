@@ -23,6 +23,22 @@ export interface AppMetadata {
   ogImageUrl: string;
 }
 
+// Frame object for fc:frame meta tag
+export const creatorScoreFrame = {
+  version: "next",
+  imageUrl: "https://www.creatorscore.app/hero.png",
+  button: {
+    title: "Launch Creator Score",
+    action: {
+      type: "launch_frame",
+      name: "Creator Score Mini App",
+      url: "https://www.creatorscore.app",
+      splashImageUrl: "https://www.creatorscore.app/splash.png",
+      splashBackgroundColor: "#C79AF6",
+    },
+  },
+};
+
 // Static metadata configuration (version controlled)
 export const APP_METADATA = {
   name: "Creator Score Mini App",

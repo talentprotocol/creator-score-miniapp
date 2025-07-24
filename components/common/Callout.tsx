@@ -7,24 +7,49 @@ import { cn, openExternalUrl } from "@/lib/utils";
 interface CalloutProps {
   children: React.ReactNode;
   href?: string;
+  variant?: "brand" | "neutral";
   className?: string;
 }
 
-export function Callout({ children, href, className }: CalloutProps) {
+export function Callout({
+  children,
+  href,
+  variant = "brand",
+  className,
+}: CalloutProps) {
   const { context } = useMiniKit();
   const isExternal = href?.startsWith("http");
   const Icon = isExternal ? ExternalLink : ArrowRight;
 
   const content = (
     <>
-      <div className="flex-1">{children}</div>
-      {href && <Icon className="size-4 shrink-0" />}
+      <div className="flex-1 text-left">{children}</div>
+      {href && (
+        <Icon className="size-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
+      )}
     </>
   );
 
+  const baseStyles =
+    "w-full rounded-xl px-6 py-4 my-1 flex items-center text-xs transition-colors duration-150";
+
+  const variantStyles = {
+    brand: "bg-purple-100 text-purple-700",
+    neutral: "bg-muted text-muted-foreground",
+  };
+
+  const hoverStyles = href
+    ? {
+        brand: "hover:bg-purple-200",
+        neutral: "hover:bg-muted/80",
+      }
+    : {};
+
   const styles = cn(
-    "bg-purple-100 rounded-xl px-6 py-4 my-1 flex items-center text-purple-700 text-xs",
-    href && "hover:bg-purple-200 cursor-pointer transition-colors",
+    baseStyles,
+    variantStyles[variant],
+    href && hoverStyles[variant],
+    href && "group cursor-pointer",
     className,
   );
 

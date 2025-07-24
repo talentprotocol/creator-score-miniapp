@@ -1,5 +1,6 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { unstable_cache } from "next/cache";
 import { isEarningsCredential } from "./total-earnings-config";
 import { LEVEL_RANGES } from "./constants";
 
@@ -85,8 +86,8 @@ export async function getEthUsdcPrice(): Promise<number> {
       throw new Error("Invalid price data");
     }
 
-    // Cache the price
-    setCachedData(cacheKey, price);
+    // Cache the price with correct 24-hour duration
+    setCachedData(cacheKey, price, CACHE_DURATIONS.ETH_PRICE);
 
     return price;
   } catch {
@@ -265,46 +266,95 @@ export function cleanCredentialLabel(label: string, issuer: string): string {
     : label;
 }
 
-// Generic caching utility
+// Cache data structure for localStorage
 interface CachedData<T> {
   data: T;
   timestamp: number;
 }
 
+// Server-side cache store
+const serverCache = new Map<
+  string,
+  { data: unknown; timestamp: number; maxAge: number }
+>();
+
 export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
-  if (typeof window === "undefined") return null;
+  // Client-side: use localStorage
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem(key);
+      if (!cached) return null;
 
-  try {
-    const cached = localStorage.getItem(key);
-    if (!cached) return null;
+      const { data, timestamp }: CachedData<T> = JSON.parse(cached);
+      if (Date.now() - timestamp < maxAgeMs) {
+        return data;
+      }
 
-    const { data, timestamp }: CachedData<T> = JSON.parse(cached);
-    if (Date.now() - timestamp < maxAgeMs) {
-      return data;
+      // Data is stale, remove it
+      localStorage.removeItem(key);
+      return null;
+    } catch {
+      // Invalid cache data, remove it
+      localStorage.removeItem(key);
+      return null;
     }
-
-    // Data is stale, remove it
-    localStorage.removeItem(key);
-    return null;
-  } catch {
-    // Invalid cache data, remove it
-    localStorage.removeItem(key);
-    return null;
   }
+
+  // Server-side: use in-memory cache with unstable_cache for persistence
+  const cached = serverCache.get(key);
+  if (cached) {
+    if (Date.now() - cached.timestamp < cached.maxAge) {
+      return cached.data as T;
+    }
+    // Data is stale, remove it
+    serverCache.delete(key);
+  }
+
+  return null;
 }
 
-export function setCachedData<T>(key: string, data: T): void {
-  if (typeof window === "undefined") return;
-
-  try {
-    const cachedData: CachedData<T> = {
-      data,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(key, JSON.stringify(cachedData));
-  } catch {
-    // Storage quota exceeded or other error, silently fail
+export function setCachedData<T>(
+  key: string,
+  data: T,
+  maxAgeMs?: number,
+): void {
+  // Client-side: use localStorage
+  if (typeof window !== "undefined") {
+    try {
+      const cachedData: CachedData<T> = {
+        data,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(key, JSON.stringify(cachedData));
+    } catch {
+      // Storage quota exceeded or other error, silently fail
+    }
+    return;
   }
+
+  // Server-side: use in-memory cache
+  const cacheMaxAge = maxAgeMs || 300000; // 5 minutes default
+  serverCache.set(key, {
+    data,
+    timestamp: Date.now(),
+    maxAge: cacheMaxAge,
+  });
+}
+
+// Unstable cache wrapper for specific data fetching functions
+export function createCachedFunction<TArgs extends readonly unknown[], TReturn>(
+  fn: (...args: TArgs) => Promise<TReturn>,
+  keyPrefix: string,
+  revalidateSeconds: number,
+) {
+  return unstable_cache(fn, [keyPrefix], {
+    revalidate: revalidateSeconds,
+  });
+}
+
+// Helper to convert milliseconds to seconds for unstable_cache
+export function msToSeconds(ms: number): number {
+  return Math.floor(ms / 1000);
 }
 
 // Cache duration constants
@@ -343,15 +393,9 @@ export type ClientEnvironment = "farcaster" | "base" | "browser";
 /**
  * Detect the current client environment
  */
-export function detectClient(context?: unknown): ClientEnvironment {
-  // Debug logging to understand the context
-  console.log("🔍 detectClient - context:", context);
-  console.log("🔍 detectClient - window.location:", window.location?.href);
-  console.log("🔍 detectClient - userAgent:", navigator.userAgent);
-  console.log(
-    "🔍 detectClient - is iframe:",
-    typeof window !== "undefined" ? window.self !== window.top : "no window",
-  );
+export async function detectClient(
+  context?: unknown,
+): Promise<ClientEnvironment> {
   // Check for Base App first - clientFid 399519 indicates Base app
   if (
     context &&
@@ -362,44 +406,36 @@ export function detectClient(context?: unknown): ClientEnvironment {
     "clientFid" in context.client &&
     context.client.clientFid === 399519
   ) {
-    console.log("🔍 detectClient - detected: base");
     return "base";
   }
 
-  // Check if we're in a Farcaster environment
+  // Use Farcaster SDK's own detection methods
   if (typeof window !== "undefined") {
-    // More comprehensive Farcaster detection
-    const isInFarcaster =
-      // Check URL patterns
-      window.location.hostname.includes("farcaster") ||
-      window.location.hostname.includes("warpcast") ||
-      window.location.href.includes("farcaster") ||
-      window.location.href.includes("warpcast") ||
-      // Check for Farcaster-specific globals and properties
-      "farcasterFrame" in window ||
-      "farcaster" in window ||
-      // Check for Farcaster SDK availability
-      "farcaster" in window ||
-      // Check user agent for Farcaster
-      navigator.userAgent.includes("Farcaster") ||
-      navigator.userAgent.includes("Warpcast") ||
-      // Check if we're in an iframe (common for mini apps)
-      window.self !== window.top ||
-      // Check for Farcaster-specific context properties
-      (context &&
-        typeof context === "object" &&
-        ("farcaster" in context ||
-          "warpcast" in context ||
-          "isFarcaster" in context));
+    try {
+      const { sdk } = await import("@farcaster/frame-sdk");
 
-    if (isInFarcaster) {
-      console.log("🔍 detectClient - detected: farcaster");
+      // Check if Farcaster context is available using the SDK
+      const farcasterContext = await sdk.context;
+      if (farcasterContext && farcasterContext.client) {
+        return "farcaster";
+      }
+    } catch {
+      // SDK not available or failed to load, continue with fallback detection
+    }
+
+    // Fallback: Check for Farcaster-specific context properties
+    if (
+      context &&
+      typeof context === "object" &&
+      ("farcaster" in context ||
+        "warpcast" in context ||
+        "isFarcaster" in context)
+    ) {
       return "farcaster";
     }
   }
 
   // Default to browser environment
-  console.log("🔍 detectClient - detected: browser");
   return "browser";
 }
 
@@ -410,15 +446,13 @@ export async function openExternalUrl(
   url: string,
   context?: unknown,
 ): Promise<void> {
-  const client = detectClient(context);
+  const client = await detectClient(context);
 
   if (client === "base") {
     try {
       // Use Base Mini App SDK - note: actual API methods need to be verified
       // For now, falling through to window.open as Base Mini App SDK methods are not confirmed
-      console.log("Base Mini App detected - using window.open fallback");
-    } catch (error) {
-      console.error("Failed to open external URL with Base SDK:", error);
+    } catch {
       // Fall through to regular window.open
     }
   } else if (client === "farcaster") {
@@ -426,8 +460,7 @@ export async function openExternalUrl(
       const { sdk } = await import("@farcaster/frame-sdk");
       await sdk.actions.openUrl(url);
       return;
-    } catch (error) {
-      console.error("Failed to open external URL with Farcaster SDK:", error);
+    } catch {
       // Fall through to regular window.open
     }
   }
@@ -436,14 +469,12 @@ export async function openExternalUrl(
   try {
     const newWindow = window.open(url, "_blank", "noopener,noreferrer");
     if (!newWindow) {
-      console.debug("Failed to open new window - popup may be blocked");
       // Don't throw error - popups being blocked is expected behavior
       return;
     }
     // Focus the new window if it opened successfully
     newWindow.focus();
-  } catch (error) {
-    console.debug("window.open failed:", error);
+  } catch {
     // Don't throw error - this is expected in some environments
   }
 }
@@ -452,66 +483,67 @@ export async function openExternalUrl(
  * Compose a cast with environment detection
  */
 export async function composeCast(
-  text: string,
+  farcasterText: string,
+  twitterText: string,
   embeds?: string[],
   context?: unknown,
 ): Promise<void> {
-  console.log("🎯 composeCast - text:", text);
-  console.log("🎯 composeCast - embeds:", embeds);
-  console.log("🎯 composeCast - context:", context);
+  // First, detect the client environment
+  const client = await detectClient(context);
 
-  // Try Farcaster SDK first (most reliable for Farcaster environments)
-  try {
-    const { sdk } = await import("@farcaster/frame-sdk");
-    console.log("🎯 composeCast - Farcaster SDK imported successfully");
-
-    // Farcaster SDK expects embeds as limited array
-    const limitedEmbeds = embeds
-      ? (embeds.slice(0, 2) as [] | [string] | [string, string])
-      : undefined;
-
-    await sdk.actions.composeCast({ text, embeds: limitedEmbeds });
-    console.log("🎯 composeCast - Farcaster SDK composeCast successful");
-    return;
-  } catch (error) {
-    console.log(
-      "🎯 composeCast - Farcaster SDK failed, trying client detection:",
-      error,
-    );
-  }
-
-  // If Farcaster SDK fails, try client detection
-  const client = detectClient(context);
-  console.log("🎯 composeCast - detected client:", client);
-
-  if (client === "base") {
+  // Handle Farcaster environment
+  if (client === "farcaster") {
     try {
-      // Use Base Mini App SDK - note: actual API methods need to be verified
-      // For now, falling through to Warpcast intent URL as Base Mini App SDK methods are not confirmed
-      console.log(
-        "Base Mini App detected - using Warpcast intent URL fallback",
-      );
-    } catch (error) {
-      console.error("Failed to compose cast with Base SDK:", error);
-      // Fall through to Warpcast intent URL
+      const { sdk } = await import("@farcaster/frame-sdk");
+
+      // Farcaster SDK expects embeds as limited array
+      const limitedEmbeds = embeds
+        ? (embeds.slice(0, 2) as [] | [string] | [string, string])
+        : undefined;
+
+      await sdk.actions.composeCast({
+        text: farcasterText,
+        embeds: limitedEmbeds,
+      });
+      return;
+    } catch {
+      // Fall through to URL-based sharing
     }
   }
 
-  // Fallback to Farcaster/Warpcast intent URL for browser or when SDKs fail
-  console.log("🎯 composeCast - using Farcaster URL fallback");
-  const encodedText = encodeURIComponent(text);
+  // Handle Base app environment - use same composeCast as Farcaster
+  if (client === "base") {
+    try {
+      const { sdk } = await import("@farcaster/frame-sdk");
 
-  // Try farcaster.xyz first (as seen in the working URL), then fallback to warpcast.com
-  let farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodedText}`;
+      // Base app uses the same Farcaster SDK composeCast functionality
+      const limitedEmbeds = embeds
+        ? (embeds.slice(0, 2) as [] | [string] | [string, string])
+        : undefined;
 
-  if (embeds && embeds.length > 0) {
-    embeds.forEach((embed) => {
-      farcasterUrl += `&embeds[]=${encodeURIComponent(embed)}`;
-    });
+      await sdk.actions.composeCast({
+        text: farcasterText,
+        embeds: limitedEmbeds,
+      });
+      return;
+    } catch {
+      // Fall through to Twitter/X only if SDK fails
+    }
   }
 
-  console.log("🎯 composeCast - opening Farcaster URL:", farcasterUrl);
-  window.open(farcasterUrl, "_blank");
+  // Fallback to Twitter/X for browser or when SDKs fail
+  const encodedText = encodeURIComponent(twitterText);
+
+  // Build Twitter/X share URL with URL parameter (for testing)
+  let twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+
+  if (embeds && embeds.length > 0) {
+    // Add URL as parameter - Twitter should show as link preview
+    const profileUrl = embeds[0];
+    twitterUrl += `&url=${encodeURIComponent(profileUrl)}`;
+  }
+
+  window.open(twitterUrl, "_blank");
 }
 
 /**

@@ -41,7 +41,7 @@ export async function GET() {
       name: frameMetadata.name,
       subtitle: frameMetadata.subtitle,
       description: frameMetadata.description,
-      iconUrl: frameMetadata.iconUrl, // Now guaranteed to be absolute
+      iconUrl: frameMetadata.iconUrl,
       splashImageUrl: frameMetadata.splashImageUrl,
       splashBackgroundColor: frameMetadata.splashBackgroundColor,
       homeUrl: baseUrl,
@@ -53,11 +53,6 @@ export async function GET() {
       ogTitle: frameMetadata.ogTitle,
       ogDescription: frameMetadata.ogDescription,
       ogImageUrl: frameMetadata.ogImageUrl,
-      // Additional properties to help trigger installation modal
-      installPrompt:
-        "Add Creator Score to your Farcaster account to track your onchain reputation and earn rewards",
-      installButtonText: "Add to Farcaster",
-      installUrl: baseUrl,
     }),
   });
-}
+} 

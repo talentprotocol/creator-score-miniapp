@@ -1,10 +1,12 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { useProfileActions } from "@/hooks/useProfileActions";
 import { Icon } from "@/components/ui/icon";
-import { Bell, Twitter, Share2, Plus } from "lucide-react";
+import { Bell, Plus, Twitter, Share2 } from "lucide-react";
+import { detectClient } from "@/lib/utils";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 
 interface RewardsBoostsCardProps {
   talentUuid?: string | null;
@@ -12,9 +14,32 @@ interface RewardsBoostsCardProps {
 }
 
 export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
-  const { handleShareStats } = useProfileActions({
-    talentUUID: talentUuid || "",
-  });
+  const { context } = useMiniKit();
+
+  const handleShareStats = React.useCallback(async () => {
+    if (!talentUuid) return;
+
+    const client = await detectClient(context);
+
+    if (client === "browser") {
+      // In browser, redirect to profile page where they can access the share modal
+      window.location.href = `/${talentUuid}/stats`;
+    } else {
+      // In Farcaster or Base app, show a basic share message
+      try {
+        const { sdk } = await import("@farcaster/frame-sdk");
+
+        await sdk.actions.composeCast({
+          text: "Check out my creator stats in the Creator Score mini app! 📊",
+          embeds: [`https://creatorscore.app/${talentUuid}`],
+        });
+      } catch (error) {
+        console.error("Failed to compose cast:", error);
+        // Fallback to redirect
+        window.location.href = `/${talentUuid}/stats`;
+      }
+    }
+  }, [talentUuid, context]);
 
   return (
     <Card className="p-6 space-y-4">

@@ -8,7 +8,11 @@ import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
 import { WelcomeModalHandler } from "@/components/common/WelcomeModalHandler";
-import { getPageMetadata } from "@/lib/app-metadata";
+import {
+  getPageMetadata,
+  getFrameMetadata,
+  creatorScoreFrame,
+} from "@/lib/app-metadata";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -17,6 +21,7 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const pageMetadata = getPageMetadata();
+  const frameMetadata = getFrameMetadata();
 
   return {
     title: pageMetadata.title,
@@ -25,6 +30,16 @@ export async function generateMetadata(): Promise<Metadata> {
       icon: "/favicon-64.png",
       shortcut: "/favicon-64.png",
       apple: "/favicon-64.png",
+    },
+    other: {
+      "fc:frame": JSON.stringify(creatorScoreFrame),
+      "og:title": frameMetadata.ogTitle,
+      "og:description": frameMetadata.ogDescription,
+      "og:image": frameMetadata.ogImageUrl,
+      "twitter:card": "summary_large_image",
+      "twitter:title": frameMetadata.ogTitle,
+      "twitter:description": frameMetadata.ogDescription,
+      "twitter:image": frameMetadata.ogImageUrl,
     },
   };
 }

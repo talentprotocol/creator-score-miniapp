@@ -1,21 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { getUserContext } from "@/lib/user-context";
-import { useUserResolution } from "@/hooks/useUserResolution";
-import { useScoreRefresh } from "@/hooks/useScoreRefresh";
-// Removed useCreatorCategory - data now comes from ProfileContext
-import { formatNumberWithSuffix, formatK, composeCast } from "@/lib/utils";
+import { useCallback, useState, useEffect } from "react";
+import { useScoreRefresh } from "./useScoreRefresh";
+import { useUserResolution } from "./useUserResolution";
 import type { ProfileData } from "@/contexts/ProfileContext";
 
 interface UseProfileActionsProps {
   talentUUID: string;
   refetchScore?: () => void;
-  profile?: ProfileData | null;
+  profile?: ProfileData["profile"];
   creatorScore?: number;
   lastCalculatedAt?: string | null;
   calculating?: boolean;
   totalFollowers?: number;
-  totalEarnings?: number | null;
+  totalEarnings?: number;
 }
 
 export function useProfileActions({
@@ -28,8 +24,6 @@ export function useProfileActions({
   totalFollowers,
   totalEarnings,
 }: UseProfileActionsProps) {
-  const { context } = useMiniKit();
-  const user = getUserContext(context);
   const { talentUuid: currentUserTalentUuid } = useUserResolution();
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
 
@@ -142,7 +136,6 @@ export function useProfileActions({
     failedText,
     refreshError,
     successMessage,
-    handleShareStats,
     handleRefreshScore,
   };
 }
