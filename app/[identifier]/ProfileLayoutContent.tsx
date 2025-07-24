@@ -20,6 +20,7 @@ import { Share, RotateCcw, Loader2 } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import posthog from "posthog-js";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -101,6 +102,16 @@ function ProfileLayoutContentInner({
 
   // Main share stats handler - detects environment and either opens modal or shares directly
   const handleShareStats = React.useCallback(async () => {
+    // Track share stats click
+    posthog.capture("profile_share_stats_clicked", {
+      creator_score: creatorScore,
+      total_earnings: totalEarnings,
+      total_followers: totalFollowers,
+      is_own_profile: isOwnProfile,
+      has_score: !hasNoScore,
+      rank,
+    });
+
     const client = await detectClient(context);
 
     if (client === "browser") {
@@ -128,11 +139,30 @@ function ProfileLayoutContentInner({
           text: farcasterShareText,
           embeds: limitedEmbeds,
         });
+
+        // Track successful direct share
+        posthog.capture("profile_share_completed", {
+          platform: "farcaster",
+          method: "direct",
+          creator_score: creatorScore,
+          total_earnings: totalEarnings,
+          total_followers: totalFollowers,
+          is_own_profile: isOwnProfile,
+        });
       } catch (error) {
         console.error("Failed to compose cast:", error);
       }
     }
-  }, [context, creatorScore, totalFollowers, totalEarnings, profile]);
+  }, [
+    context,
+    creatorScore,
+    totalFollowers,
+    totalEarnings,
+    profile,
+    isOwnProfile,
+    hasNoScore,
+    rank,
+  ]);
 
   // Handle Farcaster sharing from modal (browser only)
   const handleShareFarcaster = React.useCallback(() => {
@@ -150,7 +180,17 @@ function ProfileLayoutContentInner({
     // Open Farcaster web app with pre-filled cast
     const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterShareText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
     window.open(farcasterUrl, "_blank");
-  }, [profile, creatorScore, totalFollowers, totalEarnings]);
+
+    // Track modal share
+    posthog.capture("profile_share_completed", {
+      platform: "farcaster",
+      method: "modal",
+      creator_score: creatorScore,
+      total_earnings: totalEarnings,
+      total_followers: totalFollowers,
+      is_own_profile: isOwnProfile,
+    });
+  }, [profile, creatorScore, totalFollowers, totalEarnings, isOwnProfile]);
 
   // Handle Twitter sharing from modal (browser only)
   const handleShareTwitter = React.useCallback(() => {
@@ -169,7 +209,17 @@ function ProfileLayoutContentInner({
     // Open Twitter web app with pre-filled tweet
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
     window.open(twitterUrl, "_blank");
-  }, [profile, creatorScore, totalFollowers, totalEarnings]);
+
+    // Track modal share
+    posthog.capture("profile_share_completed", {
+      platform: "twitter",
+      method: "modal",
+      creator_score: creatorScore,
+      total_earnings: totalEarnings,
+      total_followers: totalFollowers,
+      is_own_profile: isOwnProfile,
+    });
+  }, [profile, creatorScore, totalFollowers, totalEarnings, isOwnProfile]);
 
   // Profile data comes from server-side, no loading state needed
   if (!profile) {
@@ -212,7 +262,21 @@ function ProfileLayoutContentInner({
             Share Stats
           </Button>
           <Button
-            onClick={handleRefreshScore}
+            onClick={() => {
+              // Track refresh score click
+              posthog.capture("profile_refresh_score_clicked", {
+                creator_score: creatorScore,
+                total_earnings: totalEarnings,
+                total_followers: totalFollowers,
+                is_own_profile: isOwnProfile,
+                has_score: !hasNoScore,
+                is_in_cooldown: isInCooldown,
+                has_error: !!refreshError,
+                is_calculating: isCalculatingOrRefreshing,
+              });
+
+              handleRefreshScore();
+            }}
             variant="default"
             className={`flex-1 ${
               refreshError ? "text-red-700 hover:border-red-400" : ""

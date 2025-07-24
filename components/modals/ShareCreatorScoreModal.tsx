@@ -23,6 +23,7 @@ import { X, Download } from "lucide-react";
 import { cn, formatWithK } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { detectClient } from "@/lib/utils";
+import posthog from "posthog-js";
 
 interface ShareCreatorScoreModalProps {
   open: boolean;
@@ -47,6 +48,18 @@ export function ShareCreatorScoreModal({
     formattedEarnings,
   } = useShareData();
   const [downloading, setDownloading] = React.useState(false);
+
+  // Track modal open
+  React.useEffect(() => {
+    if (open && !loading) {
+      posthog.capture("share_modal_opened", {
+        source: "welcome",
+        creator_score: realScore,
+        total_earnings: realEarnings,
+        total_followers: formattedFollowers,
+      });
+    }
+  }, [open, loading, realScore, realEarnings, formattedFollowers]);
 
   // Counting animations
   const animatedScore = useCountingAnimation({
@@ -192,6 +205,15 @@ export function ShareCreatorScoreModal({
           {/* Button #1 - Farcaster */}
           <button
             onClick={async () => {
+              // Track click before sharing
+              posthog.capture("share_button_clicked", {
+                platform: "farcaster",
+                source: "welcome",
+                creator_score: realScore,
+                total_earnings: realEarnings,
+                total_followers: formattedFollowers,
+              });
+
               const client = await detectClient(context);
               const identifier = handle;
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
@@ -236,6 +258,15 @@ export function ShareCreatorScoreModal({
           {/* Button #2 - X/Twitter */}
           <button
             onClick={async () => {
+              // Track click before sharing
+              posthog.capture("share_button_clicked", {
+                platform: "twitter",
+                source: "welcome",
+                creator_score: realScore,
+                total_earnings: realEarnings,
+                total_followers: formattedFollowers,
+              });
+
               const identifier = handle;
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
               const displayName = identifier;
@@ -268,6 +299,15 @@ export function ShareCreatorScoreModal({
           {/* Button #3 - Download */}
           <button
             onClick={async () => {
+              // Track click before downloading
+              posthog.capture("share_button_clicked", {
+                platform: "download",
+                source: "welcome",
+                creator_score: realScore,
+                total_earnings: realEarnings,
+                total_followers: formattedFollowers,
+              });
+
               try {
                 setDownloading(true);
                 const baseUrl =
