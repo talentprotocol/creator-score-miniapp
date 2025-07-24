@@ -2,11 +2,12 @@ import { useCallback, useState, useEffect } from "react";
 import { useScoreRefresh } from "./useScoreRefresh";
 import { useUserResolution } from "./useUserResolution";
 import type { ProfileData } from "@/contexts/ProfileContext";
+import { composeCast, formatK, formatNumberWithSuffix } from "@/lib/utils";
 
 interface UseProfileActionsProps {
   talentUUID: string;
   refetchScore?: () => void;
-  profile?: ProfileData["profile"];
+  profile: ProfileData | null;
   creatorScore?: number;
   lastCalculatedAt?: string | null;
   calculating?: boolean;
@@ -102,21 +103,17 @@ export function useProfileActions({
     // Get Farcaster handle for the share text
     const farcasterHandle = profile?.fname || "creator";
 
-    const shareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
-
     // Use profile URL instead of static image for better engagement
     const profileUrl = `${window.location.origin}/${talentUUID}`;
 
+    // Create platform-specific share text
+    const farcasterText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+
+    const twitterText = `Check ${profile?.display_name || profile?.name || "Creator"}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
+
     // Use the new cross-platform composeCast function
-    await composeCast(shareText, [profileUrl], context);
-  }, [
-    profile,
-    creatorScore,
-    totalFollowers,
-    totalEarnings,
-    talentUUID,
-    context,
-  ]);
+    await composeCast(farcasterText, twitterText, [profileUrl]);
+  }, [profile, creatorScore, totalFollowers, totalEarnings, talentUUID]);
 
   // Handle refresh/calculate score action
   const handleRefreshScore = useCallback(() => {
