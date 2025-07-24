@@ -23,6 +23,7 @@ import {
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -205,6 +206,23 @@ export default function LeaderboardPage() {
 
         {activeTab === "creators" && (
           <>
+            {loading && visibleEntries.length === 0 && (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* Leaderboard list */}
             <div className="overflow-hidden rounded-lg bg-gray-50">
               {visibleEntries.map((user, index) => (

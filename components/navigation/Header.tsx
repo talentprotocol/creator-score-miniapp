@@ -22,7 +22,7 @@ export function Header() {
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
 
   const handleTitleClick = () => {
-    router.push("/");
+    router.push("/leaderboard");
   };
 
   const handleNavClick = (

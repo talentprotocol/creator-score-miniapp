@@ -1,7 +1,13 @@
 import React from "react";
 import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { talentApiClient } from "@/lib/talent-api-client";
+import {
+  CACHE_KEYS,
+  CACHE_DURATION_10_MINUTES,
+  CACHE_DURATION_1_HOUR,
+} from "@/lib/cache-keys";
 import {
   calculateTotalFollowers,
   convertEthToUsdc,
@@ -20,9 +26,26 @@ export async function GET(
 ) {
   try {
     // Fetch user data (PRESERVED EXACTLY)
-    const profileResponse = await talentApiClient.getProfile({
-      talent_protocol_id: params.talentUUID,
-    });
+    const profileResponse = await unstable_cache(
+      async () => {
+        const response = await talentApiClient.getProfile({
+          talent_protocol_id: params.talentUUID,
+        });
+
+        // Check if profile exists and parse immediately
+        if (!response.ok) {
+          throw new Error(`Profile not found: ${response.status}`);
+        }
+
+        const profileData = await response.json();
+        return { ok: true, data: profileData };
+      },
+      [`profile-${params.talentUUID}`],
+      {
+        tags: [`profile-${params.talentUUID}`, CACHE_KEYS.TALENT_PROFILES],
+        revalidate: CACHE_DURATION_10_MINUTES,
+      },
+    )();
 
     // Check if profile exists (PRESERVED EXACTLY)
     if (!profileResponse.ok) {
@@ -30,13 +53,40 @@ export async function GET(
     }
 
     // Parse the profile data from the response (PRESERVED EXACTLY)
-    const profileData = await profileResponse.json();
+    const profileData = profileResponse.data;
 
     // Fetch additional data (PRESERVED EXACTLY)
     const [socialAccounts, credentials, creatorScoreData] = await Promise.all([
-      getSocialAccountsForTalentId(params.talentUUID).catch(() => []),
-      getCredentialsForTalentId(params.talentUUID).catch(() => []),
-      getCreatorScoreForTalentId(params.talentUUID).catch(() => ({
+      unstable_cache(
+        async () => getSocialAccountsForTalentId(params.talentUUID),
+        [`social-accounts-${params.talentUUID}`],
+        {
+          tags: [
+            `social-accounts-${params.talentUUID}`,
+            CACHE_KEYS.SOCIAL_ACCOUNTS,
+          ],
+          revalidate: CACHE_DURATION_1_HOUR,
+        },
+      )().catch(() => []),
+      unstable_cache(
+        async () => getCredentialsForTalentId(params.talentUUID),
+        [`credentials-${params.talentUUID}`],
+        {
+          tags: [`credentials-${params.talentUUID}`, CACHE_KEYS.CREDENTIALS],
+          revalidate: CACHE_DURATION_10_MINUTES,
+        },
+      )().catch(() => []),
+      unstable_cache(
+        async () => getCreatorScoreForTalentId(params.talentUUID),
+        [`creator-score-${params.talentUUID}`],
+        {
+          tags: [
+            `creator-score-${params.talentUUID}`,
+            CACHE_KEYS.CREATOR_SCORES,
+          ],
+          revalidate: CACHE_DURATION_10_MINUTES,
+        },
+      )().catch(() => ({
         score: 0,
       })),
     ]);
@@ -47,6 +97,7 @@ export async function GET(
 
     // Calculate total earnings (PRESERVED EXACTLY - same logic as layout.tsx)
     const ethPrice = await getEthUsdcPrice();
+
     const issuerTotals = new Map<string, number>();
 
     credentials.forEach((credentialGroup) => {
@@ -140,7 +191,7 @@ export async function GET(
     ]);
 
     // Generate image with @vercel/og (REPLACING Canvas)
-    return new ImageResponse(
+    const imageResponse = new ImageResponse(
       (
         <div
           style={{
@@ -321,6 +372,8 @@ export async function GET(
         },
       },
     );
+
+    return imageResponse;
   } catch (error) {
     console.error("Error generating share image:", error);
     return NextResponse.json(

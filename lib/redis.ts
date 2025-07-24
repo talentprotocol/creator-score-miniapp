@@ -1,32 +1,14 @@
-// Client-side caching utility to replace Redis
-// This provides similar functionality using localStorage
+// Client-side and server-side caching utility
+// This provides caching functionality for both environments
 
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-}
+import {
+  getCachedData as utilsGetCachedData,
+  setCachedData as utilsSetCachedData,
+} from "./utils";
 
 export function getCachedData<T>(key: string): T | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const cached = localStorage.getItem(key);
-    if (!cached) return null;
-
-    const entry: CacheEntry<T> = JSON.parse(cached);
-    const now = Date.now();
-
-    if (now - entry.timestamp > entry.ttl) {
-      localStorage.removeItem(key);
-      return null;
-    }
-
-    return entry.data;
-  } catch {
-    localStorage.removeItem(key);
-    return null;
-  }
+  // Use the updated utils function which handles both client and server
+  return utilsGetCachedData<T>(key, 3600000); // Default 1 hour TTL
 }
 
 export function setCachedData<T>(
@@ -34,34 +16,26 @@ export function setCachedData<T>(
   data: T,
   ttlMs: number = 3600000,
 ): void {
-  if (typeof window === "undefined") return;
-
-  try {
-    const entry: CacheEntry<T> = {
-      data,
-      timestamp: Date.now(),
-      ttl: ttlMs,
-    };
-    localStorage.setItem(key, JSON.stringify(entry));
-  } catch {
-    // Storage quota exceeded or other error, silently fail
-  }
+  // Use the updated utils function which handles both client and server
+  utilsSetCachedData<T>(key, data, ttlMs);
 }
 
 export function clearCache(key?: string): void {
-  if (typeof window === "undefined") return;
-
-  if (key) {
-    localStorage.removeItem(key);
-  } else {
-    // Clear all cache entries
-    const keys = Object.keys(localStorage);
-    keys.forEach((k) => {
-      if (k.startsWith("cache:")) {
-        localStorage.removeItem(k);
-      }
-    });
+  if (typeof window !== "undefined") {
+    if (key) {
+      localStorage.removeItem(key);
+    } else {
+      // Clear all cache entries
+      const keys = Object.keys(localStorage);
+      keys.forEach((k) => {
+        if (k.startsWith("cache:")) {
+          localStorage.removeItem(k);
+        }
+      });
+    }
   }
+  // Note: Server-side cache clearing would need to be implemented separately
+  // if needed, as the in-memory cache is per-process
 }
 
 // Legacy Redis-like interface for compatibility

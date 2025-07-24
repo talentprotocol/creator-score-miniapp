@@ -15,6 +15,12 @@ import {
   formatNumberWithSuffix,
 } from "@/lib/utils";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
+import {
+  CACHE_KEYS,
+  CACHE_DURATION_10_MINUTES,
+  CACHE_DURATION_1_HOUR,
+} from "@/lib/cache-keys";
 
 export async function generateMetadata({
   params,
@@ -44,9 +50,30 @@ export async function generateMetadata({
 
     // Fetch basic data for metadata
     const [creatorScoreData, socialAccounts, credentials] = await Promise.all([
-      getCreatorScoreForTalentId(user.id).catch(() => ({ score: 0 })),
-      getSocialAccountsForTalentId(user.id).catch(() => []),
-      getCredentialsForTalentId(user.id).catch(() => []),
+      unstable_cache(
+        async () => getCreatorScoreForTalentId(user.id!),
+        [`creator-score-${user.id!}`],
+        {
+          tags: [`creator-score-${user.id!}`, CACHE_KEYS.CREATOR_SCORES],
+          revalidate: CACHE_DURATION_10_MINUTES,
+        },
+      )().catch(() => ({ score: 0 })),
+      unstable_cache(
+        async () => getSocialAccountsForTalentId(user.id!),
+        [`social-accounts-${user.id!}`],
+        {
+          tags: [`social-accounts-${user.id!}`, CACHE_KEYS.SOCIAL_ACCOUNTS],
+          revalidate: CACHE_DURATION_1_HOUR,
+        },
+      )().catch(() => []),
+      unstable_cache(
+        async () => getCredentialsForTalentId(user.id!),
+        [`credentials-${user.id!}`],
+        {
+          tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
+          revalidate: CACHE_DURATION_10_MINUTES,
+        },
+      )().catch(() => []),
     ]);
 
     // Calculate total followers
@@ -207,16 +234,44 @@ export default async function ProfileLayout({
   // 🚀 FETCH ALL PROFILE DATA HERE (server-side, once)
   const [creatorScoreData, socialAccounts, credentials, posts] =
     await Promise.all([
-      getCreatorScoreForTalentId(user.id).catch(() => ({
+      unstable_cache(
+        async () => getCreatorScoreForTalentId(user.id!),
+        [`creator-score-${user.id!}`],
+        {
+          tags: [`creator-score-${user.id!}`, CACHE_KEYS.CREATOR_SCORES],
+          revalidate: CACHE_DURATION_10_MINUTES,
+        },
+      )().catch(() => ({
         score: 0,
         level: 1,
         levelName: "Level 1",
         lastCalculatedAt: null,
         calculating: false,
       })),
-      getSocialAccountsForTalentId(user.id).catch(() => []),
-      getCredentialsForTalentId(user.id).catch(() => []),
-      getAllPostsForTalentId(user.id).catch(() => []),
+      unstable_cache(
+        async () => getSocialAccountsForTalentId(user.id!),
+        [`social-accounts-${user.id!}`],
+        {
+          tags: [`social-accounts-${user.id!}`, CACHE_KEYS.SOCIAL_ACCOUNTS],
+          revalidate: CACHE_DURATION_1_HOUR,
+        },
+      )().catch(() => []),
+      unstable_cache(
+        async () => getCredentialsForTalentId(user.id!),
+        [`credentials-${user.id!}`],
+        {
+          tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
+          revalidate: CACHE_DURATION_10_MINUTES,
+        },
+      )().catch(() => []),
+      unstable_cache(
+        async () => getAllPostsForTalentId(user.id!),
+        [`posts-${user.id!}`],
+        {
+          tags: [`posts-${user.id!}`, CACHE_KEYS.POSTS],
+          revalidate: CACHE_DURATION_1_HOUR,
+        },
+      )().catch(() => []),
     ]);
 
   // Process posts into yearly data (same logic as hooks)
