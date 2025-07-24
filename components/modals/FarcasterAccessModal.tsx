@@ -39,11 +39,13 @@ function useMediaQuery(query: string) {
 interface FarcasterAccessModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  redirectPath?: string;
 }
 
 export function FarcasterAccessModal({
   open,
   onOpenChange,
+  redirectPath = "/profile",
 }: FarcasterAccessModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const drawerContentRef = React.useRef<HTMLDivElement>(null);
@@ -53,12 +55,9 @@ export function FarcasterAccessModal({
   const router = useRouter();
   const { login } = useLogin({
     onComplete: () => {
-      console.log("open", open);
-      console.log("[FarcasterAccessModal] onComplete");
       if (open) {
-        console.log("[FarcasterAccessModal] redirecting to /profile");
         onOpenChange(false);
-        router.push("/profile");
+        router.push(redirectPath);
       }
     },
   });

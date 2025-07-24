@@ -18,6 +18,7 @@ export function Header() {
   const { shouldShowBackButton, handleBack } = useBackButton();
   const [showModal, setShowModal] = React.useState(false);
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = React.useState<string>("/profile");
   const { talentId } = usePrivyAuth({});
 
   const handleTitleClick = () => {
@@ -35,6 +36,7 @@ export function Header() {
       (item.label === "Profile" || item.label === "Settings")
     ) {
       e.preventDefault();
+      setRedirectPath(item.href);
       setShowModal(true);
       return;
     }
@@ -174,7 +176,11 @@ export function Header() {
         </div>
       </header>
 
-      <FarcasterAccessModal open={showModal} onOpenChange={setShowModal} />
+      <FarcasterAccessModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        redirectPath={redirectPath}
+      />
     </>
   );
 }
