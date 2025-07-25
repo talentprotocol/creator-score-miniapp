@@ -132,13 +132,13 @@ if (typeof window === "undefined") {
 export const ACTIVE_SPONSORS = [
   {
     id: "talent",
-    name: "Talent",
+    name: "Talent Protocol",
     avatar:
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/002f0efe-2513-41e7-3d89-d38875d76800/anim=false,f=auto,w=288",
     amount: 2500,
-    date: "2023-07-23",
+    handle: "@talent",
     rank: 1,
-    txHash: "0x1234567890abcdef1234567890abcdef12345678",
+    farcasterUrl: "https://farcaster.xyz/talent",
   },
   {
     id: "efp",
@@ -146,9 +146,9 @@ export const ACTIVE_SPONSORS = [
     avatar:
       "https://pbs.twimg.com/profile_images/1899112167468638208/H7XicSUE_400x400.png",
     amount: 1350,
-    date: "2023-07-23",
+    handle: "@efp",
     rank: 2,
-    txHash: "0x456789013def23456789013def456789ab",
+    farcasterUrl: "https://x.com/efp",
   },
   {
     id: "phi",
@@ -156,9 +156,9 @@ export const ACTIVE_SPONSORS = [
     avatar:
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/9b5ad594-f3e9-4160-9c33-4e0eeaf28500/anim=false,fit=contain,f=auto,w=576",
     amount: 1250,
-    date: "2023-07-23",
+    handle: "@phi",
     rank: 3,
-    txHash: "0x2345678901bcdef12345678901bcdef23456789",
+    farcasterUrl: "https://farcaster.xyz/phi",
   },
   {
     id: "noice",
@@ -166,9 +166,9 @@ export const ACTIVE_SPONSORS = [
     avatar:
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/96aabcca-a8ce-47d6-b6f6-d2b6d1272500/anim=false,fit=contain,f=auto,w=576",
     amount: 1250,
-    date: "2023-07-23",
+    handle: "@noiceapp",
     rank: 4,
-    txHash: "0x3456789012cdef123456789012cdef3456789a",
+    farcasterUrl: "https://farcaster.xyz/noiceapp",
   },
 ];
 
