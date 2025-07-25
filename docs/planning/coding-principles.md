@@ -105,6 +105,12 @@ External APIs → API Clients → Services → API Routes → Hooks → Pure UI 
 - **Error Resilience**: App functionality independent of PostHog availability
 - **Event Schema**: Document event properties and user properties in `/docs/posthog-integration.md`
 
+#### Analytics Integration Patterns
+
+- **Score Refresh Analytics**: All score refresh functionality must include PostHog analytics tracking within the core refresh method, not in individual UI components. This ensures analytics are captured regardless of where refresh is triggered.
+- **Implementation Pattern**: Use the `useScoreRefresh` hook with analytics parameters to ensure consistent tracking across all refresh implementations.
+- **Systematic Approach**: Analytics should be co-located with the action being tracked to prevent future developers from forgetting to add analytics when implementing functionality elsewhere.
+
 ### Data Fetching Principles
 
 - **Hook Interface Standard**: All hooks return `{data, loading, error}` consistently

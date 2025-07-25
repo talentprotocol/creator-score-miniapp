@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { triggerScoreCalculation } from "@/app/services/scoreRefreshService";
+import posthog from "posthog-js";
 
 interface UseScoreRefreshResult {
   isRefreshing: boolean;
@@ -9,9 +10,20 @@ interface UseScoreRefreshResult {
   clearError: () => void;
 }
 
+interface AnalyticsData {
+  creatorScore?: number;
+  totalEarnings?: number;
+  totalFollowers?: number;
+  isOwnProfile?: boolean;
+  hasScore?: boolean;
+  isInCooldown?: boolean;
+  isCalculating?: boolean;
+}
+
 export function useScoreRefresh(
   talentUUID: string,
   onSuccess?: () => void,
+  analyticsData?: AnalyticsData,
 ): UseScoreRefreshResult {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -25,6 +37,19 @@ export function useScoreRefresh(
 
   const refreshScore = async () => {
     if (!talentUUID || isRefreshing) return;
+
+    // Track analytics at the beginning of refresh
+    if (analyticsData) {
+      posthog.capture("profile_refresh_score_clicked", {
+        creator_score: analyticsData.creatorScore,
+        total_earnings: analyticsData.totalEarnings,
+        total_followers: analyticsData.totalFollowers,
+        is_own_profile: analyticsData.isOwnProfile,
+        has_score: analyticsData.hasScore,
+        is_in_cooldown: analyticsData.isInCooldown,
+        is_calculating: analyticsData.isCalculating,
+      });
+    }
 
     try {
       setIsRefreshing(true);
