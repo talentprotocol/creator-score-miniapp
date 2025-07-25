@@ -5,10 +5,9 @@ import type { LucideIcon } from "lucide-react";
 export interface IconProps extends React.ComponentPropsWithoutRef<"svg"> {
   icon: LucideIcon;
   size?: "sm" | "md" | "lg";
-  color?: "default" | "muted" | "brand" | "error";
+  color?: "primary" | "muted" | "brand" | "error";
   disabled?: boolean;
   isActive?: boolean;
-  fillOnActive?: boolean;
 }
 
 const iconSizes = {
@@ -18,7 +17,7 @@ const iconSizes = {
 } as const;
 
 const iconColors = {
-  default: "text-foreground",
+  primary: "text-foreground",
   muted: "text-muted-foreground",
   brand: "text-purple-500", // Reserved for special moments
   error: "text-destructive",
@@ -30,7 +29,6 @@ export function Icon({
   color = "muted",
   disabled = false,
   isActive = false,
-  fillOnActive = true,
   className,
   ...props
 }: IconProps) {
@@ -39,13 +37,19 @@ export function Icon({
       className={cn(
         // Base styles
         iconSizes[size],
-        "stroke-2",
         "transition-all duration-200",
+
+        // Stroke weight - consistent across all states
+        "stroke-[1.5]",
 
         // States
         disabled && "opacity-20 cursor-not-allowed",
         !disabled && "active:scale-110",
-        !disabled && isActive && fillOnActive && "fill-current text-foreground",
+
+        // Active state: Color + Weight (Option 1)
+        !disabled && isActive && "text-foreground stroke-2",
+
+        // Color variants (only apply when not active)
         !disabled && !isActive && iconColors[color],
 
         className,

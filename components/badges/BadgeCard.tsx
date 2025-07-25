@@ -17,7 +17,7 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
         <Icon
           icon={badge.icon}
           size="lg"
-          color={badge.completed ? "default" : "muted"}
+          color={badge.completed ? "primary" : "muted"}
           className={badge.completed ? "fill-current" : ""}
         />
       </div>

@@ -127,8 +127,7 @@ export function Header() {
                       icon={item.icon}
                       size="lg"
                       isActive={isActive || isClicked}
-                      fillOnActive={false}
-                      color={isActive ? "default" : "muted"}
+                      color={isActive ? "primary" : "muted"}
                       className="transition-colors group-hover:text-foreground"
                     />
                   </Link>
@@ -165,7 +164,7 @@ export function Header() {
                     pathname === settingsItem.href ||
                     clickedIcon === settingsItem.href
                   }
-                  color={pathname === settingsItem.href ? "default" : "muted"}
+                  color={pathname === settingsItem.href ? "primary" : "muted"}
                   className="transition-colors group-hover:text-foreground"
                 />
               </Link>

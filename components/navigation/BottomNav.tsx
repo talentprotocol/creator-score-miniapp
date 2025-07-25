@@ -102,7 +102,7 @@ export function BottomNav() {
                     icon={item.icon}
                     size="lg"
                     isActive={isActive || isClicked}
-                    color={isActive ? "default" : "muted"}
+                    color={isActive ? "primary" : "muted"}
                     className="transition-colors group-hover:text-foreground"
                   />
                   <span
