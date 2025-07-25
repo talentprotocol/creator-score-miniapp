@@ -7,7 +7,7 @@ import { Search, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function CreatorNotFoundCard() {
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(20);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -43,6 +43,12 @@ export function CreatorNotFoundCard() {
               <Link href="/leaderboard">
                 <Trophy className="w-4 h-4 mr-2" />
                 Go to Leaderboard
+              </Link>
+            </Button>
+            <Button asChild variant="default" className="w-full">
+              <Link href="https://app.talentprotocol.com/">
+                <Trophy className="w-4 h-4 mr-2" />
+                Create an account
               </Link>
             </Button>
           </div>

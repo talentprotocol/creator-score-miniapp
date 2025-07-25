@@ -285,9 +285,9 @@ export class TalentApiClient {
 
       // Handle talent_protocol_id (UUID) vs id (account lookup)
       if (params.talent_protocol_id) {
-        urlParams.append("id", params.talent_protocol_id);
+        urlParams.append("id", params.talent_protocol_id.toLowerCase());
       } else {
-        urlParams.append("id", params.id!);
+        urlParams.append("id", params.id!.toLowerCase());
         if (params.account_source) {
           urlParams.append("account_source", params.account_source);
         }
@@ -350,6 +350,13 @@ export class TalentApiClient {
         params.id || "unknown",
         error instanceof Error ? error.message : String(error),
       );
+
+      if (
+        error instanceof Error &&
+        error.message.includes("Resource not found")
+      ) {
+        return createNotFoundResponse("User not found");
+      }
       return createServerErrorResponse("Failed to fetch user data");
     }
   }
