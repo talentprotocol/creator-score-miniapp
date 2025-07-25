@@ -262,21 +262,7 @@ function ProfileLayoutContentInner({
             Share Stats
           </Button>
           <Button
-            onClick={() => {
-              // Track refresh score click
-              posthog.capture("profile_refresh_score_clicked", {
-                creator_score: creatorScore,
-                total_earnings: totalEarnings,
-                total_followers: totalFollowers,
-                is_own_profile: isOwnProfile,
-                has_score: !hasNoScore,
-                is_in_cooldown: isInCooldown,
-                has_error: !!refreshError,
-                is_calculating: isCalculatingOrRefreshing,
-              });
-
-              handleRefreshScore();
-            }}
+            onClick={handleRefreshScore}
             variant="default"
             className={`flex-1 ${
               refreshError ? "text-red-700 hover:border-red-400" : ""

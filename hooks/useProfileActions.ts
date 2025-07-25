@@ -62,25 +62,38 @@ export function useProfileActions({
   // Category data no longer needed in useProfileActions
   // (It was only used for share stats, which can work without it)
 
-  // Score refresh hook
+  // Check if this is the current user's profile
+  const isOwnProfile = Boolean(
+    currentUserTalentUuid && currentUserTalentUuid === talentUUID,
+  );
+
+  // Calculate hasNoScore for analytics
+  const hasNoScore = !creatorScore || creatorScore === 0;
+
+  // Determine button text and state
+  const hasNeverCalculated = lastCalculatedAt === null;
+  const isInCooldown = cooldownMinutes !== null && cooldownMinutes > 0;
+
+  // Score refresh hook with analytics
   const {
     isRefreshing,
     successMessage,
     error: refreshError,
     refreshScore,
     clearError,
-  } = useScoreRefresh(talentUUID, refetchScore);
+  } = useScoreRefresh(talentUUID, refetchScore, {
+    creatorScore,
+    totalEarnings,
+    totalFollowers,
+    isOwnProfile,
+    hasScore: !hasNoScore,
+    isInCooldown,
+    isCalculating: calculating,
+  });
 
   // Don't auto-reset error state - let user see the error until page refresh
 
-  // Check if this is the current user's profile
-  const isOwnProfile =
-    currentUserTalentUuid && currentUserTalentUuid === talentUUID;
-
-  // Determine button text and state
   const isCalculatingOrRefreshing = calculating || isRefreshing;
-  const hasNeverCalculated = lastCalculatedAt === null;
-  const isInCooldown = cooldownMinutes !== null && cooldownMinutes > 0;
 
   const buttonText = hasNeverCalculated
     ? "Calculate Score"
