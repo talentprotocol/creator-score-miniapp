@@ -5,6 +5,7 @@ import { base } from "wagmi/chains";
 import { MiniKitProvider } from "@coinbase/onchainkit/minikit";
 import { getMiniKitConfig } from "@/lib/app-metadata";
 import { PostHogProvider } from "@/components/PostHogProvider";
+import { PrivyProvider } from "@privy-io/react-auth";
 
 export function Providers(props: { children: ReactNode }) {
   const miniKitConfig = getMiniKitConfig();
@@ -15,22 +16,33 @@ export function Providers(props: { children: ReactNode }) {
     console.error("NEXT_PUBLIC_ONCHAINKIT_API_KEY is not defined");
   }
 
+  const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
+  const privyClientId = process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID!;
+
+  if (!privyAppId || !privyClientId) {
+    console.error(
+      "NEXT_PUBLIC_PRIVY_APP_ID or NEXT_PUBLIC_PRIVY_CLIENT_ID is not defined",
+    );
+  }
+
   return (
     <PostHogProvider>
-      <MiniKitProvider
-        apiKey={apiKey || ""}
-        chain={base}
-        config={{
-          appearance: {
-            mode: "auto",
-            theme: "mini-app-theme",
-            name: miniKitConfig.name,
-            logo: miniKitConfig.logo,
-          },
-        }}
-      >
-        {props.children}
-      </MiniKitProvider>
+      <PrivyProvider appId={privyAppId} clientId={privyClientId}>
+        <MiniKitProvider
+          apiKey={apiKey || ""}
+          chain={base}
+          config={{
+            appearance: {
+              mode: "auto",
+              theme: "mini-app-theme",
+              name: miniKitConfig.name,
+              logo: miniKitConfig.logo,
+            },
+          }}
+        >
+          {props.children}
+        </MiniKitProvider>
+      </PrivyProvider>
     </PostHogProvider>
   );
 }

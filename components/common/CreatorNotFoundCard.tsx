@@ -7,7 +7,7 @@ import { Search, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function CreatorNotFoundCard() {
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(20);
 
   useEffect(() => {
     const timer = setInterval(() => {

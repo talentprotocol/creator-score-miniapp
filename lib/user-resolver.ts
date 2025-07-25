@@ -1,6 +1,7 @@
 // Shared user/account resolver logic for Talent Protocol users
 import { getLocalBaseUrl } from "./constants";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "./utils";
+import { validateTalentUUID } from "./validation";
 
 // In-flight request tracking to prevent duplicate concurrent calls
 const inFlightRequests = new Map<number, Promise<string | null>>();
@@ -38,19 +39,22 @@ export async function resolveFidToTalentUuid(
 
   // Create the request promise
   const requestPromise = performFidRequest(fid, cacheKey);
-  
+
   // Store it in the in-flight map
   inFlightRequests.set(fid, requestPromise);
-  
+
   // Clean up when done
   requestPromise.finally(() => {
     inFlightRequests.delete(fid);
   });
-  
+
   return requestPromise;
 }
 
-async function performFidRequest(fid: number, cacheKey: string): Promise<string | null> {
+async function performFidRequest(
+  fid: number,
+  cacheKey: string,
+): Promise<string | null> {
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
@@ -100,6 +104,10 @@ export async function resolveTalentUser(identifier: string): Promise<{
   // Add retry logic for server-side calls
   const maxRetries = 3;
   let lastError: Error | null = null;
+
+  if (!validateTalentUUID(identifier)) {
+    return null;
+  }
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {

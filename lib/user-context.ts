@@ -14,15 +14,15 @@ export function getUserContext(
   context: { user?: UserContext } | null,
 ): UserContext | undefined {
   // Development mode: return hardcoded user data for FID 8446
-  if (process.env.NODE_ENV === "development") {
-    return {
-      fid: 8446,
-      // fid: 374478,
-      username: "macedo",
-      displayName: "Filipe Macedo",
-      pfpUrl: "https://i.imgur.com/YgNTMUI.jpg",
-    };
-  }
+  // if (process.env.NODE_ENV === "development") {
+  //   return {
+  //     fid: 8446,
+  //     // fid: 374478,
+  //     username: "macedo",
+  //     displayName: "Filipe Macedo",
+  //     pfpUrl: "https://i.imgur.com/YgNTMUI.jpg",
+  //   };
+  // }
 
   // Return the actual Farcaster context if available
   if (context?.user) {
