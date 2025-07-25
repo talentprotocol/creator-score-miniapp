@@ -130,12 +130,12 @@ export default function DesignPage() {
                   <IconDemo
                     icon={<Icon icon={Heart} size="lg" isActive />}
                     label="Active"
-                    code="text-foreground fill-current"
+                    code="text-foreground stroke-2"
                   />
                   <IconDemo
                     icon={<Icon icon={Heart} size="lg" disabled />}
                     label="Disabled"
-                    code="disabled:opacity-50"
+                    code="stroke-[1.5] opacity-20"
                   />
                 </div>
 
@@ -152,7 +152,7 @@ export default function DesignPage() {
                         Toggle fill state
                       </span>
                       <span className="text-[10px] text-muted-foreground font-mono">
-                        active:scale-110 active:fill-current
+                        active:scale-110 stroke-2
                       </span>
                     </button>
                   </div>
@@ -172,8 +172,8 @@ export default function DesignPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                   {
-                    name: "Default",
-                    color: "default" as const,
+                    name: "Primary",
+                    color: "primary" as const,
                     class: "text-foreground",
                   },
                   {

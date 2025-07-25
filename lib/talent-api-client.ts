@@ -72,8 +72,13 @@ export class TalentApiClient {
     const url = buildApiUrl(`${TALENT_API_BASE}${endpoint}`, params);
     const headers = createTalentApiHeaders(this.apiKey);
 
-    // make sure we don't cache the request
-    const response = await fetch(url, { headers, cache: "no-store" });
+    const response = await fetch(url, {
+      headers,
+      next: {
+        revalidate: 60,
+        tags: [url],
+      },
+    });
 
     if (!validateJsonResponse(response)) {
       throw new Error("Invalid response format from Talent API");
@@ -280,9 +285,9 @@ export class TalentApiClient {
 
       // Handle talent_protocol_id (UUID) vs id (account lookup)
       if (params.talent_protocol_id) {
-        urlParams.append("id", params.talent_protocol_id);
+        urlParams.append("id", params.talent_protocol_id.toLowerCase());
       } else {
-        urlParams.append("id", params.id!);
+        urlParams.append("id", params.id!.toLowerCase());
         if (params.account_source) {
           urlParams.append("account_source", params.account_source);
         }
@@ -345,6 +350,13 @@ export class TalentApiClient {
         params.id || "unknown",
         error instanceof Error ? error.message : String(error),
       );
+
+      if (
+        error instanceof Error &&
+        error.message.includes("Resource not found")
+      ) {
+        return createNotFoundResponse("User not found");
+      }
       return createServerErrorResponse("Failed to fetch user data");
     }
   }

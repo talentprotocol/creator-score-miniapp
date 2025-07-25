@@ -52,6 +52,35 @@ const nextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+  // This is required to support Privy
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `
+              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com;
+              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://use.typekit.net https://p.typekit.net;
+              font-src 'self' https://fonts.gstatic.com https://use.typekit.net https://p.typekit.net;
+              object-src 'none';
+              base-uri 'self';
+              form-action 'self';
+              frame-ancestors 'none';
+              child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org;
+              frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com;
+              connect-src 'self' https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://explorer-api.walletconnect.com https://pulse.walletconnect.org https://api.web3modal.org;
+              worker-src 'self';
+              manifest-src 'self'
+            `
+              .replace(/\s+/g, " ")
+              .trim(),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

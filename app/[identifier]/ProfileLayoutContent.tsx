@@ -12,6 +12,7 @@ import {
   calculateTotalFollowers,
   detectClient,
 } from "@/lib/utils";
+import { processCreatorCategories } from "@/lib/credentialUtils";
 import { useProfileActions } from "@/hooks/useProfileActions";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
@@ -125,10 +126,21 @@ function ProfileLayoutContentInner({
         ? formatNumberWithSuffix(totalEarnings)
         : "—";
 
+      // Get creator type from credentials
+      const categoryData = profileData?.credentials
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          processCreatorCategories(profileData.credentials as any)
+        : null;
+      const creatorType = categoryData?.primaryCategory?.name || "Creator";
+      const creatorEmoji = categoryData?.primaryCategory?.emoji || "👤";
+
+      // Get rank text
+      const rankText = rank ? `#${rank.toLocaleString()}` : "—";
+
       const farcasterHandle = profile?.fname || "creator";
       const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
 
-      const farcasterShareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+      const farcasterShareText = `Check @${farcasterHandle}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @TalentProtocol 👇`;
 
       try {
         const { sdk } = await import("@farcaster/frame-sdk");
@@ -161,6 +173,7 @@ function ProfileLayoutContentInner({
     profile,
     isOwnProfile,
     hasNoScore,
+    profileData,
     rank,
   ]);
 
@@ -172,10 +185,21 @@ function ProfileLayoutContentInner({
       ? formatNumberWithSuffix(totalEarnings)
       : "—";
 
+    // Get creator type from credentials
+    const categoryData = profileData?.credentials
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        processCreatorCategories(profileData.credentials as any)
+      : null;
+    const creatorType = categoryData?.primaryCategory?.name || "Creator";
+    const creatorEmoji = categoryData?.primaryCategory?.emoji || "👤";
+
+    // Get rank text
+    const rankText = rank ? `#${rank.toLocaleString()}` : "—";
+
     const farcasterHandle = profile?.fname || "creator";
     const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
 
-    const farcasterShareText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+    const farcasterShareText = `Check @${farcasterHandle}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @Talent 👇`;
 
     // Open Farcaster web app with pre-filled cast
     const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterShareText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
@@ -190,7 +214,15 @@ function ProfileLayoutContentInner({
       total_followers: totalFollowers,
       is_own_profile: isOwnProfile,
     });
-  }, [profile, creatorScore, totalFollowers, totalEarnings, isOwnProfile]);
+  }, [
+    profile,
+    creatorScore,
+    totalFollowers,
+    totalEarnings,
+    isOwnProfile,
+    profileData,
+    rank,
+  ]);
 
   // Handle Twitter sharing from modal (browser only)
   const handleShareTwitter = React.useCallback(() => {
@@ -200,11 +232,22 @@ function ProfileLayoutContentInner({
       ? formatNumberWithSuffix(totalEarnings)
       : "—";
 
+    // Get creator type from credentials
+    const categoryData = profileData?.credentials
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        processCreatorCategories(profileData.credentials as any)
+      : null;
+    const creatorType = categoryData?.primaryCategory?.name || "Creator";
+    const creatorEmoji = categoryData?.primaryCategory?.emoji || "👤";
+
+    // Get rank text
+    const rankText = rank ? `#${rank.toLocaleString()}` : "—";
+
     const displayName = profile?.display_name || profile?.name || "Creator";
     const farcasterHandle = profile?.fname || "creator";
     const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
 
-    const twitterShareText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
+    const twitterShareText = `Check ${displayName}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @TalentProtocol 👇`;
 
     // Open Twitter web app with pre-filled tweet
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
@@ -219,7 +262,15 @@ function ProfileLayoutContentInner({
       total_followers: totalFollowers,
       is_own_profile: isOwnProfile,
     });
-  }, [profile, creatorScore, totalFollowers, totalEarnings, isOwnProfile]);
+  }, [
+    profile,
+    creatorScore,
+    totalFollowers,
+    totalEarnings,
+    isOwnProfile,
+    profileData,
+    rank,
+  ]);
 
   // Profile data comes from server-side, no loading state needed
   if (!profile) {

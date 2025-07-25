@@ -172,7 +172,7 @@ export async function generateMetadata({
           version: "next",
           imageUrl: dynamicImageUrl, // Use the custom card!
           button: {
-            title: "Launch Creator Score",
+            title: "Check Your Score",
             action: {
               type: "launch_frame",
               name: "Creator Score Mini App",

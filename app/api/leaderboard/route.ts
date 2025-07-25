@@ -41,19 +41,12 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
       `view=scores_minimal`,
     ].join("&");
 
-    console.log("fetching top 200 entries start");
-    console.log("current time", new Date().toISOString());
-
-    console.log("Request URL: ", `${baseUrl}?${queryString}`);
     const res = await fetch(`${baseUrl}?${queryString}`, {
       headers: {
         Accept: "application/json",
         "X-API-KEY": apiKey,
       },
     });
-
-    console.log("fetching top 200 entries end");
-    console.log("current time", new Date().toISOString());
 
     if (!res.ok) {
       throw new Error(`Failed to fetch page ${page}`);
@@ -188,8 +181,6 @@ export async function GET(req: NextRequest) {
 
       const cachedTop10Response = unstable_cache(
         async () => {
-          console.log("fetching top 10 entries start");
-          console.log("current time", new Date().toISOString());
           const result = await fetch(
             `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
             {
@@ -199,12 +190,6 @@ export async function GET(req: NextRequest) {
               },
             },
           );
-          console.log(
-            "Request URL: ",
-            `https://api.talentprotocol.com/search/advanced/profiles?${queryString}`,
-          );
-          console.log("fetching top 10 entries end");
-          console.log("current time", new Date().toISOString());
 
           if (!result.ok) {
             throw new Error(await result.text());

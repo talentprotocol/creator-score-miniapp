@@ -1,7 +1,5 @@
 "use client";
 
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { getUserContext } from "@/lib/user-context";
 import { useUserResolution } from "@/hooks/useUserResolution";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
@@ -36,12 +34,12 @@ import {
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { TestShareScoreButton } from "@/components/settings/TestShareScoreButton";
+import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export default function SettingsPage() {
-  const { context } = useMiniKit();
-  const user = getUserContext(context);
   const router = useRouter();
-  const { talentUuid } = useUserResolution();
+  const { handleLogout, authenticated } = usePrivyAuth({});
+  const { talentUuid, loading: loadingUserResolution } = useUserResolution();
 
   const {
     accounts,
@@ -60,14 +58,18 @@ export default function SettingsPage() {
   }, [humanityCredentials]);
 
   useEffect(() => {
-    if (!user) {
+    if (!loadingUserResolution) {
+      return;
+    }
+
+    if (!talentUuid) {
       // If no user context, redirect to leaderboard
       router.push("/leaderboard");
       return;
     }
-  }, [user, router]);
+  }, [loadingUserResolution, talentUuid, router]);
 
-  if (!user) {
+  if (!talentUuid) {
     return null; // Will redirect
   }
 
@@ -268,20 +270,21 @@ export default function SettingsPage() {
           </div>
 
           {/* Log Out - with extra spacing above */}
-          <div className="bg-muted rounded-xl border-0 shadow-none mt-6">
-            <Button
-              type="button"
-              variant="destructive"
-              disabled
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl opacity-50 cursor-not-allowed"
-            >
-              <div className="flex items-center gap-3">
-                <LogOut className="h-4 w-4" />
-                <span className="font-medium">Log Out</span>
-              </div>
-              <span className="text-xs">Coming soon</span>
-            </Button>
-          </div>
+          {authenticated && (
+            <div className="bg-muted rounded-xl border-0 shadow-none mt-6">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              >
+                <div className="flex items-center gap-3">
+                  <LogOut className="h-4 w-4" />
+                  <span className="font-medium">Log Out</span>
+                </div>
+              </Button>
+            </div>
+          )}
         </Accordion>
 
         {/* Test Share Score Modal - Development Only */}

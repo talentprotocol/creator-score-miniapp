@@ -9,17 +9,17 @@ import { Icon } from "@/components/ui/icon";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { useBackButton } from "@/hooks/useBackButton";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
+import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { navItems, settingsItem, user } = useUserNavigation();
+  const { navItems, settingsItem, talentUuid } = useUserNavigation();
   const { shouldShowBackButton, handleBack } = useBackButton();
   const [showModal, setShowModal] = React.useState(false);
-  const [modalFeature, setModalFeature] = React.useState<
-    "Profile" | "Settings"
-  >("Profile");
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = React.useState<string>("/profile");
+  const { talentId } = usePrivyAuth({});
 
   const handleTitleClick = () => {
     router.push("/leaderboard");
@@ -30,10 +30,13 @@ export function Header() {
     e: React.MouseEvent,
   ) => {
     setClickedIcon(item.href);
-    // If user tries to access Profile or Settings without user context, show modal
-    if (!user && (item.label === "Profile" || item.label === "Settings")) {
+    // If user tries to access Profile or Settings without user context or talentId, show modal
+    if (
+      (!talentUuid || !talentId) &&
+      (item.label === "Profile" || item.label === "Settings")
+    ) {
       e.preventDefault();
-      setModalFeature(item.label as "Profile" | "Settings");
+      setRedirectPath(item.href);
       setShowModal(true);
       return;
     }
@@ -127,8 +130,7 @@ export function Header() {
                       icon={item.icon}
                       size="lg"
                       isActive={isActive || isClicked}
-                      fillOnActive={false}
-                      color={isActive ? "default" : "muted"}
+                      color={isActive ? "primary" : "muted"}
                       className="transition-colors group-hover:text-foreground"
                     />
                   </Link>
@@ -165,7 +167,7 @@ export function Header() {
                     pathname === settingsItem.href ||
                     clickedIcon === settingsItem.href
                   }
-                  color={pathname === settingsItem.href ? "default" : "muted"}
+                  color={pathname === settingsItem.href ? "primary" : "muted"}
                   className="transition-colors group-hover:text-foreground"
                 />
               </Link>
@@ -177,7 +179,7 @@ export function Header() {
       <FarcasterAccessModal
         open={showModal}
         onOpenChange={setShowModal}
-        feature={modalFeature}
+        redirectPath={redirectPath}
       />
     </>
   );

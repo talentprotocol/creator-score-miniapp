@@ -121,7 +121,7 @@ export function ProofOfHumanitySection({
                 <Icon
                   icon={CheckCircle}
                   size="sm"
-                  color="default"
+                  color="primary"
                   className="text-green-600"
                 />
               ) : (

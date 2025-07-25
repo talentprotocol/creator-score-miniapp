@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
+import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = React.useState(false);
@@ -37,28 +39,34 @@ function useMediaQuery(query: string) {
 interface FarcasterAccessModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  feature: "Profile" | "Settings";
+  redirectPath?: string;
 }
 
 export function FarcasterAccessModal({
   open,
   onOpenChange,
-  feature,
+  redirectPath = "/profile",
 }: FarcasterAccessModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const drawerContentRef = React.useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = React.useRef<HTMLElement | null>(null);
+  const { ready } = usePrivy();
+
+  const router = useRouter();
+  const { login } = useLogin({
+    onComplete: () => {
+      if (open) {
+        onOpenChange(false);
+        router.push(redirectPath);
+      }
+    },
+  });
 
   const handleFarcasterClick = () => {
     window.open(
       "https://farcaster.xyz/miniapps/WSqcbI1uxFJo/creator-score-mini-app",
       "_blank",
     );
-  };
-
-  const handleContinueBrowsing = () => {
-    // Just close the modal, keeping user on current page
-    onOpenChange(false);
   };
 
   // Handle focus management for mobile drawer
@@ -89,12 +97,12 @@ export function FarcasterAccessModal({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" disableOutsideClick={true}>
           <DialogHeader>
-            <DialogTitle>Access {feature} in Farcaster</DialogTitle>
+            <DialogTitle>Check your Creator Score</DialogTitle>
             <DialogDescription>
-              To view your {feature.toLowerCase()} and access all features,
-              please open this app in Farcaster.
+              To view your score and access all features, please login with
+              Privy or use our Mini App.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
@@ -106,12 +114,14 @@ export function FarcasterAccessModal({
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
             </Button>
+
             <Button
               variant="default"
-              onClick={handleContinueBrowsing}
+              onClick={() => login({ walletChainType: "ethereum-only" })}
               className="w-full"
+              disabled={!ready}
             >
-              Continue Browsing
+              Login with Privy
             </Button>
           </div>
         </DialogContent>
@@ -123,10 +133,10 @@ export function FarcasterAccessModal({
     <Drawer open={open} onOpenChange={onOpenChange} modal={true}>
       <DrawerContent className="max-w-sm mx-auto w-full p-4 rounded-t-2xl">
         <DrawerHeader>
-          <DrawerTitle>Access {feature} in Farcaster</DrawerTitle>
+          <DrawerTitle>Check your Creator Score</DrawerTitle>
           <DrawerDescription>
-            To view your {feature.toLowerCase()} and access all features, please
-            open this app in Farcaster.
+            To view your score and access all features, please login with Privy
+            or use our Mini App.
           </DrawerDescription>
         </DrawerHeader>
         <div
@@ -145,10 +155,11 @@ export function FarcasterAccessModal({
             </Button>
             <Button
               variant="default"
-              onClick={handleContinueBrowsing}
+              onClick={() => login({ walletChainType: "ethereum-only" })}
               className="w-full"
+              disabled={!ready}
             >
-              Continue Browsing
+              Login with Privy
             </Button>
           </div>
         </div>

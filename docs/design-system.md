@@ -310,17 +310,17 @@ className="animate-pulse"  // Skeletons
 - `sm`: 14px - Small indicators
 
 ### States
-- Default: `text-muted-foreground`
-- Active: `text-foreground fill-current`
-- Disabled: `opacity-20`
+- Default: `text-muted-foreground stroke-[1.5]`
+- Active: `text-foreground stroke-2`
+- Disabled: `text-muted-foreground stroke-[1.5] opacity-20`
 
 ### Interactions
-- Click effect: Scale up + fill
+- Click effect: Scale up + stroke weight change
 - No hover states (mobile first)
 
 ### Colors
-- Default: `text-muted-foreground`
-- Active: `text-foreground`
+- Primary: `text-foreground`
+- Muted: `text-muted-foreground`
 - Brand: `text-purple-500` (reserved for special moments)
 - Error: `text-destructive`
 

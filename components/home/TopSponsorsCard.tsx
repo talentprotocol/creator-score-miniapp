@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
 import { ACTIVE_SPONSORS } from "@/lib/constants";
+import { openExternalUrl } from "@/lib/utils";
 
 interface TopSponsorsCardProps {
   loading?: boolean;
@@ -53,7 +54,11 @@ export function TopSponsorsCard({ loading }: TopSponsorsCardProps) {
 
       <div className="space-y-3">
         {ACTIVE_SPONSORS.map((sponsor) => (
-          <div key={sponsor.id} className="flex items-center gap-3">
+          <div 
+            key={sponsor.id} 
+            className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors rounded-md p-1"
+            onClick={() => openExternalUrl(sponsor.farcasterUrl)}
+          >
             <span className="text-sm font-medium w-4 text-muted-foreground">
               #{sponsor.rank}
             </span>
@@ -64,7 +69,7 @@ export function TopSponsorsCard({ loading }: TopSponsorsCardProps) {
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{sponsor.name}</p>
               <p className="text-xs text-muted-foreground">
-                ${sponsor.amount.toLocaleString()}
+                {sponsor.handle}
               </p>
             </div>
           </div>

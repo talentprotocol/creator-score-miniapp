@@ -28,7 +28,7 @@ export const creatorScoreFrame = {
   version: "next",
   imageUrl: "https://www.creatorscore.app/hero.png",
   button: {
-    title: "Launch Creator Score",
+    title: "Check Your Score",
     action: {
       type: "launch_frame",
       name: "Creator Score Mini App",

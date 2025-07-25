@@ -10,7 +10,7 @@ import type { LeaderboardEntry } from "@/app/services/types";
 import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
-import { formatWithK, formatDate, formatCurrency } from "@/lib/utils";
+import { formatWithK, formatCurrency, openExternalUrl } from "@/lib/utils";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
@@ -272,7 +272,10 @@ export default function LeaderboardPage() {
           <div className="overflow-hidden rounded-lg bg-gray-50">
             {ACTIVE_SPONSORS.map((sponsor, index, array) => (
               <div key={sponsor.id}>
-                <div className="flex items-center gap-3 p-3">
+                <div 
+                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => openExternalUrl(sponsor.farcasterUrl)}
+                >
                   <span className="text-sm font-medium w-6">
                     #{sponsor.rank}
                   </span>
@@ -283,7 +286,7 @@ export default function LeaderboardPage() {
                   <div className="flex-1">
                     <p className="font-medium text-sm">{sponsor.name}</p>
                     <p className="text-xs text-gray-600">
-                      {formatDate(sponsor.date)}
+                      {sponsor.handle}
                     </p>
                   </div>
                   <div className="flex flex-col items-end">
