@@ -45,12 +45,6 @@ export function CreatorNotFoundCard() {
                 Go to Leaderboard
               </Link>
             </Button>
-            <Button asChild variant="default" className="w-full">
-              <Link href="https://app.talentprotocol.com/">
-                <Trophy className="w-4 h-4 mr-2" />
-                Create an account
-              </Link>
-            </Button>
           </div>
           <div className="pt-4 text-xs text-muted-foreground">
             Redirecting to home in {countdown} second

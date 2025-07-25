@@ -89,15 +89,6 @@ export const usePrivyAuth = ({
   const router = useRouter();
   const [fetchingTalentUser, setFetchingTalentUser] = useState(false);
   const { ready, authenticated, user: privyUser, logout } = usePrivy();
-  // TODO: remove this once we have a real Privy implementation
-  // const ready = true;
-  // const authenticated = true;
-  // const privyUser = {
-  //   wallet: {
-  //     address: "0x346cFbbE6814Fb588593913D64F41Efca5024A44",
-  //   },
-  // };
-  // const logout = () => {};
 
   const { login } = useLogin({
     onComplete: () => {
