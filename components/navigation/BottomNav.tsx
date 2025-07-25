@@ -25,7 +25,7 @@ export function BottomNav() {
     setClickedIcon(item.href);
 
     // If user tries to access Profile without user context, show modal
-    if ((!talentUuid || !talentId) && item.label === "Profile") {
+    if (!talentUuid && !talentId && item.label === "Profile") {
       e.preventDefault();
       setRedirectPath(item.href);
       setShowModal(true);
