@@ -374,6 +374,7 @@ export async function GET(
         ],
         headers: {
           "Cache-Control": "public, max-age=3600",
+          "Access-Control-Allow-Origin": "*",
         },
       },
     );
@@ -383,7 +384,12 @@ export async function GET(
     console.error("Error generating share image:", error);
     return NextResponse.json(
       { error: "Failed to generate image" },
-      { status: 500 },
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
     );
   }
 }

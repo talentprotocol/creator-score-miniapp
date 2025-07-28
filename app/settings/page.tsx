@@ -33,6 +33,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
+import { TestShareScoreButton } from "@/components/settings/TestShareScoreButton";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export default function SettingsPage() {
@@ -285,6 +286,13 @@ export default function SettingsPage() {
             </div>
           )}
         </Accordion>
+
+        {/* Test Share Score Modal - Development Only */}
+        {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
+          <div className="mt-6">
+            <TestShareScoreButton />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-8 pt-6 border-t border-muted text-center space-y-1">

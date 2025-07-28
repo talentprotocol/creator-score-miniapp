@@ -349,6 +349,7 @@ export class TalentApiClient {
         "getProfile",
         params.id || "unknown",
         error instanceof Error ? error.message : String(error),
+        { source: params.account_source },
       );
 
       if (
