@@ -32,7 +32,8 @@ export function Header() {
     setClickedIcon(item.href);
     // If user tries to access Profile or Settings without user context or talentId, show modal
     if (
-      (!talentUuid || !talentId) &&
+      !talentUuid &&
+      !talentId &&
       (item.label === "Profile" || item.label === "Settings")
     ) {
       e.preventDefault();
