@@ -112,8 +112,9 @@ export function logApiError(
   additionalInfo?: Record<string, unknown>,
 ): void {
   const logInfo = additionalInfo ? JSON.stringify(additionalInfo) : "";
+  const source = additionalInfo?.source;
   console.error(
-    `[API] ${operation} error for ${identifier}: ${error} ${logInfo}`,
+    `[API] ${operation} error for ${identifier}${source ? ` (${source})` : ""}: ${error} ${logInfo}`,
   );
 }
 
