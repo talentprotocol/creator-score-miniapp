@@ -1,6 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
+
+// Global in-memory cache and deduplication helpers
+type CreatorScoreData = {
+  score: number;
+  lastCalculatedAt: string | null;
+  calculating?: boolean;
+  calculatingEnqueuedAt?: string | null;
+  error?: string;
+};
+
+// Cache of scores keyed by talent UUID with timestamp for TTL handling
+const globalScoreCache = new Map<
+  string,
+  { data: CreatorScoreData; timestamp: number }
+>();
+
+// Map to deduplicate concurrent fetches for the same talent UUID
+const globalFetchingPromises = new Map<string, Promise<CreatorScoreData>>();
+
+// Cache duration: 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
 export function useProfileCreatorScore(talentUUID: string) {
   const [creatorScore, setCreatorScore] = useState<number | undefined>(
@@ -18,32 +38,31 @@ export function useProfileCreatorScore(talentUUID: string) {
   const fetchScore = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `creator_score_data_${talentUUID}`;
-
-    // TEMPORARILY DISABLE CACHE - Check cache first
-    // const cachedData = getCachedData<{
-    //   score: number;
-    //   lastCalculatedAt: string | null;
-    //   calculating: boolean;
-    //   calculatingEnqueuedAt: string | null;
-    // }>(cacheKey, CACHE_DURATIONS.SCORE_BREAKDOWN);
-    // if (cachedData !== null) {
-    //   console.log("[useProfileCreatorScore] Using cached data:", cachedData);
-    //   setCreatorScore(cachedData.score);
-    //   setLastCalculatedAt(cachedData.lastCalculatedAt);
-    //   setCalculating(cachedData.calculating);
-    //   setCalculatingEnqueuedAt(cachedData.calculatingEnqueuedAt);
-    //   setLoading(false);
-    //   setHasNoScore(cachedData.lastCalculatedAt === null);
-    //   return;
-    // }
-
     try {
+      // 1. Check global in-memory cache first
+      const cached = globalScoreCache.get(talentUUID);
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        const d = cached.data;
+        setCreatorScore(d.score);
+        setLastCalculatedAt(d.lastCalculatedAt);
+        setCalculating(d.calculating || false);
+        setCalculatingEnqueuedAt(d.calculatingEnqueuedAt || null);
+        setHasNoScore(d.lastCalculatedAt === null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
-      // Use service layer instead of direct API call
-      const scoreData = await getCreatorScoreForTalentId(talentUUID);
+      // 2. Deduplicate concurrent fetches
+      let scorePromise = globalFetchingPromises.get(talentUUID);
+      if (!scorePromise) {
+        scorePromise = getCreatorScoreForTalentId(talentUUID);
+        globalFetchingPromises.set(talentUUID, scorePromise);
+      }
+
+      const scoreData = await scorePromise;
 
       if (scoreData.error) {
         setError(scoreData.error);
@@ -60,14 +79,15 @@ export function useProfileCreatorScore(talentUUID: string) {
         // Fix: hasNoScore should be based on lastCalculatedAt, not score value
         setHasNoScore(scoreData.lastCalculatedAt === null);
 
-        // Cache the complete score data
-        setCachedData(cacheKey, {
-          score: scoreData.score,
-          lastCalculatedAt: scoreData.lastCalculatedAt,
-          calculating: scoreData.calculating || false,
-          calculatingEnqueuedAt: scoreData.calculatingEnqueuedAt || null,
+        // Store in global cache for future hook instances (in-memory)
+        globalScoreCache.set(talentUUID, {
+          data: scoreData,
+          timestamp: Date.now(),
         });
       }
+
+      // Ensure we clean up the promise map
+      globalFetchingPromises.delete(talentUUID);
     } catch (err) {
       console.error("Error fetching creator score:", err);
       setError(

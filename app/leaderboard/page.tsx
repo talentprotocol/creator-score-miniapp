@@ -26,6 +26,8 @@ import { Callout } from "@/components/common/Callout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWelcomeModal } from "@/hooks/useWelcomeModal";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
+import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
+import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -56,8 +58,26 @@ export default function LeaderboardPage() {
     totalScores: totalTop200Scores,
   } = useLeaderboardOptimized();
 
-  // Use hooks for data fetching
-  const { creatorScore } = useUserCreatorScore(user?.fid);
+  // Use hooks for data fetching - both auth paths
+  const { creatorScore: fidScore, loading: fidScoreLoading } =
+    useUserCreatorScore(user?.fid);
+  const { creatorScore: uuidScore, loading: uuidScoreLoading } =
+    useProfileCreatorScore(userTalentUuid || "");
+  const { profile, loading: profileLoading } = useProfileHeaderData(
+    userTalentUuid || "",
+  );
+
+  // Combine data from both auth paths
+  const creatorScore = fidScore ?? uuidScore ?? 0;
+  const avatarUrl = user?.pfpUrl ?? profile?.image_url;
+  const name =
+    user?.displayName ??
+    user?.username ??
+    profile?.display_name ??
+    profile?.fname ??
+    "Unknown user";
+  const loadingStats =
+    statsLoading || profileLoading || fidScoreLoading || uuidScoreLoading;
 
   // Countdown state
   const [countdown, setCountdown] = useState(() =>
@@ -147,18 +167,18 @@ export default function LeaderboardPage() {
     <PageContainer noPadding>
       {/* Header section */}
       <Section variant="header">
-        {/* My Rewards Hero - Only show if user is logged in */}
-        {user && (
+        {/* My Rewards Hero - Show if user is logged in via either path */}
+        {(user || profile) && (
           <MyRewards
             rewards={
               creatorScore
                 ? getUsdcRewards(creatorScore, userTop200Entry?.rank)
                 : "$0"
             }
-            score={creatorScore ?? 0}
-            avatarUrl={user.pfpUrl}
-            name={user.displayName || user.username || "Unknown user"}
-            isLoading={statsLoading || (top200Loading && !userTop200Entry)}
+            score={creatorScore}
+            avatarUrl={avatarUrl}
+            name={name}
+            isLoading={loadingStats || (top200Loading && !userTop200Entry)}
             rank={userTop200Entry?.rank}
             pointsToTop200={pointsToTop200}
             onHowToEarnClick={() => setHowToEarnOpen(true)}
