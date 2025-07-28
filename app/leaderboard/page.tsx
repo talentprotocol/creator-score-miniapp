@@ -272,7 +272,7 @@ export default function LeaderboardPage() {
           <div className="overflow-hidden rounded-lg bg-gray-50">
             {ACTIVE_SPONSORS.map((sponsor, index, array) => (
               <div key={sponsor.id}>
-                <div 
+                <div
                   className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => openExternalUrl(sponsor.farcasterUrl)}
                 >
@@ -285,9 +285,7 @@ export default function LeaderboardPage() {
                   </Avatar>
                   <div className="flex-1">
                     <p className="font-medium text-sm">{sponsor.name}</p>
-                    <p className="text-xs text-gray-600">
-                      {sponsor.handle}
-                    </p>
+                    <p className="text-xs text-gray-600">{sponsor.handle}</p>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-sm font-medium">
