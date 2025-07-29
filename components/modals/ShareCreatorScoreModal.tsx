@@ -20,7 +20,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCountingAnimation } from "@/hooks/useCountingAnimation";
 import { useShareData } from "@/hooks/useShareData";
 import { X, Download } from "lucide-react";
-import { cn, formatNumberWithSuffix } from "@/lib/utils";
+import { cn, formatNumberWithSuffix, openExternalUrl } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { detectClient } from "@/lib/utils";
 import posthog from "posthog-js";
@@ -271,10 +271,13 @@ export function ShareCreatorScoreModal({
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
               const displayName = identifier;
               const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: $${formattedEarnings}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
-              window.open(
-                `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`,
-                "_blank",
-              );
+              const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
+              const client = await detectClient(context);
+              if (client === "browser") {
+                window.open(twitterUrl, "_blank");
+              } else {
+                openExternalUrl(twitterUrl, null, client);
+              }
             }}
             className="bg-white/80 hover:bg-white/90 active:bg-white/70 transition-all duration-200 flex items-center justify-center"
             style={{
@@ -317,13 +320,18 @@ export function ShareCreatorScoreModal({
                 );
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${handle}-creator-score.png`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                const client = await detectClient(context);
+                if (client === "browser") {
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${handle}-creator-score.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } else {
+                  openExternalUrl(url, null, client);
+                }
               } catch (error) {
                 console.error("Failed to download image:", error);
               } finally {

@@ -11,6 +11,7 @@ import {
   formatK,
   calculateTotalFollowers,
   detectClient,
+  openExternalUrl,
 } from "@/lib/utils";
 import { processCreatorCategories } from "@/lib/credentialUtils";
 import { useProfileActions } from "@/hooks/useProfileActions";
@@ -215,7 +216,12 @@ function ProfileLayoutContentInner({
 
     // Open Farcaster web app with pre-filled cast
     const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterShareText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
-    window.open(farcasterUrl, "_blank");
+
+    if (client === "browser") {
+      window.open(farcasterUrl, "_blank");
+    } else {
+      openExternalUrl(farcasterUrl, null, client);
+    }
 
     // Track modal share
     posthog.capture("profile_share_completed", {
@@ -263,7 +269,11 @@ function ProfileLayoutContentInner({
 
     // Open Twitter web app with pre-filled tweet
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
-    window.open(twitterUrl, "_blank");
+    if (client === "browser") {
+      window.open(twitterUrl, "_blank");
+    } else {
+      openExternalUrl(twitterUrl, null, client);
+    }
 
     // Track modal share
     posthog.capture("profile_share_completed", {

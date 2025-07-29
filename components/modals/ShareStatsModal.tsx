@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Link, Download } from "lucide-react";
+import { openExternalUrl } from "@/lib/utils";
 
 interface ShareStatsModalProps {
   appClient: string | null;
@@ -70,13 +71,17 @@ export function ShareStatsModal({
       const response = await fetch(`${baseUrl}/api/share-image/${talentUUID}`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${handle}-creator-score.png`; // Updated filename
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (appClient === "browser") {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${handle}-creator-score.png`; // Updated filename
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        openExternalUrl(url, null, appClient);
+      }
     } catch (error) {
       console.error("Failed to download image:", error);
     } finally {
@@ -120,7 +125,6 @@ export function ShareStatsModal({
           size="icon"
           className="flex-1"
           aria-label="Share on X"
-          disabled={appClient !== "browser"}
         >
           <Image src="/logos/twitter.svg" alt="X" width={20} height={20} />
         </Button>
