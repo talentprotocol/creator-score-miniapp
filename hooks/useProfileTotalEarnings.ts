@@ -53,7 +53,6 @@ export function useProfileTotalEarnings(talentUUID: string) {
 
       // Check cache first
       const cacheKey = `total_earnings_${talentUUID}_v0`;
-      console.log("[useProfileTotalEarnings] cacheKey", cacheKey);
       const cachedEarnings = getCachedData<number>(
         cacheKey,
         CACHE_DURATIONS.PROFILE_DATA,
