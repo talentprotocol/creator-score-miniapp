@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { WalletMinimal, Loader2, LogOut } from "lucide-react";
+import { WalletMinimal, Loader2 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { truncateAddress, openExternalUrl } from "@/lib/utils";
@@ -10,7 +10,6 @@ import type {
   ConnectedAccount,
   AccountManagementAction,
 } from "@/app/services/types";
-import { usePostHog } from "posthog-js/react";
 
 interface ConnectedWalletsSectionProps {
   accounts: ConnectedAccount[];
@@ -29,17 +28,8 @@ export function ConnectedWalletsSection({
   );
   const [modalOpen, setModalOpen] = React.useState(false);
   const [isConnecting, setIsConnecting] = React.useState(false);
-  const [isDisconnecting, setIsDisconnecting] = React.useState(false);
-  const posthog = usePostHog();
 
   const handleSetPrimary = async (account: ConnectedAccount) => {
-    // Track set primary click
-    posthog?.capture("settings_wallet_primary_set", {
-      wallet_address: account.identifier,
-      wallet_source: account.imported_from || "talent",
-      is_own_profile: true,
-    });
-
     // For Farcaster-verified wallets, always open Farcaster settings
     if (account.imported_from === "farcaster") {
       await openExternalUrl(
@@ -62,25 +52,11 @@ export function ConnectedWalletsSection({
   };
 
   const handleConnectWallet = async () => {
-    // Track connect wallet click
-    posthog?.capture("settings_wallet_connect_clicked", {
-      is_own_profile: true,
-    });
-
     setIsConnecting(true);
     try {
       // Implement the logic to connect a wallet
     } finally {
       setIsConnecting(false);
-    }
-  };
-
-  const handleDisconnectWallet = async () => {
-    setIsDisconnecting(true);
-    try {
-      // Implement the logic to disconnect a wallet
-    } finally {
-      setIsDisconnecting(false);
     }
   };
 
@@ -106,7 +82,7 @@ export function ConnectedWalletsSection({
           ) : (
             <>
               <WalletMinimal className="w-4 h-4 mr-2" />
-              Connect Wallet
+              Connect New Wallet
             </>
           )}
         </Button>
@@ -122,6 +98,26 @@ export function ConnectedWalletsSection({
 
   return (
     <div className="space-y-4">
+      {/* Add Wallet Button */}
+      <Button
+        onClick={handleConnectWallet}
+        variant="special"
+        className="w-full"
+        disabled={isConnecting}
+      >
+        {isConnecting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Connecting...
+          </>
+        ) : (
+          <>
+            <WalletMinimal className="w-4 h-4 mr-2" />
+            Connect New Wallet
+          </>
+        )}
+      </Button>
+
       {/* Wallet List */}
       <div className="space-y-3">
         {accounts.map((account) => {
@@ -159,7 +155,7 @@ export function ConnectedWalletsSection({
                 {showPrimaryLabel ? (
                   <Button
                     type="button"
-                    variant="default"
+                    variant="special"
                     size="sm"
                     className="whitespace-nowrap cursor-default min-w-[100px]"
                   >
@@ -181,48 +177,6 @@ export function ConnectedWalletsSection({
           );
         })}
       </div>
-
-      {/* Add Wallet Button */}
-      <Button
-        onClick={handleConnectWallet}
-        variant="special"
-        className="w-full"
-        disabled={isConnecting}
-      >
-        {isConnecting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Connecting...
-          </>
-        ) : (
-          <>
-            <WalletMinimal className="w-4 h-4 mr-2" />
-            Connect Wallet
-          </>
-        )}
-      </Button>
-
-      {/* Disconnect button */}
-      {accounts.length > 0 && (
-        <Button
-          onClick={handleDisconnectWallet}
-          variant="default"
-          className="w-full"
-          disabled={isDisconnecting}
-        >
-          {isDisconnecting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Disconnecting...
-            </>
-          ) : (
-            <>
-              <LogOut className="w-4 h-4 mr-2" />
-              Disconnect Wallet
-            </>
-          )}
-        </Button>
-      )}
 
       <AccountManagementModal
         open={modalOpen}
