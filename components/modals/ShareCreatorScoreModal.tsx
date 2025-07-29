@@ -381,10 +381,6 @@ export function ShareCreatorScoreModal({
     </>
   );
 
-  if (!context) {
-    return null;
-  }
-
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
