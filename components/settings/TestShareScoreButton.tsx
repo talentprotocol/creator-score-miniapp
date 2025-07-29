@@ -9,7 +9,7 @@ export function TestShareScoreButton() {
 
   return (
     <>
-      <Button variant="default" onClick={openForTesting} className="w-full">
+      <Button variant="destructive" onClick={openForTesting} className="w-full">
         Test Share Score Modal
       </Button>
       <ShareCreatorScoreModal open={isOpen} onOpenChange={onOpenChange} />

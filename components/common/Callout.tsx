@@ -9,6 +9,7 @@ interface CalloutProps {
   href?: string;
   variant?: "brand" | "neutral";
   className?: string;
+  onClick?: () => void;
 }
 
 export function Callout({
@@ -16,6 +17,7 @@ export function Callout({
   href,
   variant = "brand",
   className,
+  onClick,
 }: CalloutProps) {
   const { context } = useMiniKit();
   const isExternal = href?.startsWith("http");
@@ -54,6 +56,11 @@ export function Callout({
   );
 
   const handleClick = async (e: React.MouseEvent) => {
+    // Call custom onClick handler if provided
+    if (onClick) {
+      onClick();
+    }
+
     if (isExternal && href) {
       e.preventDefault();
       await openExternalUrl(href, context);
@@ -66,7 +73,7 @@ export function Callout({
         {content}
       </button>
     ) : (
-      <Link href={href} className={styles}>
+      <Link href={href} className={styles} onClick={onClick}>
         {content}
       </Link>
     );

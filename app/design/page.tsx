@@ -239,8 +239,9 @@ export default function DesignPage() {
             <Section title="Button Variants">
               <div className="flex flex-wrap gap-4">
                 <Button>Default (Outline)</Button>
-                <Button variant="special">Special</Button>
+                <Button variant="special">Brand</Button>
                 <Button variant="destructive">Destructive</Button>
+                <Button disabled>Disabled</Button>
                 <div className="w-full mt-2">
                   <div className="text-xs text-muted-foreground font-mono space-y-1">
                     <div>default: border-input hover:border-gray-400</div>
@@ -249,6 +250,10 @@ export default function DesignPage() {
                     </div>
                     <div>
                       destructive: bg-red-100 hover:bg-red-200 text-red-700
+                    </div>
+                    <div>
+                      disabled: opacity-50 cursor-not-allowed
+                      text-muted-foreground
                     </div>
                   </div>
                 </div>

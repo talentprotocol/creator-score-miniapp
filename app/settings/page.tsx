@@ -160,7 +160,7 @@ export default function SettingsPage() {
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 {hasVerifiedHumanityCredentials ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 ) : (
                   <XCircle className="h-4 w-4 text-muted-foreground" />
                 )}
@@ -218,7 +218,7 @@ export default function SettingsPage() {
             <Button
               type="button"
               variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
               onClick={() =>
                 openExternalUrl(
                   "https://docs.talentprotocol.com/docs/protocol-concepts/scoring-systems/creator-score",
@@ -238,7 +238,7 @@ export default function SettingsPage() {
             <Button
               type="button"
               variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
               onClick={() =>
                 openExternalUrl("https://docs.talentprotocol.com/")
               }
@@ -256,7 +256,7 @@ export default function SettingsPage() {
             <Button
               type="button"
               variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
               onClick={() =>
                 openExternalUrl("https://discord.com/invite/talentprotocol")
               }

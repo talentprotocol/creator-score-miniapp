@@ -11,6 +11,7 @@ import { useCreatorCategory } from "@/hooks/useCreatorCategory";
 import { useProfileContext } from "@/contexts/ProfileContext";
 import { processCreatorCategories } from "@/lib/credentialUtils";
 import { CategorySelectionModal } from "./CategorySelectionModal";
+import posthog from "posthog-js";
 
 import type { SocialAccount } from "@/app/services/types";
 import type { CreatorCategoryType } from "@/lib/credentialUtils";
@@ -103,12 +104,33 @@ export function ProfileHeader({
 
   // Handle category selection
   const handleCategorySelect = (category: CreatorCategoryType) => {
+    // Track category selection
+    posthog.capture("profile_category_selected", {
+      category,
+      previous_category: userCategory,
+      is_own_profile: isOwnProfile,
+      has_creator_score: hasCreatorScore,
+    });
+
     // Set pending category for immediate UI feedback
     setPendingCategory(category);
     // Update the actual category in storage
     updateCategory(category);
     // Close modal immediately
     setIsCategoryModalOpen(false);
+  };
+
+  // Handle category modal open
+  const handleCategoryClick = () => {
+    if (isOwnProfile && hasCreatorScore) {
+      // Track category modal open
+      posthog.capture("profile_category_modal_opened", {
+        current_category: userCategory,
+        is_own_profile: isOwnProfile,
+        has_creator_score: hasCreatorScore,
+      });
+      setIsCategoryModalOpen(true);
+    }
   };
 
   // Show category badge only if user has a creator score
@@ -142,12 +164,11 @@ export function ProfileHeader({
                     {" • "}
                     {isOwnProfile ? (
                       <button
-                        onClick={() => setIsCategoryModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted hover:bg-muted/80 transition-colors text-xs font-medium text-muted-foreground hover:text-foreground"
+                        onClick={handleCategoryClick}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-md hover:bg-muted/80 transition-colors"
                       >
-                        <span>{displayCategory.name}</span>
-                        <span>{displayCategory.emoji}</span>
-                        <span className="text-[10px] opacity-60">Edit</span>
+                        {displayCategory.emoji} {displayCategory.name}
+                        <span className="text-xs opacity-60">Edit</span>
                       </button>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-xs font-medium text-muted-foreground">

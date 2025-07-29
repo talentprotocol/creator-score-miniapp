@@ -9,6 +9,7 @@ import {
   Video,
   FileText,
   Heart,
+  Linkedin,
 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,13 @@ const socialPlatforms = [
     color: "text-foreground",
     comingSoon: true,
   },
+  {
+    name: "LinkedIn",
+    source: "linkedin",
+    icon: Linkedin,
+    color: "text-foreground",
+    comingSoon: true,
+  },
 ];
 
 export function ConnectedSocialsSection({
@@ -123,8 +131,13 @@ export function ConnectedSocialsSection({
               onClick={connectedAccount ? handleDisconnect : handleConnect}
               variant="default"
               size="sm"
+              disabled={platform.comingSoon}
             >
-              {connectedAccount ? "Disconnect" : "Connect"}
+              {platform.comingSoon
+                ? "Coming Soon"
+                : connectedAccount
+                  ? "Disconnect"
+                  : "Connect"}
             </Button>
           </div>
         );

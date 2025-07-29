@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { WalletMinimal, Loader2, LogOut } from "lucide-react";
+import { WalletMinimal, Loader2 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { truncateAddress, openExternalUrl } from "@/lib/utils";
@@ -28,7 +28,6 @@ export function ConnectedWalletsSection({
   );
   const [modalOpen, setModalOpen] = React.useState(false);
   const [isConnecting, setIsConnecting] = React.useState(false);
-  const [isDisconnecting, setIsDisconnecting] = React.useState(false);
 
   const handleSetPrimary = async (account: ConnectedAccount) => {
     // For Farcaster-verified wallets, always open Farcaster settings
@@ -58,15 +57,6 @@ export function ConnectedWalletsSection({
       // Implement the logic to connect a wallet
     } finally {
       setIsConnecting(false);
-    }
-  };
-
-  const handleDisconnectWallet = async () => {
-    setIsDisconnecting(true);
-    try {
-      // Implement the logic to disconnect a wallet
-    } finally {
-      setIsDisconnecting(false);
     }
   };
 
@@ -145,7 +135,7 @@ export function ConnectedWalletsSection({
                 {showPrimaryLabel ? (
                   <Button
                     type="button"
-                    variant="default"
+                    variant="special"
                     size="sm"
                     className="whitespace-nowrap cursor-default min-w-[100px]"
                   >
@@ -187,28 +177,6 @@ export function ConnectedWalletsSection({
           </>
         )}
       </Button>
-
-      {/* Disconnect button */}
-      {accounts.length > 0 && (
-        <Button
-          onClick={handleDisconnectWallet}
-          variant="default"
-          className="w-full"
-          disabled={isDisconnecting}
-        >
-          {isDisconnecting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Disconnecting...
-            </>
-          ) : (
-            <>
-              <LogOut className="w-4 h-4 mr-2" />
-              Disconnect Wallet
-            </>
-          )}
-        </Button>
-      )}
 
       <AccountManagementModal
         open={modalOpen}

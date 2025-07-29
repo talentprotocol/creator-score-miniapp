@@ -368,7 +368,21 @@ function ProfileLayoutContentInner({
         {/* Increase Score Callout - Only show for own profile */}
         {isOwnProfile && !hasNoScore && (
           <div className="mt-4">
-            <Callout variant="brand" href="/settings">
+            <Callout
+              variant="brand"
+              href="/settings"
+              onClick={() => {
+                // Track connect accounts callout click
+                posthog.capture("profile_connect_accounts_clicked", {
+                  creator_score: creatorScore,
+                  total_earnings: totalEarnings,
+                  total_followers: totalFollowers,
+                  is_own_profile: isOwnProfile,
+                  has_score: !hasNoScore,
+                  rank,
+                });
+              }}
+            >
               Connect more accounts to increase your Creator Score
             </Callout>
           </div>
