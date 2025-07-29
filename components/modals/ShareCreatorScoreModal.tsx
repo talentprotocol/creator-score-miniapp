@@ -217,7 +217,7 @@ export function ShareCreatorScoreModal({
               const client = await detectClient(context);
               const identifier = handle;
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
-              const farcasterText = `Check @${identifier}'s reputation as an onchain creator:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: $${formattedEarnings}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+              const farcasterText = `Check @${identifier}'s reputation as an onchain creator:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
 
               if (client === "farcaster") {
                 try {
@@ -270,7 +270,7 @@ export function ShareCreatorScoreModal({
               const identifier = handle;
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
               const displayName = identifier;
-              const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: $${formattedEarnings}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
+              const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
               const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
               const client = await detectClient(context);
               if (client === "browser") {
