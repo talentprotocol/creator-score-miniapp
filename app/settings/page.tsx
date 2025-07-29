@@ -310,7 +310,7 @@ export default function SettingsPage() {
             <button
               onClick={() =>
                 openExternalUrl(
-                  "https://docs.talentprotocol.com/docs/legal/builder-rewards-terms-conditions",
+                  "https://docs.talentprotocol.com/docs/legal/creator-rewards-terms-conditions",
                 )
               }
               className="underline hover:no-underline"
