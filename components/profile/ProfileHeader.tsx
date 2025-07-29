@@ -9,13 +9,14 @@ import { ProfileAccountsSheet } from "./ProfileAccountsSheet";
 import { useUserCategory } from "@/hooks/useUserCategory";
 import { useCreatorCategory } from "@/hooks/useCreatorCategory";
 import { useProfileContext } from "@/contexts/ProfileContext";
-import { processCreatorCategories } from "@/lib/credentialUtils";
+import {
+  processCreatorCategories,
+  CREATOR_CATEGORIES,
+} from "@/lib/credentialUtils";
 import { CategorySelectionModal } from "./CategorySelectionModal";
-import posthog from "posthog-js";
-
 import type { SocialAccount } from "@/app/services/types";
 import type { CreatorCategoryType } from "@/lib/credentialUtils";
-import { CREATOR_CATEGORIES } from "@/lib/credentialUtils";
+import { usePostHog } from "posthog-js/react";
 
 export function ProfileHeader({
   followers,
@@ -55,6 +56,7 @@ export function ProfileHeader({
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
   const [pendingCategory, setPendingCategory] =
     React.useState<CreatorCategoryType | null>(null);
+  const posthog = usePostHog();
 
   // Clear pending category when userCategory updates from the hook
   React.useEffect(() => {
@@ -105,7 +107,7 @@ export function ProfileHeader({
   // Handle category selection
   const handleCategorySelect = (category: CreatorCategoryType) => {
     // Track category selection
-    posthog.capture("profile_category_selected", {
+    posthog?.capture("profile_category_selected", {
       category,
       previous_category: userCategory,
       is_own_profile: isOwnProfile,
@@ -124,7 +126,7 @@ export function ProfileHeader({
   const handleCategoryClick = () => {
     if (isOwnProfile && hasCreatorScore) {
       // Track category modal open
-      posthog.capture("profile_category_modal_opened", {
+      posthog?.capture("profile_category_modal_opened", {
         current_category: userCategory,
         is_own_profile: isOwnProfile,
         has_creator_score: hasCreatorScore,

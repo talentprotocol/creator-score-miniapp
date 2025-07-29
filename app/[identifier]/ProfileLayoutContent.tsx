@@ -21,7 +21,7 @@ import { Share, RotateCcw, Loader2 } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -57,6 +57,7 @@ function ProfileLayoutContentInner({
   const { profile, profileData, refetchScore } = useProfileContext();
   const { context } = useMiniKit();
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+  const posthog = usePostHog();
 
   // Extract data from server-fetched profileData
   const {
@@ -104,7 +105,7 @@ function ProfileLayoutContentInner({
   // Main share stats handler - detects environment and either opens modal or shares directly
   const handleShareStats = React.useCallback(async () => {
     // Track share stats click
-    posthog.capture("profile_share_stats_clicked", {
+    posthog?.capture("profile_share_stats_clicked", {
       creator_score: creatorScore,
       total_earnings: totalEarnings,
       total_followers: totalFollowers,
@@ -153,7 +154,7 @@ function ProfileLayoutContentInner({
         });
 
         // Track successful direct share
-        posthog.capture("profile_share_completed", {
+        posthog?.capture("profile_share_completed", {
           platform: "farcaster",
           method: "direct",
           creator_score: creatorScore,
@@ -175,6 +176,7 @@ function ProfileLayoutContentInner({
     hasNoScore,
     profileData,
     rank,
+    posthog,
   ]);
 
   // Handle Farcaster sharing from modal (browser only)
@@ -206,7 +208,7 @@ function ProfileLayoutContentInner({
     window.open(farcasterUrl, "_blank");
 
     // Track modal share
-    posthog.capture("profile_share_completed", {
+    posthog?.capture("profile_share_completed", {
       platform: "farcaster",
       method: "modal",
       creator_score: creatorScore,
@@ -222,6 +224,7 @@ function ProfileLayoutContentInner({
     isOwnProfile,
     profileData,
     rank,
+    posthog,
   ]);
 
   // Handle Twitter sharing from modal (browser only)
@@ -254,7 +257,7 @@ function ProfileLayoutContentInner({
     window.open(twitterUrl, "_blank");
 
     // Track modal share
-    posthog.capture("profile_share_completed", {
+    posthog?.capture("profile_share_completed", {
       platform: "twitter",
       method: "modal",
       creator_score: creatorScore,
@@ -270,6 +273,7 @@ function ProfileLayoutContentInner({
     isOwnProfile,
     profileData,
     rank,
+    posthog,
   ]);
 
   // Profile data comes from server-side, no loading state needed
@@ -373,7 +377,7 @@ function ProfileLayoutContentInner({
               href="/settings"
               onClick={() => {
                 // Track connect accounts callout click
-                posthog.capture("profile_connect_accounts_clicked", {
+                posthog?.capture("profile_connect_accounts_clicked", {
                   creator_score: creatorScore,
                   total_earnings: totalEarnings,
                   total_followers: totalFollowers,

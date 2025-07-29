@@ -23,14 +23,6 @@ export function useUserNavigation() {
 
   const navItems = [
     {
-      href: profilePaths[0], // Use first path (canonical) for navigation
-      icon: User,
-      label: "Profile",
-      disabled: false,
-      // Store all possible paths for active state check
-      alternateHrefs: profilePaths.slice(1),
-    },
-    {
       href: "/leaderboard",
       icon: Trophy,
       label: "Leaderboard",
@@ -39,6 +31,14 @@ export function useUserNavigation() {
       href: "/explore",
       icon: Search,
       label: "Explore",
+    },
+    {
+      href: profilePaths[0], // Use first path (canonical) for navigation
+      icon: User,
+      label: "Profile",
+      disabled: false,
+      // Store all possible paths for active state check
+      alternateHrefs: profilePaths.slice(1),
     },
   ];
 

@@ -35,11 +35,13 @@ import {
 import { openExternalUrl } from "@/lib/utils";
 import { TestShareScoreButton } from "@/components/settings/TestShareScoreButton";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { usePostHog } from "posthog-js/react";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useUserResolution();
+  const posthog = usePostHog();
 
   const {
     accounts,
@@ -103,6 +105,31 @@ export default function SettingsPage() {
   const socialAccounts = accounts?.social || [];
   const walletAccounts = accounts?.wallet || [];
 
+  // Handle section expansion tracking
+  const handleSectionExpand = (sectionName: string) => {
+    posthog?.capture("settings_section_expanded", {
+      section_name: sectionName,
+      is_own_profile: true, // Settings page is always own profile
+    });
+  };
+
+  // Handle external link clicks
+  const handleExternalLinkClick = (linkType: string) => {
+    posthog?.capture("settings_external_link_clicked", {
+      link_type: linkType,
+      is_own_profile: true,
+    });
+  };
+
+  // Handle logout click
+  const handleLogoutClick = () => {
+    posthog?.capture("settings_external_link_clicked", {
+      link_type: "logout",
+      is_own_profile: true,
+    });
+    handleLogout();
+  };
+
   return (
     <PageContainer noPadding>
       {/* Header section */}
@@ -119,7 +146,10 @@ export default function SettingsPage() {
             value="connected-socials"
             className="bg-muted rounded-xl border-0 shadow-none"
           >
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+            <AccordionTrigger
+              className="px-6 py-4 hover:no-underline"
+              onClick={() => handleSectionExpand("connected_socials")}
+            >
               <div className="flex items-center gap-3">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Connected Socials</span>
@@ -138,7 +168,10 @@ export default function SettingsPage() {
             value="connected-wallets"
             className="bg-muted rounded-xl border-0 shadow-none"
           >
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+            <AccordionTrigger
+              className="px-6 py-4 hover:no-underline"
+              onClick={() => handleSectionExpand("connected_wallets")}
+            >
               <div className="flex items-center gap-3">
                 <Wallet className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Connected Wallets</span>
@@ -157,10 +190,13 @@ export default function SettingsPage() {
             value="proof-of-humanity"
             className="bg-muted rounded-xl border-0 shadow-none"
           >
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+            <AccordionTrigger
+              className="px-6 py-4 hover:no-underline"
+              onClick={() => handleSectionExpand("proof_of_humanity")}
+            >
               <div className="flex items-center gap-3">
                 {hasVerifiedHumanityCredentials ? (
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  <CheckCircle className="h-4 w-4 text-green-500" />
                 ) : (
                   <XCircle className="h-4 w-4 text-muted-foreground" />
                 )}
@@ -199,7 +235,10 @@ export default function SettingsPage() {
             value="account-settings"
             className="bg-muted rounded-xl border-0 shadow-none"
           >
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+            <AccordionTrigger
+              className="px-6 py-4 hover:no-underline"
+              onClick={() => handleSectionExpand("account_settings")}
+            >
               <div className="flex items-center gap-3">
                 <Settings className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Account Settings</span>
@@ -218,12 +257,13 @@ export default function SettingsPage() {
             <Button
               type="button"
               variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
-              onClick={() =>
+              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              onClick={() => {
+                handleExternalLinkClick("about");
                 openExternalUrl(
                   "https://docs.talentprotocol.com/docs/protocol-concepts/scoring-systems/creator-score",
-                )
-              }
+                );
+              }}
             >
               <div className="flex items-center gap-3">
                 <Info className="h-4 w-4 text-muted-foreground" />
@@ -238,10 +278,11 @@ export default function SettingsPage() {
             <Button
               type="button"
               variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
-              onClick={() =>
-                openExternalUrl("https://docs.talentprotocol.com/")
-              }
+              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              onClick={() => {
+                handleExternalLinkClick("dev_docs");
+                openExternalUrl("https://docs.talentprotocol.com/");
+              }}
             >
               <div className="flex items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -256,10 +297,11 @@ export default function SettingsPage() {
             <Button
               type="button"
               variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
-              onClick={() =>
-                openExternalUrl("https://discord.com/invite/talentprotocol")
-              }
+              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
+              onClick={() => {
+                handleExternalLinkClick("support");
+                openExternalUrl("https://discord.com/invite/talentprotocol");
+              }}
             >
               <div className="flex items-center gap-3">
                 <MessageCircle className="h-4 w-4 text-muted-foreground" />
@@ -275,7 +317,7 @@ export default function SettingsPage() {
               <Button
                 type="button"
                 variant="destructive"
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
               >
                 <div className="flex items-center gap-3">
@@ -300,7 +342,10 @@ export default function SettingsPage() {
           <p className="text-xs text-muted-foreground">
             Powered by{" "}
             <button
-              onClick={() => openExternalUrl("https://www.talentprotocol.com/")}
+              onClick={() => {
+                handleExternalLinkClick("talent_protocol");
+                openExternalUrl("https://www.talentprotocol.com/");
+              }}
               className="underline hover:no-underline"
             >
               Talent Protocol
@@ -308,11 +353,12 @@ export default function SettingsPage() {
           </p>
           <p className="text-xs text-muted-foreground">
             <button
-              onClick={() =>
+              onClick={() => {
+                handleExternalLinkClick("terms");
                 openExternalUrl(
                   "https://docs.talentprotocol.com/docs/legal/creator-rewards-terms-conditions",
-                )
-              }
+                );
+              }}
               className="underline hover:no-underline"
             >
               Terms and Conditions
