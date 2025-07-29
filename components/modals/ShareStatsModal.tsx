@@ -30,6 +30,7 @@ interface ShareStatsModalProps {
   handle: string; // Add handle prop for URL and filename
   onShareFarcaster: () => void;
   onShareTwitter: () => void;
+  disableTwitter?: boolean; // New prop to control Twitter button
 }
 
 export function ShareStatsModal({
@@ -40,6 +41,7 @@ export function ShareStatsModal({
   handle,
   onShareFarcaster,
   onShareTwitter,
+  disableTwitter = false, // Default to false
 }: ShareStatsModalProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [copied, setCopied] = React.useState(false);
@@ -157,6 +159,7 @@ export function ShareStatsModal({
           size="icon"
           className="flex-1"
           aria-label="Share on X"
+          disabled={disableTwitter}
         >
           <Image src="/logos/twitter.svg" alt="X" width={20} height={20} />
         </Button>

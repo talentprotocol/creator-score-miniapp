@@ -129,67 +129,18 @@ function ProfileLayoutContentInner({
       setClient(localClient);
     }
 
-    if (localClient === "browser") {
-      // In browser, open the modal for user to choose
-      setIsShareModalOpen(true);
-    } else {
-      // In Farcaster or Base app, use native composeCast directly
-      const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
-      const followersText = formatK(totalFollowers || 0);
-      const earningsText = totalEarnings
-        ? formatNumberWithSuffix(totalEarnings)
-        : "—";
-
-      // Get creator type from credentials
-      const categoryData = profileData?.credentials
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          processCreatorCategories(profileData.credentials as any)
-        : null;
-      const creatorType = categoryData?.primaryCategory?.name || "Creator";
-      const creatorEmoji = categoryData?.primaryCategory?.emoji || "👤";
-
-      // Get rank text
-      const rankText = rank ? `#${rank.toLocaleString()}` : "—";
-
-      const farcasterHandle = profile?.fname || "creator";
-      const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
-
-      const farcasterShareText = `Check @${farcasterHandle}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @TalentProtocol 👇`;
-
-      try {
-        const { sdk } = await import("@farcaster/frame-sdk");
-
-        const limitedEmbeds = [profileUrl] as [] | [string] | [string, string];
-
-        await sdk.actions.composeCast({
-          text: farcasterShareText,
-          embeds: limitedEmbeds,
-        });
-
-        // Track successful direct share
-        posthog?.capture("profile_share_completed", {
-          platform: "farcaster",
-          method: "direct",
-          creator_score: creatorScore,
-          total_earnings: totalEarnings,
-          total_followers: totalFollowers,
-          is_own_profile: isOwnProfile,
-        });
-      } catch (error) {
-        console.error("Failed to compose cast:", error);
-      }
-    }
+    // Always show modal, regardless of client type
+    setIsShareModalOpen(true);
   }, [
     context,
     creatorScore,
     totalFollowers,
     totalEarnings,
-    profile,
     isOwnProfile,
     hasNoScore,
-    profileData,
     rank,
     posthog,
+    client,
   ]);
 
   // Handle Farcaster sharing from modal (browser only)
@@ -425,7 +376,7 @@ function ProfileLayoutContentInner({
         {children}
       </Section>
 
-      {/* Share Stats Modal - only shows in browser environment */}
+      {/* Share Stats Modal */}
       <ShareStatsModal
         open={isShareModalOpen}
         onOpenChange={setIsShareModalOpen}
@@ -434,6 +385,7 @@ function ProfileLayoutContentInner({
         onShareFarcaster={handleShareFarcaster}
         onShareTwitter={handleShareTwitter}
         appClient={client}
+        disableTwitter={client !== "browser"} // Disable Twitter button in non-browser contexts
       />
     </PageContainer>
   );
