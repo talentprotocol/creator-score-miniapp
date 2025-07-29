@@ -11,6 +11,7 @@ import {
   formatK,
   calculateTotalFollowers,
   detectClient,
+  openExternalUrl,
 } from "@/lib/utils";
 import { processCreatorCategories } from "@/lib/credentialUtils";
 import { useProfileActions } from "@/hooks/useProfileActions";
@@ -22,6 +23,7 @@ import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import posthog from "posthog-js";
+import { useEffect } from "react";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -57,6 +59,7 @@ function ProfileLayoutContentInner({
   const { profile, profileData, refetchScore } = useProfileContext();
   const { context } = useMiniKit();
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+  const [client, setClient] = React.useState<string | null>(null);
 
   // Extract data from server-fetched profileData
   const {
@@ -101,6 +104,12 @@ function ProfileLayoutContentInner({
     totalEarnings,
   });
 
+  useEffect(() => {
+    detectClient(context).then((client) => {
+      setClient(client);
+    });
+  }, [context]);
+
   // Main share stats handler - detects environment and either opens modal or shares directly
   const handleShareStats = React.useCallback(async () => {
     // Track share stats click
@@ -113,9 +122,13 @@ function ProfileLayoutContentInner({
       rank,
     });
 
-    const client = await detectClient(context);
+    let localClient = client;
+    if (!localClient) {
+      localClient = await detectClient(context);
+      setClient(localClient);
+    }
 
-    if (client === "browser") {
+    if (localClient === "browser") {
       // In browser, open the modal for user to choose
       setIsShareModalOpen(true);
     } else {
@@ -203,7 +216,12 @@ function ProfileLayoutContentInner({
 
     // Open Farcaster web app with pre-filled cast
     const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterShareText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
-    window.open(farcasterUrl, "_blank");
+
+    if (client === "browser") {
+      window.open(farcasterUrl, "_blank");
+    } else {
+      openExternalUrl(farcasterUrl, null, client);
+    }
 
     // Track modal share
     posthog.capture("profile_share_completed", {
@@ -251,7 +269,11 @@ function ProfileLayoutContentInner({
 
     // Open Twitter web app with pre-filled tweet
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
-    window.open(twitterUrl, "_blank");
+    if (client === "browser") {
+      window.open(twitterUrl, "_blank");
+    } else {
+      openExternalUrl(twitterUrl, null, client);
+    }
 
     // Track modal share
     posthog.capture("profile_share_completed", {
@@ -393,6 +415,7 @@ function ProfileLayoutContentInner({
         handle={profile?.fname || identifier}
         onShareFarcaster={handleShareFarcaster}
         onShareTwitter={handleShareTwitter}
+        appClient={client}
       />
     </PageContainer>
   );

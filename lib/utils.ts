@@ -445,8 +445,9 @@ export async function detectClient(
 export async function openExternalUrl(
   url: string,
   context?: unknown,
+  appClient?: string | null,
 ): Promise<void> {
-  const client = await detectClient(context);
+  const client = appClient || (await detectClient(context));
 
   if (client === "base") {
     try {

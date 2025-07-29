@@ -3,7 +3,11 @@ import { useProfileCreatorScore } from "./useProfileCreatorScore";
 import { useProfileSocialAccounts } from "./useProfileSocialAccounts";
 import { useProfileTotalEarnings } from "./useProfileTotalEarnings";
 import { useProfileHeaderData } from "./useProfileHeaderData";
-import { calculateTotalFollowers, formatWithK, formatK } from "@/lib/utils";
+import {
+  calculateTotalFollowers,
+  formatNumberWithSuffix,
+  formatK,
+} from "@/lib/utils";
 
 export function useShareData() {
   const { talentUuid } = useUserResolution();
@@ -43,6 +47,6 @@ export function useShareData() {
     displayName: profile?.display_name || profile?.name || "Creator",
     handle: profile?.fname || profile?.wallet_address || talentUuid || "",
     formattedFollowers: formatK(totalFollowers),
-    formattedEarnings: formatWithK(totalEarnings || 0),
+    formattedEarnings: formatNumberWithSuffix(totalEarnings || 0),
   };
 }
