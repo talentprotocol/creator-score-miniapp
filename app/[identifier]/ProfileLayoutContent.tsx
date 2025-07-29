@@ -22,7 +22,7 @@ import { Share, RotateCcw, Loader2 } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
 
 interface ProfileData {
@@ -59,6 +59,7 @@ function ProfileLayoutContentInner({
   const { profile, profileData, refetchScore } = useProfileContext();
   const { context } = useMiniKit();
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+  const posthog = usePostHog();
   const [client, setClient] = React.useState<string | null>(null);
 
   // Extract data from server-fetched profileData
@@ -113,7 +114,7 @@ function ProfileLayoutContentInner({
   // Main share stats handler - detects environment and either opens modal or shares directly
   const handleShareStats = React.useCallback(async () => {
     // Track share stats click
-    posthog.capture("profile_share_stats_clicked", {
+    posthog?.capture("profile_share_stats_clicked", {
       creator_score: creatorScore,
       total_earnings: totalEarnings,
       total_followers: totalFollowers,
@@ -138,6 +139,7 @@ function ProfileLayoutContentInner({
     isOwnProfile,
     hasNoScore,
     rank,
+    posthog,
     client,
   ]);
 
@@ -175,7 +177,7 @@ function ProfileLayoutContentInner({
     }
 
     // Track modal share
-    posthog.capture("profile_share_completed", {
+    posthog?.capture("profile_share_completed", {
       platform: "farcaster",
       method: "modal",
       creator_score: creatorScore,
@@ -191,6 +193,7 @@ function ProfileLayoutContentInner({
     isOwnProfile,
     profileData,
     rank,
+    posthog,
   ]);
 
   // Handle Twitter sharing from modal (browser only)
@@ -227,7 +230,7 @@ function ProfileLayoutContentInner({
     }
 
     // Track modal share
-    posthog.capture("profile_share_completed", {
+    posthog?.capture("profile_share_completed", {
       platform: "twitter",
       method: "modal",
       creator_score: creatorScore,
@@ -243,6 +246,7 @@ function ProfileLayoutContentInner({
     isOwnProfile,
     profileData,
     rank,
+    posthog,
   ]);
 
   // Profile data comes from server-side, no loading state needed
@@ -341,7 +345,21 @@ function ProfileLayoutContentInner({
         {/* Increase Score Callout - Only show for own profile */}
         {isOwnProfile && !hasNoScore && (
           <div className="mt-4">
-            <Callout variant="brand" href="/settings">
+            <Callout
+              variant="brand"
+              href="/settings"
+              onClick={() => {
+                // Track connect accounts callout click
+                posthog?.capture("profile_connect_accounts_clicked", {
+                  creator_score: creatorScore,
+                  total_earnings: totalEarnings,
+                  total_followers: totalFollowers,
+                  is_own_profile: isOwnProfile,
+                  has_score: !hasNoScore,
+                  rank,
+                });
+              }}
+            >
               Connect more accounts to increase your Creator Score
             </Callout>
           </div>

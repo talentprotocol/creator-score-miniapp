@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
+import { usePostHog } from "posthog-js/react";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = React.useState(false);
@@ -47,8 +48,15 @@ export function AccountManagementModal({
   accountType,
 }: AccountManagementModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const posthog = usePostHog();
 
   const handleManageAccounts = () => {
+    // Track manage accounts click
+    posthog?.capture("settings_modal_manage_clicked", {
+      account_type: accountType,
+      is_own_profile: true,
+    });
+
     openExternalUrl("https://app.talentprotocol.com/accounts").catch(
       (error) => {
         console.error("Failed to open external URL:", error);
@@ -58,6 +66,12 @@ export function AccountManagementModal({
   };
 
   const handleCancel = () => {
+    // Track cancel click
+    posthog?.capture("settings_modal_cancel_clicked", {
+      account_type: accountType,
+      is_own_profile: true,
+    });
+
     onOpenChange(false);
   };
 
@@ -103,20 +117,18 @@ export function AccountManagementModal({
             account verification.
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-2 pb-4">
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={handleManageAccounts}
-              variant="special"
-              className="w-full"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Manage in Talent App
-            </Button>
-            <Button variant="default" onClick={handleCancel} className="w-full">
-              Cancel
-            </Button>
-          </div>
+        <div className="flex flex-col gap-2 mt-4">
+          <Button
+            onClick={handleManageAccounts}
+            variant="special"
+            className="w-full"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Manage in Talent App
+          </Button>
+          <Button variant="default" onClick={handleCancel} className="w-full">
+            Cancel
+          </Button>
         </div>
       </DrawerContent>
     </Drawer>

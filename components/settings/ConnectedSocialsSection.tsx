@@ -9,6 +9,7 @@ import {
   Video,
   FileText,
   Heart,
+  Linkedin,
 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import type {
   ConnectedAccount,
   AccountManagementAction,
 } from "@/app/services/types";
+import { usePostHog } from "posthog-js/react";
 
 interface ConnectedSocialsSectionProps {
   accounts: ConnectedAccount[];
@@ -75,18 +77,38 @@ const socialPlatforms = [
     color: "text-foreground",
     comingSoon: true,
   },
+  {
+    name: "LinkedIn",
+    source: "linkedin",
+    icon: Linkedin,
+    color: "text-foreground",
+    comingSoon: true,
+  },
 ];
 
 export function ConnectedSocialsSection({
   accounts,
 }: ConnectedSocialsSectionProps) {
   const [modalOpen, setModalOpen] = React.useState(false);
+  const posthog = usePostHog();
 
-  const handleConnect = () => {
+  const handleConnect = (platform: string) => {
+    // Track connect click
+    posthog?.capture("settings_account_connect_clicked", {
+      account_type: "social",
+      platform,
+      is_own_profile: true,
+    });
     setModalOpen(true);
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = (platform: string) => {
+    // Track disconnect click
+    posthog?.capture("settings_account_disconnect_clicked", {
+      account_type: "social",
+      platform,
+      is_own_profile: true,
+    });
     setModalOpen(true);
   };
 
@@ -120,11 +142,20 @@ export function ConnectedSocialsSection({
             </div>
 
             <Button
-              onClick={connectedAccount ? handleDisconnect : handleConnect}
+              onClick={
+                connectedAccount
+                  ? () => handleDisconnect(platform.source)
+                  : () => handleConnect(platform.source)
+              }
               variant="default"
               size="sm"
+              disabled={platform.comingSoon}
             >
-              {connectedAccount ? "Disconnect" : "Connect"}
+              {platform.comingSoon
+                ? "Coming Soon"
+                : connectedAccount
+                  ? "Disconnect"
+                  : "Connect"}
             </Button>
           </div>
         );

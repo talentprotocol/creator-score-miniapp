@@ -10,6 +10,7 @@ import type {
   ConnectedAccount,
   AccountManagementAction,
 } from "@/app/services/types";
+import { usePostHog } from "posthog-js/react";
 
 interface ConnectedWalletsSectionProps {
   accounts: ConnectedAccount[];
@@ -29,8 +30,16 @@ export function ConnectedWalletsSection({
   const [modalOpen, setModalOpen] = React.useState(false);
   const [isConnecting, setIsConnecting] = React.useState(false);
   const [isDisconnecting, setIsDisconnecting] = React.useState(false);
+  const posthog = usePostHog();
 
   const handleSetPrimary = async (account: ConnectedAccount) => {
+    // Track set primary click
+    posthog?.capture("settings_wallet_primary_set", {
+      wallet_address: account.identifier,
+      wallet_source: account.imported_from || "talent",
+      is_own_profile: true,
+    });
+
     // For Farcaster-verified wallets, always open Farcaster settings
     if (account.imported_from === "farcaster") {
       await openExternalUrl(
@@ -53,6 +62,11 @@ export function ConnectedWalletsSection({
   };
 
   const handleConnectWallet = async () => {
+    // Track connect wallet click
+    posthog?.capture("settings_wallet_connect_clicked", {
+      is_own_profile: true,
+    });
+
     setIsConnecting(true);
     try {
       // Implement the logic to connect a wallet

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { CreatorCategory } from "@/lib/types/user-preferences";
+import { usePostHog } from "posthog-js/react";
 
 export function useUserCategory(talentUUID: string) {
   const [userCategory, setUserCategory] = useState<CreatorCategory | null>(
@@ -9,6 +10,7 @@ export function useUserCategory(talentUUID: string) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const posthog = usePostHog();
 
   // Load category from API on mount
   useEffect(() => {
@@ -62,6 +64,12 @@ export function useUserCategory(talentUUID: string) {
 
         if (response.ok) {
           setUserCategory(category);
+
+          // Track successful category save
+          posthog?.capture("profile_category_saved", {
+            category,
+            talent_uuid: talentUUID,
+          });
         } else {
           const errorData = await response.json();
           setError(errorData.error || "Failed to update category");
@@ -77,7 +85,7 @@ export function useUserCategory(talentUUID: string) {
         throw error;
       }
     },
-    [talentUUID],
+    [talentUUID, posthog],
   );
 
   // Clear category (set to null in database)

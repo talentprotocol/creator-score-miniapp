@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Link, Download } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { openExternalUrl } from "@/lib/utils";
 
 interface ShareStatsModalProps {
@@ -45,6 +46,7 @@ export function ShareStatsModal({
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [copied, setCopied] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
+  const posthog = usePostHog();
 
   // Reset states when modal closes
   React.useEffect(() => {
@@ -61,6 +63,12 @@ export function ShareStatsModal({
       await navigator.clipboard.writeText(profileUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+
+      // Track copy link success
+      posthog?.capture("profile_share_link_copied", {
+        talent_uuid: talentUUID,
+        handle,
+      });
     } catch (error) {
       console.error("Failed to copy link:", error);
     }
@@ -71,6 +79,11 @@ export function ShareStatsModal({
       setDownloading(true);
       const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
       const imageURL = `${baseUrl}/api/share-image/${talentUUID}`;
+      // Track download success
+      posthog?.capture("profile_share_image_downloaded", {
+        talent_uuid: talentUUID,
+        handle,
+      });
       if (appClient === "browser") {
         const response = await fetch(imageURL);
         const blob = await response.blob();
@@ -92,6 +105,24 @@ export function ShareStatsModal({
     }
   };
 
+  // Handle Farcaster share with tracking
+  const handleFarcasterShare = () => {
+    posthog?.capture("profile_share_farcaster_clicked", {
+      talent_uuid: talentUUID,
+      handle,
+    });
+    onShareFarcaster();
+  };
+
+  // Handle Twitter share with tracking
+  const handleTwitterShare = () => {
+    posthog?.capture("profile_share_twitter_clicked", {
+      talent_uuid: talentUUID,
+      handle,
+    });
+    onShareTwitter();
+  };
+
   const content = (
     <div className="space-y-6">
       {/* Share Image Preview */}
@@ -108,7 +139,7 @@ export function ShareStatsModal({
       {/* Share Actions Row */}
       <div className="flex justify-between gap-2">
         <Button
-          onClick={onShareFarcaster}
+          onClick={handleFarcasterShare}
           variant="default"
           size="icon"
           className="flex-1"
@@ -123,7 +154,7 @@ export function ShareStatsModal({
         </Button>
 
         <Button
-          onClick={onShareTwitter}
+          onClick={handleTwitterShare}
           variant="default"
           size="icon"
           className="flex-1"
