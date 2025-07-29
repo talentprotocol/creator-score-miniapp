@@ -445,8 +445,9 @@ export async function detectClient(
 export async function openExternalUrl(
   url: string,
   context?: unknown,
+  appClient?: string | null,
 ): Promise<void> {
-  const client = await detectClient(context);
+  const client = appClient || (await detectClient(context));
 
   if (client === "base") {
     try {
@@ -535,7 +536,7 @@ export async function composeCast(
   const encodedText = encodeURIComponent(twitterText);
 
   // Build Twitter/X share URL with URL parameter (for testing)
-  let twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+  let twitterUrl = `https://x.com/intent/post?text=${encodedText}`;
 
   if (embeds && embeds.length > 0) {
     // Add URL as parameter - Twitter should show as link preview

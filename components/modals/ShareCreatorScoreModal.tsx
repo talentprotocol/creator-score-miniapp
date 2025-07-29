@@ -20,7 +20,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCountingAnimation } from "@/hooks/useCountingAnimation";
 import { useShareData } from "@/hooks/useShareData";
 import { X, Download } from "lucide-react";
-import { cn, formatWithK } from "@/lib/utils";
+import { cn, formatNumberWithSuffix, openExternalUrl } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { detectClient } from "@/lib/utils";
 import posthog from "posthog-js";
@@ -186,7 +186,7 @@ export function ShareCreatorScoreModal({
             justifyContent: "center",
           }}
         >
-          ${formatWithK(animatedEarnings)}
+          {formatNumberWithSuffix(animatedEarnings)}
         </div>
 
         {/* Share Buttons */}
@@ -217,7 +217,7 @@ export function ShareCreatorScoreModal({
               const client = await detectClient(context);
               const identifier = handle;
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
-              const farcasterText = `Check @${identifier}'s reputation as an onchain creator:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: $${formattedEarnings}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+              const farcasterText = `Check @${identifier}'s reputation as an onchain creator:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
 
               if (client === "farcaster") {
                 try {
@@ -270,11 +270,14 @@ export function ShareCreatorScoreModal({
               const identifier = handle;
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
               const displayName = identifier;
-              const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: $${formattedEarnings}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
-              window.open(
-                `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`,
-                "_blank",
-              );
+              const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
+              const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
+              const client = await detectClient(context);
+              if (client === "browser") {
+                window.open(twitterUrl, "_blank");
+              } else {
+                openExternalUrl(twitterUrl, null, client);
+              }
             }}
             className="bg-white/80 hover:bg-white/90 active:bg-white/70 transition-all duration-200 flex items-center justify-center"
             style={{
@@ -312,18 +315,23 @@ export function ShareCreatorScoreModal({
                 setDownloading(true);
                 const baseUrl =
                   process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
-                const response = await fetch(
-                  `${baseUrl}/api/share-image/${talentUuid}`,
-                );
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${handle}-creator-score.png`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                const imageURL = `${baseUrl}/api/share-image/${talentUuid}`;
+                const client = await detectClient(context);
+                if (client === "browser") {
+                  const response = await fetch(imageURL);
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${handle}-creator-score.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } else {
+                  openExternalUrl(imageURL, null, client);
+                }
               } catch (error) {
                 console.error("Failed to download image:", error);
               } finally {

@@ -24,8 +24,6 @@ import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWelcomeModal } from "@/hooks/useWelcomeModal";
-import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
 import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 
@@ -47,7 +45,6 @@ export default function LeaderboardPage() {
   const { talentUuid: userTalentUuid } = useUserResolution();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
   const [visibleEntries, setVisibleEntries] = useState<LeaderboardEntry[]>([]);
-  const { shouldShowModal, markModalAsShown } = useWelcomeModal();
 
   // Initial fast load of first 10 entries
   // Use optimized leaderboard hook for all data
@@ -330,16 +327,6 @@ export default function LeaderboardPage() {
           </div>
         )}
       </Section>
-
-      {/* Welcome Modal */}
-      <ShareCreatorScoreModal
-        open={shouldShowModal}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            markModalAsShown();
-          }
-        }}
-      />
     </PageContainer>
   );
 }

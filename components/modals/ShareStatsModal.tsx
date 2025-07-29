@@ -20,8 +20,10 @@ import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Link, Download } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
+import { openExternalUrl } from "@/lib/utils";
 
 interface ShareStatsModalProps {
+  appClient: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   talentUUID: string;
@@ -31,6 +33,7 @@ interface ShareStatsModalProps {
 }
 
 export function ShareStatsModal({
+  appClient,
   open,
   onOpenChange,
   talentUUID,
@@ -73,22 +76,26 @@ export function ShareStatsModal({
     try {
       setDownloading(true);
       const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
-      const response = await fetch(`${baseUrl}/api/share-image/${talentUUID}`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${handle}-creator-score.png`; // Updated filename
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
+      const imageURL = `${baseUrl}/api/share-image/${talentUUID}`;
       // Track download success
       posthog?.capture("profile_share_image_downloaded", {
         talent_uuid: talentUUID,
         handle,
       });
+      if (appClient === "browser") {
+        const response = await fetch(imageURL);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${handle}-creator-score.png`; // Updated filename
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        openExternalUrl(imageURL, null, appClient);
+      }
     } catch (error) {
       console.error("Failed to download image:", error);
     } finally {
@@ -169,7 +176,7 @@ export function ShareStatsModal({
           variant="default"
           size="icon"
           className="flex-1"
-          disabled={downloading}
+          disabled={downloading || appClient !== "browser"}
           aria-label={downloading ? "Downloading..." : "Download image"}
         >
           <Download className="w-5 h-5" />

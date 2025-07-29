@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import {
-  calculateTotalRewards,
   getEthUsdcPrice,
+  convertEthToUsdc,
   getCachedData,
   setCachedData,
   CACHE_DURATIONS,
+  formatNumberWithSuffix,
 } from "@/lib/utils";
+import { isEarningsCredential } from "@/lib/total-earnings-config";
 import { useProfileCredentials } from "./useProfileCredentials";
 
 export function useProfileTotalEarnings(talentUUID: string) {
@@ -14,6 +16,12 @@ export function useProfileTotalEarnings(talentUUID: string) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Derived formatted value
+  const formattedTotalEarnings =
+    totalEarnings !== undefined
+      ? formatNumberWithSuffix(totalEarnings)
+      : undefined;
 
   // Use the existing credentials hook instead of making our own API call
   const {
@@ -44,7 +52,7 @@ export function useProfileTotalEarnings(talentUUID: string) {
       }
 
       // Check cache first
-      const cacheKey = `total_earnings_${talentUUID}`;
+      const cacheKey = `total_earnings_${talentUUID}_v0`;
       const cachedEarnings = getCachedData<number>(
         cacheKey,
         CACHE_DURATIONS.PROFILE_DATA,
@@ -59,24 +67,58 @@ export function useProfileTotalEarnings(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        // Transform grouped credentials into the structure expected by calculateTotalRewards
-        const credentials = credentialsGroups.flatMap((group) =>
-          group.points.map((point) => ({
-            name: point.label,
-            slug: point.slug,
-            points_calculation_logic: {
-              data_points: [
-                {
-                  value: `${point.readable_value} ${point.uom}`, // Reconstruct original value with currency
-                  readable_value: point.readable_value,
-                  uom: point.uom,
-                },
-              ],
-            },
-          })),
-        );
+        // Match earnings calculation logic used in app/[identifier]/layout.tsx
+        const ethPrice = await getEthUsdcPrice();
 
-        const total = await calculateTotalRewards(credentials, getEthUsdcPrice);
+        const issuerTotals = new Map<string, number>();
+
+        credentialsGroups.forEach((credentialGroup) => {
+          // Check if this group contains any earnings-related credentials
+          const hasEarningsCredentials = credentialGroup.points.some((point) =>
+            isEarningsCredential(point.slug || ""),
+          );
+
+          if (!hasEarningsCredentials) return;
+
+          let issuerTotal = 0;
+
+          credentialGroup.points.forEach((point) => {
+            if (!isEarningsCredential(point.slug || "")) return;
+            if (!point.readable_value || !point.uom) return;
+
+            const cleanValue = point.readable_value;
+            const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+            let value: number;
+            if (numericValue.includes("K")) {
+              value = parseFloat(numericValue.replace("K", "")) * 1000;
+            } else if (numericValue.includes("M")) {
+              value = parseFloat(numericValue.replace("M", "")) * 1000000;
+            } else {
+              value = parseFloat(numericValue);
+            }
+
+            if (isNaN(value)) return;
+
+            let usdValue = 0;
+            if (point.uom === "ETH") {
+              usdValue = convertEthToUsdc(value, ethPrice);
+            } else if (point.uom === "USDC") {
+              usdValue = value;
+            }
+
+            issuerTotal += usdValue;
+          });
+
+          if (issuerTotal > 0) {
+            issuerTotals.set(credentialGroup.issuer, issuerTotal);
+          }
+        });
+
+        const total = Array.from(issuerTotals.values()).reduce(
+          (sum, value) => sum + value,
+          0,
+        );
 
         setTotalEarnings(total);
 
@@ -98,5 +140,5 @@ export function useProfileTotalEarnings(talentUUID: string) {
     calculateEarnings();
   }, [talentUUID, credentialsGroups, credentialsLoading, credentialsError]);
 
-  return { totalEarnings, loading, error };
+  return { totalEarnings, formattedTotalEarnings, loading, error };
 }
