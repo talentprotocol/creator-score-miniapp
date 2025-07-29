@@ -68,10 +68,11 @@ export function ShareStatsModal({
     try {
       setDownloading(true);
       const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
-      const response = await fetch(`${baseUrl}/api/share-image/${talentUUID}`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const imageURL = `${baseUrl}/api/share-image/${talentUUID}`;
       if (appClient === "browser") {
+        const response = await fetch(imageURL);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = `${handle}-creator-score.png`; // Updated filename
@@ -80,7 +81,7 @@ export function ShareStatsModal({
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        openExternalUrl(url, null, appClient);
+        openExternalUrl(imageURL, null, appClient);
       }
     } catch (error) {
       console.error("Failed to download image:", error);
