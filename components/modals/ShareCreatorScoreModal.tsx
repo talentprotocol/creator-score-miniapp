@@ -271,7 +271,7 @@ export function ShareCreatorScoreModal({
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
               const displayName = identifier;
               const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: $${formattedEarnings}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
-              const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
+              const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
               const client = await detectClient(context);
               if (client === "browser") {
                 window.open(twitterUrl, "_blank");

@@ -536,7 +536,7 @@ export async function composeCast(
   const encodedText = encodeURIComponent(twitterText);
 
   // Build Twitter/X share URL with URL parameter (for testing)
-  let twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+  let twitterUrl = `https://x.com/intent/post?text=${encodedText}`;
 
   if (embeds && embeds.length > 0) {
     // Add URL as parameter - Twitter should show as link preview

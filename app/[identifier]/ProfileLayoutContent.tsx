@@ -268,7 +268,7 @@ function ProfileLayoutContentInner({
     const twitterShareText = `Check ${displayName}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @TalentProtocol 👇`;
 
     // Open Twitter web app with pre-filled tweet
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
+    const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
     if (client === "browser") {
       window.open(twitterUrl, "_blank");
     } else {
