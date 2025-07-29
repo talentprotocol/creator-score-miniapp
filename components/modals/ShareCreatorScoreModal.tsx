@@ -127,12 +127,13 @@ export function ShareCreatorScoreModal({
             left: "44.0%", // 210.49 / 478 * 100
             top: "28.6%", // 243.2 / 849 * 100
             width: "49.65%", // (158.25 * 1.5) / 478 * 100 (increased by 50%)
-            height: "2.5%", // 21.25 / 849 * 100
+            height: "3.5%", // Increased from 2.5% to 3.5% to accommodate descenders
             fontSize: "clamp(16px, 4.9vw, 23.7px)",
-            fontFamily: "Cy ExtraBold, sans-serif",
+            fontFamily: "var(--font-cy), sans-serif",
             overflow: "hidden",
             whiteSpace: "nowrap",
             textOverflow: "ellipsis",
+            lineHeight: "1.2", // Added line height to help with vertical alignment
           }}
         >
           {displayName}
@@ -147,7 +148,7 @@ export function ShareCreatorScoreModal({
             width: "38.4%", // (122.5 * 1.5) / 478 * 100 (increased by 50%)
             height: "2.5%", // 21.25 / 849 * 100
             fontSize: "clamp(12px, 2.7vw, 12.93px)",
-            fontFamily: "Cy SemiBold, sans-serif",
+            fontFamily: "var(--font-cy), sans-serif",
           }}
         >
           {formattedFollowers} total followers
@@ -162,7 +163,7 @@ export function ShareCreatorScoreModal({
             width: "29.7%", // 142.22 / 478 * 100
             height: "5.9%", // 49.78 / 849 * 100
             fontSize: "clamp(32px, 10.5vw, 50.62px)",
-            fontFamily: "Cy ExtraBold, sans-serif",
+            fontFamily: "var(--font-cy), sans-serif",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -180,7 +181,7 @@ export function ShareCreatorScoreModal({
             width: "29.7%", // 142.22 / 478 * 100
             height: "5.9%", // 49.78 / 849 * 100
             fontSize: "clamp(28px, 9.3vw, 44.44px)",
-            fontFamily: "Cy ExtraBold, sans-serif",
+            fontFamily: "var(--font-cy), sans-serif",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

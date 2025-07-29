@@ -13,6 +13,7 @@ import {
   getFrameMetadata,
   creatorScoreFrame,
 } from "@/lib/app-metadata";
+import localFont from "next/font/local";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -64,13 +65,39 @@ const globalErrorHandlingScript = `
   });
 `;
 
+const cyFont = localFont({
+  src: [
+    {
+      path: "../public/fonts/Cy Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/Cy SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/Cy Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/Cy ExtraBold.ttf",
+      weight: "800",
+      style: "normal",
+    },
+  ],
+  variable: "--font-cy",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className={cyFont.variable}>
       <head>
         <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
       </head>
