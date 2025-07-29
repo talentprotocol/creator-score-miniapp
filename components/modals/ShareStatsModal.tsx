@@ -21,6 +21,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Link, Download } from "lucide-react";
 
 interface ShareStatsModalProps {
+  appClient: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   talentUUID: string;
@@ -30,6 +31,7 @@ interface ShareStatsModalProps {
 }
 
 export function ShareStatsModal({
+  appClient,
   open,
   onOpenChange,
   talentUUID,
@@ -118,6 +120,7 @@ export function ShareStatsModal({
           size="icon"
           className="flex-1"
           aria-label="Share on X"
+          disabled={appClient !== "browser"}
         >
           <Image src="/logos/twitter.svg" alt="X" width={20} height={20} />
         </Button>
@@ -137,7 +140,7 @@ export function ShareStatsModal({
           variant="default"
           size="icon"
           className="flex-1"
-          disabled={downloading}
+          disabled={downloading || appClient !== "browser"}
           aria-label={downloading ? "Downloading..." : "Download image"}
         >
           <Download className="w-5 h-5" />

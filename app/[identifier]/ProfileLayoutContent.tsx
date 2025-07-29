@@ -22,6 +22,7 @@ import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import posthog from "posthog-js";
+import { useEffect } from "react";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -57,6 +58,7 @@ function ProfileLayoutContentInner({
   const { profile, profileData, refetchScore } = useProfileContext();
   const { context } = useMiniKit();
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+  const [client, setClient] = React.useState<string | null>(null);
 
   // Extract data from server-fetched profileData
   const {
@@ -101,6 +103,12 @@ function ProfileLayoutContentInner({
     totalEarnings,
   });
 
+  useEffect(() => {
+    detectClient(context).then((client) => {
+      setClient(client);
+    });
+  }, [context]);
+
   // Main share stats handler - detects environment and either opens modal or shares directly
   const handleShareStats = React.useCallback(async () => {
     // Track share stats click
@@ -113,9 +121,13 @@ function ProfileLayoutContentInner({
       rank,
     });
 
-    const client = await detectClient(context);
+    let localClient = client;
+    if (!localClient) {
+      localClient = await detectClient(context);
+      setClient(localClient);
+    }
 
-    if (client === "browser") {
+    if (localClient === "browser") {
       // In browser, open the modal for user to choose
       setIsShareModalOpen(true);
     } else {
@@ -393,6 +405,7 @@ function ProfileLayoutContentInner({
         handle={profile?.fname || identifier}
         onShareFarcaster={handleShareFarcaster}
         onShareTwitter={handleShareTwitter}
+        appClient={client}
       />
     </PageContainer>
   );
