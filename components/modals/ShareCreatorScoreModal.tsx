@@ -20,7 +20,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCountingAnimation } from "@/hooks/useCountingAnimation";
 import { useShareData } from "@/hooks/useShareData";
 import { X, Download } from "lucide-react";
-import { cn, formatWithK } from "@/lib/utils";
+import { cn, formatNumberWithSuffix } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { detectClient } from "@/lib/utils";
 import posthog from "posthog-js";
@@ -186,7 +186,7 @@ export function ShareCreatorScoreModal({
             justifyContent: "center",
           }}
         >
-          ${formatWithK(animatedEarnings)}
+          {formatNumberWithSuffix(animatedEarnings)}
         </div>
 
         {/* Share Buttons */}
