@@ -33,13 +33,13 @@ export function CreatorNotFoundCard() {
             the leaderboard.
           </p>
           <div className="space-y-2">
-            <Button asChild variant="default" className="w-full">
+            <Button asChild styling="default" className="w-full">
               <Link href="/explore">
                 <Search className="w-4 h-4 mr-2" />
                 Explore Creators
               </Link>
             </Button>
-            <Button asChild variant="default" className="w-full">
+            <Button asChild styling="default" className="w-full">
               <Link href="/leaderboard">
                 <Trophy className="w-4 h-4 mr-2" />
                 Go to Leaderboard

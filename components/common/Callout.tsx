@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, X } from "lucide-react";
 import Link from "next/link";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { cn, openExternalUrl } from "@/lib/utils";
@@ -8,49 +8,83 @@ interface CalloutProps {
   children: React.ReactNode;
   href?: string;
   variant?: "brand" | "neutral";
+  icon?: React.ReactNode;
+  external?: boolean;
+  textSize?: "sm" | "xs";
   className?: string;
   onClick?: () => void;
+  onClose?: () => void;
 }
 
 export function Callout({
   children,
   href,
   variant = "brand",
+  icon,
+  external,
+  textSize = "sm",
   className,
   onClick,
+  onClose,
 }: CalloutProps) {
+  // Auto-detect if we should show left icon based on text length
+  const shouldShowLeftIcon = icon && textSize === "sm";
   const { context } = useMiniKit();
-  const isExternal = href?.startsWith("http");
-  const Icon = isExternal ? ExternalLink : ArrowRight;
+  const isExternal = external ?? href?.startsWith("http");
+  const RightIcon = isExternal ? ExternalLink : ArrowRight;
 
   const content = (
     <>
-      <div className="flex-1 text-left">{children}</div>
+      <div className="flex items-center gap-3">
+        {shouldShowLeftIcon && (
+          <div
+            className={`h-4 w-4 ${variant === "brand" ? "text-purple-700" : "text-muted-foreground"}`}
+          >
+            {React.cloneElement(icon as React.ReactElement, {
+              className: "h-4 w-4",
+            })}
+          </div>
+        )}
+        <span
+          className={`font-medium max-w-[38ch] sm:max-w-[80ch] overflow-hidden text-ellipsis whitespace-nowrap ${textSize === "sm" ? "text-sm" : "text-xs"}`}
+        >
+          {children}
+        </span>
+      </div>
       {href && (
-        <Icon className="size-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
+        <RightIcon
+          className={`h-4 w-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5 ${variant === "brand" ? "text-purple-700" : "text-muted-foreground"}`}
+        />
+      )}
+      {onClose && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className={`h-4 w-4 shrink-0 transition-colors duration-150 ${variant === "brand" ? "text-purple-700 hover:text-purple-800" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <X className="h-4 w-4" />
+        </button>
       )}
     </>
   );
 
   const baseStyles =
-    "w-full rounded-xl px-6 py-4 my-1 flex items-center text-xs transition-colors duration-150";
+    "w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl transition-colors duration-150";
 
   const variantStyles = {
-    brand: "bg-purple-100 text-purple-700",
-    neutral: "bg-muted text-muted-foreground",
+    brand: href
+      ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+      : "bg-purple-100 text-purple-700",
+    neutral: href
+      ? "bg-muted text-muted-foreground hover:bg-gray-200"
+      : "bg-muted text-muted-foreground",
   };
-
-  const hoverStyles = href
-    ? {
-        brand: "hover:bg-purple-200",
-        neutral: "hover:bg-muted/80",
-      }
-    : {};
 
   const styles = cn(
     baseStyles,
     variantStyles[variant],
-    href && hoverStyles[variant],
     href && "group cursor-pointer",
     className,
   );

@@ -108,7 +108,7 @@ export function FarcasterAccessModal({
           <div className="flex flex-col gap-2">
             <Button
               onClick={handleFarcasterClick}
-              variant="special"
+              styling="brand"
               className="w-full"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
@@ -116,7 +116,7 @@ export function FarcasterAccessModal({
             </Button>
 
             <Button
-              variant="default"
+              styling="default"
               onClick={() => login({ walletChainType: "ethereum-only" })}
               className="w-full"
               disabled={!ready}
@@ -147,14 +147,14 @@ export function FarcasterAccessModal({
           <div className="flex flex-col gap-2">
             <Button
               onClick={handleFarcasterClick}
-              variant="special"
+              styling="brand"
               className="w-full"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
             </Button>
             <Button
-              variant="default"
+              styling="default"
               onClick={() => login({ walletChainType: "ethereum-only" })}
               className="w-full"
               disabled={!ready}

@@ -14,14 +14,12 @@ import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
 import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
-
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
-import { Button } from "@/components/ui/button";
+import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { getVersionDisplay } from "@/lib/version";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import {
-  ExternalLink,
   FileText,
   MessageCircle,
   LogOut,
@@ -31,10 +29,12 @@ import {
   Info,
   CheckCircle,
   XCircle,
+  Share,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
-import { TestShareScoreButton } from "@/components/settings/TestShareScoreButton";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
+import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
 
 export default function SettingsPage() {
@@ -42,6 +42,7 @@ export default function SettingsPage() {
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useUserResolution();
   const posthog = usePostHog();
+  const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore();
 
   const {
     accounts,
@@ -208,28 +209,6 @@ export default function SettingsPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Notifications - Temporarily hidden while focusing on core functionality */}
-          {/* TODO: Re-enable when notification system is ready for production */}
-          {/* 
-          <AccordionItem
-            value="notifications"
-            className="bg-muted rounded-xl border-0 shadow-none"
-          >
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Notifications</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <NotificationsSection
-                settings={settings}
-                onUpdateNotifications={updateNotifications}
-              />
-            </AccordionContent>
-          </AccordionItem>
-          */}
-
           {/* Account Settings */}
           <AccordionItem
             value="account-settings"
@@ -253,67 +232,48 @@ export default function SettingsPage() {
           </AccordionItem>
 
           {/* About */}
-          <div className="bg-muted rounded-xl border-0 shadow-none">
-            <Button
-              type="button"
-              variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
-              onClick={() => handleExternalLinkClick("about")}
-            >
-              <div className="flex items-center gap-3">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">About</span>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
+          <Callout
+            variant="neutral"
+            icon={<Info />}
+            href="https://talentprotocol.com/about"
+            external
+            onClick={() => handleExternalLinkClick("about")}
+          >
+            About
+          </Callout>
 
           {/* Dev Docs */}
-          <div className="bg-muted rounded-xl border-0 shadow-none">
-            <Button
-              type="button"
-              variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
-              onClick={() => handleExternalLinkClick("dev_docs")}
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Dev Docs</span>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
+          <Callout
+            variant="neutral"
+            icon={<FileText />}
+            href="https://docs.talentprotocol.com/"
+            external
+            onClick={() => handleExternalLinkClick("dev_docs")}
+          >
+            Dev Docs
+          </Callout>
 
           {/* Support */}
-          <div className="bg-muted rounded-xl border-0 shadow-none">
-            <Button
-              type="button"
-              variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl bg-muted border-0 hover:bg-muted/80"
-              onClick={() => handleExternalLinkClick("support")}
-            >
-              <div className="flex items-center gap-3">
-                <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Support</span>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
+          <Callout
+            variant="neutral"
+            icon={<MessageCircle />}
+            href="https://talentprotocol.com/support"
+            external
+            onClick={() => handleExternalLinkClick("support")}
+          >
+            Support
+          </Callout>
 
           {/* Log Out - with extra spacing above */}
           {authenticated && (
             <div className="bg-muted rounded-xl border-0 shadow-none mt-6">
-              <Button
-                type="button"
-                variant="destructive"
+              <ButtonFullWidth
+                styling="default"
+                icon={<LogOut className="h-4 w-4" />}
                 onClick={handleLogoutClick}
-                className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
               >
-                <div className="flex items-center gap-3">
-                  <LogOut className="h-4 w-4" />
-                  <span className="font-medium">Log Out</span>
-                </div>
-              </Button>
+                <span className="font-medium">Log Out</span>
+              </ButtonFullWidth>
             </div>
           )}
         </Accordion>
@@ -321,7 +281,13 @@ export default function SettingsPage() {
         {/* Test Share Score Modal - Development Only */}
         {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
           <div className="mt-6">
-            <TestShareScoreButton />
+            <ButtonFullWidth
+              styling="destructive"
+              icon={<Share className="h-4 w-4" />}
+              onClick={openForTesting}
+            >
+              Test Share Score Modal
+            </ButtonFullWidth>
           </div>
         )}
 
@@ -355,6 +321,9 @@ export default function SettingsPage() {
           </p>
         </div>
       </Section>
+
+      {/* Share Score Modal */}
+      <ShareCreatorScoreModal open={isOpen} onOpenChange={onOpenChange} />
     </PageContainer>
   );
 }

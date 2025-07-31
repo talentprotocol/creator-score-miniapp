@@ -140,7 +140,7 @@ export function ShareStatsModal({
       <div className="flex justify-between gap-2">
         <Button
           onClick={handleFarcasterShare}
-          variant="default"
+          styling="default"
           size="icon"
           className="flex-1"
           aria-label="Share on Farcaster"
@@ -155,7 +155,7 @@ export function ShareStatsModal({
 
         <Button
           onClick={handleTwitterShare}
-          variant="default"
+          styling="default"
           size="icon"
           className="flex-1"
           aria-label="Share on X"
@@ -166,7 +166,7 @@ export function ShareStatsModal({
 
         <Button
           onClick={handleCopyLink}
-          variant="default"
+          styling="default"
           size="icon"
           className="flex-1"
           aria-label={copied ? "Link copied!" : "Copy link"}
@@ -176,7 +176,7 @@ export function ShareStatsModal({
 
         <Button
           onClick={handleDownload}
-          variant="default"
+          styling="default"
           size="icon"
           className="flex-1"
           disabled={downloading || appClient !== "browser"}

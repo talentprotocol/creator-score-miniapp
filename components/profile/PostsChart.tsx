@@ -93,7 +93,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
           {yearlyData.map((yearData) => (
             <Button
               key={yearData.year}
-              variant={selectedYear === yearData.year ? "special" : "default"}
+              styling={selectedYear === yearData.year ? "brand" : "default"}
               size="sm"
               onClick={() => setSelectedYear(yearData.year)}
               className="transition-all duration-200"

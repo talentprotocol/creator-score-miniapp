@@ -18,7 +18,7 @@ import { useProfileActions } from "@/hooks/useProfileActions";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
-import { Share, RotateCcw, Loader2 } from "lucide-react";
+import { Share, RotateCcw, Loader2, Settings } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -281,17 +281,13 @@ function ProfileLayoutContentInner({
 
         {/* Action buttons - show for all profiles */}
         <div className="flex flex-row gap-4 w-full mt-6">
-          <Button
-            onClick={handleShareStats}
-            variant="special"
-            className="flex-1"
-          >
+          <Button onClick={handleShareStats} styling="brand" className="flex-1">
             <Share className="w-4 h-4 mr-2" />
             Share Stats
           </Button>
           <Button
             onClick={handleRefreshScore}
-            variant="default"
+            styling="default"
             className={`flex-1 ${
               refreshError ? "text-red-700 hover:border-red-400" : ""
             }`}
@@ -348,6 +344,7 @@ function ProfileLayoutContentInner({
             <Callout
               variant="brand"
               href="/settings"
+              textSize="xs"
               onClick={() => {
                 // Track connect accounts callout click
                 posthog?.capture("profile_connect_accounts_clicked", {
@@ -360,7 +357,7 @@ function ProfileLayoutContentInner({
                 });
               }}
             >
-              Connect more accounts to increase your Creator Score
+              Connect accounts to increase your Creator Score
             </Callout>
           </div>
         )}

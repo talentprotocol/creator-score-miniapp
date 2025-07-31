@@ -89,7 +89,7 @@ export function AccountSettingsSection({
 
             <Button
               type="button"
-              variant="destructive"
+              styling="destructive"
               size="sm"
               disabled={true}
             >

@@ -267,7 +267,7 @@ export default function LeaderboardPage() {
             {/* Load More button - only show if there are more entries and we haven't reached 200 */}
             {hasMore && visibleEntries.length < 200 && (
               <Button
-                variant="default"
+                styling="default"
                 className="w-full flex items-center justify-center mt-4"
                 onClick={loadMore}
                 disabled={loading}
@@ -321,7 +321,11 @@ export default function LeaderboardPage() {
         {/* Sponsor Callout */}
         {activeTab === "sponsors" && (
           <div className="mt-4">
-            <Callout variant="brand" href="https://farcaster.xyz/juampi">
+            <Callout
+              variant="brand"
+              href="https://farcaster.xyz/juampi"
+              textSize="xs"
+            >
               Want to join as a sponsor? Reach out to @juampi
             </Callout>
           </div>

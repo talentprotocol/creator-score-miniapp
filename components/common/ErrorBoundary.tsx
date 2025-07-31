@@ -58,7 +58,7 @@ export class ErrorBoundary extends React.Component<
               </div>
             </div>
           </Callout>
-          <Button onClick={this.resetError} variant="destructive" size="sm">
+          <Button onClick={this.resetError} styling="destructive" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>

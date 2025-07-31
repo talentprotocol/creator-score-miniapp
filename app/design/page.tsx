@@ -1,10 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Home, Search, Trophy, Settings, Info } from "lucide-react";
+import {
+  Heart,
+  Home,
+  Search,
+  Trophy,
+  Settings,
+  Info,
+  Trash2,
+  MessageCircle,
+  ExternalLink,
+  FileText,
+  Users,
+} from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { TabContainer } from "@/components/common/TabContainer";
 import { Callout } from "@/components/common/Callout";
 import { cn } from "@/lib/utils";
@@ -236,20 +249,40 @@ export default function DesignPage() {
       case "buttons":
         return (
           <div className="space-y-6">
-            <Section title="Button Variants">
-              <div className="flex flex-wrap gap-4">
-                <Button>Default (Outline)</Button>
-                <Button variant="special">Brand</Button>
-                <Button variant="destructive">Destructive</Button>
-                <Button disabled>Disabled</Button>
-                <div className="w-full mt-2">
-                  <div className="text-xs text-muted-foreground font-mono space-y-1">
-                    <div>default: border-input hover:border-gray-400</div>
+            <Section title="Button Components">
+              <div className="space-y-6">
+                {/* Regular Buttons */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    Base Button
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/ui/button.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/ui/button.tsx
+                    </a>
+                  </h3>
+                  <div className="flex flex-wrap gap-4">
+                    <Button styling="default">Default</Button>
+                    <Button styling="brand">Brand</Button>
+                    <Button styling="destructive">Destructive</Button>
+                    <Button styling="ghost">Ghost</Button>
+                    <Button disabled>Disabled</Button>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground font-mono space-y-1">
                     <div>
-                      special: bg-purple-100 hover:bg-purple-200 text-purple-700
+                      default: border border-input hover:border-gray-400
+                    </div>
+                    <div>
+                      brand: bg-purple-100 hover:bg-purple-200 text-purple-700
                     </div>
                     <div>
                       destructive: bg-red-100 hover:bg-red-200 text-red-700
+                    </div>
+                    <div>
+                      ghost: border-0 bg-transparent hover:text-foreground
                     </div>
                     <div>
                       disabled: opacity-50 cursor-not-allowed
@@ -257,66 +290,177 @@ export default function DesignPage() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </Section>
 
-            <Section title="Ghost Buttons">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-primary">
-                    Info Button Example
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 text-muted-foreground hover:text-primary"
-                  >
-                    <Icon icon={Info} size="sm" color="muted" />
-                  </Button>
+                {/* Icon Buttons */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Icon Buttons</h3>
+                  <div className="flex flex-wrap gap-4 items-center">
+                    <Button styling="default" size="icon">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                    <Button styling="brand" size="icon">
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                    <Button styling="destructive" size="icon">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      styling="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground font-mono">
-                  ghost: no background, no border, hover:text-foreground
-                </div>
-              </div>
-            </Section>
 
-            <Section title="Callouts">
-              <div className="space-y-6">
-                {/* Not Clickable */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium">Not Clickable</h3>
+                {/* Full-Width Buttons */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    Full-Width Buttons
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/ui/button-full-width.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/ui/button-full-width.tsx
+                    </a>
+                  </h3>
                   <div className="space-y-3">
-                    <Callout variant="brand">
+                    <ButtonFullWidth
+                      styling="default"
+                      icon={<Settings className="h-4 w-4" />}
+                    >
+                      Settings (Default)
+                    </ButtonFullWidth>
+
+                    <ButtonFullWidth
+                      styling="brand"
+                      icon={<Heart className="h-4 w-4" />}
+                    >
+                      Follow (Brand)
+                    </ButtonFullWidth>
+
+                    <ButtonFullWidth
+                      styling="destructive"
+                      icon={<Trash2 className="h-4 w-4" />}
+                    >
+                      Delete Account (Destructive)
+                    </ButtonFullWidth>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground font-mono space-y-1">
+                    <div>
+                      Layout: w-full flex justify-start items-center gap-3 px-6
+                      py-4 h-auto rounded-xl
+                    </div>
+                    <div>
+                      Props: icon (required), styling, size, onClick, etc.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <Section title="Button Sizes">
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-4 items-end">
+                  <div className="space-y-2 text-center">
+                    <Button size="sm">Small</Button>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      sm: h-8 px-3 text-xs
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-center">
+                    <Button size="default">Default</Button>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      default: h-9 px-4
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-center">
+                    <Button size="lg">Large</Button>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      lg: h-10 px-8
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-center">
+                    <Button size="icon">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      icon: h-9 w-9
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <Section title="Callout Components">
+              <div className="space-y-6">
+                {/* Static Callouts */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    Static Callouts
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/Callout.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/Callout.tsx
+                    </a>
+                  </h3>
+                  <div className="space-y-3">
+                    <Callout
+                      variant="brand"
+                      icon={<Info />}
+                      onClose={() => console.log("Closed brand callout")}
+                    >
                       Brand callout - not clickable
                     </Callout>
-                    <Callout variant="neutral">
-                      Neutral callout - not clickable
+                    <Callout
+                      variant="neutral"
+                      onClose={() => console.log("Closed neutral callout")}
+                      textSize="xs"
+                    >
+                      Neutral callout with longer text - no icon automatically
+                      hidden
                     </Callout>
                   </div>
                 </div>
 
-                {/* External Links */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium">External Links</h3>
+                {/* Interactive Callouts */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3">
+                    Interactive Callouts
+                  </h3>
                   <div className="space-y-3">
-                    <Callout variant="brand" href="https://example.com">
+                    <Callout
+                      variant="brand"
+                      href="https://example.com"
+                      external
+                      icon={<Heart />}
+                    >
                       Brand callout - external link
                     </Callout>
-                    <Callout variant="neutral" href="https://example.com">
+                    <Callout
+                      variant="neutral"
+                      href="https://example.com"
+                      external
+                      icon={<FileText />}
+                    >
                       Neutral callout - external link
                     </Callout>
-                  </div>
-                </div>
-
-                {/* Internal Links */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium">Internal Links</h3>
-                  <div className="space-y-3">
-                    <Callout variant="brand" href="/profile">
+                    <Callout
+                      variant="brand"
+                      href="/profile"
+                      icon={<Settings />}
+                    >
                       Brand callout - internal link
                     </Callout>
-                    <Callout variant="neutral" href="/profile">
-                      Neutral callout - internal link
+                    <Callout variant="neutral" href="/profile" textSize="xs">
+                      Neutral callout with longer text for internal link - no
+                      icon
                     </Callout>
                   </div>
                 </div>
@@ -333,6 +477,14 @@ export default function DesignPage() {
                     cursor-pointer
                   </div>
                   <div>Icon animation: group-hover:translate-x-0.5</div>
+                  <div>Icons: h-4 w-4 text-muted-foreground</div>
+                  <div>
+                    Text sizes: text-sm (default), text-xs (for longer text)
+                  </div>
+                  <div>
+                    Auto behavior: text-xs hides left icon, text-sm shows left
+                    icon
+                  </div>
                 </div>
               </div>
             </Section>

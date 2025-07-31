@@ -92,13 +92,13 @@ export function AccountManagementModal({
           <div className="flex flex-col gap-2">
             <Button
               onClick={handleManageAccounts}
-              variant="special"
+              styling="brand"
               className="w-full"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Manage in Talent App
             </Button>
-            <Button variant="default" onClick={handleCancel} className="w-full">
+            <Button styling="default" onClick={handleCancel} className="w-full">
               Cancel
             </Button>
           </div>
@@ -120,13 +120,13 @@ export function AccountManagementModal({
         <div className="flex flex-col gap-2 mt-4">
           <Button
             onClick={handleManageAccounts}
-            variant="special"
+            styling="brand"
             className="w-full"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Manage in Talent App
           </Button>
-          <Button variant="default" onClick={handleCancel} className="w-full">
+          <Button styling="default" onClick={handleCancel} className="w-full">
             Cancel
           </Button>
         </div>

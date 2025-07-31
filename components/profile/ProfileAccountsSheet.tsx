@@ -10,7 +10,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Icon } from "@/components/ui/icon";
-import { ChevronDown, ExternalLink } from "lucide-react";
+import { ChevronDown, ExternalLink, Copy } from "lucide-react";
 import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
 import { truncateAddress, formatK, openExternalUrl } from "@/lib/utils";
 import type { SocialAccount } from "@/app/services/types";
@@ -247,7 +247,7 @@ function WalletAddressesList({
   const WalletItem = ({ address }: { address: string }) => (
     <div
       key={address}
-      className="flex items-center gap-3 py-2 cursor-pointer transition-colors"
+      className="flex items-center gap-3 py-2 cursor-pointer transition-colors active:bg-gray-200"
       onClick={() => handleCopyAddress(address)}
     >
       <svg
@@ -270,12 +270,24 @@ function WalletAddressesList({
       <span className="flex-1 text-foreground font-mono text-sm truncate">
         {truncateAddress(address)}
       </span>
-      <div className="text-gray-600 p-1 flex items-center justify-end min-w-[60px]">
-        {copiedAddress === address ? (
-          <span className="text-xs text-gray-500">Copied</span>
-        ) : (
+      <div className="flex items-center gap-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCopyAddress(address);
+          }}
+          className="p-1 hover:bg-gray-100 active:bg-gray-200 rounded transition-colors"
+          aria-label={`Copy address ${truncateAddress(address)}`}
+        >
+          {copiedAddress === address ? (
+            <span className="text-xs text-green-600 font-medium">Copied</span>
+          ) : (
+            <Icon icon={Copy} size="sm" color="muted" />
+          )}
+        </button>
+        <div className="text-gray-600 p-1">
           <Icon icon={ExternalLink} size="sm" color="muted" />
-        )}
+        </div>
       </div>
     </div>
   );
