@@ -5,10 +5,6 @@ import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
 import { useProfileContext } from "@/contexts/ProfileContext";
 import type { SocialAccount } from "@/app/services/types";
 
-interface StatsTabContentProps {
-  identifier: string;
-}
-
 // Platform URL mapping for earnings platforms
 const getPlatformUrl = (
   platformName: string,
@@ -69,7 +65,7 @@ const getPlatformUrl = (
   return undefined;
 };
 
-export function StatsTabContent({}: StatsTabContentProps) {
+export function StatsContent() {
   const { profileData } = useProfileContext();
 
   // Extract data from server-fetched profileData
@@ -89,8 +85,6 @@ export function StatsTabContent({}: StatsTabContentProps) {
   const postsError = null;
   const socialAccountsError = null;
   const earningsError = null;
-
-  // Data comes from server, no loading check needed
 
   // Process followers breakdown with URLs
   const processFollowersBreakdown = () => {
