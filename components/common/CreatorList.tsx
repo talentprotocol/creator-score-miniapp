@@ -1,0 +1,116 @@
+"use client";
+
+import React from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+export interface CreatorItem {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  rank?: number;
+  primaryMetric?: string; // e.g., "$1,250" for rewards
+  secondaryMetric?: string; // e.g., "Creator Score: 5,230"
+}
+
+interface CreatorListProps {
+  items: CreatorItem[];
+  onItemClick?: (item: CreatorItem) => void;
+  loading?: boolean;
+  pinnedIndex?: number;
+  className?: string;
+}
+
+export function CreatorList({
+  items,
+  onItemClick,
+  loading = false,
+  pinnedIndex,
+  className,
+}: CreatorListProps) {
+  if (loading && items.length === 0) {
+    return (
+      <div className={cn("space-y-3", className)}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 p-3">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="flex-1 space-y-1">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <div className="space-y-1 text-right">
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className={cn("text-center py-8 text-muted-foreground", className)}>
+        <p className="text-sm">No items found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("w-full", className)}>
+      <div className="bg-background rounded-xl border border-input overflow-hidden">
+        {items.map((item, index) => (
+          <div key={item.id}>
+            <div
+              className={cn(
+                "flex items-center gap-3 p-3 transition-colors cursor-pointer hover:bg-muted active:bg-muted/80",
+                pinnedIndex === index
+                  ? "rounded-lg bg-muted hover:bg-muted/80 mb-2"
+                  : "",
+                onItemClick && "cursor-pointer",
+              )}
+              onClick={() => onItemClick?.(item)}
+            >
+              {/* Rank (optional) */}
+              {item.rank !== undefined && (
+                <span className="text-sm font-medium w-6">#{item.rank}</span>
+              )}
+
+              {/* Avatar */}
+              <Avatar className="h-8 w-8">
+                {item.avatarUrl ? (
+                  <AvatarImage src={item.avatarUrl} />
+                ) : (
+                  <AvatarFallback>{item.name[0]}</AvatarFallback>
+                )}
+              </Avatar>
+
+              {/* Name and secondary metric */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate leading-tight">
+                  {item.name}
+                </p>
+                {item.secondaryMetric && (
+                  <p className="text-xs text-muted-foreground">
+                    {item.secondaryMetric}
+                  </p>
+                )}
+              </div>
+
+              {/* Primary metric (optional) */}
+              {item.primaryMetric && (
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-medium">
+                    {item.primaryMetric}
+                  </span>
+                </div>
+              )}
+            </div>
+            {index < items.length - 1 && <div className="h-px bg-border" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

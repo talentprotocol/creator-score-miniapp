@@ -18,7 +18,7 @@ import { useProfileActions } from "@/hooks/useProfileActions";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
-import { Share, RotateCcw, Loader2, Settings } from "lucide-react";
+import { Share, RotateCcw, Loader2 } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -194,6 +194,7 @@ function ProfileLayoutContentInner({
     profileData,
     rank,
     posthog,
+    client,
   ]);
 
   // Handle Twitter sharing from modal (browser only)
@@ -247,6 +248,7 @@ function ProfileLayoutContentInner({
     profileData,
     rank,
     posthog,
+    client,
   ]);
 
   // Profile data comes from server-side, no loading state needed

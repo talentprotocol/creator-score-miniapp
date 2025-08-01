@@ -3,12 +3,7 @@
 import { useUserResolution } from "@/hooks/useUserResolution";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { SectionAccordion } from "@/components/common/SectionAccordion";
 import { Callout } from "@/components/common/Callout";
 import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
@@ -106,14 +101,6 @@ export default function SettingsPage() {
   const socialAccounts = accounts?.social || [];
   const walletAccounts = accounts?.wallet || [];
 
-  // Handle section expansion tracking
-  const handleSectionExpand = (sectionName: string) => {
-    posthog?.capture("settings_section_expanded", {
-      section_name: sectionName,
-      is_own_profile: true, // Settings page is always own profile
-    });
-  };
-
   // Handle external link clicks
   const handleExternalLinkClick = (linkType: string) => {
     posthog?.capture("settings_external_link_clicked", {
@@ -141,97 +128,60 @@ export default function SettingsPage() {
 
       {/* Content section */}
       <Section variant="content">
-        <Accordion type="single" collapsible className="w-full space-y-2">
-          {/* Connected Socials */}
-          <AccordionItem
-            value="connected-socials"
-            className="bg-muted rounded-xl border-0 shadow-none"
-          >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("connected_socials")}
-            >
-              <div className="flex items-center gap-3">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Connected Socials</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <ConnectedSocialsSection
-                accounts={socialAccounts || []}
-                onAction={performAction}
-              />
-            </AccordionContent>
-          </AccordionItem>
+        <SectionAccordion
+          type="single"
+          variant="gray"
+          sections={[
+            {
+              id: "connected-socials",
+              title: "Connected Socials",
+              icon: <Users className="h-4 w-4" />,
+              content: (
+                <ConnectedSocialsSection
+                  accounts={socialAccounts || []}
+                  onAction={performAction}
+                />
+              ),
+            },
+            {
+              id: "connected-wallets",
+              title: "Connected Wallets",
+              icon: <Wallet className="h-4 w-4" />,
+              content: (
+                <ConnectedWalletsSection
+                  accounts={walletAccounts || []}
+                  onAction={performAction}
+                />
+              ),
+            },
+            {
+              id: "proof-of-humanity",
+              title: "Proof of Humanity",
+              icon: hasVerifiedHumanityCredentials ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              ),
+              content: (
+                <ProofOfHumanitySection credentials={humanityCredentials} />
+              ),
+            },
+            {
+              id: "account-settings",
+              title: "Account Settings",
+              icon: <Settings className="h-4 w-4" />,
+              content: (
+                <AccountSettingsSection
+                  settings={settings}
+                  onAction={performAction}
+                />
+              ),
+            },
+          ]}
+        />
 
-          {/* Connected Wallets */}
-          <AccordionItem
-            value="connected-wallets"
-            className="bg-muted rounded-xl border-0 shadow-none"
-          >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("connected_wallets")}
-            >
-              <div className="flex items-center gap-3">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Connected Wallets</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <ConnectedWalletsSection
-                accounts={walletAccounts || []}
-                onAction={performAction}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Proof of Humanity */}
-          <AccordionItem
-            value="proof-of-humanity"
-            className="bg-muted rounded-xl border-0 shadow-none"
-          >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("proof_of_humanity")}
-            >
-              <div className="flex items-center gap-3">
-                {hasVerifiedHumanityCredentials ? (
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-muted-foreground" />
-                )}
-                <span className="font-medium">Proof of Humanity</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <ProofOfHumanitySection credentials={humanityCredentials} />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Account Settings */}
-          <AccordionItem
-            value="account-settings"
-            className="bg-muted rounded-xl border-0 shadow-none"
-          >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("account_settings")}
-            >
-              <div className="flex items-center gap-3">
-                <Settings className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Account Settings</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <AccountSettingsSection
-                settings={settings}
-                onAction={performAction}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* About */}
+        {/* About */}
+        <div className="mt-2">
           <Callout
             variant="neutral"
             icon={<Info />}
@@ -241,8 +191,10 @@ export default function SettingsPage() {
           >
             About
           </Callout>
+        </div>
 
-          {/* Dev Docs */}
+        {/* Dev Docs */}
+        <div className="mt-2">
           <Callout
             variant="neutral"
             icon={<FileText />}
@@ -252,8 +204,10 @@ export default function SettingsPage() {
           >
             Dev Docs
           </Callout>
+        </div>
 
-          {/* Support */}
+        {/* Support */}
+        <div className="mt-2">
           <Callout
             variant="neutral"
             icon={<MessageCircle />}
@@ -263,24 +217,24 @@ export default function SettingsPage() {
           >
             Support
           </Callout>
+        </div>
 
-          {/* Log Out - with extra spacing above */}
-          {authenticated && (
-            <div className="bg-muted rounded-xl border-0 shadow-none mt-6">
-              <ButtonFullWidth
-                styling="default"
-                icon={<LogOut className="h-4 w-4" />}
-                onClick={handleLogoutClick}
-              >
-                <span className="font-medium">Log Out</span>
-              </ButtonFullWidth>
-            </div>
-          )}
-        </Accordion>
+        {/* Log Out - with extra spacing above */}
+        {authenticated && (
+          <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
+            <ButtonFullWidth
+              styling="default"
+              icon={<LogOut className="h-4 w-4" />}
+              onClick={handleLogoutClick}
+            >
+              <span className="font-medium">Log Out</span>
+            </ButtonFullWidth>
+          </div>
+        )}
 
         {/* Test Share Score Modal - Development Only */}
         {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
-          <div className="mt-6">
+          <div className="mt-2">
             <ButtonFullWidth
               styling="destructive"
               icon={<Share className="h-4 w-4" />}

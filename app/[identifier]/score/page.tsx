@@ -2,7 +2,6 @@
 
 import { ScoreProgressAccordion } from "@/components/profile/ScoreProgressAccordion";
 import { ScoreDataPoints } from "@/components/profile/ScoreDataPoints";
-import { Callout } from "@/components/common/Callout";
 
 interface ProfileScorePageProps {
   params: { identifier: string };

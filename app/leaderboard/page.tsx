@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
@@ -11,7 +10,7 @@ import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
 import { formatWithK, formatCurrency, openExternalUrl } from "@/lib/utils";
-import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
+import { CreatorList } from "@/components/common/CreatorList";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
@@ -244,25 +243,21 @@ export default function LeaderboardPage() {
               </div>
             )}
             {/* Leaderboard list */}
-            <div className="overflow-hidden rounded-lg bg-gray-50">
-              {visibleEntries.map((user, index) => (
-                <div key={user.id}>
-                  <LeaderboardRow
-                    rank={user.rank}
-                    name={user.name}
-                    avatarUrl={user.pfp}
-                    score={user.score}
-                    rewards={getUsdcRewards(user.score, user.rank)}
-                    // onClick={() => handleEntryClick(user)}
-                    rewardsLoading={!userTop200Entry && top200Loading}
-                    talentUuid={user.talent_protocol_id}
-                  />
-                  {index < visibleEntries.length - 1 && (
-                    <div className="h-px bg-gray-200" />
-                  )}
-                </div>
-              ))}
-            </div>
+            <CreatorList
+              items={visibleEntries.map((user) => ({
+                id: String(user.talent_protocol_id),
+                name: user.name,
+                avatarUrl: user.pfp,
+                rank: user.rank,
+                secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
+                primaryMetric: getUsdcRewards(user.score, user.rank),
+              }))}
+              onItemClick={(item) => {
+                // Navigate to profile page
+                window.location.href = `/${item.id}`;
+              }}
+              loading={loading}
+            />
 
             {/* Load More button - only show if there are more entries and we haven't reached 200 */}
             {hasMore && visibleEntries.length < 200 && (
@@ -286,36 +281,22 @@ export default function LeaderboardPage() {
         )}
 
         {activeTab === "sponsors" && (
-          <div className="overflow-hidden rounded-lg bg-gray-50">
-            {ACTIVE_SPONSORS.map((sponsor, index, array) => (
-              <div key={sponsor.id}>
-                <div
-                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => openExternalUrl(sponsor.farcasterUrl)}
-                >
-                  <span className="text-sm font-medium w-6">
-                    #{sponsor.rank}
-                  </span>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={sponsor.avatar} />
-                    <AvatarFallback>{sponsor.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{sponsor.name}</p>
-                    <p className="text-xs text-gray-600">{sponsor.handle}</p>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-sm font-medium">
-                      {formatCurrency(sponsor.amount)}
-                    </span>
-                  </div>
-                </div>
-                {index < array.length - 1 && (
-                  <div className="h-px bg-gray-200" />
-                )}
-              </div>
-            ))}
-          </div>
+          <CreatorList
+            items={ACTIVE_SPONSORS.map((sponsor) => ({
+              id: sponsor.id,
+              name: sponsor.name,
+              avatarUrl: sponsor.avatar,
+              rank: sponsor.rank,
+              secondaryMetric: sponsor.handle,
+              primaryMetric: formatCurrency(sponsor.amount),
+            }))}
+            onItemClick={(item) => {
+              const sponsor = ACTIVE_SPONSORS.find((s) => s.id === item.id);
+              if (sponsor) {
+                openExternalUrl(sponsor.farcasterUrl);
+              }
+            }}
+          />
         )}
 
         {/* Sponsor Callout */}

@@ -80,7 +80,10 @@ export function Header() {
                     alt="Creator Score"
                     width={120}
                     height={36}
+                    priority
+                    fetchPriority="high"
                     className="h-full w-auto"
+                    style={{ width: "auto" }}
                   />
                 </button>
               )}

@@ -8,11 +8,11 @@ import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { useUserResolution } from "@/hooks/useUserResolution";
 import {
   CreatorScoreCard,
-  TopCreatorsCard,
   PotentialRewardsCard,
   RewardsBoostsCard,
-  TopSponsorsCard,
 } from "@/components/home";
+import { TopListCard } from "@/components/common/TopListCard";
+import { ACTIVE_SPONSORS } from "@/lib/constants";
 
 export default function HomePage() {
   const { context } = useMiniKit();
@@ -39,8 +39,16 @@ export default function HomePage() {
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <TopCreatorsCard
-            creators={topCreators.slice(0, 10)}
+          <TopListCard
+            title="Top Creators"
+            seeMoreLink="/leaderboard"
+            items={topCreators.slice(0, 10).map((creator) => ({
+              id: String(creator.talent_protocol_id),
+              name: creator.name,
+              avatarUrl: creator.pfp,
+              rank: creator.rank,
+              secondaryMetric: `Creator Score: ${creator.score.toLocaleString()}`,
+            }))}
             loading={creatorsLoading}
           />
         </ErrorBoundary>
@@ -50,7 +58,18 @@ export default function HomePage() {
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <TopSponsorsCard loading={creatorsLoading} />
+          <TopListCard
+            title="Top Sponsors"
+            seeMoreLink="/leaderboard"
+            items={ACTIVE_SPONSORS.map((sponsor) => ({
+              id: sponsor.id,
+              name: sponsor.name,
+              avatarUrl: sponsor.avatar,
+              rank: sponsor.rank,
+              secondaryMetric: sponsor.handle,
+            }))}
+            loading={creatorsLoading}
+          />
         </ErrorBoundary>
       </div>
     </main>

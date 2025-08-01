@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Accordion } from "@/components/ui/accordion";
+import { SectionAccordion } from "@/components/common/SectionAccordion";
 import { useBadges } from "@/hooks/useBadges";
 import { BadgeItem } from "@/lib/badge-data";
 import {
   BadgeModal,
-  BadgeSectionComponent,
+  BadgeCard,
   LoadingState,
   ErrorState,
 } from "@/components/badges";
@@ -49,15 +49,33 @@ export default function BadgesPage() {
 
       {/* Content section */}
       <Section variant="content">
-        <Accordion type="multiple" className="w-full space-y-2">
-          {badges.map((section) => (
-            <BadgeSectionComponent
-              key={section.id}
-              section={section}
-              onBadgeClick={handleBadgeClick}
-            />
-          ))}
-        </Accordion>
+        <SectionAccordion
+          type="multiple"
+          variant="white"
+          sections={badges.map((section) => {
+            const completedCount = section.badges.filter(
+              (badge) => badge.completed,
+            ).length;
+            const totalCount = section.badges.length;
+
+            return {
+              id: section.id,
+              title: section.title,
+              value: `${completedCount}/${totalCount}`,
+              content: (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
+                  {section.badges.map((badge) => (
+                    <BadgeCard
+                      key={badge.id}
+                      badge={badge}
+                      onBadgeClick={handleBadgeClick}
+                    />
+                  ))}
+                </div>
+              ),
+            };
+          })}
+        />
 
         <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
       </Section>

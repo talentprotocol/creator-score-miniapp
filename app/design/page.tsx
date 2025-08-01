@@ -9,8 +9,6 @@ import {
   Settings,
   Info,
   Trash2,
-  MessageCircle,
-  ExternalLink,
   FileText,
   Users,
 } from "lucide-react";
@@ -20,8 +18,20 @@ import { Button } from "@/components/ui/button";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { TabContainer } from "@/components/common/TabContainer";
 import { Callout } from "@/components/common/Callout";
+import { SectionAccordion } from "@/components/common/SectionAccordion";
+import { CredentialAccordion } from "@/components/common/CredentialAccordion";
+import { CreatorList } from "@/components/common/CreatorList";
+import { TopListCard } from "@/components/common/TopListCard";
 import { cn } from "@/lib/utils";
 import { PageContainer } from "@/components/common/PageContainer";
+import { StatCard } from "@/components/common/StatCard";
+import { SegmentedBar } from "@/components/common/SegmentedBar";
+import { CreatorScoreCard } from "@/components/home/CreatorScoreCard";
+import { PotentialRewardsCard } from "@/components/home/PotentialRewardsCard";
+import { RewardsBoostsCard } from "@/components/home/RewardsBoostsCard";
+import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
+import { BadgeCard } from "@/components/badges/BadgeCard";
+import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
 
 function IconDemo({
   icon,
@@ -488,6 +498,897 @@ export default function DesignPage() {
                 </div>
               </div>
             </Section>
+          </div>
+        );
+
+      case "cards":
+        return (
+          <div className="space-y-8">
+            {/* Base Card Component */}
+            <Section title="Base Card Component">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    Base Card
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/ui/card.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/ui/card.tsx
+                    </a>
+                  </h3>
+                  <Card className="p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Base Card Example
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        This is the foundational card component used throughout
+                        the app.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Uses semantic color classes and consistent spacing.
+                      </p>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            </Section>
+
+            {/* Stat Cards */}
+            <Section title="Stat Cards">
+              <div className="space-y-6">
+                {/* StatCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    StatCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/StatCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/StatCard.tsx
+                    </a>
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <StatCard title="Rewards Pool" value="$50,000" />
+                    <StatCard
+                      title="Your Rank"
+                      value="#42"
+                      onClick={() => alert("Clicked!")}
+                    />
+                  </div>
+                </div>
+
+                {/* SegmentedBar */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    SegmentedBar
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/SegmentedBar.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/SegmentedBar.tsx
+                    </a>
+                  </h3>
+                  <SegmentedBar
+                    title="Social Activity"
+                    total={2500}
+                    segments={[
+                      {
+                        name: "Farcaster",
+                        value: 1200,
+                        percentage: 48,
+                        url: "https://farcaster.xyz",
+                      },
+                      {
+                        name: "Twitter",
+                        value: 800,
+                        percentage: 32,
+                        url: "https://twitter.com",
+                      },
+                      {
+                        name: "GitHub",
+                        value: 500,
+                        percentage: 20,
+                        url: "https://github.com",
+                      },
+                    ]}
+                    color="blue"
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* Home Page Cards */}
+            <Section title="Home Page Cards">
+              <div className="space-y-6">
+                {/* CreatorScoreCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    CreatorScoreCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/home/CreatorScoreCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/home/CreatorScoreCard.tsx
+                    </a>
+                  </h3>
+                  <CreatorScoreCard score={1250} />
+                </div>
+
+                {/* PotentialRewardsCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    PotentialRewardsCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/home/PotentialRewardsCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/home/PotentialRewardsCard.tsx
+                    </a>
+                  </h3>
+                  <PotentialRewardsCard score={1250} />
+                </div>
+
+                {/* TopCreatorsCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    TopCreatorsCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/home/TopCreatorsCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/home/TopCreatorsCard.tsx
+                    </a>
+                  </h3>
+                  <TopListCard
+                    title="Top Creators"
+                    seeMoreLink="/leaderboard"
+                    items={[
+                      {
+                        id: "1",
+                        name: "Alice Builder",
+                        avatarUrl: undefined,
+                        rank: 1,
+                        secondaryMetric: "Creator Score: 5,230",
+                      },
+                      {
+                        id: "2",
+                        name: "Bob Creator",
+                        avatarUrl: undefined,
+                        rank: 2,
+                        secondaryMetric: "Creator Score: 4,890",
+                      },
+                      {
+                        id: "3",
+                        name: "Carol Developer",
+                        avatarUrl: undefined,
+                        rank: 3,
+                        secondaryMetric: "Creator Score: 4,120",
+                      },
+                    ]}
+                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                  />
+                </div>
+
+                {/* TopSponsorsCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    TopSponsorsCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/home/TopSponsorsCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/home/TopSponsorsCard.tsx
+                    </a>
+                  </h3>
+                  <TopListCard
+                    title="Top Sponsors"
+                    seeMoreLink="/leaderboard"
+                    items={[
+                      {
+                        id: "1",
+                        name: "Sponsor One",
+                        avatarUrl: undefined,
+                        rank: 1,
+                        secondaryMetric: "@sponsor1",
+                      },
+                      {
+                        id: "2",
+                        name: "Sponsor Two",
+                        avatarUrl: undefined,
+                        rank: 2,
+                        secondaryMetric: "@sponsor2",
+                      },
+                      {
+                        id: "3",
+                        name: "Sponsor Three",
+                        avatarUrl: undefined,
+                        rank: 3,
+                        secondaryMetric: "@sponsor3",
+                      },
+                    ]}
+                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                  />
+                </div>
+
+                {/* RewardsBoostsCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    RewardsBoostsCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/home/RewardsBoostsCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/home/RewardsBoostsCard.tsx
+                    </a>
+                  </h3>
+                  <RewardsBoostsCard talentUuid="demo-123" />
+                </div>
+              </div>
+            </Section>
+
+            {/* Utility Cards */}
+            <Section title="Utility Cards">
+              <div className="space-y-6">
+                {/* CreatorNotFoundCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    CreatorNotFoundCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/CreatorNotFoundCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/CreatorNotFoundCard.tsx
+                    </a>
+                  </h3>
+                  <CreatorNotFoundCard />
+                </div>
+
+                {/* BadgeCard */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    BadgeCard
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/badges/BadgeCard.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/badges/BadgeCard.tsx
+                    </a>
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <BadgeCard
+                      badge={{
+                        id: "1",
+                        name: "First Post",
+                        description: "Made your first post",
+                        icon: Trophy,
+                        completed: true,
+                      }}
+                      onBadgeClick={() => alert("Badge clicked!")}
+                    />
+                    <BadgeCard
+                      badge={{
+                        id: "2",
+                        name: "100 Followers",
+                        description: "Reached 100 followers",
+                        icon: Users,
+                        completed: false,
+                      }}
+                      onBadgeClick={() => alert("Badge clicked!")}
+                    />
+                  </div>
+                </div>
+
+                {/* RewardsCalculationProgress */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    RewardsCalculationProgress
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/RewardsCalculationProgress.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/RewardsCalculationProgress.tsx
+                    </a>
+                  </h3>
+                  <RewardsCalculationProgress
+                    progress={75}
+                    message="Calculating your rewards..."
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* Accordion Components */}
+            <Section title="Accordion Components">
+              <div className="space-y-6">
+                {/* Gray Accordion */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    Gray Accordion
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/SectionAccordion.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/SectionAccordion.tsx
+                    </a>
+                  </h3>
+                  <SectionAccordion
+                    type="single"
+                    variant="gray"
+                    sections={[
+                      {
+                        id: "connected-socials",
+                        title: "Connected Socials",
+                        icon: <Users className="h-4 w-4" />,
+                        content: (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>Farcaster</span>
+                              <span className="text-muted-foreground">
+                                Connected
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span>Twitter</span>
+                              <span className="text-muted-foreground">
+                                Not connected
+                              </span>
+                            </div>
+                          </div>
+                        ),
+                      },
+                      {
+                        id: "connected-wallets",
+                        title: "Connected Wallets",
+                        icon: <Settings className="h-4 w-4" />,
+                        value: "2",
+                        content: (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>0x1234...5678</span>
+                              <span className="text-muted-foreground">
+                                Primary
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span>0x8765...4321</span>
+                              <span className="text-muted-foreground">
+                                Secondary
+                              </span>
+                            </div>
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
+                </div>
+
+                {/* White Accordion */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    White Accordion
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/SectionAccordion.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/SectionAccordion.tsx
+                    </a>
+                  </h3>
+                  <SectionAccordion
+                    type="multiple"
+                    variant="white"
+                    sections={[
+                      {
+                        id: "badge-section-1",
+                        title: "Social Badges",
+                        value: "3/5",
+                        content: (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-2 bg-muted rounded-lg">
+                              <div className="text-xs font-medium">
+                                Farcaster
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Active
+                              </div>
+                            </div>
+                            <div className="text-center p-2 bg-muted rounded-lg">
+                              <div className="text-xs font-medium">Twitter</div>
+                              <div className="text-xs text-muted-foreground">
+                                Inactive
+                              </div>
+                            </div>
+                          </div>
+                        ),
+                      },
+                      {
+                        id: "badge-section-2",
+                        title: "Achievement Badges",
+                        value: "1/3",
+                        content: (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-2 bg-muted rounded-lg">
+                              <div className="text-xs font-medium">
+                                First Post
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Earned
+                              </div>
+                            </div>
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
+                </div>
+
+                {/* Credential Accordion */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    Credential Accordion
+                    <a
+                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/CredentialAccordion.tsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                    >
+                      components/common/CredentialAccordion.tsx
+                    </a>
+                  </h3>
+                  <CredentialAccordion
+                    credentials={[
+                      {
+                        issuer: "Farcaster",
+                        total: 1250,
+                        max_total: 2000,
+                        points: [
+                          {
+                            label: "Followers",
+                            value: 500,
+                            max_score: 1000,
+                            readable_value: "500",
+                            uom: "followers",
+                            external_url: null,
+                          },
+                          {
+                            label: "Posts",
+                            value: 750,
+                            max_score: 1000,
+                            readable_value: "150",
+                            uom: "posts",
+                            external_url: null,
+                          },
+                        ],
+                      },
+                      {
+                        issuer: "GitHub",
+                        total: 800,
+                        max_total: 1500,
+                        points: [
+                          {
+                            label: "Repositories",
+                            value: 300,
+                            max_score: 500,
+                            readable_value: "12",
+                            uom: "repos",
+                            external_url: null,
+                          },
+                          {
+                            label: "Stars",
+                            value: 500,
+                            max_score: 1000,
+                            readable_value: "45",
+                            uom: "stars",
+                            external_url: null,
+                          },
+                        ],
+                      },
+                    ]}
+                  />
+                </div>
+
+                <div className="text-xs text-muted-foreground font-mono space-y-1">
+                  <div>Gray: bg-muted rounded-xl border-0 shadow-none</div>
+                  <div>White: bg-card rounded-xl border shadow-none</div>
+                  <div>Credential: bg-card rounded-xl border shadow-none</div>
+                  <div>Layout: px-6 py-4 flex items-center justify-between</div>
+                  <div>Icons: h-4 w-4 text-muted-foreground</div>
+                  <div>
+                    Values: text-xl font-semibold text-foreground w-16
+                    text-right
+                  </div>
+                </div>
+              </div>
+            </Section>
+          </div>
+        );
+
+      case "lists":
+        return (
+          <div className="space-y-8">
+            {/* Component Standardization Summary */}
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="text-sm font-medium mb-2">
+                Component Standardization Summary
+              </h4>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>
+                  <strong>✅ Standardized:</strong> Reduced from 6 components to
+                  2
+                </div>
+                <div>
+                  <strong>CreatorList:</strong> Replaces SearchResults and
+                  LeaderboardRow
+                </div>
+                <div>
+                  <strong>TopListCard:</strong> Replaces TopCreatorsCard and
+                  TopSponsorsCard
+                </div>
+                <div>
+                  <strong>PostsList:</strong> Kept separate (unique structure)
+                  but updated styling
+                </div>
+                <div>
+                  <strong>Styling:</strong> Consistent semantic colors and hover
+                  states
+                </div>
+              </div>
+            </div>
+
+            {/* 1. PostsList */}
+            <div>
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                1. PostsList
+                <a
+                  href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/profile/PostsList.tsx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                >
+                  components/profile/PostsList.tsx
+                </a>
+              </h3>
+              <div className="text-xs text-muted-foreground mb-3">
+                <strong>Use case:</strong> List of user posts with external
+                links
+                <br />
+                <strong>Structure:</strong> Title + Date on left, External link
+                + Platform on right
+                <br />
+                <strong>Features:</strong> External navigation, platform
+                indicators
+              </div>
+              <div className="w-full">
+                <div className="bg-background rounded-xl border border-input overflow-hidden">
+                  <div className="flex gap-3 p-3 hover:bg-muted active:bg-muted/80 transition-colors cursor-pointer">
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <p className="font-medium text-sm truncate leading-tight">
+                        My first post about Creator Score
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        2 days ago
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end justify-between">
+                      <div className="text-muted-foreground p-1">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Twitter
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-px bg-border"></div>
+                  <div className="flex gap-3 p-3 hover:bg-muted active:bg-muted/80 transition-colors cursor-pointer">
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <p className="font-medium text-sm truncate leading-tight">
+                        Building the future of creator economy
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        1 week ago
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end justify-between">
+                      <div className="text-muted-foreground p-1">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Farcaster
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. CreatorList */}
+            <div>
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                2. CreatorList
+                <a
+                  href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/CreatorList.tsx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                >
+                  components/common/CreatorList.tsx
+                </a>
+              </h3>
+              <div className="text-xs text-muted-foreground mb-3">
+                <strong>Use case:</strong> Standardized list for creators
+                (replaces SearchResults and LeaderboardRow)
+                <br />
+                <strong>Structure:</strong> Avatar + Name + optional Rank +
+                optional Primary/Secondary metrics
+                <br />
+                <strong>Features:</strong> Loading states, empty states, hover
+                effects, click handlers
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-xs font-medium mb-3">
+                    CreatorList - Search Results Style
+                  </h4>
+                  <CreatorList
+                    items={[
+                      {
+                        id: "1",
+                        name: "Alice Builder",
+                        avatarUrl: undefined,
+                        secondaryMetric: "Creator Score: 5,230",
+                      },
+                      {
+                        id: "2",
+                        name: "Bob Creator",
+                        avatarUrl: undefined,
+                        secondaryMetric: "Creator Score: 4,890",
+                      },
+                      {
+                        id: "3",
+                        name: "Carol Developer",
+                        avatarUrl: undefined,
+                        secondaryMetric: "Creator Score: 4,120",
+                      },
+                    ]}
+                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium mb-3">
+                    CreatorList - Leaderboard Style (with Rank & Primary Metric)
+                  </h4>
+                  <CreatorList
+                    items={[
+                      {
+                        id: "1",
+                        name: "Alice Builder",
+                        avatarUrl: undefined,
+                        rank: 1,
+                        primaryMetric: "$500",
+                        secondaryMetric: "Creator Score: 5,230",
+                      },
+                      {
+                        id: "2",
+                        name: "Bob Creator",
+                        avatarUrl: undefined,
+                        rank: 2,
+                        primaryMetric: "$450",
+                        secondaryMetric: "Creator Score: 4,890",
+                      },
+                      {
+                        id: "3",
+                        name: "Carol Developer",
+                        avatarUrl: undefined,
+                        rank: 3,
+                        primaryMetric: "$400",
+                        secondaryMetric: "Creator Score: 4,120",
+                      },
+                    ]}
+                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium mb-3">
+                    CreatorList - Loading State
+                  </h4>
+                  <CreatorList items={[]} loading={true} />
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium mb-3">
+                    CreatorList - Empty State
+                  </h4>
+                  <CreatorList items={[]} loading={false} />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. TopListCard */}
+            <div>
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                3. TopListCard
+                <a
+                  href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/TopListCard.tsx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                >
+                  components/common/TopListCard.tsx
+                </a>
+              </h3>
+              <div className="text-xs text-muted-foreground mb-3">
+                <strong>Use case:</strong> Card container for top lists
+                (replaces TopCreatorsCard and TopSponsorsCard)
+                <br />
+                <strong>Structure:</strong> Clickable title with chevron +
+                CreatorList (shows top 3)
+                <br />
+                <strong>Features:</strong> External links, loading states,
+                consistent styling
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-xs font-medium mb-3">
+                    TopListCard - Top Creators
+                  </h4>
+                  <TopListCard
+                    title="Top Creators"
+                    seeMoreLink="/leaderboard"
+                    items={[
+                      {
+                        id: "1",
+                        name: "Alice Builder",
+                        avatarUrl: undefined,
+                        rank: 1,
+                        secondaryMetric: "Creator Score: 5,230",
+                      },
+                      {
+                        id: "2",
+                        name: "Bob Creator",
+                        avatarUrl: undefined,
+                        rank: 2,
+                        secondaryMetric: "Creator Score: 4,890",
+                      },
+                      {
+                        id: "3",
+                        name: "Carol Developer",
+                        avatarUrl: undefined,
+                        rank: 3,
+                        secondaryMetric: "Creator Score: 4,120",
+                      },
+                    ]}
+                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium mb-3">
+                    TopListCard - Top Sponsors
+                  </h4>
+                  <TopListCard
+                    title="Top Sponsors"
+                    seeMoreLink="/leaderboard"
+                    items={[
+                      {
+                        id: "1",
+                        name: "Sponsor One",
+                        avatarUrl: undefined,
+                        rank: 1,
+                        secondaryMetric: "@sponsor1",
+                      },
+                      {
+                        id: "2",
+                        name: "Sponsor Two",
+                        avatarUrl: undefined,
+                        rank: 2,
+                        secondaryMetric: "@sponsor2",
+                      },
+                      {
+                        id: "3",
+                        name: "Sponsor Three",
+                        avatarUrl: undefined,
+                        rank: 3,
+                        secondaryMetric: "@sponsor3",
+                      },
+                    ]}
+                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                  />
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium mb-3">
+                    TopListCard - Loading State
+                  </h4>
+                  <TopListCard title="Top Creators" items={[]} loading={true} />
+                </div>
+              </div>
+            </div>
+
+            {/* Implementation Notes */}
+            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+              <h4 className="text-sm font-medium mb-2 text-blue-900">
+                Implementation Notes
+              </h4>
+              <div className="text-xs text-blue-800 space-y-1">
+                <div>
+                  <strong>CreatorList:</strong> Replaces SearchResults and
+                  LeaderboardRow
+                </div>
+                <div>
+                  <strong>TopListCard:</strong> Replaces TopCreatorsCard and
+                  TopSponsorsCard
+                </div>
+                <div>
+                  <strong>Styling:</strong> Uses PostsList patterns for
+                  consistency
+                </div>
+                <div>
+                  <strong>Props:</strong> Flexible optional props for different
+                  use cases
+                </div>
+                <div>
+                  <strong>States:</strong> Loading, empty, pinned, hover states
+                  included
+                </div>
+              </div>
+            </div>
           </div>
         );
 

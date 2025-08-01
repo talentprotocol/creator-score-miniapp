@@ -142,7 +142,11 @@ export function ConnectedSocialsSection({
             </div>
 
             <Button
-              onClick={connectedAccount ? handleDisconnect : handleConnect}
+              onClick={() =>
+                connectedAccount
+                  ? handleDisconnect(platform.source)
+                  : handleConnect(platform.source)
+              }
               styling={connectedAccount ? "default" : "brand"}
               size="sm"
               disabled={platform.comingSoon}
