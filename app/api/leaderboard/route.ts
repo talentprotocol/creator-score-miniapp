@@ -1,14 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
-import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
+import {
+  PROJECT_ACCOUNTS_TO_EXCLUDE,
+  TOTAL_SPONSORS_POOL,
+} from "@/lib/constants";
+import { getCachedTokenBalances } from "../../services/tokenBalanceService";
+import type { TokenBalanceData } from "../../services/tokenBalanceService";
 
 type Profile = {
   id: string;
   display_name?: string;
   name?: string;
   image_url?: string;
-  scores?: Array<{ slug: string; points?: number }>;
+  scores?: Array<{
+    slug: string;
+    points?: number;
+    points_calculation_logic?: {
+      data_points?: Array<{
+        is_maximum: boolean;
+        readable_value: string | null;
+        value: string | null;
+        uom: string | null;
+      }>;
+      max_points: number | null;
+    };
+  }>;
 };
 
 async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
@@ -49,7 +66,9 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch page ${page}`);
+      const errorText = await res.text();
+      console.error(`API Error for page ${page}:`, errorText);
+      throw new Error(`Failed to fetch page ${page}: ${errorText}`);
     }
 
     const json = await res.json();
@@ -103,7 +122,9 @@ export async function GET(req: NextRequest) {
           );
 
           if (!result.ok) {
-            throw new Error(await result.text());
+            const errorText = await result.text();
+            console.error("API Error for stats:", errorText);
+            throw new Error(errorText);
           }
 
           const json = await result.json();
@@ -168,14 +189,14 @@ export async function GET(req: NextRequest) {
           id: { order: "desc" },
         },
         page,
-        per_page: perPage + PROJECT_ACCOUNTS_TO_EXCLUDE.length,
+        per_page: perPage,
       };
 
       const queryString = [
         `query=${encodeURIComponent(JSON.stringify(data.query))}`,
         `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
         `page=${page}`,
-        `per_page=${perPage + PROJECT_ACCOUNTS_TO_EXCLUDE.length}`,
+        `per_page=${perPage}`,
         `view=scores_minimal`,
       ].join("&");
 
@@ -192,7 +213,9 @@ export async function GET(req: NextRequest) {
           );
 
           if (!result.ok) {
-            throw new Error(await result.text());
+            const errorText = await result.text();
+            console.error("API Error for paginated request:", errorText);
+            throw new Error(errorText);
           }
 
           const json = await result.json();
@@ -210,23 +233,82 @@ export async function GET(req: NextRequest) {
       (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
     );
 
-    // Map and rank the entries
-    const mapped = profiles.map((profile: Profile) => {
-      const p = profile;
-      const creatorScores = Array.isArray(p.scores)
-        ? p.scores
-            .filter((s) => s.slug === "creator_score")
-            .map((s) => s.points ?? 0)
-        : [];
-      const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
-      return {
-        name: p.display_name || p.name || "Unknown",
-        pfp: p.image_url || undefined,
-        score,
-        id: p.id,
-        talent_protocol_id: p.id,
+    // APPROACH 2: Try to get cached token balances with timeout (non-blocking)
+    let cachedTokenBalances: {
+      tokenBalances: Record<string, TokenBalanceData>;
+      lastUpdated: string;
+      nextUpdate: string;
+    } | null = null;
+
+    try {
+      // Set a short timeout to avoid blocking the response
+      const cachePromise = getCachedTokenBalances(apiKey);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Cache timeout")), 2000),
+      );
+
+      cachedTokenBalances = (await Promise.race([
+        cachePromise,
+        timeoutPromise,
+      ])) as {
+        tokenBalances: Record<string, TokenBalanceData>;
+        lastUpdated: string;
+        nextUpdate: string;
       };
-    });
+      console.log("✅ Token balance cache hit - using cached data");
+    } catch (error) {
+      console.warn("Token balance cache miss or timeout:", error);
+      cachedTokenBalances = null;
+    }
+
+    // Map and rank the entries
+    const mapped = await Promise.all(
+      profiles.map(async (profile: Profile) => {
+        const p = profile;
+        const creatorScores = Array.isArray(p.scores)
+          ? p.scores
+              .filter((s) => s.slug === "creator_score")
+              .map((s) => s.points ?? 0)
+          : [];
+        const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
+
+        // Get token balance from cached data (or default to 0 if cache miss)
+        const tokenData = cachedTokenBalances?.tokenBalances[p.id];
+        const tokenBalance = tokenData?.balance || 0;
+        const isBoosted = tokenData?.isBoosted || false;
+        const boostMultiplier = isBoosted ? 1.1 : 1.0;
+        const boostedScore = score * boostMultiplier;
+
+        // Calculate reward amounts (using existing logic from leaderboard page)
+        const totalTop200Scores = profiles.reduce((sum, p) => {
+          const scores = Array.isArray(p.scores)
+            ? p.scores
+                .filter((s) => s.slug === "creator_score")
+                .map((s) => s.points ?? 0)
+            : [];
+          return sum + (scores.length > 0 ? Math.max(...scores) : 0);
+        }, 0);
+
+        const multiplier =
+          totalTop200Scores > 0 ? TOTAL_SPONSORS_POOL / totalTop200Scores : 0;
+        const baseReward = score * multiplier;
+        const boostedReward = boostedScore * multiplier;
+        const boostAmount = boostedReward - baseReward;
+
+        return {
+          name: p.display_name || p.name || "Unknown",
+          pfp: p.image_url || undefined,
+          score,
+          id: p.id,
+          talent_protocol_id: p.id,
+          tokenBalance,
+          isBoosted,
+          boostAmount,
+          baseReward,
+          boostedReward,
+        };
+      }),
+    );
 
     // Sort by score
     mapped.sort(
@@ -255,7 +337,26 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ entries: ranked });
+    // Calculate boosted creators count for tab badge
+    const boostedCreatorsCount = ranked.filter(
+      (entry) => entry.isBoosted && entry.score > 0,
+    ).length;
+
+    // Start background cache refresh if cache was empty (fire and forget)
+    if (!cachedTokenBalances && page === 1 && perPage === 200) {
+      console.log("🔄 Starting background token balance cache refresh...");
+      getCachedTokenBalances(apiKey).catch((error) => {
+        console.warn("Background token balance fetch failed:", error);
+      });
+    }
+
+    return NextResponse.json({
+      entries: ranked,
+      boostedCreatorsCount,
+      tokenDataAvailable: !!cachedTokenBalances,
+      lastUpdated: cachedTokenBalances?.lastUpdated || null,
+      nextUpdate: cachedTokenBalances?.nextUpdate || null,
+    });
   } catch (error) {
     console.error("API error:", error);
     return NextResponse.json(

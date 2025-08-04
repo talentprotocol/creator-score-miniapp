@@ -1,19 +1,39 @@
-import { LeaderboardEntry } from "./types";
+import type { LeaderboardEntry } from "./types";
 
-/**
- * Fetches leaderboard data (top creators by Creator Score) from Talent Protocol API
- */
-export async function getLeaderboardCreators({
-  page = 1,
-  perPage = 10,
-}: { page?: number; perPage?: number } = {}): Promise<LeaderboardEntry[]> {
-  const res = await fetch(`/api/leaderboard?page=${page}&per_page=${perPage}`);
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || "Failed to fetch leaderboard data");
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  boostedCreatorsCount?: number;
+  tokenDataAvailable?: boolean;
+  lastUpdated?: string | null;
+  nextUpdate?: string | null;
+}
+
+export async function getLeaderboardCreators(
+  page: number = 1,
+  perPage: number = 25,
+): Promise<LeaderboardResponse> {
+  const response = await fetch(
+    `/api/leaderboard?page=${page}&per_page=${perPage}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch leaderboard data");
   }
-  const json = await res.json();
-  return json.entries || [];
+
+  const json = await response.json();
+  return {
+    entries: json.entries || [],
+    boostedCreatorsCount: json.boostedCreatorsCount,
+    tokenDataAvailable: json.tokenDataAvailable,
+    lastUpdated: json.lastUpdated,
+    nextUpdate: json.nextUpdate,
+  };
 }
 
 /**

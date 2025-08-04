@@ -22,10 +22,8 @@ export default function HomePage() {
     user?.fid,
   );
 
-  const {
-    top200: topCreators,
-    loading: { top200: creatorsLoading },
-  } = useLeaderboardOptimized();
+  const { entries: topCreators, loading: creatorsLoading } =
+    useLeaderboardOptimized();
 
   return (
     <main className="flex-1 overflow-y-auto">

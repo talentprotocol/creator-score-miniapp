@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
@@ -25,6 +26,7 @@ import { Callout } from "@/components/common/Callout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
 import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
+import { usePostHog } from "posthog-js/react";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -44,15 +46,16 @@ export default function LeaderboardPage() {
   const { talentUuid: userTalentUuid } = useUserResolution();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
   const [visibleEntries, setVisibleEntries] = useState<LeaderboardEntry[]>([]);
+  const posthog = usePostHog();
 
   // Initial fast load of first 10 entries
   // Use optimized leaderboard hook for all data
   const {
-    top200: top200Entries,
-    loading: { top200: top200Loading, stats: statsLoading },
+    entries: top200Entries,
+    loading: top200Loading,
     error: top200Error,
-    totalScores: totalTop200Scores,
-  } = useLeaderboardOptimized();
+    boostedCreatorsCount,
+  } = useLeaderboardOptimized(1, 200);
 
   // Use hooks for data fetching - both auth paths
   const { creatorScore: fidScore, loading: fidScoreLoading } =
@@ -72,8 +75,7 @@ export default function LeaderboardPage() {
     profile?.display_name ??
     profile?.fname ??
     "Unknown user";
-  const loadingStats =
-    statsLoading || profileLoading || fidScoreLoading || uuidScoreLoading;
+  const loadingStats = profileLoading || fidScoreLoading || uuidScoreLoading;
 
   // Countdown state
   const [countdown, setCountdown] = useState(() =>
@@ -118,7 +120,14 @@ export default function LeaderboardPage() {
   // Helper to calculate USDC rewards using top 200 scores
   function getUsdcRewards(score: number, rank?: number): string {
     // Only top 200 creators earn rewards
-    if (!rank || rank > 200 || !totalTop200Scores) return "$0";
+    if (!rank || rank > 200) return "$0";
+
+    // Calculate total scores from top200Entries
+    const totalTop200Scores = top200Entries.reduce(
+      (sum, entry) => sum + entry.score,
+      0,
+    );
+    if (totalTop200Scores === 0) return "$0";
 
     // Calculate multiplier based on total top 200 scores
     const multiplier = TOTAL_SPONSORS_POOL / totalTop200Scores;
@@ -143,6 +152,14 @@ export default function LeaderboardPage() {
   //     router.push(url);
   //   }
   // }
+
+  // Handle tab changes with PostHog tracking
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    if (tabId === "talent") {
+      posthog?.capture("talent_tab_opened");
+    }
+  };
 
   // Determine loading and pagination state
   const hasMore =
@@ -207,13 +224,18 @@ export default function LeaderboardPage() {
               count: 200,
             },
             {
+              id: "talent",
+              label: "Boosts",
+              count: boostedCreatorsCount || 0,
+            },
+            {
               id: "sponsors",
               label: "Sponsors",
               count: ACTIVE_SPONSORS.length,
             },
           ]}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
         />
       </Section>
 
@@ -245,12 +267,12 @@ export default function LeaderboardPage() {
             {/* Leaderboard list */}
             <CreatorList
               items={visibleEntries.map((user) => ({
-                id: String(user.talent_protocol_id),
+                id: user.id,
                 name: user.name,
                 avatarUrl: user.pfp,
                 rank: user.rank,
-                secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
                 primaryMetric: getUsdcRewards(user.score, user.rank),
+                secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
               }))}
               onItemClick={(item) => {
                 // Navigate to profile page
@@ -280,23 +302,93 @@ export default function LeaderboardPage() {
           </>
         )}
 
+        {activeTab === "talent" && (
+          <>
+            {loading && (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loading && (
+              <>
+                {/* Filter for boosted creators only */}
+                {top200Entries.filter(
+                  (entry) => entry.isBoosted && entry.score > 0,
+                ).length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No boosted creators found
+                    </p>
+                  </div>
+                ) : (
+                  /* Talent leaderboard list */
+                  <CreatorList
+                    items={top200Entries
+                      .filter((entry) => entry.isBoosted && entry.score > 0)
+                      .map((user) => ({
+                        id: user.id,
+                        name: user.name,
+                        avatarUrl: user.pfp,
+                        rank: user.rank,
+                        primaryMetric: getUsdcRewards(user.score, user.rank),
+                        secondaryMetric: `Creator Score: ${user.score.toLocaleString()} | Tokens: ${(user.tokenBalance || 0).toLocaleString()}`,
+                      }))}
+                    onItemClick={(item) => {
+                      // Navigate to profile page
+                      window.location.href = `/${item.id}`;
+                    }}
+                    loading={false}
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+
         {activeTab === "sponsors" && (
-          <CreatorList
-            items={ACTIVE_SPONSORS.map((sponsor) => ({
-              id: sponsor.id,
-              name: sponsor.name,
-              avatarUrl: sponsor.avatar,
-              rank: sponsor.rank,
-              secondaryMetric: sponsor.handle,
-              primaryMetric: formatCurrency(sponsor.amount),
-            }))}
-            onItemClick={(item) => {
-              const sponsor = ACTIVE_SPONSORS.find((s) => s.id === item.id);
-              if (sponsor) {
-                openExternalUrl(sponsor.farcasterUrl);
-              }
-            }}
-          />
+          <div className="overflow-hidden rounded-lg bg-gray-50">
+            {ACTIVE_SPONSORS.map((sponsor, index, array) => (
+              <div key={sponsor.id}>
+                <div
+                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => openExternalUrl(sponsor.farcasterUrl)}
+                >
+                  <span className="text-sm font-medium w-6">
+                    #{sponsor.rank}
+                  </span>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={sponsor.avatar} />
+                    <AvatarFallback>{sponsor.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{sponsor.name}</p>
+                    <p className="text-xs text-gray-600">{sponsor.handle}</p>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-medium">
+                      {formatCurrency(sponsor.amount)}
+                    </span>
+                  </div>
+                </div>
+                {index < array.length - 1 && (
+                  <div className="h-px bg-gray-200" />
+                )}
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Sponsor Callout */}

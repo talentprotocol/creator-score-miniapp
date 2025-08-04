@@ -107,6 +107,12 @@ export type LeaderboardEntry = {
   rewards: string;
   id: string;
   talent_protocol_id: string | number;
+  // Token boost fields
+  tokenBalance?: number;
+  isBoosted?: boolean;
+  boostAmount?: number;
+  baseReward?: number;
+  boostedReward?: number;
 };
 
 // Wallet account types for Talent Protocol API

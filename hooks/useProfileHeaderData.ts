@@ -18,11 +18,13 @@ export function useProfileHeaderData(talentUUID: string) {
       CACHE_DURATIONS.PROFILE_DATA,
     );
     if (cachedProfile) {
+      console.log(`[useProfileHeaderData] Cache hit for ${talentUUID}`);
       setProfile(cachedProfile);
       setLoading(false);
       return;
     }
 
+    console.log(`[useProfileHeaderData] Fetching profile for ${talentUUID}`);
     try {
       setLoading(true);
       setError(null);
@@ -34,6 +36,7 @@ export function useProfileHeaderData(talentUUID: string) {
       // Cache the profile data
       if (user) {
         setCachedData(cacheKey, user);
+        console.log(`[useProfileHeaderData] Cached profile for ${talentUUID}`);
       }
     } catch (err) {
       console.error("Error fetching profile:", err);

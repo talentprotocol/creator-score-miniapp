@@ -589,3 +589,29 @@ export function formatCurrency(amount: number): string {
   }
   return `$${amount}`;
 }
+
+/**
+ * Parse formatted numbers with K and M suffixes
+ * Examples: "3.01K" -> 3010, "1.5M" -> 1500000, "780" -> 780
+ */
+export function parseFormattedNumber(value: string): number {
+  if (!value) return 0;
+
+  const trimmed = value.trim();
+
+  // Handle K (thousands)
+  if (trimmed.endsWith("K")) {
+    const num = parseFloat(trimmed.slice(0, -1));
+    return isNaN(num) ? 0 : num * 1000;
+  }
+
+  // Handle M (millions)
+  if (trimmed.endsWith("M")) {
+    const num = parseFloat(trimmed.slice(0, -1));
+    return isNaN(num) ? 0 : num * 1000000;
+  }
+
+  // Handle regular numbers
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? 0 : num;
+}

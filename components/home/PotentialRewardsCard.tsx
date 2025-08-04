@@ -21,12 +21,8 @@ export function PotentialRewardsCard({
   loading,
 }: PotentialRewardsCardProps) {
   const { talentUuid } = useUserResolution();
-  const {
-    stats,
-    top200: top200Entries,
-    totalScores: totalTop200Scores,
-    loading: { stats: statsLoading, top200: top200Loading },
-  } = useLeaderboardOptimized();
+  const { entries: top200Entries, loading: top200Loading } =
+    useLeaderboardOptimized();
 
   // Calculate loading progress
   const loadingProgress = (() => {
@@ -42,7 +38,10 @@ export function PotentialRewardsCard({
     : null;
 
   // Calculate points needed to reach top 200
-  const pointsNeededForTop200 = stats?.minScore || 0;
+  const pointsNeededForTop200 =
+    top200Entries.length > 0
+      ? top200Entries[top200Entries.length - 1]?.score || 0
+      : 0;
 
   // Calculate rewards
   const currentRewards = getUsdcRewards(score || 0, userTop200Entry?.rank);
@@ -63,7 +62,7 @@ export function PotentialRewardsCard({
   }
 
   // Show skeleton while loading basic data
-  if (loading || statsLoading) {
+  if (loading) {
     return (
       <Card className="w-full">
         <div className="p-6 space-y-4">
@@ -78,7 +77,13 @@ export function PotentialRewardsCard({
   // Helper to calculate USDC rewards using top 200 scores
   function getUsdcRewards(score: number, rank?: number): string {
     // Only top 200 creators earn rewards
-    if (!rank || rank > 200 || !totalTop200Scores) return "$0";
+    if (!rank || rank > 200 || top200Entries.length === 0) return "$0";
+
+    // Calculate total scores from top 200 entries
+    const totalTop200Scores = top200Entries.reduce(
+      (sum, entry) => sum + entry.score,
+      0,
+    );
 
     // Calculate multiplier based on total top 200 scores
     const multiplier = TOTAL_SPONSORS_POOL / totalTop200Scores;
