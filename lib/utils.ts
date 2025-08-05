@@ -584,6 +584,12 @@ export function formatDate(dateString: string): string {
 
 // Helper to format currency
 export function formatCurrency(amount: number): string {
+  if (amount >= 1000000000) {
+    return `$${(amount / 1000000000).toFixed(2)}B`;
+  }
+  if (amount >= 1000000) {
+    return `$${(amount / 1000000).toFixed(2)}M`;
+  }
   if (amount >= 1000) {
     return `$${formatWithK(amount)}`;
   }

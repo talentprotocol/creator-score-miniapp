@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { talentApiClient } from "@/lib/talent-api-client";
+import { getTokenBalanceForProfileManual } from "@/app/services/scoreRefreshService";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -12,12 +13,41 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const params = {
-    talent_protocol_id,
-    scorer_slug: "creator_score",
-  };
+  try {
+    // Step 1: Refresh score
+    const params = {
+      talent_protocol_id,
+      scorer_slug: "creator_score",
+    };
 
-  const result = await talentApiClient.refreshScore(params);
+    const result = await talentApiClient.refreshScore(params);
 
-  return result;
+    // Step 2: Refresh token balance (server-side)
+    try {
+      const apiKey = process.env.TALENT_API_KEY;
+      if (apiKey) {
+        await getTokenBalanceForProfileManual(
+          String(talent_protocol_id),
+          apiKey,
+        );
+      }
+    } catch (tokenError) {
+      console.warn(`⚠️ [API] Token balance refresh failed:`, tokenError);
+      // Don't fail the entire operation if token refresh fails
+    }
+
+    return result;
+  } catch (error) {
+    console.error(
+      `❌ [API] Score refresh failed for talent ID ${talent_protocol_id}:`,
+      error,
+    );
+    return new Response(
+      JSON.stringify({
+        error: "Failed to refresh score",
+        details: error instanceof Error ? error.message : String(error),
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 }

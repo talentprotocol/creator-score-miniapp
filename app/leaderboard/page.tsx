@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
@@ -27,6 +27,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
 import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { usePostHog } from "posthog-js/react";
+import { Rocket } from "lucide-react";
+import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
+import { useSearchParams } from "next/navigation";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -39,7 +42,7 @@ function getCountdownParts(target: Date) {
   return { days, hours };
 }
 
-export default function LeaderboardPage() {
+function LeaderboardContent() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const [activeTab, setActiveTab] = useState("creators");
@@ -48,14 +51,22 @@ export default function LeaderboardPage() {
   const [visibleEntries, setVisibleEntries] = useState<LeaderboardEntry[]>([]);
   const posthog = usePostHog();
 
+  // Read URL parameters for pagination
+  const searchParams = useSearchParams();
+  const pageParam = searchParams.get("page");
+  const perPageParam = searchParams.get("per_page");
+  const page = pageParam ? parseInt(pageParam, 10) : 1;
+  const perPage = perPageParam ? parseInt(perPageParam, 10) : 200;
+
   // Initial fast load of first 10 entries
-  // Use optimized leaderboard hook for all data
+  // Use optimized leaderboard hook for all data with URL parameters
   const {
     entries: top200Entries,
     loading: top200Loading,
+    rewardsLoading,
     error: top200Error,
     boostedCreatorsCount,
-  } = useLeaderboardOptimized(1, 200);
+  } = useLeaderboardOptimized(page, perPage);
 
   // Use hooks for data fetching - both auth paths
   const { creatorScore: fidScore, loading: fidScoreLoading } =
@@ -77,6 +88,10 @@ export default function LeaderboardPage() {
     "Unknown user";
   const loadingStats = profileLoading || fidScoreLoading || uuidScoreLoading;
 
+  // Fetch user token balance
+  const { balance: tokenBalance, loading: tokenLoading } =
+    useUserTokenBalance(userTalentUuid);
+
   // Countdown state
   const [countdown, setCountdown] = useState(() =>
     getCountdownParts(ROUND_ENDS_AT),
@@ -85,9 +100,14 @@ export default function LeaderboardPage() {
   // Update visible entries when data changes
   useEffect(() => {
     if (top200Entries.length > 0) {
-      setVisibleEntries(top200Entries);
+      // If URL has per_page parameter, show all entries
+      // Otherwise, show first 10 for client-side pagination
+      const shouldShowAll = perPageParam !== null;
+      setVisibleEntries(
+        shouldShowAll ? top200Entries : top200Entries.slice(0, 10),
+      );
     }
-  }, [top200Entries]);
+  }, [top200Entries, perPageParam]);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -117,21 +137,35 @@ export default function LeaderboardPage() {
       ? Math.max(0, lastTop200Score - creatorScore)
       : 0;
 
-  // Helper to calculate USDC rewards using top 200 scores
-  function getUsdcRewards(score: number, rank?: number): string {
+  // Helper to calculate USDC rewards using top 200 scores with boost consideration
+  function getUsdcRewards(
+    score: number,
+    rank?: number,
+    isBoosted?: boolean,
+  ): string {
     // Only top 200 creators earn rewards
     if (!rank || rank > 200) return "$0";
 
-    // Calculate total scores from top200Entries
-    const totalTop200Scores = top200Entries.reduce(
-      (sum, entry) => sum + entry.score,
+    // Calculate boosted scores for all entries
+    const boostedScores = top200Entries.map((entry) => {
+      const baseScore = entry.score;
+      // Apply 10% boost if the entry is boosted
+      return entry.isBoosted ? baseScore * 1.1 : baseScore;
+    });
+
+    // Calculate total boosted scores from top200Entries
+    const totalBoostedScores = boostedScores.reduce(
+      (sum, boostedScore) => sum + boostedScore,
       0,
     );
-    if (totalTop200Scores === 0) return "$0";
+    if (totalBoostedScores === 0) return "$0";
 
-    // Calculate multiplier based on total top 200 scores
-    const multiplier = TOTAL_SPONSORS_POOL / totalTop200Scores;
-    const reward = score * multiplier;
+    // Calculate multiplier based on total boosted scores
+    const multiplier = TOTAL_SPONSORS_POOL / totalBoostedScores;
+
+    // Calculate reward based on boosted score if applicable
+    const boostedScore = isBoosted ? score * 1.1 : score;
+    const reward = boostedScore * multiplier;
 
     // Format as currency
     if (reward >= 1) {
@@ -139,6 +173,38 @@ export default function LeaderboardPage() {
     } else {
       return `$${reward.toFixed(2)}`;
     }
+  }
+
+  // Helper to calculate boost amount for a given score and rank
+  function getBoostAmount(score: number, rank?: number): number {
+    if (!rank || rank > 200 || !top200Entries.length) return 0;
+
+    // Find the entry to check if it's boosted
+    const entry = top200Entries.find((e) => e.rank === rank);
+    if (!entry?.isBoosted) return 0;
+
+    // Calculate total scores without boost (for base reward calculation)
+    const totalBaseScores = top200Entries.reduce(
+      (sum, entry) => sum + entry.score,
+      0,
+    );
+    if (totalBaseScores === 0) return 0;
+
+    // Calculate total boosted scores (for boosted reward calculation)
+    const totalBoostedScores = top200Entries.reduce((sum, entry) => {
+      return sum + (entry.isBoosted ? entry.score * 1.1 : entry.score);
+    }, 0);
+    if (totalBoostedScores === 0) return 0;
+
+    // Calculate multipliers
+    const baseMultiplier = TOTAL_SPONSORS_POOL / totalBaseScores;
+    const boostedMultiplier = TOTAL_SPONSORS_POOL / totalBoostedScores;
+
+    // Calculate rewards
+    const baseReward = score * baseMultiplier;
+    const boostedReward = score * 1.1 * boostedMultiplier;
+
+    return boostedReward - baseReward;
   }
 
   // Handler to navigate to profile page for a leaderboard entry
@@ -164,7 +230,7 @@ export default function LeaderboardPage() {
   // Determine loading and pagination state
   const hasMore =
     top200Entries.length > 0
-      ? top200Entries.length < 200
+      ? top200Entries.length < perPage
       : visibleEntries.length < top200Entries.length;
   const loading = top200Loading;
 
@@ -177,42 +243,45 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <PageContainer noPadding>
-      {/* Header section */}
-      <Section variant="header">
-        {/* My Rewards Hero - Show if user is logged in via either path */}
-        {(user || profile) && (
-          <MyRewards
-            rewards={
-              creatorScore
-                ? getUsdcRewards(creatorScore, userTop200Entry?.rank)
-                : "$0"
-            }
-            score={creatorScore}
-            avatarUrl={avatarUrl}
-            name={name}
-            isLoading={loadingStats || (top200Loading && !userTop200Entry)}
-            rank={userTop200Entry?.rank}
-            pointsToTop200={pointsToTop200}
-            onHowToEarnClick={() => setHowToEarnOpen(true)}
-          />
-        )}
+    <>
+      {/* My Rewards Hero - Show if user is logged in via either path */}
+      {(user || profile) && (
+        <MyRewards
+          rewards={
+            creatorScore
+              ? getUsdcRewards(
+                  creatorScore,
+                  userTop200Entry?.rank,
+                  userTop200Entry?.isBoosted,
+                )
+              : "$0"
+          }
+          score={creatorScore}
+          avatarUrl={avatarUrl}
+          name={name}
+          isLoading={loadingStats || (top200Loading && !userTop200Entry)}
+          rank={userTop200Entry?.rank}
+          pointsToTop200={pointsToTop200}
+          onHowToEarnClick={() => setHowToEarnOpen(true)}
+          tokenBalance={tokenBalance}
+          tokenLoading={tokenLoading}
+        />
+      )}
 
-        {/* How to Earn Modal */}
-        <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
+      {/* How to Earn Modal */}
+      <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
 
-        {/* Simplified Stat Cards */}
-        <div className="grid grid-cols-2 gap-4 mt-6">
-          <StatCard
-            title="Rewards Pool"
-            value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
-          />
-          <StatCard
-            title="Rewards Distribution"
-            value={`${countdown.days}d ${countdown.hours}h`}
-          />
-        </div>
-      </Section>
+      {/* Simplified Stat Cards */}
+      <div className="grid grid-cols-2 gap-4 mt-6">
+        <StatCard
+          title="Rewards Pool"
+          value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
+        />
+        <StatCard
+          title="Rewards Distribution"
+          value={`${countdown.days}d ${countdown.hours}h`}
+        />
+      </div>
 
       {/* Full width tabs */}
       <Section variant="full-width">
@@ -221,7 +290,7 @@ export default function LeaderboardPage() {
             {
               id: "creators",
               label: "Leaderboard",
-              count: 200,
+              count: perPage,
             },
             {
               id: "talent",
@@ -266,19 +335,34 @@ export default function LeaderboardPage() {
             )}
             {/* Leaderboard list */}
             <CreatorList
-              items={visibleEntries.map((user) => ({
-                id: user.id,
-                name: user.name,
-                avatarUrl: user.pfp,
-                rank: user.rank,
-                primaryMetric: getUsdcRewards(user.score, user.rank),
-                secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
-              }))}
+              items={visibleEntries.map((user) => {
+                // Check if user is boosted
+                const isBoosted = user.isBoosted;
+
+                return {
+                  id: user.id,
+                  name: user.name,
+                  avatarUrl: user.pfp,
+                  rank: user.rank,
+                  primaryMetric: getUsdcRewards(
+                    user.score,
+                    user.rank,
+                    isBoosted,
+                  ),
+                  secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
+                  badge: isBoosted ? (
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100">
+                      <Rocket className="h-3 w-3 text-purple-600" />
+                    </div>
+                  ) : undefined,
+                };
+              })}
               onItemClick={(item) => {
                 // Navigate to profile page
                 window.location.href = `/${item.id}`;
               }}
               loading={loading}
+              primaryMetricLoading={rewardsLoading}
             />
 
             {/* Load More button - only show if there are more entries and we haven't reached 200 */}
@@ -338,14 +422,21 @@ export default function LeaderboardPage() {
                   <CreatorList
                     items={top200Entries
                       .filter((entry) => entry.isBoosted && entry.score > 0)
-                      .map((user) => ({
-                        id: user.id,
-                        name: user.name,
-                        avatarUrl: user.pfp,
-                        rank: user.rank,
-                        primaryMetric: getUsdcRewards(user.score, user.rank),
-                        secondaryMetric: `Creator Score: ${user.score.toLocaleString()} | Tokens: ${(user.tokenBalance || 0).toLocaleString()}`,
-                      }))}
+                      .map((user) => {
+                        const boostAmount = getBoostAmount(
+                          user.score,
+                          user.rank,
+                        );
+
+                        return {
+                          id: user.id,
+                          name: user.name,
+                          avatarUrl: user.pfp,
+                          rank: user.rank,
+                          primaryMetric: `$${boostAmount.toFixed(0)}`,
+                          secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
+                        };
+                      })}
                     onItemClick={(item) => {
                       // Navigate to profile page
                       window.location.href = `/${item.id}`;
@@ -403,6 +494,19 @@ export default function LeaderboardPage() {
             </Callout>
           </div>
         )}
+      </Section>
+    </>
+  );
+}
+
+export default function LeaderboardPage() {
+  return (
+    <PageContainer noPadding>
+      {/* Header section */}
+      <Section variant="header">
+        <Suspense fallback={<Skeleton className="h-16 w-full" />}>
+          <LeaderboardContent />
+        </Suspense>
       </Section>
     </PageContainer>
   );

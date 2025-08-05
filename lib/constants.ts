@@ -179,3 +179,8 @@ export const TOTAL_SPONSORS_POOL = ACTIVE_SPONSORS.reduce(
 );
 
 export const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
+
+// Boost configuration
+export const BOOST_CONFIG = {
+  TOKEN_THRESHOLD: 100, // Minimum tokens required for boost status
+} as const;

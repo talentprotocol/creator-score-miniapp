@@ -104,13 +104,9 @@ export type LeaderboardEntry = {
   name: string;
   pfp?: string;
   score: number;
-  rewards: string;
   id: string;
   talent_protocol_id: string | number;
-  // Token boost fields
-  tokenBalance?: number;
   isBoosted?: boolean;
-  boostAmount?: number;
   baseReward?: number;
   boostedReward?: number;
 };

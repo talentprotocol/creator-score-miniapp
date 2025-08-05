@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { InfoIcon } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import { formatCurrency } from "@/lib/utils";
 
 interface MyRewardsProps {
   rewards: string;
@@ -13,6 +14,8 @@ interface MyRewardsProps {
   rank?: number;
   pointsToTop200?: number;
   onHowToEarnClick?: () => void;
+  tokenBalance?: number | null;
+  tokenLoading?: boolean;
 }
 
 export function MyRewards({
@@ -24,6 +27,8 @@ export function MyRewards({
   rank,
   pointsToTop200,
   onHowToEarnClick,
+  tokenBalance,
+  tokenLoading = false,
 }: MyRewardsProps) {
   const isTop200 = rank !== undefined && rank <= 200;
 
@@ -64,6 +69,16 @@ export function MyRewards({
                     ? `${pointsToTop200} points left to earn rewards.`
                     : "Calculating your position..."}
               </p>
+              {/* Token balance display */}
+              {tokenBalance !== null && tokenBalance !== undefined && (
+                <p className="text-xs text-muted-foreground">
+                  {tokenLoading
+                    ? "Loading token balance..."
+                    : tokenBalance > 0
+                      ? `${formatCurrency(tokenBalance)} $TALENT`
+                      : "No $TALENT tokens held"}
+                </p>
+              )}
             </>
           )}
         </div>
