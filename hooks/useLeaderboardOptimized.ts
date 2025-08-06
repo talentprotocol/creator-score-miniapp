@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { LeaderboardEntry } from "@/app/services/types";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export interface UseLeaderboardOptimizedReturn {
   entries: LeaderboardEntry[];
@@ -14,10 +16,7 @@ export interface UseLeaderboardOptimizedReturn {
   refetch: () => void;
 }
 
-export function useLeaderboardOptimized(
-  page: number = 1,
-  perPage: number = 200,
-): UseLeaderboardOptimizedReturn {
+export function useLeaderboardOptimized(): UseLeaderboardOptimizedReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
@@ -28,21 +27,36 @@ export function useLeaderboardOptimized(
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
-  // Phase 1: Load basic data immediately
+  // Load basic data immediately
   const loadBasicData = useCallback(async () => {
+    // Check cache first
+    const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
+    const cachedData = getCachedData<{
+      entries: LeaderboardEntry[];
+      boostedCreatorsCount: number;
+      lastUpdated: string | null;
+      nextUpdate: string | null;
+    }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
+
+    if (cachedData) {
+      setEntries(cachedData.entries);
+      setBoostedCreatorsCount(cachedData.boostedCreatorsCount);
+      setLastUpdated(cachedData.lastUpdated);
+      setNextUpdate(cachedData.nextUpdate);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `/api/leaderboard/basic?page=${page}&per_page=${perPage}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`/api/leaderboard/basic`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
@@ -54,21 +68,29 @@ export function useLeaderboardOptimized(
       setBoostedCreatorsCount(data.boostedCreatorsCount);
       setLastUpdated(data.lastUpdated);
       setNextUpdate(data.nextUpdate);
+
+      // Cache the data
+      setCachedData(cacheKey, {
+        entries: data.entries,
+        boostedCreatorsCount: data.boostedCreatorsCount,
+        lastUpdated: data.lastUpdated,
+        nextUpdate: data.nextUpdate,
+      });
     } catch (err) {
-      console.error(`❌ [LEADERBOARD HOOK] Failed to load basic data:`, err);
+      console.error(`Failed to load leaderboard data:`, err);
       setError(
         err instanceof Error ? err.message : "Failed to load leaderboard",
       );
     } finally {
       setLoading(false);
     }
-  }, [page, perPage]);
+  }, []);
 
   const refetch = useCallback(() => {
     loadBasicData();
   }, [loadBasicData]);
 
-  // Load basic data on mount or when params change
+  // Load basic data on mount
   useEffect(() => {
     loadBasicData();
   }, [loadBasicData]);

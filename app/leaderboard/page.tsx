@@ -1,12 +1,10 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useUserResolution } from "@/hooks/useUserResolution";
-import type { LeaderboardEntry } from "@/app/services/types";
 import { sdk } from "@farcaster/frame-sdk";
 import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
 import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
@@ -29,7 +27,6 @@ import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
 import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
 import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
-import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Typography } from "@/components/ui/typography";
@@ -52,25 +49,16 @@ function LeaderboardContent() {
   const [activeTab, setActiveTab] = useState("creators");
   const { talentUuid: userTalentUuid } = useUserResolution();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
-  const [visibleEntries, setVisibleEntries] = useState<LeaderboardEntry[]>([]);
   const posthog = usePostHog();
 
-  // Read URL parameters for pagination
-  const searchParams = useSearchParams();
-  const pageParam = searchParams.get("page");
-  const perPageParam = searchParams.get("per_page");
-  const page = pageParam ? parseInt(pageParam, 10) : 1;
-  const perPage = perPageParam ? parseInt(perPageParam, 10) : 200;
-
-  // Initial fast load of first 10 entries
-  // Use optimized leaderboard hook for all data with URL parameters
+  // Use optimized leaderboard hook for all data
   const {
     entries: top200Entries,
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
     boostedCreatorsCount,
-  } = useLeaderboardOptimized(page, perPage);
+  } = useLeaderboardOptimized();
 
   // Use hooks for data fetching - both auth paths
   const { creatorScore: fidScore, loading: fidScoreLoading } =
@@ -100,18 +88,6 @@ function LeaderboardContent() {
   const [countdown, setCountdown] = useState(() =>
     getCountdownParts(ROUND_ENDS_AT),
   );
-
-  // Update visible entries when data changes
-  useEffect(() => {
-    if (top200Entries.length > 0) {
-      // If URL has per_page parameter, show all entries
-      // Otherwise, show first 10 for client-side pagination
-      const shouldShowAll = perPageParam !== null;
-      setVisibleEntries(
-        shouldShowAll ? top200Entries : top200Entries.slice(0, 10),
-      );
-    }
-  }, [top200Entries, perPageParam]);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -231,21 +207,6 @@ function LeaderboardContent() {
     }
   };
 
-  // Determine loading and pagination state
-  const hasMore =
-    top200Entries.length > 0
-      ? top200Entries.length < perPage
-      : visibleEntries.length < top200Entries.length;
-  const loading = top200Loading;
-
-  // Handler to load more entries
-  const loadMore = () => {
-    // Load more from top200Entries
-    const currentLength = visibleEntries.length;
-    const nextEntries = top200Entries.slice(currentLength, currentLength + 10);
-    setVisibleEntries([...visibleEntries, ...nextEntries]);
-  };
-
   return (
     <>
       {/* My Rewards Hero - Show if user is logged in via either path */}
@@ -294,7 +255,6 @@ function LeaderboardContent() {
             {
               id: "creators",
               label: "Leaderboard",
-              count: perPage,
             },
             {
               id: "talent",
@@ -314,13 +274,13 @@ function LeaderboardContent() {
 
       {/* Content section */}
       <Section variant="content" animate>
-        {loading && top200Error && (
+        {top200Loading && top200Error && (
           <div className="text-destructive text-sm px-2">{top200Error}</div>
         )}
 
         {activeTab === "creators" && (
           <>
-            {loading && visibleEntries.length === 0 && (
+            {top200Loading && top200Entries.length === 0 && (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3 p-3">
@@ -337,9 +297,9 @@ function LeaderboardContent() {
                 ))}
               </div>
             )}
-            {/* Leaderboard list */}
+            {/* Leaderboard list - show all 200 entries */}
             <CreatorList
-              items={visibleEntries.map((user) => {
+              items={top200Entries.map((user) => {
                 // Check if user is boosted
                 const isBoosted = user.isBoosted;
 
@@ -365,29 +325,15 @@ function LeaderboardContent() {
                 // Navigate to profile page
                 router.push(`/${item.id}`);
               }}
-              loading={loading}
+              loading={top200Loading}
               primaryMetricLoading={rewardsLoading}
             />
-
-            {/* Load More button - only show if there are more entries and we haven't reached 200 */}
-            {hasMore && visibleEntries.length < 200 && (
-              <Button onClick={loadMore} className="w-full" variant="default">
-                {loading ? (
-                  <>
-                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></span>
-                    Loading...
-                  </>
-                ) : (
-                  "Load More"
-                )}
-              </Button>
-            )}
           </>
         )}
 
         {activeTab === "talent" && (
           <>
-            {loading && (
+            {top200Loading && (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3 p-3">
@@ -405,7 +351,7 @@ function LeaderboardContent() {
               </div>
             )}
 
-            {!loading && (
+            {!top200Loading && (
               <>
                 {/* Filter for boosted creators only */}
                 {top200Entries.filter(

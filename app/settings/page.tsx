@@ -31,7 +31,6 @@ import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
-import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
   const router = useRouter();

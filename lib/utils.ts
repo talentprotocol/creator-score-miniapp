@@ -87,7 +87,7 @@ export async function getEthUsdcPrice(): Promise<number> {
     }
 
     // Cache the price with correct 24-hour duration
-    setCachedData(cacheKey, price, CACHE_DURATIONS.ETH_PRICE);
+    setCachedData(cacheKey, price);
 
     return price;
   } catch {
@@ -272,73 +272,46 @@ interface CachedData<T> {
   timestamp: number;
 }
 
-// Server-side cache store
-const serverCache = new Map<
-  string,
-  { data: unknown; timestamp: number; maxAge: number }
->();
-
 export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
-  // Client-side: use localStorage
-  if (typeof window !== "undefined") {
-    try {
-      const cached = localStorage.getItem(key);
-      if (!cached) return null;
+  if (typeof window === "undefined") {
+    return null;
+  }
 
-      const { data, timestamp }: CachedData<T> = JSON.parse(cached);
-      if (Date.now() - timestamp < maxAgeMs) {
-        return data;
-      }
-
-      // Data is stale, remove it
-      localStorage.removeItem(key);
+  try {
+    const cached = localStorage.getItem(key);
+    if (!cached) {
       return null;
-    } catch {
-      // Invalid cache data, remove it
+    }
+
+    const parsed: CachedData<T> = JSON.parse(cached);
+    const age = Date.now() - parsed.timestamp;
+
+    if (age > maxAgeMs) {
       localStorage.removeItem(key);
       return null;
     }
-  }
 
-  // Server-side: use in-memory cache with unstable_cache for persistence
-  const cached = serverCache.get(key);
-  if (cached) {
-    if (Date.now() - cached.timestamp < cached.maxAge) {
-      return cached.data as T;
-    }
-    // Data is stale, remove it
-    serverCache.delete(key);
+    return parsed.data;
+  } catch {
+    return null;
   }
-
-  return null;
 }
 
-export function setCachedData<T>(
-  key: string,
-  data: T,
-  maxAgeMs?: number,
-): void {
-  // Client-side: use localStorage
-  if (typeof window !== "undefined") {
-    try {
-      const cachedData: CachedData<T> = {
-        data,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(key, JSON.stringify(cachedData));
-    } catch {
-      // Storage quota exceeded or other error, silently fail
-    }
+export function setCachedData<T>(key: string, data: T): void {
+  if (typeof window === "undefined") {
     return;
   }
 
-  // Server-side: use in-memory cache
-  const cacheMaxAge = maxAgeMs || 300000; // 5 minutes default
-  serverCache.set(key, {
-    data,
-    timestamp: Date.now(),
-    maxAge: cacheMaxAge,
-  });
+  try {
+    const cacheData: CachedData<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+
+    localStorage.setItem(key, JSON.stringify(cacheData));
+  } catch {
+    // Storage quota exceeded or other error, silently fail
+  }
 }
 
 // Unstable cache wrapper for specific data fetching functions
@@ -363,6 +336,7 @@ export const CACHE_DURATIONS = {
   SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
   EXPENSIVE_COMPUTATION: 30 * 60 * 1000, // 30 minutes for expensive computations
   ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours
+  LEADERBOARD_DATA: 5 * 60 * 1000, // 5 minutes for leaderboard data
 } as const;
 
 export { resolveTalentUser } from "./user-resolver";

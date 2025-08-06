@@ -129,6 +129,20 @@ export default function DesignPage() {
   const [isClicked, setIsClicked] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("icons");
 
+  // Only show design system in development
+  if (process.env.NODE_ENV === "production") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-semibold">Design System</h1>
+          <p className="text-muted-foreground">
+            Design system is only available in development environment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const tabs = [
     { id: "icons", label: "Icons" },
     { id: "buttons", label: "Buttons" },
@@ -422,17 +436,10 @@ export default function DesignPage() {
                     </a>
                   </h3>
                   <div className="space-y-3">
-                    <Callout
-                      variant="brand"
-                      icon={<Info />}
-                      onClose={() => console.log("Closed brand callout")}
-                    >
+                    <Callout variant="brand" icon={<Info />} onClose={() => {}}>
                       Brand callout - not clickable
                     </Callout>
-                    <Callout
-                      variant="neutral"
-                      onClose={() => console.log("Closed neutral callout")}
-                    >
+                    <Callout variant="neutral" onClose={() => {}}>
                       <Typography size="xs">
                         This is a neutral callout with close button
                       </Typography>
@@ -683,7 +690,7 @@ export default function DesignPage() {
                         secondaryMetric: "Creator Score: 4,120",
                       },
                     ]}
-                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                    onItemClick={() => {}}
                   />
                 </div>
 
@@ -726,7 +733,7 @@ export default function DesignPage() {
                         secondaryMetric: "@sponsor3",
                       },
                     ]}
-                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                    onItemClick={() => {}}
                   />
                 </div>
 
@@ -1206,7 +1213,7 @@ export default function DesignPage() {
                         secondaryMetric: "Creator Score: 4,120",
                       },
                     ]}
-                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                    onItemClick={() => {}}
                   />
                 </div>
 
@@ -1241,7 +1248,7 @@ export default function DesignPage() {
                         secondaryMetric: "Creator Score: 4,120",
                       },
                     ]}
-                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                    onItemClick={() => {}}
                   />
                 </div>
 
@@ -1316,7 +1323,7 @@ export default function DesignPage() {
                         secondaryMetric: "Creator Score: 4,120",
                       },
                     ]}
-                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                    onItemClick={() => {}}
                   />
                 </div>
 
@@ -1350,7 +1357,7 @@ export default function DesignPage() {
                         secondaryMetric: "@sponsor3",
                       },
                     ]}
-                    onItemClick={(item) => console.log("Clicked:", item.name)}
+                    onItemClick={() => {}}
                   />
                 </div>
 
