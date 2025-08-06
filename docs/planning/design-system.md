@@ -88,16 +88,78 @@ Every page follows this pattern:
 
 ## Typography
 
-### Font Scale
-- **Body**: `text-sm sm:text-[15px]` (14px mobile, 15px desktop)
-- **Secondary**: `text-xs sm:text-sm text-muted-foreground`
-- **Headings**: `text-xl sm:text-2xl` (page), `text-lg sm:text-xl` (section)
-- **Micro**: `text-xs` (labels, metadata)
+### Typography Component
+The `Typography` component provides consistent text styling across the app using semantic classes and the established design system.
 
-### Font Weight
-- **Default**: `font-light` for body text
-- **Emphasis**: `font-medium` for labels and headings
-- **Bold**: `font-bold` for numbers and key data
+**Usage:**
+```tsx
+import { Typography } from "@/components/ui/typography";
+
+// Basic usage
+<Typography>Default body text</Typography>
+
+// With variants
+<Typography size="xs" weight="medium" color="muted">
+  Small, medium weight, muted text
+</Typography>
+
+// As different elements
+<Typography as="h1" size="xl" weight="bold">
+  Page heading
+</Typography>
+```
+
+**Available Variants:**
+- **Size**: `xs`, `sm`, `base`, `lg`, `xl`, `2xl`
+- **Weight**: `light`, `normal`, `medium`, `bold`
+- **Color**: `default`, `muted`, `brand`
+- **Element**: `p`, `span`, `div`, `h1`-`h6`
+
+> **Note**: The Typography component (`components/ui/typography.tsx`) is the single source of truth for all typography values. Refer to the component implementation for the complete list of available options.
+
+### Typography Principles
+- **Semantic Colors**: Use `default`, `muted`, or `brand` colors for consistent theming
+- **Responsive Sizes**: Most sizes include responsive variants (e.g., `text-sm sm:text-[15px]`)
+- **Element Semantics**: Use appropriate HTML elements (`h1`-`h6` for headings, `p` for paragraphs)
+- **Consistent Spacing**: Typography components work with the established spacing scale
+
+### Component Integration
+**Callout Component**: Updated to use children composition instead of `textSize` prop:
+```tsx
+// ✅ GOOD: Use Typography component for text styling
+<Callout variant="brand" href="/settings">
+  <Typography size="xs">Connect accounts to increase your Creator Score</Typography>
+</Callout>
+
+// ✅ GOOD: Direct children for simple text
+<Callout variant="neutral">
+  Simple text without special styling
+</Callout>
+```
+
+### Migration Guide
+**From `textSize` prop to `Typography` component:**
+
+```tsx
+// ❌ OLD: Using textSize prop
+<Callout variant="brand" textSize="xs">
+  Connect accounts to increase your Creator Score
+</Callout>
+
+// ✅ NEW: Using Typography component
+<Callout variant="brand">
+  <Typography size="xs">
+    Connect accounts to increase your Creator Score
+  </Typography>
+</Callout>
+```
+
+**Benefits of the new approach:**
+- **Flexibility**: Easy to add bold, different colors, or other typography variations
+- **Composability**: Combine any typography variant with any callout variant
+- **Reusability**: Typography component can be used anywhere, not just in callouts
+- **Maintainability**: Changes to typography don't require changes to layout components
+- **Separation of concerns**: Callout handles layout/styling, Typography handles text styling
 
 ## Data Visualization
 

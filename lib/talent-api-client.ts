@@ -129,10 +129,6 @@ export class TalentApiClient {
             last_calculated_at: data.scores[0].last_calculated_at,
           },
         };
-        console.log(
-          "[TalentApiClient.getScore] Transformed Farcaster response:",
-          transformed,
-        );
         return NextResponse.json(transformed);
       }
       return NextResponse.json(data);
@@ -543,9 +539,6 @@ export class TalentApiClient {
         async () => {
           const url = `${TALENT_API_BASE}/search/advanced/profiles?${queryString}&view=scores_minimal`;
 
-          console.log("Starting searchProfiles request");
-          console.log("current time", new Date().toISOString());
-          console.log("Request URL: ", url);
           const response = await fetch(url, {
             method: "GET",
             headers: {
@@ -553,8 +546,6 @@ export class TalentApiClient {
               "X-API-Key": this.apiKey,
             },
           });
-          console.log("searchProfiles request end");
-          console.log("current time", new Date().toISOString());
 
           if (!response.ok) {
             const errorText = await response.text();

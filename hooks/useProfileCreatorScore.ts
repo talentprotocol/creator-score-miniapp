@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
+import { CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 
 // Global in-memory cache and deduplication helpers
 type CreatorScoreData = {
@@ -10,17 +11,17 @@ type CreatorScoreData = {
   error?: string;
 };
 
-// Cache of scores keyed by talent UUID with timestamp for TTL handling
+// Global cache for creator scores (in-memory)
 const globalScoreCache = new Map<
   string,
   { data: CreatorScoreData; timestamp: number }
 >();
 
-// Map to deduplicate concurrent fetches for the same talent UUID
+// Global promise cache to prevent duplicate requests
 const globalFetchingPromises = new Map<string, Promise<CreatorScoreData>>();
 
 // Cache duration: 5 minutes
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = CACHE_DURATION_5_MINUTES * 1000; // Convert to milliseconds
 
 export function useProfileCreatorScore(talentUUID: string) {
   const [creatorScore, setCreatorScore] = useState<number | undefined>(

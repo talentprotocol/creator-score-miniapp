@@ -7,6 +7,7 @@ import {
   setCachedData,
   CACHE_DURATIONS,
 } from "@/lib/utils";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 
 interface EarningsBreakdownSegment {
@@ -38,7 +39,7 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
         return;
       }
 
-      const cacheKey = `earnings_breakdown_${talentUUID}`;
+      const cacheKey = `${CACHE_KEYS.EARNINGS_BREAKDOWN}_${talentUUID}`;
 
       // Check cache first
       const cachedBreakdown = getCachedData<EarningsBreakdown>(

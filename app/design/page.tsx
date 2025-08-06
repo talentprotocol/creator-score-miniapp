@@ -32,6 +32,7 @@ import { RewardsBoostsCard } from "@/components/home/RewardsBoostsCard";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { BadgeCard } from "@/components/badges/BadgeCard";
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
+import { Typography } from "@/components/ui/typography";
 
 function IconDemo({
   icon,
@@ -275,10 +276,10 @@ export default function DesignPage() {
                     </a>
                   </h3>
                   <div className="flex flex-wrap gap-4">
-                    <Button styling="default">Default</Button>
-                    <Button styling="brand">Brand</Button>
-                    <Button styling="destructive">Destructive</Button>
-                    <Button styling="ghost">Ghost</Button>
+                    <Button variant="default">Default</Button>
+                    <Button variant="brand">Brand</Button>
+                    <Button variant="destructive">Destructive</Button>
+                    <Button variant="ghost">Ghost</Button>
                     <Button disabled>Disabled</Button>
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground font-mono space-y-1">
@@ -305,17 +306,17 @@ export default function DesignPage() {
                 <div>
                   <h3 className="text-sm font-medium mb-3">Icon Buttons</h3>
                   <div className="flex flex-wrap gap-4 items-center">
-                    <Button styling="default" size="icon">
+                    <Button variant="default" size="icon">
                       <Settings className="h-4 w-4" />
                     </Button>
-                    <Button styling="brand" size="icon">
+                    <Button variant="brand" size="icon">
                       <Heart className="h-4 w-4" />
                     </Button>
-                    <Button styling="destructive" size="icon">
+                    <Button variant="destructive" size="icon">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                     <Button
-                      styling="ghost"
+                      variant="ghost"
                       size="icon"
                       className="text-muted-foreground hover:text-primary"
                     >
@@ -339,21 +340,21 @@ export default function DesignPage() {
                   </h3>
                   <div className="space-y-3">
                     <ButtonFullWidth
-                      styling="default"
+                      variant="default"
                       icon={<Settings className="h-4 w-4" />}
                     >
                       Settings (Default)
                     </ButtonFullWidth>
 
                     <ButtonFullWidth
-                      styling="brand"
+                      variant="brand"
                       icon={<Heart className="h-4 w-4" />}
                     >
                       Follow (Brand)
                     </ButtonFullWidth>
 
                     <ButtonFullWidth
-                      styling="destructive"
+                      variant="destructive"
                       icon={<Trash2 className="h-4 w-4" />}
                     >
                       Delete Account (Destructive)
@@ -431,10 +432,10 @@ export default function DesignPage() {
                     <Callout
                       variant="neutral"
                       onClose={() => console.log("Closed neutral callout")}
-                      textSize="xs"
                     >
-                      Neutral callout with longer text - no icon automatically
-                      hidden
+                      <Typography size="xs">
+                        This is a neutral callout with close button
+                      </Typography>
                     </Callout>
                   </div>
                 </div>
@@ -468,9 +469,10 @@ export default function DesignPage() {
                     >
                       Brand callout - internal link
                     </Callout>
-                    <Callout variant="neutral" href="/profile" textSize="xs">
-                      Neutral callout with longer text for internal link - no
-                      icon
+                    <Callout variant="neutral" href="/profile">
+                      <Typography size="xs">
+                        This is a neutral callout with link
+                      </Typography>
                     </Callout>
                   </div>
                 </div>

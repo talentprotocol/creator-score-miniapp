@@ -147,7 +147,8 @@ export function ConnectedSocialsSection({
                   ? handleDisconnect(platform.source)
                   : handleConnect(platform.source)
               }
-              styling={connectedAccount ? "default" : "brand"}
+              className="w-full"
+              variant={connectedAccount ? "default" : "brand"}
               size="sm"
               disabled={platform.comingSoon}
             >

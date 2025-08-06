@@ -96,7 +96,7 @@ export function NoScoreStates({
         className="w-full max-w-xs"
         size="lg"
         disabled={isRefreshing || !!successMessage}
-        styling={errorMessage ? "destructive" : "default"}
+        variant={errorMessage ? "destructive" : "default"}
       >
         {isRefreshing ? (
           <>

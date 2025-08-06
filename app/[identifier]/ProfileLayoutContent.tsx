@@ -24,6 +24,7 @@ import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
+import { Typography } from "@/components/ui/typography";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -283,13 +284,13 @@ function ProfileLayoutContentInner({
 
         {/* Action buttons - show for all profiles */}
         <div className="flex flex-row gap-4 w-full mt-6">
-          <Button onClick={handleShareStats} styling="brand" className="flex-1">
+          <Button onClick={handleShareStats} variant="brand" className="flex-1">
             <Share className="w-4 h-4 mr-2" />
             Share Stats
           </Button>
           <Button
             onClick={handleRefreshScore}
-            styling="default"
+            variant="default"
             className={`flex-1 ${
               refreshError ? "text-red-700 hover:border-red-400" : ""
             }`}
@@ -346,7 +347,6 @@ function ProfileLayoutContentInner({
             <Callout
               variant="brand"
               href="/settings"
-              textSize="xs"
               onClick={() => {
                 // Track connect accounts callout click
                 posthog?.capture("profile_connect_accounts_clicked", {
@@ -359,7 +359,9 @@ function ProfileLayoutContentInner({
                 });
               }}
             >
-              Connect accounts to increase your Creator Score
+              <Typography size="xs">
+                Connect accounts to increase your Creator Score
+              </Typography>
             </Callout>
           </div>
         )}

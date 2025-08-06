@@ -3,6 +3,7 @@
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 
 const getInitialTalentUserId = () => {
   if (typeof window !== "undefined") {
@@ -50,7 +51,7 @@ function useGlobalTalentUserId() {
 }
 
 // Cache duration: 5 minutes
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = CACHE_DURATION_5_MINUTES * 1000; // Convert to milliseconds
 
 async function fetchTalentUser(walletAddress: string): Promise<{ id: string }> {
   // Check cache first

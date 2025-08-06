@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 import { useProfileCredentials } from "./useProfileCredentials";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfileTotalEarnings(talentUUID: string) {
   const [totalEarnings, setTotalEarnings] = useState<number | undefined>(
@@ -52,7 +53,7 @@ export function useProfileTotalEarnings(talentUUID: string) {
       }
 
       // Check cache first
-      const cacheKey = `total_earnings_${talentUUID}_v0`;
+      const cacheKey = `${CACHE_KEYS.TOTAL_EARNINGS}_${talentUUID}_v0`;
       const cachedEarnings = getCachedData<number>(
         cacheKey,
         CACHE_DURATIONS.PROFILE_DATA,

@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 
 interface DataPoint {
   account_identifier: string;
@@ -21,26 +22,14 @@ async function getUserTokenBalanceFromAPI(
   apiKey: string,
   talentUuid: string,
 ): Promise<number> {
-  console.log(
-    `🔄 [TOKEN BALANCE SERVICE] Starting token balance fetch for user ${talentUuid}`,
-  );
-
   const baseUrl = "https://api.talentprotocol.com";
 
   // Fetch data points for both token types
   const tokenSlugs = ["talent_protocol_talent_holder", "talent_vault"];
   let totalBalance = 0;
 
-  console.log(
-    `📊 [TOKEN BALANCE SERVICE] Fetching data points for ${tokenSlugs.length} token types: ${tokenSlugs.join(", ")}`,
-  );
-
   for (const slug of tokenSlugs) {
     try {
-      console.log(
-        `🔄 [TOKEN BALANCE SERVICE] Fetching ${slug} data points for user ${talentUuid}`,
-      );
-
       const response = await fetch(
         `${baseUrl}/data_points?id=${talentUuid}&slugs=${slug}`,
         {
@@ -52,21 +41,10 @@ async function getUserTokenBalanceFromAPI(
       );
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          `❌ [TOKEN BALANCE SERVICE] Data points API error for ${slug}:`,
-          errorText,
-        );
-        console.warn(
-          `⚠️ [TOKEN BALANCE SERVICE] Skipping ${slug} due to API error`,
-        );
         continue; // Skip this slug if it fails
       }
 
       const data: DataPointsResponse = await response.json();
-      console.log(
-        `✅ [TOKEN BALANCE SERVICE] Received ${data.data_points.length} data points for ${slug}`,
-      );
 
       // Sum all readable_values for this credential type
       const slugBalance = data.data_points.reduce((sum, dp) => {
@@ -74,29 +52,11 @@ async function getUserTokenBalanceFromAPI(
         return sum + value;
       }, 0);
 
-      console.log(
-        `🎯 [TOKEN BALANCE SERVICE] Found ${data.data_points.length} data points for ${slug}, total: ${slugBalance.toFixed(2)}`,
-      );
-
       totalBalance += slugBalance;
-      console.log(
-        `🎯 [TOKEN BALANCE SERVICE] User ${talentUuid} has ${slugBalance.toFixed(2)} ${slug} tokens`,
-      );
-    } catch (error) {
-      console.error(
-        `❌ [TOKEN BALANCE SERVICE] Error fetching ${slug} data points:`,
-        error,
-      );
-      console.warn(
-        `⚠️ [TOKEN BALANCE SERVICE] Continuing with other slugs even if ${slug} fails`,
-      );
+    } catch {
       // Continue with other slugs even if one fails
     }
   }
-
-  console.log(
-    `🎯 [TOKEN BALANCE SERVICE] User ${talentUuid} has ${totalBalance.toFixed(2)} total tokens`,
-  );
 
   return totalBalance;
 }
@@ -106,27 +66,16 @@ async function getUserTokenBalanceFromAPI(
  */
 export const getCachedUserTokenBalance = unstable_cache(
   async (apiKey: string, talentUuid: string): Promise<number> => {
-    console.log(
-      `🔄 [TOKEN BALANCE SERVICE] Fetching token balance for user ${talentUuid}...`,
-    );
-
     try {
       const balance = await getUserTokenBalanceFromAPI(apiKey, talentUuid);
-      console.log(
-        `✅ [TOKEN BALANCE SERVICE] User token balance: ${balance.toFixed(2)}`,
-      );
       return balance;
     } catch (error) {
-      console.error(
-        "❌ [TOKEN BALANCE SERVICE] Error fetching user token balance:",
-        error,
-      );
       throw error;
     }
   },
-  ["user-token-balance"],
+  [CACHE_KEYS.USER_TOKEN_BALANCE],
   {
-    revalidate: 60 * 60, // 1 hour cache
-    tags: ["user-token-balance"],
+    revalidate: CACHE_DURATION_1_HOUR,
+    tags: [CACHE_KEYS.USER_TOKEN_BALANCE],
   },
 );

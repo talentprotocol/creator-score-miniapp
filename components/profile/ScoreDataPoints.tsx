@@ -73,13 +73,5 @@ export function ScoreDataPoints() {
 
   const sortedCredentials = sortCredentialsByTotal(allCredentials);
 
-  return (
-    <CredentialAccordion
-      credentials={sortedCredentials}
-      onCredentialClick={() => {
-        // Handle credential click - this will be called by CredentialAccordion
-        // The component handles the SDK logic internally
-      }}
-    />
-  );
+  return <CredentialAccordion credentials={sortedCredentials} />;
 }

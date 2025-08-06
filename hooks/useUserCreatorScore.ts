@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useUserCreatorScore(fid: number | undefined) {
   const [creatorScore, setCreatorScore] = useState<number | null>(null);
@@ -20,7 +21,7 @@ export function useUserCreatorScore(fid: number | undefined) {
         return;
       }
 
-      const cacheKey = `user_creator_score_${fid}`;
+      const cacheKey = `${CACHE_KEYS.USER_CREATOR_SCORE}_${fid}`;
 
       // Check cache first
       const cachedScore = getCachedData<number>(

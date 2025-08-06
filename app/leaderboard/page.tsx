@@ -30,6 +30,9 @@ import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
 import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import { useSearchParams } from "next/navigation";
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { Typography } from "@/components/ui/typography";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -45,6 +48,7 @@ function getCountdownParts(target: Date) {
 function LeaderboardContent() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
   const { talentUuid: userTalentUuid } = useUserResolution();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
@@ -359,7 +363,7 @@ function LeaderboardContent() {
               })}
               onItemClick={(item) => {
                 // Navigate to profile page
-                window.location.href = `/${item.id}`;
+                router.push(`/${item.id}`);
               }}
               loading={loading}
               primaryMetricLoading={rewardsLoading}
@@ -367,12 +371,7 @@ function LeaderboardContent() {
 
             {/* Load More button - only show if there are more entries and we haven't reached 200 */}
             {hasMore && visibleEntries.length < 200 && (
-              <Button
-                styling="default"
-                className="w-full flex items-center justify-center mt-4"
-                onClick={loadMore}
-                disabled={loading}
-              >
+              <Button onClick={loadMore} className="w-full" variant="default">
                 {loading ? (
                   <>
                     <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></span>
@@ -439,7 +438,7 @@ function LeaderboardContent() {
                       })}
                     onItemClick={(item) => {
                       // Navigate to profile page
-                      window.location.href = `/${item.id}`;
+                      router.push(`/${item.id}`);
                     }}
                     loading={false}
                   />
@@ -485,12 +484,10 @@ function LeaderboardContent() {
         {/* Sponsor Callout */}
         {activeTab === "sponsors" && (
           <div className="mt-4">
-            <Callout
-              variant="brand"
-              href="https://farcaster.xyz/juampi"
-              textSize="xs"
-            >
-              Want to join as a sponsor? Reach out to @juampi
+            <Callout variant="brand" href="https://farcaster.xyz/juampi">
+              <Typography size="xs">
+                Want to join as a sponsor? Reach out to @juampi
+              </Typography>
             </Callout>
           </div>
         )}

@@ -70,8 +70,8 @@ export function ConnectedWalletsSection({
         {/* Add Wallet Button */}
         <Button
           onClick={() => setModalOpen(true)}
-          styling="brand"
           className="w-full"
+          variant="brand"
           disabled={isConnecting}
         >
           {isConnecting ? (
@@ -101,8 +101,8 @@ export function ConnectedWalletsSection({
       {/* Add Wallet Button */}
       <Button
         onClick={handleConnectWallet}
-        styling="brand"
         className="w-full"
+        variant="brand"
         disabled={isConnecting}
       >
         {isConnecting ? (
@@ -155,8 +155,6 @@ export function ConnectedWalletsSection({
                 {showPrimaryLabel ? (
                   <Button
                     type="button"
-                    styling="brand"
-                    size="sm"
                     className="whitespace-nowrap cursor-default min-w-[100px]"
                   >
                     Primary
@@ -164,8 +162,6 @@ export function ConnectedWalletsSection({
                 ) : showSetPrimaryButton ? (
                   <Button
                     onClick={() => handleSetPrimary(account)}
-                    styling="default"
-                    size="sm"
                     className="ml-auto"
                     disabled={account.is_primary}
                   >

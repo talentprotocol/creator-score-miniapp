@@ -40,12 +40,10 @@ export async function getLeaderboardCreators(
  */
 async function executeSearchQuery(
   baseUrl: string,
-  searchQuery: any,
+  searchQuery: Record<string, unknown>,
   apiKey: string,
   queryName: string,
 ): Promise<string[]> {
-  console.log(`🔍 [LEADERBOARD SERVICE] Executing ${queryName} query...`);
-
   const queryString = Object.keys(searchQuery)
     .map(
       (key) => `${key}=${encodeURIComponent(JSON.stringify(searchQuery[key]))}`,
@@ -64,10 +62,6 @@ async function executeSearchQuery(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(
-      `❌ [LEADERBOARD SERVICE] ${queryName} API error:`,
-      errorText,
-    );
     throw new Error(`${queryName} search failed: ${errorText}`);
   }
 
@@ -75,9 +69,6 @@ async function executeSearchQuery(
   const profileIds =
     data.profiles?.map((profile: { id: string }) => profile.id) || [];
 
-  console.log(
-    `✅ [LEADERBOARD SERVICE] ${queryName} returned ${profileIds.length} profiles`,
-  );
   return profileIds;
 }
 
@@ -88,10 +79,6 @@ async function executeSearchQuery(
 async function getBoostedProfilesViaSearch(apiKey: string): Promise<string[]> {
   const baseUrl = "https://api.talentprotocol.com";
   const boostedProfileIds = new Set<string>();
-
-  console.log(
-    `🔄 [LEADERBOARD SERVICE] Starting boosted profiles search with threshold: ${BOOST_CONFIG.TOKEN_THRESHOLD} tokens`,
-  );
 
   // Query 1: talent_protocol_talent_holder ≥ 100 (optimized for top 200)
   const query1 = {
@@ -136,10 +123,6 @@ async function getBoostedProfilesViaSearch(apiKey: string): Promise<string[]> {
   };
 
   // Execute both queries in parallel and handle partial failures gracefully
-  console.log(
-    `🚀 [LEADERBOARD SERVICE] Executing parallel queries for boosted profiles...`,
-  );
-
   const [results1, results2] = await Promise.allSettled([
     executeSearchQuery(
       baseUrl,
@@ -152,34 +135,14 @@ async function getBoostedProfilesViaSearch(apiKey: string): Promise<string[]> {
 
   // Process results and deduplicate
   if (results1.status === "fulfilled") {
-    console.log(
-      `✅ [LEADERBOARD SERVICE] talent_protocol_talent_holder query successful: ${results1.value.length} profiles`,
-    );
     results1.value.forEach((id) => boostedProfileIds.add(id));
-  } else {
-    console.warn(
-      `⚠️ [LEADERBOARD SERVICE] talent_protocol_talent_holder query failed:`,
-      results1.reason,
-    );
   }
 
   if (results2.status === "fulfilled") {
-    console.log(
-      `✅ [LEADERBOARD SERVICE] talent_vault query successful: ${results2.value.length} profiles`,
-    );
     results2.value.forEach((id) => boostedProfileIds.add(id));
-  } else {
-    console.warn(
-      `⚠️ [LEADERBOARD SERVICE] talent_vault query failed:`,
-      results2.reason,
-    );
   }
 
   const finalResults = Array.from(boostedProfileIds);
-  console.log(
-    `🎯 [LEADERBOARD SERVICE] Total unique boosted profiles found: ${finalResults.length}`,
-  );
-
   return finalResults;
 }
 
@@ -192,16 +155,8 @@ export async function getBoostedProfilesData(): Promise<string[]> {
     throw new Error("Missing Talent API key");
   }
 
-  console.log("🔄 [LEADERBOARD SERVICE] Fetching boosted profiles...");
-  console.log(
-    `🎯 [LEADERBOARD SERVICE] Boost threshold: ${BOOST_CONFIG.TOKEN_THRESHOLD} tokens`,
-  );
-
   const boostedProfileIds = await getBoostedProfilesViaSearch(apiKey);
 
-  console.log(
-    `✅ [LEADERBOARD SERVICE] Found ${boostedProfileIds.length} boosted profiles`,
-  );
   return boostedProfileIds;
 }
 

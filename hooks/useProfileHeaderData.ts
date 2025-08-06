@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { resolveTalentUser } from "@/lib/user-resolver";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfileHeaderData(talentUUID: string) {
   const [profile, setProfile] = useState<any>(null);
@@ -10,7 +11,7 @@ export function useProfileHeaderData(talentUUID: string) {
   const fetchProfile = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `profile_header_${talentUUID}`;
+    const cacheKey = `${CACHE_KEYS.PROFILE_HEADER}_${talentUUID}`;
 
     // Check cache first
     const cachedProfile = getCachedData<any>(
@@ -18,13 +19,11 @@ export function useProfileHeaderData(talentUUID: string) {
       CACHE_DURATIONS.PROFILE_DATA,
     );
     if (cachedProfile) {
-      console.log(`[useProfileHeaderData] Cache hit for ${talentUUID}`);
       setProfile(cachedProfile);
       setLoading(false);
       return;
     }
 
-    console.log(`[useProfileHeaderData] Fetching profile for ${talentUUID}`);
     try {
       setLoading(true);
       setError(null);
@@ -36,7 +35,6 @@ export function useProfileHeaderData(talentUUID: string) {
       // Cache the profile data
       if (user) {
         setCachedData(cacheKey, user);
-        console.log(`[useProfileHeaderData] Cached profile for ${talentUUID}`);
       }
     } catch (err) {
       console.error("Error fetching profile:", err);

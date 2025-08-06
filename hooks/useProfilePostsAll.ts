@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Post } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export interface YearlyPostData {
   year: number;
@@ -19,7 +20,7 @@ export function useProfilePostsAll(talentUUID: string) {
   const fetchAllPosts = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `all_posts_${talentUUID}`;
+    const cacheKey = `${CACHE_KEYS.PROFILE_POSTS_ALL}_${talentUUID}`;
 
     // Check cache first
     const cachedPosts = getCachedData<Post[]>(

@@ -31,6 +31,7 @@ import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
+import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -223,7 +224,6 @@ export default function SettingsPage() {
         {authenticated && (
           <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
             <ButtonFullWidth
-              styling="default"
               icon={<LogOut className="h-4 w-4" />}
               onClick={handleLogoutClick}
             >
@@ -236,7 +236,6 @@ export default function SettingsPage() {
         {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
           <div className="mt-2">
             <ButtonFullWidth
-              styling="destructive"
               icon={<Share className="h-4 w-4" />}
               onClick={openForTesting}
             >

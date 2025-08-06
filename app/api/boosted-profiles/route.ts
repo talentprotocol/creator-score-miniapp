@@ -10,21 +10,14 @@ export async function GET() {
 
     const boostedProfiles = await unstable_cache(
       async () => {
-        console.log(
-          "🔄 [BOOSTED PROFILES API] Cache miss, fetching fresh data...",
-        );
         return await getBoostedProfilesData();
       },
       [cacheKey],
       { revalidate: CACHE_DURATION_1_HOUR },
     )();
 
-    console.log(
-      `✅ [BOOSTED PROFILES API] Returning ${boostedProfiles.length} boosted profiles`,
-    );
     return NextResponse.json({ profiles: boostedProfiles });
-  } catch (error) {
-    console.error("❌ [BOOSTED PROFILES API] Error:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch boosted profiles" },
       { status: 500 },

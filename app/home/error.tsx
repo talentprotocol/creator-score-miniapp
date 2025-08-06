@@ -20,7 +20,7 @@ export default function Error({
     <div className="flex-1 flex items-center justify-center min-h-[200px]">
       <div className="text-center space-y-4">
         <p className="text-sm text-muted-foreground">Something went wrong!</p>
-        <Button onClick={reset} styling="destructive" size="sm">
+        <Button onClick={reset} variant="destructive" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Try Again
         </Button>

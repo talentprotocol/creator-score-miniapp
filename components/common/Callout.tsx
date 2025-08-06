@@ -10,7 +10,6 @@ interface CalloutProps {
   variant?: "brand" | "neutral";
   icon?: React.ReactNode;
   external?: boolean;
-  textSize?: "sm" | "xs";
   className?: string;
   onClick?: () => void;
   onClose?: () => void;
@@ -22,13 +21,12 @@ export function Callout({
   variant = "brand",
   icon,
   external,
-  textSize = "sm",
   className,
   onClick,
   onClose,
 }: CalloutProps) {
   // Auto-detect if we should show left icon based on text length
-  const shouldShowLeftIcon = icon && textSize === "sm";
+  const shouldShowLeftIcon = icon && React.Children.count(children) > 0;
   const { context } = useMiniKit();
   const isExternal = external ?? href?.startsWith("http");
   const RightIcon = isExternal ? ExternalLink : ArrowRight;
@@ -45,9 +43,7 @@ export function Callout({
             })}
           </div>
         )}
-        <span
-          className={`font-medium max-w-[38ch] sm:max-w-[80ch] overflow-hidden text-ellipsis whitespace-nowrap ${textSize === "sm" ? "text-sm" : "text-xs"}`}
-        >
+        <span className="font-medium max-w-[38ch] sm:max-w-[80ch] overflow-hidden text-ellipsis whitespace-nowrap">
           {children}
         </span>
       </div>

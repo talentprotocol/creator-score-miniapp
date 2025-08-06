@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag, unstable_cache } from "next/cache";
+import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
 import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { getBoostedProfilesData } from "@/app/services/leaderboardService";
@@ -54,7 +54,6 @@ async function fetchTop200Entries(apiKey: string): Promise<Profile[]> {
 
     if (!res.ok) {
       const errorText = await res.text();
-      console.error(`API Error for page ${page}:`, errorText);
       throw new Error(`Failed to fetch page ${page}: ${errorText}`);
     }
 
@@ -112,7 +111,6 @@ async function fetchPaginatedProfiles(
 
   if (!result.ok) {
     const errorText = await result.text();
-    console.error("API Error for paginated request:", errorText);
     throw new Error(errorText);
   }
 
@@ -123,11 +121,8 @@ async function fetchPaginatedProfiles(
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
-  console.log("🎯 [BASIC API] Starting basic leaderboard request");
-
   const apiKey = process.env.TALENT_API_KEY;
   if (!apiKey) {
-    console.error("❌ [BASIC API] Missing Talent API key");
     return NextResponse.json(
       { error: "Missing Talent API key" },
       { status: 500 },
@@ -141,53 +136,28 @@ export async function GET(req: NextRequest) {
     10,
   );
 
-  console.log(`📊 [BASIC API] Requesting page ${page}, perPage ${perPage}`);
-
   try {
     // Cache the entire processed response for page 1, perPage 200
     if (page === 1 && perPage === 200) {
-      console.log("🔄 [BASIC API] Fetching cached leaderboard response");
       const cachedResponse = unstable_cache(
         async () => {
-          console.log("🔄 [BASIC API] Cache miss, processing full leaderboard");
-
           // Fetch profiles
           const profiles = await fetchTop200Entries(apiKey);
-          console.log(
-            `✅ [BASIC API] Retrieved ${profiles.length} profiles from Talent API`,
-          );
 
           // Filter out project accounts
-          const originalCount = profiles.length;
           const filteredProfiles = profiles.filter(
             (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
           );
-          console.log(
-            `🔍 [BASIC API] Filtered ${originalCount - filteredProfiles.length} project accounts`,
-          );
 
           // Fetch boosted profiles for integration
-          console.log(
-            "🔄 [BASIC API] Fetching boosted profiles for integration",
-          );
           let boostedProfileIds: string[] = [];
           try {
             boostedProfileIds = await getBoostedProfilesData();
-            console.log(
-              `✅ [BASIC API] Retrieved ${boostedProfileIds.length} boosted profiles`,
-            );
-          } catch (error) {
-            console.warn(
-              "⚠️ [BASIC API] Failed to fetch boosted profiles:",
-              error,
-            );
+          } catch {
             boostedProfileIds = [];
           }
 
           // Map to basic entries (no rewards) with boosted status
-          console.log(
-            "🔄 [BASIC API] Mapping profiles to entries with boosted status",
-          );
           const mapped = filteredProfiles.map((profile: Profile) => {
             const creatorScores = Array.isArray(profile.scores)
               ? profile.scores
@@ -209,7 +179,6 @@ export async function GET(req: NextRequest) {
           });
 
           // Sort by score and assign ranks
-          console.log("🔄 [BASIC API] Sorting and ranking entries");
           mapped.sort((a, b) => b.score - a.score);
 
           let lastScore: number | null = null;
@@ -234,9 +203,6 @@ export async function GET(req: NextRequest) {
           const boostedCreatorsCount = ranked.filter(
             (entry) => entry.isBoosted,
           ).length;
-          console.log(
-            `✅ [BASIC API] Found ${boostedCreatorsCount} boosted creators in top ${ranked.length} entries`,
-          );
 
           return {
             entries: ranked,
@@ -248,54 +214,25 @@ export async function GET(req: NextRequest) {
       );
 
       const result = await cachedResponse();
-      console.log(
-        `✅ [BASIC API] Returning ${result.entries.length} cached entries`,
-      );
-      console.log(
-        `🏆 [BASIC API] Top 3:`,
-        result.entries
-          .slice(0, 3)
-          .map(
-            (e) =>
-              `${e.rank}. ${e.name} (${e.score})${e.isBoosted ? " 🚀" : ""}`,
-          ),
-      );
-
       return NextResponse.json(result);
     } else {
       // For non-cached requests (pagination), process normally
-      console.log(`🔄 [BASIC API] Fetching paginated profiles (page ${page})`);
       const profiles = await fetchPaginatedProfiles(apiKey, page, perPage);
-      console.log(
-        `✅ [BASIC API] Retrieved ${profiles.length} profiles from paginated request`,
-      );
 
       // Filter out project accounts
-      const originalCount = profiles.length;
       const filteredProfiles = profiles.filter(
         (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
       );
-      console.log(
-        `🔍 [BASIC API] Filtered ${originalCount - filteredProfiles.length} project accounts`,
-      );
 
       // Fetch boosted profiles for integration
-      console.log("🔄 [BASIC API] Fetching boosted profiles for integration");
       let boostedProfileIds: string[] = [];
       try {
         boostedProfileIds = await getBoostedProfilesData();
-        console.log(
-          `✅ [BASIC API] Retrieved ${boostedProfileIds.length} boosted profiles`,
-        );
-      } catch (error) {
-        console.warn("⚠️ [BASIC API] Failed to fetch boosted profiles:", error);
+      } catch {
         boostedProfileIds = [];
       }
 
       // Map to basic entries (no rewards) with boosted status
-      console.log(
-        "🔄 [BASIC API] Mapping profiles to entries with boosted status",
-      );
       const mapped = filteredProfiles.map((profile: Profile) => {
         const creatorScores = Array.isArray(profile.scores)
           ? profile.scores
@@ -316,7 +253,6 @@ export async function GET(req: NextRequest) {
       });
 
       // Sort by score and assign ranks
-      console.log("🔄 [BASIC API] Sorting and ranking entries");
       mapped.sort((a, b) => b.score - a.score);
 
       let lastScore: number | null = null;
@@ -341,18 +277,13 @@ export async function GET(req: NextRequest) {
       const boostedCreatorsCount = ranked.filter(
         (entry) => entry.isBoosted,
       ).length;
-      console.log(
-        `✅ [BASIC API] Found ${boostedCreatorsCount} boosted creators in top ${ranked.length} entries`,
-      );
 
-      console.log(`✅ [BASIC API] Returning ${ranked.length} ranked entries`);
       return NextResponse.json({
         entries: ranked,
         boostedCreatorsCount,
       });
     }
-  } catch (error) {
-    console.error("❌ [BASIC API] API error:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch leaderboard data" },
       { status: 500 },

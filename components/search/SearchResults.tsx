@@ -120,10 +120,10 @@ export function SearchResults({
           {onRetry && !isRateLimited && (
             <div className="space-y-2">
               <Button
-                styling="destructive"
                 onClick={onRetry}
-                disabled={loading}
                 className="w-full"
+                variant="destructive"
+                disabled={loading}
               >
                 {loading ? (
                   <>
@@ -182,8 +182,8 @@ export function SearchResults({
         <div className="flex justify-center pt-4">
           <Button
             onClick={onLoadMore}
-            styling="default"
             className="w-full"
+            variant="default"
             disabled={loading}
           >
             {loading ? (

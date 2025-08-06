@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Post } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getPostsForTalentId } from "@/app/services/postsService";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfilePostsPaginated(
   talentUUID: string,
@@ -18,7 +19,7 @@ export function useProfilePostsPaginated(
   const loadInitialData = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `posts_page_1_${talentUUID}_${perPage}`;
+    const cacheKey = `${CACHE_KEYS.PROFILE_POSTS_PAGINATED}_${talentUUID}_${perPage}`;
 
     // Check cache first
     const cachedData = getCachedData<Post[]>(
