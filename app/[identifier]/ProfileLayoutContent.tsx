@@ -359,7 +359,7 @@ function ProfileLayoutContentInner({
                 });
               }}
             >
-              <Typography size="xs">
+              <Typography size="xs" color="brand">
                 Connect accounts to increase your Creator Score
               </Typography>
             </Callout>

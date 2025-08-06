@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { InfoIcon } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface MyRewardsProps {
   rewards: string;
@@ -16,6 +17,7 @@ interface MyRewardsProps {
   onHowToEarnClick?: () => void;
   tokenBalance?: number | null;
   tokenLoading?: boolean;
+  isBoosted?: boolean; // New prop for boost status
 }
 
 export function MyRewards({
@@ -29,6 +31,7 @@ export function MyRewards({
   onHowToEarnClick,
   tokenBalance,
   tokenLoading = false,
+  isBoosted = false,
 }: MyRewardsProps) {
   const isTop200 = rank !== undefined && rank <= 200;
 
@@ -42,6 +45,7 @@ export function MyRewards({
             </p>
             {onHowToEarnClick && (
               <Button
+                variant="ghost"
                 onClick={onHowToEarnClick}
                 className="h-5 w-5 text-muted-foreground hover:text-primary"
               >
@@ -57,7 +61,12 @@ export function MyRewards({
             </>
           ) : (
             <>
-              <p className="text-3xl font-bold">
+              <p
+                className={cn(
+                  "text-3xl font-bold",
+                  isBoosted && "text-purple-700",
+                )}
+              >
                 {isTop200 ? rewards : score.toString()}
               </p>
               <p className="text-xs text-muted-foreground">

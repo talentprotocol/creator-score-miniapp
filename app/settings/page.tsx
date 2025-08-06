@@ -31,6 +31,7 @@ import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
+import { Typography } from "@/components/ui/typography";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -129,7 +130,7 @@ export default function SettingsPage() {
       {/* Content section */}
       <Section variant="content">
         <SectionAccordion
-          type="single"
+          type="multiple"
           variant="gray"
           sections={[
             {
@@ -189,7 +190,7 @@ export default function SettingsPage() {
             external
             onClick={() => handleExternalLinkClick("about")}
           >
-            About
+            <Typography size="sm">About</Typography>
           </Callout>
         </div>
 
@@ -202,7 +203,7 @@ export default function SettingsPage() {
             external
             onClick={() => handleExternalLinkClick("dev_docs")}
           >
-            Dev Docs
+            <Typography size="sm">Dev Docs</Typography>
           </Callout>
         </div>
 
@@ -215,7 +216,7 @@ export default function SettingsPage() {
             external
             onClick={() => handleExternalLinkClick("support")}
           >
-            Support
+            <Typography size="sm">Support</Typography>
           </Callout>
         </div>
 
@@ -235,6 +236,7 @@ export default function SettingsPage() {
         {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
           <div className="mt-2">
             <ButtonFullWidth
+              variant="destructive"
               icon={<Share className="h-4 w-4" />}
               onClick={openForTesting}
             >

@@ -230,6 +230,7 @@ function LeaderboardContent() {
           onHowToEarnClick={() => setHowToEarnOpen(true)}
           tokenBalance={tokenBalance}
           tokenLoading={tokenLoading}
+          isBoosted={userTop200Entry?.isBoosted}
         />
       )}
 
@@ -314,6 +315,7 @@ function LeaderboardContent() {
                     isBoosted,
                   ),
                   secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
+                  primaryMetricVariant: isBoosted ? "brand" : "default",
                   badge: isBoosted ? (
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100">
                       <Rocket className="h-3 w-3 text-purple-600" />
@@ -380,6 +382,7 @@ function LeaderboardContent() {
                           rank: user.rank,
                           primaryMetric: `$${boostAmount.toFixed(0)}`,
                           secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
+                          primaryMetricVariant: "brand",
                         };
                       })}
                     onItemClick={(item) => {
@@ -431,7 +434,7 @@ function LeaderboardContent() {
         {activeTab === "sponsors" && (
           <div className="mt-4">
             <Callout variant="brand" href="https://farcaster.xyz/juampi">
-              <Typography size="xs">
+              <Typography size="xs" color="brand">
                 Want to join as a sponsor? Reach out to @juampi
               </Typography>
             </Callout>

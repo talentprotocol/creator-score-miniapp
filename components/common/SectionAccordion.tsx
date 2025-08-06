@@ -18,14 +18,14 @@ interface AccordionSection {
 }
 
 interface SectionAccordionProps {
-  type?: "single" | "multiple";
+  type?: "single" | "multiple"; // Defaults to "multiple"
   variant?: "gray" | "white";
   sections: AccordionSection[];
   className?: string;
 }
 
 export function SectionAccordion({
-  type = "single",
+  type = "multiple",
   variant = "gray",
   sections,
   className,

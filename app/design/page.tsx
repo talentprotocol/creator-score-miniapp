@@ -440,7 +440,7 @@ export default function DesignPage() {
                       Brand callout - not clickable
                     </Callout>
                     <Callout variant="neutral" onClose={() => {}}>
-                      <Typography size="xs">
+                      <Typography size="xs" color="muted">
                         This is a neutral callout with close button
                       </Typography>
                     </Callout>
@@ -477,7 +477,7 @@ export default function DesignPage() {
                       Brand callout - internal link
                     </Callout>
                     <Callout variant="neutral" href="/profile">
-                      <Typography size="xs">
+                      <Typography size="xs" color="muted">
                         This is a neutral callout with link
                       </Typography>
                     </Callout>

@@ -14,6 +14,7 @@ export interface CreatorItem {
   primaryMetricLoading?: boolean; // New prop for partial loading
   secondaryMetric?: string; // e.g., "Creator Score: 5,230"
   badge?: React.ReactNode; // Optional badge (e.g., rocket for boosted users)
+  primaryMetricVariant?: "default" | "brand" | "muted"; // New prop for styling variants
 }
 
 interface CreatorListProps {
@@ -33,6 +34,13 @@ export function CreatorList({
   pinnedIndex,
   className,
 }: CreatorListProps) {
+  // Variant styles for primary metric
+  const variantStyles = {
+    default: "text-sm font-medium",
+    brand: "text-sm font-medium text-purple-700",
+    muted: "text-sm font-medium text-muted-foreground",
+  } as const;
+
   if (loading && items.length === 0) {
     return (
       <div className={cn("space-y-3", className)}>
@@ -115,7 +123,13 @@ export function CreatorList({
                       {itemPrimaryMetricLoading ? (
                         <Skeleton className="h-4 w-12" />
                       ) : (
-                        <span className="text-sm font-medium">
+                        <span
+                          className={cn(
+                            variantStyles[
+                              item.primaryMetricVariant || "default"
+                            ],
+                          )}
+                        >
                           {item.primaryMetric}
                         </span>
                       )}

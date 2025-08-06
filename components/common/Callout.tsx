@@ -25,8 +25,8 @@ export function Callout({
   onClick,
   onClose,
 }: CalloutProps) {
-  // Auto-detect if we should show left icon based on text length
-  const shouldShowLeftIcon = icon && React.Children.count(children) > 0;
+  // Show left icon when provided
+  const shouldShowLeftIcon = !!icon;
   const { context } = useMiniKit();
   const isExternal = external ?? href?.startsWith("http");
   const RightIcon = isExternal ? ExternalLink : ArrowRight;
@@ -43,7 +43,9 @@ export function Callout({
             })}
           </div>
         )}
-        <span className="font-medium max-w-[38ch] sm:max-w-[80ch] overflow-hidden text-ellipsis whitespace-nowrap">
+        <span
+          className={`font-medium max-w-[38ch] sm:max-w-[80ch] overflow-hidden text-ellipsis whitespace-nowrap ${variant === "brand" ? "text-purple-700" : variant === "neutral" ? "text-muted-foreground" : ""}`}
+        >
           {children}
         </span>
       </div>

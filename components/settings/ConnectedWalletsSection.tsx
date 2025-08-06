@@ -155,6 +155,8 @@ export function ConnectedWalletsSection({
                 {showPrimaryLabel ? (
                   <Button
                     type="button"
+                    variant="default"
+                    disabled={true}
                     className="whitespace-nowrap cursor-default min-w-[100px]"
                   >
                     Primary
