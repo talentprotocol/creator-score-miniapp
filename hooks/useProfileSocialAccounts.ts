@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { SocialAccount } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfileSocialAccounts(talentUUID: string) {
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
@@ -11,7 +12,7 @@ export function useProfileSocialAccounts(talentUUID: string) {
   const fetchSocialAccounts = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `social_accounts_${talentUUID}`;
+    const cacheKey = `${CACHE_KEYS.PROFILE_SOCIAL_ACCOUNTS}_${talentUUID}`;
 
     // Check cache first
     const cachedAccounts = getCachedData<SocialAccount[]>(

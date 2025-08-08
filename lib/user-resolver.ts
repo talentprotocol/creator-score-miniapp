@@ -5,6 +5,19 @@ import { validateTalentUUID } from "./validation";
 
 // In-flight request tracking to prevent duplicate concurrent calls
 const inFlightRequests = new Map<number, Promise<string | null>>();
+const inFlightTalentUserRequests = new Map<
+  string,
+  Promise<{
+    id: string | null;
+    fid: number | null;
+    wallet: string | null;
+    github: string | null;
+    fname: string | null;
+    display_name: string | null;
+    image_url: string | null;
+    [key: string]: unknown;
+  } | null>
+>();
 
 export function getAccountSource(id: string): "wallet" | "farcaster" | null {
   if (id.startsWith("0x") && id.length === 42) return "wallet";
@@ -96,6 +109,39 @@ export async function resolveTalentUser(identifier: string): Promise<{
   image_url: string | null;
   [key: string]: unknown;
 } | null> {
+  if (!validateTalentUUID(identifier)) {
+    return null;
+  }
+
+  // Check if there's already a request in flight for this identifier
+  if (inFlightTalentUserRequests.has(identifier)) {
+    return inFlightTalentUserRequests.get(identifier)!;
+  }
+
+  // Create the request promise
+  const requestPromise = performTalentUserRequest(identifier);
+
+  // Store it in the in-flight map
+  inFlightTalentUserRequests.set(identifier, requestPromise);
+
+  // Clean up when done
+  requestPromise.finally(() => {
+    inFlightTalentUserRequests.delete(identifier);
+  });
+
+  return requestPromise;
+}
+
+async function performTalentUserRequest(identifier: string): Promise<{
+  id: string | null;
+  fid: number | null;
+  wallet: string | null;
+  github: string | null;
+  fname: string | null;
+  display_name: string | null;
+  image_url: string | null;
+  [key: string]: unknown;
+} | null> {
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
@@ -104,10 +150,6 @@ export async function resolveTalentUser(identifier: string): Promise<{
   // Add retry logic for server-side calls
   const maxRetries = 3;
   let lastError: Error | null = null;
-
-  if (!validateTalentUUID(identifier)) {
-    return null;
-  }
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Bell, Plus, Twitter, Share2 } from "lucide-react";
@@ -15,6 +16,7 @@ interface RewardsBoostsCardProps {
 
 export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
   const { context } = useMiniKit();
+  const router = useRouter();
 
   const handleShareStats = React.useCallback(async () => {
     if (!talentUuid) return;
@@ -23,7 +25,7 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
 
     if (client === "browser") {
       // In browser, redirect to profile page where they can access the share modal
-      window.location.href = `/${talentUuid}/stats`;
+      router.push(`/${talentUuid}/stats`);
     } else {
       // In Farcaster or Base app, show a basic share message
       try {
@@ -36,10 +38,10 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
       } catch (error) {
         console.error("Failed to compose cast:", error);
         // Fallback to redirect
-        window.location.href = `/${talentUuid}/stats`;
+        router.push(`/${talentUuid}/stats`);
       }
     }
-  }, [talentUuid, context]);
+  }, [talentUuid, context, router]);
 
   return (
     <Card className="p-6 space-y-4">

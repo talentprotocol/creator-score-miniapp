@@ -1,348 +1,240 @@
 # Creator Score Mini App - Design System
 
+## Core Principles
+
+### 1. Semantic-First Approach
+- **Default to semantic classes** (`text-foreground`, `bg-muted`, `border-border`) for theme consistency
+- **Reserve brand colors** for intentional moments (rewards, CTAs, brand identity)
+- **Avoid hardcoded colors** unless for specific brand moments
+
+### 2. Mobile-First Design
+- **Touch interactions only** - no hover states on mobile
+- **Bottom sheets** for modals on mobile, centered dialogs on desktop
+- **Responsive breakpoint**: `640px` (sm+)
+
+### 3. Minimal & Elegant
+- **Smaller, thinner fonts** with more white space
+- **Consistent spacing** using established patterns
+- **Clean, uncluttered interfaces**
+
 ## Color System
 
-### Background
-- **App Background:** `#ffffff` (white) via `bg-background` / `bg-white`
+### Semantic Colors (Default)
+- **Background**: `bg-background` / `bg-muted`
+- **Text**: `text-foreground` / `text-muted-foreground`
+- **Borders**: `border-border`
 
-### Neutrals & Grays
-- **Text (foreground):** `#111111` → `text-gray-900` / `text-foreground`
-- **Secondary text:** `#999999` → `text-gray-400` / `text-muted-foreground`
-- **Background sections:** `#FAFAFA` → `bg-gray-50` / `bg-muted`
-- **Borders:** `#d5d5d5` → `border-gray-300` / `border-border`
+### Brand Colors (Reserved for Special Moments)
+- **Primary**: Purple `#8E7BE5` - rewards, key features
+- **Secondary**: Green `#EBF4B4`, Blue `#82DEED`, Pink `#E879C7` - data visualization
 
-**Dark Mode:**
-- **Background:** `#111111` → `bg-gray-900`
-- **Text:** `#fafafa` → `text-gray-50`
-- **Secondary text:** `#a3a3a3` → `text-gray-400`
-- **Borders:** `#262626` → `border-gray-800`
-
-### Brand Colors
-- **Primary:** Purple `#8E7BE5` - rewards, key features, primary brand moments
-- **Secondary:** Green `#EBF4B4`, Blue `#82DEED`, Pink `#E879C7` - data visualization, accents
-
-### Usage Patterns
-
-**1. Default to Semantic Classes:**
-```tsx
-<div className="bg-background text-foreground border-border">
-<p className="text-muted-foreground">Secondary text</p>
-```
-
-**2. Brand Moments:**
-```tsx
-<div className="bg-purple-50">Primary brand element</div>
-<div className="border-purple-200 bg-purple-50 text-purple-700">Brand callouts</div>
-```
-
-**3. Data Visualization:**
-- **SegmentedBar colors:** `purple`, `green`, `blue`, `pink` (via `color` prop)
-- **PostsChart colors:** Cycles through `purple-500`, `green-500`, `blue-500`, `pink-500`
+### Usage Rules
+1. **Start with semantic classes** for all standard UI
+2. **Use brand colors only** for:
+   - Rewards and earnings
+   - Primary CTAs
+   - Data visualization (SegmentedBar, PostsChart)
+   - Brand identity moments
 
 ## Component Patterns
 
-### Buttons
-- **Default (Outline):** `border-input hover:border-gray-400` - Most actions
-- **Special:** `bg-purple-100 text-purple-700 hover:bg-purple-200` - Primary/important actions
-- **Destructive:** `bg-red-100 text-red-700 hover:bg-red-200` - Dangerous actions
-
 ### Cards
-- Default: `bg-card` with `border` and `shadow`
-- Muted sections: `bg-muted` with `border-0 shadow-none`
+**Base Pattern**: All cards use the foundational `Card` component with semantic styling.
 
-### Loading States
-- Skeleton: `bg-muted animate-pulse` 
-- Consistent patterns across all data components
+**Variants**:
+- **Content Cards**: Standard `bg-card` with border and shadow
+- **Muted Cards**: `bg-muted` with `border-0 shadow-none` for subtle sections
+- **Interactive Cards**: Add hover states and click handlers
 
-### Responsive Modals
-- Mobile: Bottom sheets via `Drawer` component
-- Desktop: Centered dialogs via `Dialog` component  
-- Breakpoint: `640px` (sm+)
+**Common Patterns**:
+- **Stat Cards**: Title/value pairs with optional click handlers
+- **List Cards**: Avatar lists with rankings or data
+- **Progress Cards**: Score displays with progress visualization
+- **Accordion Cards**: Expandable content sections
+
+### Buttons
+**Base Button**: Standard semantic variants with consistent sizing
+**ButtonFullWidth**: Section-level actions with required icons and left alignment
+
+### Interactive States
+- **Hover**: `hover:bg-muted/50` for non-card elements
+- **Active**: Semantic color variants
+- **Disabled**: `opacity-50 cursor-not-allowed`
+- **Loading**: Consistent skeleton patterns
 
 ## Layout Standards
 
-### Page Layout Pattern
-
-Every page follows a consistent layout pattern using the `PageContainer` and `Section` components:
-
+### Page Structure
+Every page follows this pattern:
 ```tsx
 <PageContainer noPadding>
-  {/* Header section with padding */}
-  <Section variant="header">
-    <h1 className="text-xl font-semibold">Page Title</h1>
-    <p className="text-sm text-muted-foreground">Description</p>
-    {/* Other header content (search, stats, etc.) */}
-  </Section>
-
-  {/* Optional: Full width sections (tabs, media) */}
-  <Section variant="full-width">
-    <TabContainer /> {/* or other full-width content */}
-  </Section>
-
-  {/* Content section with padding and animation */}
-  <Section variant="content" animate>
-    <div>
-      {/* Main content */}
-    </div>
-  </Section>
+  <Section variant="header">     {/* Title and context */}
+  <Section variant="full-width"> {/* Tabs, navigation */}
+  <Section variant="content">    {/* Main content */}
 </PageContainer>
 ```
 
-#### Key Characteristics:
+### Spacing Scale
+- **Large**: `mb-6 sm:mb-8`
+- **Default**: `mb-4 sm:mb-6`
+- **Compact**: `mb-3 sm:mb-4`
+- **Internal**: `p-4 sm:p-6` (regular), `p-3 sm:p-4` (compact)
 
-1. **Container Strategy**
-   - `PageContainer` with `noPadding` to allow full-width sections
-   - Maximum width of `max-w-xl` (576px) enforced by container
-   - Bottom padding (`pb-24`) for navigation clearance
-
-2. **Section Types**
-   - Header sections: `px-4 py-6` with title and contextual content
-   - Full-width sections: No padding, spans entire container width
-   - Content sections: `px-4 py-6` with optional animation
-
-3. **Section Spacing**
-   - Header sections: `px-4 pt-6 pb-3` (24px top, 12px bottom)
-   - Content sections: `px-4 py-4` (16px top and bottom)
-   - Full-width sections: No padding, spans entire container width
-   - Content-specific spacing handled within sections
-
-4. **Transitions**
-   - Tab content changes use subtle zoom and fade animation
-   - Duration: 300ms with ease-out timing
-   - Classes: `animate-in fade-in zoom-in-98 duration-300 ease-out`
-
-### Component Spacing
-
-```tsx
-// Vertical margins between components
-className="mb-6 sm:mb-8"        // Large
-className="mb-4 sm:mb-6"        // Default
-className="mb-3 sm:mb-4"        // Compact
-
-// Internal padding
-className="p-4 sm:p-6"          // Regular
-className="p-3 sm:p-4"          // Compact
-
-// Flex/Grid spacing
-className="gap-3 sm:gap-4"      // Default grid/flex gap
-```
-
-### Mobile Considerations
-- Bottom padding for navigation: Handled by PageContainer (`pb-24`)
-- Safe area insets: `pb-safe` for bottom nav component
-- Backdrop blur: `bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60`
-- Mobile-first breakpoints: `md:hidden` for bottom nav
-
-### Z-index Scale
-```tsx
-// Base content: 0-10
-.content { z-index: 0 }
-
-// Header (sticky): 30
-.header { z-index: 30 }
-
-// Bottom nav (fixed): 40
-.bottom-nav { z-index: 40 }
-
-// Modals/overlays: 50 (highest)
-.modal { z-index: 50 }
-```
-
-### Section Component Usage
-
-The `Section` component encapsulates our layout patterns:
-
-```tsx
-// Header sections
-<Section variant="header">
-  <h1>Title</h1>
-  <p>Description</p>
-</Section>
-
-// Full-width sections
-<Section variant="full-width">
-  <TabContainer />
-</Section>
-
-// Content sections with animation
-<Section variant="content" animate>
-  {content}
-</Section>
-```
-
-**Key Features:**
-- Consistent padding through variants
-- Optional content animation
-- Handles common layout patterns
-- Maintains spacing consistency
-
-### Loading & Error States
-```tsx
-// Loading state
-<div className="flex-1 flex items-center justify-center min-h-[200px]">
-  <div className="text-center space-y-4">
-    <div className="animate-spin">...</div>
-    <p className="text-sm text-muted-foreground">Loading...</p>
-  </div>
-</div>
-
-// Error state
-<div className="rounded-xl border bg-card p-6 space-y-4">
-  <h2 className="text-lg font-semibold">Something went wrong</h2>
-  <p className="text-sm text-muted-foreground">{error.message}</p>
-  <Button onClick={reset} variant="outline" size="sm">Try Again</Button>
-</div>
-```
-
-### Interactive States
-- **Hover:** `hover:bg-muted/50` for non-card elements
-- **Active:** Semantic color variants (`text-primary` for active nav)
-- **Disabled:** `opacity-50 cursor-not-allowed`
-
-### Accessibility
-- **Focus rings:** `focus-visible:ring-2 focus-visible:ring-primary`
-- **Screen reader:** Proper `aria-label`, `aria-current` usage
-- **Color contrast:** All combinations meet WCAG standards
-
-### Animation
-```tsx
-// Interactions
-className="transition-all duration-200 active:scale-95"  // Buttons
-
-// Page transitions
-className="animate-in fade-in duration-300"
-
-// Bottom sheet
-className="animate-in slide-in-from-bottom duration-300"
-
-// Loading states
-className="animate-pulse"  // Skeletons
-```
+### Z-Index Hierarchy
+- **Content**: 0-10
+- **Header**: 30
+- **Navigation**: 40
+- **Modals**: 50
 
 ## Typography
-- **Font:** Geist (Google Fonts)
-- **Type Scale:**
-  ```tsx
-  // Base text (14px mobile, 15px desktop)
-  <p className="text-sm sm:text-[15px] font-light">Body text</p>
-  
-  // Secondary text (13px mobile, 14px desktop)
-  <p className="text-xs sm:text-sm text-muted-foreground font-light">Secondary text</p>
-  
-  // Headings
-  <h1 className="text-xl sm:text-2xl font-normal">Page Title</h1>
-  <h2 className="text-lg sm:text-xl font-normal">Section Title</h2>
-  <h3 className="text-base sm:text-lg font-medium">Subsection</h3>
-  
-  // Micro text (12px)
-  <span className="text-xs font-light">Labels, metadata</span>
-  ```
 
-## Spacing & Layout
-- **Container max-width:** `max-w-xl` (576px)
+### Typography Component
+The `Typography` component provides consistent text styling across the app using semantic classes and the established design system.
 
-### Component Spacing
+**Usage:**
 ```tsx
-// Vertical margins between sections
-className="mb-6 sm:mb-8"        // Large
-className="mb-4 sm:mb-6"        // Default
-className="mb-3 sm:mb-4"        // Compact
+import { Typography } from "@/components/ui/typography";
 
-// Internal padding
-className="p-4 sm:p-6"          // Regular
-className="p-3 sm:p-4"          // Compact
+// Basic usage
+<Typography>Default body text</Typography>
 
-// Flex/Grid spacing
-className="gap-3 sm:gap-4"      // Default grid/flex gap
+// With variants
+<Typography size="xs" weight="medium" color="muted">
+  Small, medium weight, muted text
+</Typography>
+
+// As different elements
+<Typography as="h1" size="xl" weight="bold">
+  Page heading
+</Typography>
 ```
 
-- **Safe areas:** Handled via `pb-safe` and `env(safe-area-inset-bottom)`
+**Available Variants:**
+- **Size**: `xs`, `sm`, `base`, `lg`, `xl`, `2xl`
+- **Weight**: `light`, `normal`, `medium`, `bold`
+- **Color**: `default`, `muted`, `brand`
+- **Element**: `p`, `span`, `div`, `h1`-`h6`
 
-## Interactive States
-- **Hover:** `hover:bg-muted/50` for non-card elements
-- **Active:** Semantic color variants (`text-primary` for active nav)
-- **Disabled:** `opacity-50 cursor-not-allowed`
+> **Note**: The Typography component (`components/ui/typography.tsx`) is the single source of truth for all typography values. Refer to the component implementation for the complete list of available options.
 
-## Accessibility
-- **Focus rings:** `focus-visible:ring-2 focus-visible:ring-primary`
-- **Screen reader:** Proper `aria-label`, `aria-current` usage
-- **Color contrast:** All combinations meet WCAG standards
+### Typography Principles
+- **Semantic Colors**: Use `default`, `muted`, or `brand` colors for consistent theming
+- **Responsive Sizes**: Most sizes include responsive variants (e.g., `text-sm sm:text-[15px]`)
+- **Element Semantics**: Use appropriate HTML elements (`h1`-`h6` for headings, `p` for paragraphs)
+- **Consistent Spacing**: Typography components work with the established spacing scale
 
-## Animation
+### Component Integration
+**Callout Component**: Updated to use children composition instead of `textSize` prop:
 ```tsx
-// Interactions
-className="transition-all duration-200 active:scale-95"  // Buttons
+// ✅ GOOD: Use Typography component for text styling
+<Callout variant="brand" href="/settings">
+  <Typography size="xs">Connect accounts to increase your Creator Score</Typography>
+</Callout>
 
-// Page transitions
-className="animate-in fade-in duration-300"
-
-// Bottom sheet
-className="animate-in slide-in-from-bottom duration-300"
-
-// Loading states
-className="animate-pulse"  // Skeletons
+// ✅ GOOD: Direct children for simple text
+<Callout variant="neutral">
+  Simple text without special styling
+</Callout>
 ```
 
-## Component Specific Guidelines
+### Migration Guide
+**From `textSize` prop to `Typography` component:**
+
+```tsx
+// ❌ OLD: Using textSize prop
+<Callout variant="brand" textSize="xs">
+  Connect accounts to increase your Creator Score
+</Callout>
+
+// ✅ NEW: Using Typography component
+<Callout variant="brand">
+  <Typography size="xs">
+    Connect accounts to increase your Creator Score
+  </Typography>
+</Callout>
+```
+
+**Benefits of the new approach:**
+- **Flexibility**: Easy to add bold, different colors, or other typography variations
+- **Composability**: Combine any typography variant with any callout variant
+- **Reusability**: Typography component can be used anywhere, not just in callouts
+- **Maintainability**: Changes to typography don't require changes to layout components
+- **Separation of concerns**: Callout handles layout/styling, Typography handles text styling
+
+## Data Visualization
 
 ### SegmentedBar
-- **Colors:** Always use brand colors (`purple`, `green`, `blue`, `pink`)
-- **Intensities:** Automatically cycles through 600→500→400→300→200→100
-- **Usage:** `green` for earnings, `pink` for followers, `blue` for posts, `purple` for score
+- **Colors**: Brand colors only (`purple`, `green`, `blue`, `pink`)
+- **Usage**: `green` for earnings, `pink` for followers, `blue` for posts, `purple` for score
 
-### PostsChart  
-- **Colors:** Brand colors only - `purple-500`, `green-500`, `blue-500`, `pink-500`
-- **Cycling:** Modulo 4 for year differentiation
-
-### Navigation
-- **TabNavigation:** Uses semantic classes for consistent theming
-- **BottomNav:** Brand-specific styling with semantic color integration
-
-### Forms & Inputs
-- **Search:** Consistent `Input` component with proper placeholder styling
-- **Buttons:** Semantic variants with proper disabled/loading states 
+### PostsChart
+- **Colors**: Brand colors cycling through years
+- **Pattern**: `purple-500` → `green-500` → `blue-500` → `pink-500`
 
 ## Icon System
 
 ### Sizes
-- `lg`: 24px - Navigation
-- `md`: 18px - Engagement (likes, comments)
-- `sm`: 14px - Small indicators
+- **Large**: 24px (navigation)
+- **Medium**: 18px (engagement)
+- **Small**: 14px (indicators)
 
 ### States
-- Default: `text-muted-foreground stroke-[1.5]`
-- Active: `text-foreground stroke-2`
-- Disabled: `text-muted-foreground stroke-[1.5] opacity-20`
+- **Default**: `text-muted-foreground stroke-[1.5]`
+- **Active**: `text-foreground stroke-2`
+- **Disabled**: `opacity-20`
 
 ### Interactions
-- Click effect: Scale up + stroke weight change
-- No hover states (mobile first)
+- **Click effect**: Scale + stroke weight change
+- **No hover states** (mobile-first)
 
-### Colors
-- Primary: `text-foreground`
-- Muted: `text-muted-foreground`
-- Brand: `text-purple-500` (reserved for special moments)
-- Error: `text-destructive`
+## Loading & Error States
 
-### Loading
-- Default spinner with outer track (25% opacity) and inner spinner (75% opacity)
+### Loading Patterns
+- **Skeleton loaders** with `animate-pulse`
+- **Progress indicators** for complex operations
+- **Consistent messaging** across all components
 
-## Typography
-// ... rest of the design system stays the same ... 
+### Error Handling
+- **Graceful fallbacks** with helpful messaging
+- **Retry mechanisms** where appropriate
+- **No crashes** - always show something
 
-### Callouts
-```tsx
-// Static
-<Callout>Message</Callout>
+## Accessibility
 
-// Internal navigation (with arrow)
-<Callout href="/path">Navigate</Callout>
+### Focus Management
+- **Visible focus rings** with `focus-visible:ring-2`
+- **Proper tab order** and keyboard navigation
+- **Screen reader support** with `aria-*` attributes
 
-// External link (with external icon)
-<Callout href="https://...">External</Callout>
-```
+### Color Contrast
+- **WCAG AA compliance** for all text combinations
+- **Semantic color usage** ensures proper contrast
 
-**Styling:**
-- Base: `bg-purple-100 text-purple-700`
-- Interactive: `hover:bg-purple-200` + icon
-- Icons: `ArrowRight` (internal), `ExternalLink` (external)
+## Animation Guidelines
+
+### Transitions
+- **Page transitions**: `animate-in fade-in duration-300`
+- **Modal animations**: `slide-in-from-bottom` (mobile), `zoom-in` (desktop)
+- **Interactive feedback**: `active:scale-95` for buttons
+
+### Performance
+- **Hardware acceleration** for smooth animations
+- **Reduced motion** support for accessibility
+- **Consistent timing** across all interactions
+
+## Component Decision Tree
+
+### When to Create New Components
+1. **Reused 3+ times** across different contexts
+2. **Complex interaction patterns** that need abstraction
+3. **Consistent visual patterns** that vary only in data
+
+### When to Use Existing Components
+1. **Standard patterns** (cards, buttons, lists)
+2. **Minor variations** can be handled with props
+3. **Consistent behavior** across the app
+
+### When to Use Semantic Classes
+1. **Simple styling** that doesn't need abstraction
+2. **One-off variations** of existing components
+3. **Layout and spacing** patterns 

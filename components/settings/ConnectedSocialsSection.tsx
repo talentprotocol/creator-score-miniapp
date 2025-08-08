@@ -142,13 +142,19 @@ export function ConnectedSocialsSection({
             </div>
 
             <Button
-              onClick={
+              onClick={() =>
                 connectedAccount
-                  ? () => handleDisconnect(platform.source)
-                  : () => handleConnect(platform.source)
+                  ? handleDisconnect(platform.source)
+                  : handleConnect(platform.source)
               }
-              variant="default"
-              size="sm"
+              className="ml-auto"
+              variant={
+                platform.comingSoon
+                  ? "default"
+                  : connectedAccount
+                    ? "default"
+                    : "brand"
+              }
               disabled={platform.comingSoon}
             >
               {platform.comingSoon

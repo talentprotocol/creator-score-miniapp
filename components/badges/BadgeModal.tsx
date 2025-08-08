@@ -69,6 +69,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
       <div className="flex justify-center">
         <Button
           onClick={onClose}
+          className="w-full"
           variant={badge.completed ? "default" : "ghost"}
         >
           {badge.completed ? "Share" : "Take Action"}

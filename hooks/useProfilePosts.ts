@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Post } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getPostsForTalentId } from "@/app/services/postsService";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfilePosts(talentUUID: string) {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -11,7 +12,7 @@ export function useProfilePosts(talentUUID: string) {
   const fetchPosts = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `posts_${talentUUID}`;
+    const cacheKey = `${CACHE_KEYS.PROFILE_POSTS}_${talentUUID}`;
 
     // Check cache first
     const cachedPosts = getCachedData<Post[]>(

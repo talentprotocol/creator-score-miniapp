@@ -24,6 +24,7 @@ import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
+import { Typography } from "@/components/ui/typography";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -194,6 +195,7 @@ function ProfileLayoutContentInner({
     profileData,
     rank,
     posthog,
+    client,
   ]);
 
   // Handle Twitter sharing from modal (browser only)
@@ -247,6 +249,7 @@ function ProfileLayoutContentInner({
     profileData,
     rank,
     posthog,
+    client,
   ]);
 
   // Profile data comes from server-side, no loading state needed
@@ -281,11 +284,7 @@ function ProfileLayoutContentInner({
 
         {/* Action buttons - show for all profiles */}
         <div className="flex flex-row gap-4 w-full mt-6">
-          <Button
-            onClick={handleShareStats}
-            variant="special"
-            className="flex-1"
-          >
+          <Button onClick={handleShareStats} variant="brand" className="flex-1">
             <Share className="w-4 h-4 mr-2" />
             Share Stats
           </Button>
@@ -360,7 +359,9 @@ function ProfileLayoutContentInner({
                 });
               }}
             >
-              Connect more accounts to increase your Creator Score
+              <Typography size="xs" color="brand">
+                Connect accounts to increase your Creator Score
+              </Typography>
             </Callout>
           </div>
         )}

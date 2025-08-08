@@ -38,7 +38,7 @@ export function ScoreProgressAccordion() {
   const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
 
   return (
-    <Accordion type="single" collapsible className="space-y-2">
+    <Accordion type="multiple" className="space-y-2">
       <AccordionItem
         value="score-progress"
         className="bg-muted rounded-xl p-0 mb-3 border-0 shadow-none"

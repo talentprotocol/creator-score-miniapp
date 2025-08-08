@@ -2,117 +2,107 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { LeaderboardEntry } from "@/app/services/types";
-import { getLeaderboardCreators } from "@/app/services/leaderboardService";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
-interface LeaderboardStats {
-  totalCreators: number;
-  minScore: number;
-  maxScore: number;
-  avgScore: number;
-}
-
-interface UseLeaderboardOptimizedReturn {
-  top200: LeaderboardEntry[];
-  stats: LeaderboardStats | null;
-  loading: {
-    top200: boolean;
-    stats: boolean;
-  };
+export interface UseLeaderboardOptimizedReturn {
+  entries: LeaderboardEntry[];
+  loading: boolean;
+  rewardsLoading: boolean;
   error: string | null;
-  totalScores: number;
-  refresh: () => void;
+  boostedCreatorsCount?: number;
+  lastUpdated?: string | null;
+  nextUpdate?: string | null;
+  refetch: () => void;
 }
 
-export function useLeaderboardOptimized(): UseLeaderboardOptimizedReturn {
-  const [top200, setTop200] = useState<LeaderboardEntry[]>([]);
-  const [stats, setStats] = useState<LeaderboardStats | null>(null);
-  const [totalScores, setTotalScores] = useState(0);
-  const [loading, setLoading] = useState({
-    top200: true,
-    stats: true,
-  });
+export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [alreadyFetching, setAlreadyFetching] = useState(false);
+  const [boostedCreatorsCount, setBoostedCreatorsCount] = useState<
+    number | undefined
+  >(undefined);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
-  // Load top 200 - with aggressive caching
-  const loadLeaderboard = useCallback(async () => {
-    if (alreadyFetching) return;
-    setAlreadyFetching(true);
+  // Load basic data immediately
+  const loadBasicData = useCallback(async () => {
+    // Check cache first
+    const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
+    const cachedData = getCachedData<{
+      entries: LeaderboardEntry[];
+      boostedCreatorsCount: number;
+      lastUpdated: string | null;
+      nextUpdate: string | null;
+    }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
+
+    if (cachedData) {
+      setEntries(cachedData.entries);
+      setBoostedCreatorsCount(cachedData.boostedCreatorsCount);
+      setLastUpdated(cachedData.lastUpdated);
+      setNextUpdate(cachedData.nextUpdate);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await getLeaderboardCreators({ page: 1, perPage: 200 });
-      const totalScores = data.reduce((sum, entry) => sum + entry.score, 0);
+      setLoading(true);
+      setError(null);
 
-      setTop200(data);
-      setTotalScores(totalScores);
+      const response = await fetch(`/api/leaderboard/basic`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      setEntries(data.entries);
+      setBoostedCreatorsCount(data.boostedCreatorsCount);
+      setLastUpdated(data.lastUpdated);
+      setNextUpdate(data.nextUpdate);
+
+      // Cache the data
+      setCachedData(cacheKey, {
+        entries: data.entries,
+        boostedCreatorsCount: data.boostedCreatorsCount,
+        lastUpdated: data.lastUpdated,
+        nextUpdate: data.nextUpdate,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load top 200");
+      console.error(`Failed to load leaderboard data:`, err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load leaderboard",
+      );
     } finally {
-      setLoading((prev) => ({ ...prev, top200: false }));
-      setAlreadyFetching(false);
+      setLoading(false);
     }
   }, []);
 
-  // Calculate and cache stats
-  const calculateStats = useCallback((entries: LeaderboardEntry[]) => {
-    if (entries.length === 0) return null;
+  const refetch = useCallback(() => {
+    loadBasicData();
+  }, [loadBasicData]);
 
-    const scores = entries.map((entry) => entry.score);
-    const totalCreators = entries.length;
-    const minScore = Math.min(...scores);
-    const maxScore = Math.max(...scores);
-    const avgScore =
-      scores.reduce((sum, score) => sum + score, 0) / totalCreators;
-
-    const calculatedStats = {
-      totalCreators,
-      minScore,
-      maxScore,
-      avgScore,
-    };
-
-    return calculatedStats;
-  }, []);
-
-  // Load stats
-  const loadStats = useCallback(async () => {
-    // Stats will be calculated when top200 loads
-    setLoading((prev) => ({ ...prev, stats: false }));
-  }, []);
-
-  // Update stats when top200 data changes
+  // Load basic data on mount
   useEffect(() => {
-    if (top200.length > 0 && !stats) {
-      const calculatedStats = calculateStats(top200);
-      setStats(calculatedStats);
-    }
-  }, [top200.length, stats, calculateStats]);
-
-  // Load data on mount
-  useEffect(() => {
-    loadLeaderboard();
-    loadStats();
-  }, []);
-
-  // Refresh function
-  const refresh = useCallback(() => {
-    // Reset state
-    setTop200([]);
-    setStats(null);
-    setTotalScores(0);
-    setError(null);
-    setLoading({ top200: true, stats: true });
-
-    // Reload data
-    loadLeaderboard();
-    loadStats();
-  }, [loadLeaderboard, loadStats]);
+    loadBasicData();
+  }, [loadBasicData]);
 
   return {
-    top200,
-    stats,
+    entries,
     loading,
+    rewardsLoading,
     error,
-    totalScores,
-    refresh,
+    boostedCreatorsCount,
+    lastUpdated,
+    nextUpdate,
+    refetch,
   };
 }

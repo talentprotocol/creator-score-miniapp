@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getWalletAccountsForTalentId } from "@/app/services/walletAccountsService";
 import type { GroupedWalletAccounts } from "@/app/services/types";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfileWalletAccounts(talentUUID: string | undefined) {
   const [walletData, setWalletData] = useState<GroupedWalletAccounts | null>(
@@ -13,7 +14,7 @@ export function useProfileWalletAccounts(talentUUID: string | undefined) {
   const fetchWalletData = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `talent_wallet_accounts_${talentUUID}`;
+    const cacheKey = `${CACHE_KEYS.PROFILE_WALLET_ACCOUNTS}_${talentUUID}`;
 
     // Check cache first
     const cachedData = getCachedData<GroupedWalletAccounts>(

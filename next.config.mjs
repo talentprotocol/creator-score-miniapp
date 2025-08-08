@@ -63,6 +63,7 @@ const nextConfig = {
             value: `
               script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com;
               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://use.typekit.net https://p.typekit.net;
+              style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://use.typekit.net https://p.typekit.net;
               font-src 'self' https://fonts.gstatic.com https://use.typekit.net https://p.typekit.net;
               object-src 'none';
               base-uri 'self';

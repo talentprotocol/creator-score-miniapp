@@ -45,7 +45,7 @@ export async function GET() {
       splashImageUrl: frameMetadata.splashImageUrl,
       splashBackgroundColor: frameMetadata.splashBackgroundColor,
       homeUrl: baseUrl,
-      webhookUrl: `${baseUrl}/api/webhook`,
+      webhookUrl: process.env.FARCASTER_WEBHOOK_URL,
       primaryCategory: frameMetadata.primaryCategory,
       tags: frameMetadata.tags,
       heroImageUrl: frameMetadata.heroImageUrl,
@@ -55,4 +55,4 @@ export async function GET() {
       ogImageUrl: frameMetadata.ogImageUrl,
     }),
   });
-} 
+}

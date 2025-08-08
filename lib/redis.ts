@@ -11,13 +11,9 @@ export function getCachedData<T>(key: string): T | null {
   return utilsGetCachedData<T>(key, 3600000); // Default 1 hour TTL
 }
 
-export function setCachedData<T>(
-  key: string,
-  data: T,
-  ttlMs: number = 3600000,
-): void {
+export function setCachedData<T>(key: string, data: T): void {
   // Use the updated utils function which handles both client and server
-  utilsSetCachedData<T>(key, data, ttlMs);
+  utilsSetCachedData<T>(key, data);
 }
 
 export function clearCache(key?: string): void {
@@ -48,7 +44,7 @@ export const redis = {
     return Promise.resolve();
   },
   setex: <T>(key: string, ttlSeconds: number, value: T): Promise<void> => {
-    setCachedData(key, value, ttlSeconds * 1000);
+    setCachedData(key, value);
     return Promise.resolve();
   },
   del: (key: string): Promise<void> => {

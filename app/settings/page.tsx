@@ -1,27 +1,20 @@
 "use client";
 
-import { useUserResolution } from "@/hooks/useUserResolution";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { SectionAccordion } from "@/components/common/SectionAccordion";
 import { Callout } from "@/components/common/Callout";
 import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
 import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
-
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
-import { Button } from "@/components/ui/button";
+import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { getVersionDisplay } from "@/lib/version";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import {
-  ExternalLink,
   FileText,
   MessageCircle,
   LogOut,
@@ -31,17 +24,21 @@ import {
   Info,
   CheckCircle,
   XCircle,
+  Share,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
-import { TestShareScoreButton } from "@/components/settings/TestShareScoreButton";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
+import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
+import { Typography } from "@/components/ui/typography";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
-  const { talentUuid, loading: loadingUserResolution } = useUserResolution();
+  const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
+  const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore();
 
   const {
     accounts,
@@ -105,14 +102,6 @@ export default function SettingsPage() {
   const socialAccounts = accounts?.social || [];
   const walletAccounts = accounts?.wallet || [];
 
-  // Handle section expansion tracking
-  const handleSectionExpand = (sectionName: string) => {
-    posthog?.capture("settings_section_expanded", {
-      section_name: sectionName,
-      is_own_profile: true, // Settings page is always own profile
-    });
-  };
-
   // Handle external link clicks
   const handleExternalLinkClick = (linkType: string) => {
     posthog?.capture("settings_external_link_clicked", {
@@ -140,199 +129,119 @@ export default function SettingsPage() {
 
       {/* Content section */}
       <Section variant="content">
-        <Accordion type="single" collapsible className="w-full space-y-2">
-          {/* Connected Socials */}
-          <AccordionItem
-            value="connected-socials"
-            className="bg-muted rounded-xl border-0 shadow-none"
-          >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("connected_socials")}
-            >
-              <div className="flex items-center gap-3">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Connected Socials</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <ConnectedSocialsSection
-                accounts={socialAccounts || []}
-                onAction={performAction}
-              />
-            </AccordionContent>
-          </AccordionItem>
+        <SectionAccordion
+          type="multiple"
+          variant="gray"
+          sections={[
+            {
+              id: "connected-socials",
+              title: "Connected Socials",
+              icon: <Users className="h-4 w-4" />,
+              content: (
+                <ConnectedSocialsSection
+                  accounts={socialAccounts || []}
+                  onAction={performAction}
+                />
+              ),
+            },
+            {
+              id: "connected-wallets",
+              title: "Connected Wallets",
+              icon: <Wallet className="h-4 w-4" />,
+              content: (
+                <ConnectedWalletsSection
+                  accounts={walletAccounts || []}
+                  onAction={performAction}
+                />
+              ),
+            },
+            {
+              id: "proof-of-humanity",
+              title: "Proof of Humanity",
+              icon: hasVerifiedHumanityCredentials ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              ),
+              content: (
+                <ProofOfHumanitySection credentials={humanityCredentials} />
+              ),
+            },
+            {
+              id: "account-settings",
+              title: "Account Settings",
+              icon: <Settings className="h-4 w-4" />,
+              content: (
+                <AccountSettingsSection
+                  settings={settings}
+                  onAction={performAction}
+                />
+              ),
+            },
+          ]}
+        />
 
-          {/* Connected Wallets */}
-          <AccordionItem
-            value="connected-wallets"
-            className="bg-muted rounded-xl border-0 shadow-none"
+        {/* About */}
+        <div className="mt-2">
+          <Callout
+            variant="neutral"
+            icon={<Info />}
+            href="https://talentprotocol.com/about"
+            external
+            onClick={() => handleExternalLinkClick("about")}
           >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("connected_wallets")}
-            >
-              <div className="flex items-center gap-3">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Connected Wallets</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <ConnectedWalletsSection
-                accounts={walletAccounts || []}
-                onAction={performAction}
-              />
-            </AccordionContent>
-          </AccordionItem>
+            <Typography size="sm">About</Typography>
+          </Callout>
+        </div>
 
-          {/* Proof of Humanity */}
-          <AccordionItem
-            value="proof-of-humanity"
-            className="bg-muted rounded-xl border-0 shadow-none"
+        {/* Dev Docs */}
+        <div className="mt-2">
+          <Callout
+            variant="neutral"
+            icon={<FileText />}
+            href="https://docs.talentprotocol.com/"
+            external
+            onClick={() => handleExternalLinkClick("dev_docs")}
           >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("proof_of_humanity")}
-            >
-              <div className="flex items-center gap-3">
-                {hasVerifiedHumanityCredentials ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-muted-foreground" />
-                )}
-                <span className="font-medium">Proof of Humanity</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <ProofOfHumanitySection credentials={humanityCredentials} />
-            </AccordionContent>
-          </AccordionItem>
+            <Typography size="sm">Dev Docs</Typography>
+          </Callout>
+        </div>
 
-          {/* Notifications - Temporarily hidden while focusing on core functionality */}
-          {/* TODO: Re-enable when notification system is ready for production */}
-          {/* 
-          <AccordionItem
-            value="notifications"
-            className="bg-muted rounded-xl border-0 shadow-none"
+        {/* Support */}
+        <div className="mt-2">
+          <Callout
+            variant="neutral"
+            icon={<MessageCircle />}
+            href="https://talentprotocol.com/support"
+            external
+            onClick={() => handleExternalLinkClick("support")}
           >
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Notifications</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <NotificationsSection
-                settings={settings}
-                onUpdateNotifications={updateNotifications}
-              />
-            </AccordionContent>
-          </AccordionItem>
-          */}
+            <Typography size="sm">Support</Typography>
+          </Callout>
+        </div>
 
-          {/* Account Settings */}
-          <AccordionItem
-            value="account-settings"
-            className="bg-muted rounded-xl border-0 shadow-none"
-          >
-            <AccordionTrigger
-              className="px-6 py-4 hover:no-underline"
-              onClick={() => handleSectionExpand("account_settings")}
+        {/* Log Out - with extra spacing above */}
+        {authenticated && (
+          <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
+            <ButtonFullWidth
+              icon={<LogOut className="h-4 w-4" />}
+              onClick={handleLogoutClick}
             >
-              <div className="flex items-center gap-3">
-                <Settings className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Account Settings</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-4">
-              <AccountSettingsSection
-                settings={settings}
-                onAction={performAction}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* About */}
-          <div className="bg-muted rounded-xl border-0 shadow-none">
-            <Button
-              type="button"
-              variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
-              onClick={() => {
-                handleExternalLinkClick("about");
-                openExternalUrl(
-                  "https://docs.talentprotocol.com/docs/protocol-concepts/scoring-systems/creator-score",
-                );
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">About</span>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </Button>
+              <span className="font-medium">Log Out</span>
+            </ButtonFullWidth>
           </div>
-
-          {/* Dev Docs */}
-          <div className="bg-muted rounded-xl border-0 shadow-none">
-            <Button
-              type="button"
-              variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
-              onClick={() => {
-                handleExternalLinkClick("dev_docs");
-                openExternalUrl("https://docs.talentprotocol.com/");
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Dev Docs</span>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-
-          {/* Support */}
-          <div className="bg-muted rounded-xl border-0 shadow-none">
-            <Button
-              type="button"
-              variant="default"
-              className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
-              onClick={() => {
-                handleExternalLinkClick("support");
-                openExternalUrl("https://discord.com/invite/talentprotocol");
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Support</span>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-
-          {/* Log Out - with extra spacing above */}
-          {authenticated && (
-            <div className="bg-muted rounded-xl border-0 shadow-none mt-6">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleLogoutClick}
-                className="w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <LogOut className="h-4 w-4" />
-                  <span className="font-medium">Log Out</span>
-                </div>
-              </Button>
-            </div>
-          )}
-        </Accordion>
+        )}
 
         {/* Test Share Score Modal - Development Only */}
         {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
-          <div className="mt-6">
-            <TestShareScoreButton />
+          <div className="mt-2">
+            <ButtonFullWidth
+              variant="destructive"
+              icon={<Share className="h-4 w-4" />}
+              onClick={openForTesting}
+            >
+              Test Share Score Modal
+            </ButtonFullWidth>
           </div>
         )}
 
@@ -366,6 +275,9 @@ export default function SettingsPage() {
           </p>
         </div>
       </Section>
+
+      {/* Share Score Modal */}
+      <ShareCreatorScoreModal open={isOpen} onOpenChange={onOpenChange} />
     </PageContainer>
   );
 }

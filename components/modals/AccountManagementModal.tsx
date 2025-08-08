@@ -92,8 +92,8 @@ export function AccountManagementModal({
           <div className="flex flex-col gap-2">
             <Button
               onClick={handleManageAccounts}
-              variant="special"
               className="w-full"
+              variant="brand"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Manage in Talent App
@@ -120,8 +120,8 @@ export function AccountManagementModal({
         <div className="flex flex-col gap-2 mt-4">
           <Button
             onClick={handleManageAccounts}
-            variant="special"
             className="w-full"
+            variant="brand"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Manage in Talent App

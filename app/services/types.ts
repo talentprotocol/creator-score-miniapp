@@ -104,9 +104,11 @@ export type LeaderboardEntry = {
   name: string;
   pfp?: string;
   score: number;
-  rewards: string;
   id: string;
   talent_protocol_id: string | number;
+  isBoosted?: boolean;
+  baseReward?: number;
+  boostedReward?: number;
 };
 
 // Wallet account types for Talent Protocol API
@@ -254,4 +256,16 @@ export interface SearchResult {
   name: string;
   avatarUrl?: string;
   score: number;
+}
+
+// Unified user profile returned by userProfileService
+export interface UnifiedUserProfile {
+  talentUuid: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  creatorScore: number;
+  lastCalculatedAt: string | null;
+  calculating: boolean;
+  hasTalentAccount: boolean;
+  error?: string;
 }

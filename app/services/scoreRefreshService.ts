@@ -1,3 +1,71 @@
+import { parseFormattedNumber } from "@/lib/utils";
+import { BOOST_CONFIG } from "@/lib/constants";
+
+export interface TokenBalanceData {
+  balance: number;
+  lastUpdated: string;
+  isBoosted: boolean;
+}
+
+/**
+ * Fetch token balance for a single profile (for manual refresh)
+ */
+export async function getTokenBalanceForProfileManual(
+  profileId: string,
+  apiKey: string,
+): Promise<TokenBalanceData> {
+  try {
+    const res = await fetch(
+      `https://api.talentprotocol.com/data_points?id=${profileId}&slugs=talent_protocol_talent_holder`,
+      {
+        headers: {
+          Accept: "application/json",
+          "X-API-KEY": apiKey,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      return {
+        balance: 0,
+        lastUpdated: new Date().toISOString(),
+        isBoosted: false,
+      };
+    }
+
+    const json = await res.json();
+
+    if (!json.data_points || json.data_points.length === 0) {
+      return {
+        balance: 0,
+        lastUpdated: new Date().toISOString(),
+        isBoosted: false,
+      };
+    }
+
+    // Sum all readable_values for token balance
+    const balance = json.data_points.reduce(
+      (sum: number, dp: { readable_value?: string }) => {
+        const readableValue = dp.readable_value || "0";
+        const parsedValue = parseFormattedNumber(readableValue);
+        return sum + parsedValue;
+      },
+      0,
+    );
+
+    const isBoosted = balance >= BOOST_CONFIG.TOKEN_THRESHOLD;
+    const lastUpdated = new Date().toISOString();
+
+    return { balance, lastUpdated, isBoosted };
+  } catch {
+    return {
+      balance: 0,
+      lastUpdated: new Date().toISOString(),
+      isBoosted: false,
+    };
+  }
+}
+
 /**
  * Triggers Creator Score calculation for a Talent Protocol ID
  */
@@ -40,7 +108,7 @@ export async function triggerScoreCalculation(
 
     return {
       success: true,
-      message: data.score || "Calculation enqueued",
+      message: data.score || "Score and token balance refreshed",
     };
   } catch (error) {
     return {

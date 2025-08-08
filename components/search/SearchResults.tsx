@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { SearchResultRow } from "./SearchResultRow";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CreatorList, type CreatorItem } from "@/components/common/CreatorList";
 import type { SearchResult } from "@/app/services/types";
 import { Loader2, Search } from "lucide-react";
 
@@ -31,7 +31,7 @@ export function SearchResults({
 }: SearchResultsProps) {
   const router = useRouter();
 
-  const handleResultClick = (result: SearchResult) => {
+  const handleResultClick = (result: CreatorItem) => {
     // Navigate to the profile page using the talent UUID
     router.push(`/${result.id}`);
 
@@ -43,6 +43,14 @@ export function SearchResults({
     //   result_position: results.indexOf(result) + 1
     // });
   };
+
+  // Transform SearchResult to CreatorItem
+  const creatorItems: CreatorItem[] = results.map((result) => ({
+    id: result.id,
+    name: result.name,
+    avatarUrl: result.avatarUrl,
+    secondaryMetric: `Creator Score: ${result.score.toLocaleString()}`,
+  }));
 
   // Show loading skeletons during initial search
   if (loading && results.length === 0) {
@@ -112,10 +120,10 @@ export function SearchResults({
           {onRetry && !isRateLimited && (
             <div className="space-y-2">
               <Button
-                variant="destructive"
                 onClick={onRetry}
-                disabled={loading}
                 className="w-full"
+                variant="destructive"
+                disabled={loading}
               >
                 {loading ? (
                   <>
@@ -160,21 +168,13 @@ export function SearchResults({
 
   return (
     <div className="space-y-3">
-      {/* Results container with gray background and dividers like leaderboard */}
+      {/* Results container using CreatorList */}
       {results.length > 0 && (
-        <div className="overflow-hidden rounded-lg bg-gray-50">
-          {results.map((result, index, array) => (
-            <div key={result.id}>
-              <SearchResultRow
-                name={result.name}
-                avatarUrl={result.avatarUrl}
-                score={result.score}
-                onClick={() => handleResultClick(result)}
-              />
-              {index < array.length - 1 && <div className="h-px bg-gray-200" />}
-            </div>
-          ))}
-        </div>
+        <CreatorList
+          items={creatorItems}
+          onItemClick={handleResultClick}
+          loading={loading}
+        />
       )}
 
       {/* Load more button - only show loading when actually loading more results */}
@@ -182,8 +182,8 @@ export function SearchResults({
         <div className="flex justify-center pt-4">
           <Button
             onClick={onLoadMore}
-            variant="default"
             className="w-full"
+            variant="default"
             disabled={loading}
           >
             {loading ? (

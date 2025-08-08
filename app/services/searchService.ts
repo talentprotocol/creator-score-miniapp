@@ -132,26 +132,32 @@ export async function getTopCreators({
   totalCount: number;
 }> {
   try {
-    const res = await fetch(
-      `/api/leaderboard?page=${page}&per_page=${perPage}`,
+    const response = await fetch(
+      `/api/leaderboard/basic?page=${page}&per_page=${perPage}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
     );
 
-    if (!res.ok) {
+    if (!response.ok) {
       let errorMessage = "Failed to fetch top creators";
 
       try {
-        const errorData = await res.json();
+        const errorData = await response.json();
         errorMessage = errorData.error || errorMessage;
       } catch {
-        errorMessage = res.statusText || errorMessage;
+        errorMessage = response.statusText || errorMessage;
       }
 
       // Provide user-friendly error messages
-      if (res.status >= 500) {
+      if (response.status >= 500) {
         throw new Error(
           "Leaderboard service is temporarily unavailable. Please try again later",
         );
-      } else if (res.status === 429) {
+      } else if (response.status === 429) {
         throw new Error(
           "Too many requests. Please wait a moment and try again",
         );
@@ -160,7 +166,7 @@ export async function getTopCreators({
       }
     }
 
-    const json = await res.json();
+    const json = await response.json();
 
     // Handle cases where API returns success but with error field
     if (json.error) {

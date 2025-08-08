@@ -13,6 +13,7 @@ import {
   updateNotificationSettings,
   fetchHumanityCredentials,
 } from "@/app/services/connectedAccountsService";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useConnectedAccounts(talentUUID: string | undefined) {
   const [accounts, setAccounts] = useState<GroupedConnectedAccounts | null>(
@@ -31,9 +32,9 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
       return;
     }
 
-    const accountsCacheKey = `connected_accounts_${talentUUID}`;
-    const settingsCacheKey = `user_settings_${talentUUID}`;
-    const humanityCacheKey = `humanity_credentials_${talentUUID}`;
+    const accountsCacheKey = `${CACHE_KEYS.CONNECTED_ACCOUNTS}_${talentUUID}`;
+    const settingsCacheKey = `${CACHE_KEYS.USER_SETTINGS}_${talentUUID}`;
+    const humanityCacheKey = `${CACHE_KEYS.HUMANITY_CREDENTIALS}_${talentUUID}`;
 
     // Check cache first
     const cachedAccounts = getCachedData<GroupedConnectedAccounts>(

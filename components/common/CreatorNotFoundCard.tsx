@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search, Trophy } from "lucide-react";
@@ -8,12 +9,13 @@ import { useEffect, useState } from "react";
 
 export function CreatorNotFoundCard() {
   const [countdown, setCountdown] = useState(20);
+  const router = useRouter();
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          window.location.href = "/";
+          router.push("/");
           return 0;
         }
         return prev - 1;
@@ -21,7 +23,7 @@ export function CreatorNotFoundCard() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [router]);
 
   return (
     <main className="flex-1 overflow-y-auto relative">

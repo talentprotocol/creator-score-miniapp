@@ -87,12 +87,7 @@ export function AccountSettingsSection({
               action cannot be undone.
             </p>
 
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              disabled={true}
-            >
+            <Button className="w-full" variant="destructive" disabled={true}>
               Delete Account
             </Button>
           </div>

@@ -4,6 +4,7 @@ import * as React from "react";
 import type { IssuerCredentialGroup } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfileCredentials(talentUUID: string) {
   const [credentials, setCredentials] = React.useState<IssuerCredentialGroup[]>(
@@ -19,7 +20,7 @@ export function useProfileCredentials(talentUUID: string) {
       setLoading(true);
       setError(null);
 
-      const cacheKey = `credentials-${talentUUID}`;
+      const cacheKey = `${CACHE_KEYS.PROFILE_CREDENTIALS}_${talentUUID}`;
       const cached = getCachedData<IssuerCredentialGroup[]>(
         cacheKey,
         CACHE_DURATIONS.PROFILE_DATA,

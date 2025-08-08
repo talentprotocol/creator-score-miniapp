@@ -20,7 +20,7 @@ const PostRow: React.FC<PostRowProps> = ({ post }) => {
 
   return (
     <div
-      className="flex gap-3 p-3 hover:bg-gray-100 transition-colors cursor-pointer active:bg-gray-200"
+      className="flex gap-3 p-3 hover:bg-muted active:bg-muted/80 transition-colors cursor-pointer"
       onClick={handleRowClick}
     >
       {/* Left side: Title + Date stacked */}
@@ -28,17 +28,17 @@ const PostRow: React.FC<PostRowProps> = ({ post }) => {
         <p className="font-medium text-sm truncate leading-tight">
           {post.name}
         </p>
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-muted-foreground">
           {formatPostDate(post.onchain_created_at)}
         </p>
       </div>
 
       {/* Right side: External link + Platform stacked */}
       <div className="flex flex-col items-end justify-between">
-        <div className="text-gray-600 p-1">
+        <div className="text-muted-foreground p-1">
           <ExternalLink className="w-4 h-4" />
         </div>
-        <span className="text-xs text-gray-600">
+        <span className="text-xs text-muted-foreground">
           {capitalizeFirst(post.platform)}
         </span>
       </div>
@@ -82,13 +82,11 @@ export function PostsList({ posts, loading, error }: PostsListProps) {
 
   return (
     <div className="w-full">
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-background rounded-xl border border-input overflow-hidden">
         {posts.map((post, index) => (
           <React.Fragment key={`${post.onchain_address}-${index}`}>
             <PostRow post={post} />
-            {index < posts.length - 1 && (
-              <div className="border-t border-gray-100" />
-            )}
+            {index < posts.length - 1 && <div className="h-px bg-border" />}
           </React.Fragment>
         ))}
       </div>

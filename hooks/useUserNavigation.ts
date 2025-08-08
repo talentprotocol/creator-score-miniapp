@@ -2,13 +2,13 @@
 
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { useUserResolution } from "@/hooks/useUserResolution";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { User, Trophy, Settings2, Search } from "lucide-react";
 
 export function useUserNavigation() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const { talentUuid } = useUserResolution();
+  const { talentUuid } = useFidToTalentUuid();
 
   // Determine canonical identifier for navigation
   // Priority: Talent UUID > Farcaster username > fallback to /profile
