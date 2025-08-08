@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
-import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { useRouter } from "next/navigation";
 
 function useMediaQuery(query: string) {
@@ -50,17 +50,13 @@ export function FarcasterAccessModal({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const drawerContentRef = React.useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = React.useRef<HTMLElement | null>(null);
-  const { ready } = usePrivy();
-
   const router = useRouter();
-  const { login } = useLogin({
-    onComplete: () => {
-      if (open) {
-        onOpenChange(false);
-        router.push(redirectPath);
-      }
-    },
-  });
+  const handleConnected = () => {
+    if (open) {
+      onOpenChange(false);
+      router.push(redirectPath);
+    }
+  };
 
   const handleFarcasterClick = () => {
     window.open(
@@ -101,8 +97,8 @@ export function FarcasterAccessModal({
           <DialogHeader>
             <DialogTitle>Check your Creator Score</DialogTitle>
             <DialogDescription>
-              To view your score and access all features, please login with
-              Privy or use our Mini App.
+              To view your score and access all features, please connect your
+              wallet or use our Mini App.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
@@ -115,13 +111,9 @@ export function FarcasterAccessModal({
               Open in Farcaster
             </Button>
 
-            <Button
-              onClick={() => login({ walletChainType: "ethereum-only" })}
-              className="w-full"
-              disabled={!ready}
-            >
-              Login with Privy
-            </Button>
+            <div className="w-full">
+              <ConnectWallet onConnect={handleConnected} />
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -134,8 +126,8 @@ export function FarcasterAccessModal({
         <DrawerHeader>
           <DrawerTitle>Check your Creator Score</DrawerTitle>
           <DrawerDescription>
-            To view your score and access all features, please login with Privy
-            or use our Mini App.
+            To view your score and access all features, please connect your
+            wallet or use our Mini App.
           </DrawerDescription>
         </DrawerHeader>
         <div
@@ -152,13 +144,9 @@ export function FarcasterAccessModal({
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
             </Button>
-            <Button
-              onClick={() => login({ walletChainType: "ethereum-only" })}
-              className="w-full"
-              disabled={!ready}
-            >
-              Login with Privy
-            </Button>
+            <div className="w-full">
+              <ConnectWallet onConnect={handleConnected} />
+            </div>
           </div>
         </div>
       </DrawerContent>

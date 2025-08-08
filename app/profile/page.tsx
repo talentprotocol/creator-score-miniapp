@@ -4,12 +4,12 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 
 export default function ProfilePage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const { talentId } = usePrivyAuth({});
+  const { talentId } = useWalletAuth({});
   const router = useRouter();
 
   useEffect(() => {

@@ -9,7 +9,7 @@ import { Icon } from "@/components/ui/icon";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { useBackButton } from "@/hooks/useBackButton";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
-import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 
 export function Header() {
   const pathname = usePathname();
@@ -19,7 +19,7 @@ export function Header() {
   const [showModal, setShowModal] = React.useState(false);
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
   const [redirectPath, setRedirectPath] = React.useState<string>("/profile");
-  const { talentId } = usePrivyAuth({});
+  const { talentId } = useWalletAuth({});
 
   const handleTitleClick = () => {
     router.push("/leaderboard");

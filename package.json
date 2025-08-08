@@ -16,8 +16,6 @@
     "@coinbase/onchainkit": "latest",
     "@farcaster/frame-sdk": "^0.0.35",
     "@neynar/nodejs-sdk": "^2.44.0",
-    "@privy-io/react-auth": "^2.20.0",
-    "@privy-io/server-auth": "^1.28.8",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.14",

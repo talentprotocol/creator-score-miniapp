@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { resolveFidToTalentUuid } from "@/lib/user-resolver";
 import type { UnifiedUserProfile } from "@/app/services/types";
 
@@ -15,7 +15,7 @@ type HookReturn = Omit<UnifiedUserProfile, "error"> & {
 export function useResolvedTalentProfile(): HookReturn {
   const { context } = useMiniKit();
   const farcasterUser = getUserContext(context);
-  const { talentId } = usePrivyAuth({});
+  const { talentId } = useWalletAuth({});
 
   const [talentUuid, setTalentUuid] = useState<string | null>(null);
   const [data, setData] = useState<UnifiedUserProfile | null>(null);

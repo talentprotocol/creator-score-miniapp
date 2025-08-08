@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
-import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 
 export function BottomNav() {
   const [mounted, setMounted] = React.useState(false);
@@ -15,7 +15,7 @@ export function BottomNav() {
   const [showModal, setShowModal] = React.useState(false);
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
   const [redirectPath, setRedirectPath] = React.useState<string>("/profile");
-  const { talentId } = usePrivyAuth({});
+  const { talentId } = useWalletAuth({});
 
   React.useEffect(() => {
     setMounted(true);

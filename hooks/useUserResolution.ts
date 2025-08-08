@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { resolveFidToTalentUuid } from "@/lib/user-resolver";
-import { usePrivyAuth } from "./usePrivyAuth";
+import { useWalletAuth } from "./useWalletAuth";
 
 // Session-level cache for user resolution
 const userResolutionCache = new Map<number, string | null>();
@@ -12,7 +12,7 @@ const userResolutionCache = new Map<number, string | null>();
 export function useFidToTalentUuid() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const { talentId } = usePrivyAuth({});
+  const { talentId } = useWalletAuth({});
   const [talentUuid, setTalentUuid] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
