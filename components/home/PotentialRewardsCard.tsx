@@ -4,10 +4,10 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
-import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
+import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 // import { useMiniKit } from "@coinbase/onchainkit/minikit";
 
-import { useUserResolution } from "@/hooks/useUserResolution";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
 import { TOTAL_SPONSORS_POOL } from "@/lib/constants";
 
@@ -20,9 +20,9 @@ export function PotentialRewardsCard({
   score,
   loading,
 }: PotentialRewardsCardProps) {
-  const { talentUuid } = useUserResolution();
+  const { talentUuid } = useFidToTalentUuid();
   const { entries: top200Entries, loading: top200Loading } =
-    useLeaderboardOptimized();
+    useLeaderboardData();
 
   // Calculate loading progress
   const loadingProgress = (() => {

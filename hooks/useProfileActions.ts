@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from "react";
 import { useScoreRefresh } from "./useScoreRefresh";
-import { useUserResolution } from "./useUserResolution";
+import { useFidToTalentUuid } from "./useUserResolution";
 import type { ProfileData } from "@/contexts/ProfileContext";
 import { composeCast, formatK, formatNumberWithSuffix } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ export function useProfileActions({
   totalFollowers,
   totalEarnings,
 }: UseProfileActionsProps) {
-  const { talentUuid: currentUserTalentUuid } = useUserResolution();
+  const { talentUuid: currentUserTalentUuid } = useFidToTalentUuid();
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
 
   // Cooldown detection and countdown logic

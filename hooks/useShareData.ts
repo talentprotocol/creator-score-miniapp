@@ -1,21 +1,23 @@
-import { useUserResolution } from "./useUserResolution";
-import { useProfileCreatorScore } from "./useProfileCreatorScore";
+import { useFidToTalentUuid } from "./useUserResolution";
 import { useProfileSocialAccounts } from "./useProfileSocialAccounts";
 import { useProfileTotalEarnings } from "./useProfileTotalEarnings";
-import { useProfileHeaderData } from "./useProfileHeaderData";
 import {
   calculateTotalFollowers,
   formatNumberWithSuffix,
   formatK,
 } from "@/lib/utils";
+import { useResolvedTalentProfile } from "./useResolvedTalentProfile";
 
 export function useShareData() {
-  const { talentUuid } = useUserResolution();
+  const { talentUuid } = useFidToTalentUuid();
 
-  // Get creator score
-  const { creatorScore, loading: scoreLoading } = useProfileCreatorScore(
-    talentUuid || "",
-  );
+  // Unified profile data
+  const {
+    creatorScore,
+    avatarUrl,
+    displayName,
+    loading: profileLoading,
+  } = useResolvedTalentProfile();
 
   // Get social accounts for followers count
   const { socialAccounts, loading: socialsLoading } = useProfileSocialAccounts(
@@ -28,13 +30,7 @@ export function useShareData() {
     talentUuid || "",
   );
 
-  // Get user profile data
-  const { profile, loading: profileLoading } = useProfileHeaderData(
-    talentUuid || "",
-  );
-
-  const loading =
-    scoreLoading || socialsLoading || earningsLoading || profileLoading;
+  const loading = profileLoading || socialsLoading || earningsLoading;
 
   return {
     creatorScore: creatorScore || 0,
@@ -43,9 +39,9 @@ export function useShareData() {
     loading,
     talentUuid,
     // Profile data
-    avatarUrl: profile?.image_url,
-    displayName: profile?.display_name || profile?.name || "Creator",
-    handle: profile?.fname || profile?.wallet_address || talentUuid || "",
+    avatarUrl: avatarUrl || null,
+    displayName: displayName || "Creator",
+    handle: talentUuid || "",
     formattedFollowers: formatK(totalFollowers),
     formattedEarnings: formatNumberWithSuffix(totalEarnings || 0),
   };

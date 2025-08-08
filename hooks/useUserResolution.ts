@@ -9,7 +9,7 @@ import { usePrivyAuth } from "./usePrivyAuth";
 // Session-level cache for user resolution
 const userResolutionCache = new Map<number, string | null>();
 
-export function useUserResolution() {
+export function useFidToTalentUuid() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const { talentId } = usePrivyAuth({});

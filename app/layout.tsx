@@ -14,6 +14,7 @@ import {
   creatorScoreFrame,
 } from "@/lib/app-metadata";
 import localFont from "next/font/local";
+import { GeistSans } from "geist/font/sans";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -21,9 +22,8 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const pageMetadata = getPageMetadata();
-  const frameMetadata = getFrameMetadata();
-
+  const pageMetadata = await getPageMetadata();
+  const frameMetadata = await getFrameMetadata();
   return {
     title: pageMetadata.title,
     description: pageMetadata.description,
@@ -65,23 +65,14 @@ const globalErrorHandlingScript = `
   });
 `;
 
+// Cy font configuration - Next.js localFont automatically preloads all weights
+// This may cause browser warnings about unused preloaded resources, which is normal
+// and expected behavior for font optimization
 const cyFont = localFont({
   src: [
-    {
-      path: "../public/fonts/Cy Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/Cy SemiBold.ttf",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/Cy Bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
+    { path: "../public/fonts/Cy Regular.ttf", weight: "400", style: "normal" },
+    { path: "../public/fonts/Cy SemiBold.ttf", weight: "600", style: "normal" },
+    { path: "../public/fonts/Cy Bold.ttf", weight: "700", style: "normal" },
     {
       path: "../public/fonts/Cy ExtraBold.ttf",
       weight: "800",
@@ -89,15 +80,17 @@ const cyFont = localFont({
     },
   ],
   variable: "--font-cy",
+  display: "swap",
 });
+
+// Geist brand font via package (CSS variable for Tailwind/theming usage)
+const geistSans = GeistSans;
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={cyFont.variable}>
+    <html lang="en" className={`${geistSans.variable} ${cyFont.variable}`}>
       <head>
         <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
       </head>

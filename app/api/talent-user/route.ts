@@ -1,28 +1,22 @@
-import { NextRequest } from "next/server";
-import { getAccountSource } from "@/lib/user-resolver";
-import { talentApiClient } from "@/lib/talent-api-client";
-import { createNotFoundResponse } from "@/lib/api-utils";
+import { NextRequest, NextResponse } from "next/server";
+import { getTalentUserService } from "@/app/services/userService";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const id = searchParams.get("id");
 
   if (!id) {
-    return talentApiClient.getProfile({ id: null });
+    return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
 
-  const account_source = getAccountSource(id);
-
-  // For UUIDs, use talent_protocol_id to avoid account_source logic
-  const params =
-    account_source === null
-      ? { talent_protocol_id: id }
-      : { id, account_source };
-
   try {
-    return talentApiClient.getProfile(params);
+    const user = await getTalentUserService(id);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    return NextResponse.json(user);
   } catch (error) {
     console.error("[talent-user] error", error);
-    return createNotFoundResponse("User not found");
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 }

@@ -257,3 +257,15 @@ export interface SearchResult {
   avatarUrl?: string;
   score: number;
 }
+
+// Unified user profile returned by userProfileService
+export interface UnifiedUserProfile {
+  talentUuid: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  creatorScore: number;
+  lastCalculatedAt: string | null;
+  calculating: boolean;
+  hasTalentAccount: boolean;
+  error?: string;
+}

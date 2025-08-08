@@ -98,6 +98,7 @@ External APIs → API Clients → Services → API Routes → Hooks → Pure UI 
 
 - **Hook Interface Standard**: All hooks return `{data, loading, error}` consistently
 - **Hook Naming**: `useProfile*` for profile data, `useLeaderboard*` for leaderboard, `useUser*` for current user
+- **Caching Location**: Caching must be implemented in services using `unstable_cache`, NOT in API routes. API routes handle HTTP concerns only, while services handle business logic and caching.
 - **Caching Strategy**: Profile data (5min), expensive computations (30min), leaderboard (5min with refresh)
 - **Error Handling**: Graceful fallbacks with skeleton loaders, no crashes
 

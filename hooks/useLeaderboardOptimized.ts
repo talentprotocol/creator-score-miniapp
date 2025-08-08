@@ -16,7 +16,7 @@ export interface UseLeaderboardOptimizedReturn {
   refetch: () => void;
 }
 
-export function useLeaderboardOptimized(): UseLeaderboardOptimizedReturn {
+export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);

@@ -4,10 +4,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { useUserResolution } from "@/hooks/useUserResolution";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { sdk } from "@farcaster/frame-sdk";
-import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
-import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
+import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
+import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 import { formatWithK, formatCurrency, openExternalUrl } from "@/lib/utils";
 import { CreatorList } from "@/components/common/CreatorList";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
@@ -22,9 +22,7 @@ import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfileHeaderData } from "@/hooks/useProfileHeaderData";
-import { useProfileCreatorScore } from "@/hooks/useProfileCreatorScore";
-import { usePostHog } from "posthog-js/react";
+// import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
 import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import * as React from "react";
@@ -47,9 +45,9 @@ function LeaderboardContent() {
   const user = getUserContext(context);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
-  const { talentUuid: userTalentUuid } = useUserResolution();
+  const { talentUuid: userTalentUuid } = useFidToTalentUuid();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
-  const posthog = usePostHog();
+  // const posthog = usePostHog();
 
   // Use optimized leaderboard hook for all data
   const {
@@ -57,28 +55,22 @@ function LeaderboardContent() {
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
-    boostedCreatorsCount,
-  } = useLeaderboardOptimized();
+  } = useLeaderboardData();
 
   // Use hooks for data fetching - both auth paths
-  const { creatorScore: fidScore, loading: fidScoreLoading } =
-    useUserCreatorScore(user?.fid);
-  const { creatorScore: uuidScore, loading: uuidScoreLoading } =
-    useProfileCreatorScore(userTalentUuid || "");
-  const { profile, loading: profileLoading } = useProfileHeaderData(
-    userTalentUuid || "",
-  );
+  const {
+    creatorScore: unifiedScore,
+    displayName: unifiedName,
+    avatarUrl: unifiedAvatar,
+    loading: unifiedLoading,
+  } = useResolvedTalentProfile();
 
   // Combine data from both auth paths
-  const creatorScore = fidScore ?? uuidScore ?? 0;
-  const avatarUrl = user?.pfpUrl ?? profile?.image_url;
+  const creatorScore = unifiedScore ?? 0;
+  const avatarUrl = unifiedAvatar ?? user?.pfpUrl;
   const name =
-    user?.displayName ??
-    user?.username ??
-    profile?.display_name ??
-    profile?.fname ??
-    "Unknown user";
-  const loadingStats = profileLoading || fidScoreLoading || uuidScoreLoading;
+    unifiedName ?? user?.displayName ?? user?.username ?? "Unknown user";
+  const loadingStats = unifiedLoading;
 
   // Fetch user token balance
   const { balance: tokenBalance, loading: tokenLoading } =
@@ -150,37 +142,15 @@ function LeaderboardContent() {
     }
   }
 
-  // Helper to calculate boost amount for a given score and rank
-  function getBoostAmount(score: number, rank?: number): number {
-    if (!rank || rank > 200 || !top200Entries.length) return 0;
-
-    // Find the entry to check if it's boosted
-    const entry = top200Entries.find((e) => e.rank === rank);
-    if (!entry?.isBoosted) return 0;
-
-    const multiplier = calculateRewardMultiplier();
-    if (multiplier === 0) return 0;
-
-    // Calculate rewards using the same multiplier
-    const baseReward = score * multiplier; // Base score reward
-    const boostedReward = score * 1.1 * multiplier; // Boosted score reward
-
-    // Return the difference (boost amount)
-    return boostedReward - baseReward;
-  }
-
   // Handle tab changes with PostHog tracking
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
-    if (tabId === "talent") {
-      posthog?.capture("talent_tab_opened");
-    }
   };
 
   return (
     <>
-      {/* My Rewards Hero - Show if user is logged in via either path */}
-      {(user || profile) && (
+      {/* My Rewards Hero - Show if we have any user context */}
+      {(user || name) && (
         <MyRewards
           rewards={
             creatorScore
@@ -225,12 +195,7 @@ function LeaderboardContent() {
           tabs={[
             {
               id: "creators",
-              label: "Leaderboard",
-            },
-            {
-              id: "talent",
-              label: "Boosts",
-              count: boostedCreatorsCount || 0,
+              label: "Top 200",
             },
             {
               id: "sponsors",
@@ -300,70 +265,6 @@ function LeaderboardContent() {
               loading={top200Loading}
               primaryMetricLoading={rewardsLoading}
             />
-          </>
-        )}
-
-        {activeTab === "talent" && (
-          <>
-            {top200Loading && (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <div className="flex-1 space-y-1">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                    <div className="space-y-1 text-right">
-                      <Skeleton className="h-4 w-12" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {!top200Loading && (
-              <>
-                {/* Filter for boosted creators only */}
-                {top200Entries.filter(
-                  (entry) => entry.isBoosted && entry.score > 0,
-                ).length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      No boosted creators found
-                    </p>
-                  </div>
-                ) : (
-                  /* Talent leaderboard list */
-                  <CreatorList
-                    items={top200Entries
-                      .filter((entry) => entry.isBoosted && entry.score > 0)
-                      .map((user) => {
-                        const boostAmount = getBoostAmount(
-                          user.score,
-                          user.rank,
-                        );
-
-                        return {
-                          id: user.id,
-                          name: user.name,
-                          avatarUrl: user.pfp,
-                          rank: user.rank,
-                          primaryMetric: `$${boostAmount.toFixed(0)}`,
-                          secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
-                          primaryMetricVariant: "brand",
-                        };
-                      })}
-                    onItemClick={(item) => {
-                      // Navigate to profile page
-                      router.push(`/${item.id}`);
-                    }}
-                    loading={false}
-                  />
-                )}
-              </>
-            )}
           </>
         )}
 

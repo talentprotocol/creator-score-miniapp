@@ -72,18 +72,16 @@ export function Header() {
               ) : (
                 <button
                   onClick={handleTitleClick}
-                  className="h-9 cursor-pointer"
+                  className="h-9 cursor-pointer relative"
                   aria-label="Go to home"
                 >
                   <Image
                     src="/cs-logo-header.svg"
                     alt="Creator Score"
-                    width={120}
-                    height={36}
                     priority
                     fetchPriority="high"
-                    className="h-full w-auto"
-                    style={{ width: "auto" }}
+                    fill
+                    className="object-contain"
                   />
                 </button>
               )}

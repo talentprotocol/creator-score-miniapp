@@ -2,10 +2,10 @@
 
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
-import { useUserCreatorScore } from "@/hooks/useUserCreatorScore";
-import { useLeaderboardOptimized } from "@/hooks/useLeaderboardOptimized";
+import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
+import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-import { useUserResolution } from "@/hooks/useUserResolution";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import {
   CreatorScoreCard,
   PotentialRewardsCard,
@@ -17,13 +17,11 @@ import { ACTIVE_SPONSORS } from "@/lib/constants";
 export default function HomePage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
-  const { talentUuid } = useUserResolution();
-  const { creatorScore, loading: scoreLoading } = useUserCreatorScore(
-    user?.fid,
-  );
+  const { talentUuid } = useFidToTalentUuid();
+  const { creatorScore, loading: scoreLoading } = useResolvedTalentProfile();
 
   const { entries: topCreators, loading: creatorsLoading } =
-    useLeaderboardOptimized();
+    useLeaderboardData();
 
   return (
     <main className="flex-1 overflow-y-auto">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useUserResolution } from "@/hooks/useUserResolution";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { SectionAccordion } from "@/components/common/SectionAccordion";
@@ -36,7 +36,7 @@ import { Typography } from "@/components/ui/typography";
 export default function SettingsPage() {
   const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
-  const { talentUuid, loading: loadingUserResolution } = useUserResolution();
+  const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore();
 

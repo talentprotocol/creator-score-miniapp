@@ -10,6 +10,7 @@ export const CACHE_KEYS = {
   POSTS: "posts",
   TALENT_PROFILES: "talent-profiles",
   // Add missing cache keys
+  USER_PROFILE: "user-profile",
   USER_TOKEN_BALANCE: "user-token-balance",
   PROFILE_HEADER: "profile-header",
   PROFILE_CREDENTIALS: "profile-credentials",
