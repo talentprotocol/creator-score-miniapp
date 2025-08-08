@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { cn } from "@/lib/utils";
+import { cn, formatReadableValue } from "@/lib/utils";
 import { type IssuerCredentialGroup } from "@/app/services/types";
 
 type CredentialIssuer = IssuerCredentialGroup;
@@ -83,12 +83,23 @@ export function CredentialAccordion({
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {pt.max_score !== null ? (
                       <>
-                        {pt.readable_value && pt.uom === "USDC" ? (
-                          `$${pt.readable_value}`
-                        ) : pt.readable_value ? (
+                        {pt.readable_value ? (
                           <>
-                            {pt.readable_value}
-                            {pt.uom && <span>{pt.uom}</span>}
+                            {pt.uom === "USDC" || pt.uom === "USD" ? (
+                              <>
+                                {formatReadableValue(pt.readable_value, pt.uom)}
+                                {pt.uom && (
+                                  <span className="ml-1">{pt.uom}</span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {formatReadableValue(pt.readable_value, pt.uom)}
+                                {pt.uom && (
+                                  <span className="ml-1">{pt.uom}</span>
+                                )}
+                              </>
+                            )}
                           </>
                         ) : null}
                         {pt.readable_value && (

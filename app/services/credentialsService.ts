@@ -63,18 +63,9 @@ export async function getCredentialsForTalentId(
       }
 
       const existingGroup = issuerGroups.get(issuer);
-      let readableValue = null;
-      let uom = null;
-
-      if (cred.points_calculation_logic?.data_points) {
-        const maxDataPoint = cred.points_calculation_logic.data_points.find(
-          (dp) => dp.is_maximum,
-        );
-        readableValue = maxDataPoint?.readable_value ?? null;
-        uom = maxDataPoint?.uom ?? cred.uom ?? null;
-      } else {
-        uom = cred.uom ?? null;
-      }
+      // Always use credential-level values; ignore data_points
+      const readableValue = cred.readable_value ?? null;
+      const uom = cred.uom ?? null;
 
       const maxScore = cred.max_score; // Use max_score from API directly
       if (existingGroup) {

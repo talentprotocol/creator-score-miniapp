@@ -14,6 +14,7 @@ export const TOTAL_EARNINGS_CONFIG: TotalEarningsConfig = {
   // These credentials represent money earned by creating content (using slugs)
   creatorEarnings: [
     "mirror_creator_rewards",
+    "mirror_creator_rewards_pol", // Mirror earnings on POL
     "warpcast_rewards_usdc", // Farcaster Creator Rewards
     "zora_creator_rewards",
     "zora_coin_earnings", // Coin Earnings from Zora
@@ -22,12 +23,15 @@ export const TOTAL_EARNINGS_CONFIG: TotalEarningsConfig = {
     "paragraph_creator_rewards", // Creator Rewards from Paragraph
     "pods_creator_rewards", // Creator Rewards from Pods
     "lens_total_earnings", // Total Earnings from Lens
+
+    "flaunch_earnings", // Flaunch creator earnings (USD)
     // Add other creator earnings credentials as they're discovered
   ],
 
   // These credentials represent money earned by collecting/curating content (using slugs)
   collectorEarnings: [
     "mirror_referral_rewards", // Earned by referring collectors, not creating
+    "zora_referral_rewards", // Zora referral rewards
     // Add other collector earnings credentials as they're discovered
   ],
 

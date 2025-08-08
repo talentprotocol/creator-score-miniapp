@@ -85,8 +85,9 @@ export function useProfileTotalEarnings(talentUUID: string) {
 
           credentialGroup.points.forEach((point) => {
             if (!isEarningsCredential(point.slug || "")) return;
-            if (!point.readable_value || !point.uom) return;
+            if (!point.readable_value) return;
 
+            // Parse credential-level readable_value only
             const cleanValue = point.readable_value;
             const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
 
@@ -102,9 +103,10 @@ export function useProfileTotalEarnings(talentUUID: string) {
             if (isNaN(value)) return;
 
             let usdValue = 0;
-            if (point.uom === "ETH") {
+            const uom = point.uom || "";
+            if (uom === "ETH") {
               usdValue = convertEthToUsdc(value, ethPrice);
-            } else if (point.uom === "USDC") {
+            } else if (uom === "USDC" || uom === "USD") {
               usdValue = value;
             }
 

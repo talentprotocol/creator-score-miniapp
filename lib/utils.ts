@@ -242,20 +242,60 @@ export function formatReadableValue(
   uom: string | null = null,
 ): string {
   if (!value) return "";
-  if (/[a-zA-Z]/.test(value)) return value;
+  // If it's already a non-numeric descriptive value, return as is
+  if (/[a-zA-Z]/.test(value) && !/^[0-9.]+$/.test(value)) {
+    // Format dates like "2021-08-11 00:22:57 UTC" when uom indicates date
+    if (uom === "creation date") {
+      return formatDate(value);
+    }
+    return value;
+  }
+
   const num = parseFloat(value);
   if (isNaN(num)) return value;
+
+  // Currency: USDC/USD
+  if (uom === "USDC" || uom === "USD") {
+    if (num >= 1000) return formatNumberWithSuffix(num);
+    return num >= 1 ? `$${num.toFixed(2)}` : `$${num.toFixed(3)}`;
+  }
 
   // Special handling for ETH values
   if (uom === "ETH") {
     return num.toFixed(3);
   }
 
-  // Existing handling for other values
+  // Count-like units: display as integer with compact K when large
+  const COUNT_UOMS = new Set([
+    "followers",
+    "collectors",
+    "subscribers",
+    "out transactions",
+    "posts",
+    "NFT",
+    "repositories",
+    "commits",
+    "stars",
+    "score",
+    "points",
+  ]);
+  if (uom && COUNT_UOMS.has(uom)) {
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return Math.round(num).toString();
+  }
+
+  // Token-like units (e.g., $TALENT, $KAITO, $WCT)
+  if (uom && uom.startsWith("$")) {
+    if (num >= 1000) return `${(num / 1000).toFixed(2)}K`;
+    return num >= 1 ? num.toFixed(2) : num.toFixed(3);
+  }
+
+  // Generic numeric formatting
   if (num >= 1000) {
     return `${(num / 1000).toFixed(1)}K`;
   }
-  return num.toString();
+  // For small generic numbers, trim excessive precision
+  return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
 }
 
 export function cleanCredentialLabel(label: string, issuer: string): string {

@@ -114,15 +114,10 @@ export async function GET(
 
       // Calculate total for this issuer
       credentialGroup.points.forEach((point) => {
-        if (!isEarningsCredential(point.slug || "")) {
-          return;
-        }
+        if (!isEarningsCredential(point.slug || "")) return;
+        if (!point.readable_value) return;
 
-        if (!point.readable_value || !point.uom) {
-          return;
-        }
-
-        // Parse the value
+        // Parse credential-level readable_value only
         const cleanValue = point.readable_value;
         let value: number;
         const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
@@ -135,15 +130,13 @@ export async function GET(
           value = parseFloat(numericValue);
         }
 
-        if (isNaN(value)) {
-          return;
-        }
+        if (isNaN(value)) return;
 
-        // Convert to USD
+        // Convert to USD using credential-level uom only
         let usdValue = 0;
         if (point.uom === "ETH") {
           usdValue = convertEthToUsdc(value, ethPrice);
-        } else if (point.uom === "USDC") {
+        } else if (point.uom === "USDC" || point.uom === "USD") {
           usdValue = value;
         }
 

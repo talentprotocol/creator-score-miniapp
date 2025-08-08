@@ -94,11 +94,7 @@ export async function generateMetadata({
 
       let issuerTotal = 0;
       credentialGroup.points.forEach((point) => {
-        if (
-          !isEarningsCredential(point.slug || "") ||
-          !point.readable_value ||
-          !point.uom
-        ) {
+        if (!isEarningsCredential(point.slug || "") || !point.readable_value) {
           return;
         }
 
@@ -117,9 +113,15 @@ export async function generateMetadata({
         if (isNaN(value)) return;
 
         let usdValue = 0;
-        if (point.uom === "ETH") {
+        const readable = point.readable_value || "";
+        const uom = point.uom || "";
+        if (
+          uom === "ETH" ||
+          readable.includes("ETH") ||
+          readable.includes("Ξ")
+        ) {
           usdValue = convertEthToUsdc(value, ethPrice);
-        } else if (point.uom === "USDC") {
+        } else if (uom === "USDC" || uom === "USD" || readable.includes("$")) {
           usdValue = value;
         }
 
@@ -319,12 +321,9 @@ export default async function ProfileLayout({
       if (!isEarningsCredential(point.slug || "")) {
         return;
       }
+      if (!point.readable_value) return;
 
-      if (!point.readable_value || !point.uom) {
-        return;
-      }
-
-      // Parse the value (same logic as useProfileEarningsBreakdown)
+      // Parse credential-level readable_value only
       const cleanValue = point.readable_value;
       let value: number;
       const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
@@ -337,15 +336,14 @@ export default async function ProfileLayout({
         value = parseFloat(numericValue);
       }
 
-      if (isNaN(value)) {
-        return;
-      }
+      if (isNaN(value)) return;
 
-      // Convert to USD (same logic as useProfileEarningsBreakdown)
+      // Convert to USD using credential-level uom only
       let usdValue = 0;
-      if (point.uom === "ETH") {
+      const uom = point.uom || "";
+      if (uom === "ETH") {
         usdValue = convertEthToUsdc(value, ethPrice);
-      } else if (point.uom === "USDC") {
+      } else if (uom === "USDC" || uom === "USD") {
         usdValue = value;
       }
 
