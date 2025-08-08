@@ -1,8 +1,8 @@
 "use client";
 
-import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAccount, useDisconnect } from "wagmi";
 import { CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 
 const getInitialTalentUserId = () => {
@@ -25,28 +25,21 @@ const globalDebounceTimer = { current: null as NodeJS.Timeout | null };
 let globalTalentUserId: string | null = getInitialTalentUserId();
 const globalStateListeners = new Set<(id: string | null) => void>();
 
-// Function to update global state and notify all listeners
 function setGlobalTalentUserId(id: string | null) {
   globalTalentUserId = id;
   globalStateListeners.forEach((listener) => listener(id));
 }
 
-// Hook to subscribe to global talent user ID
 function useGlobalTalentUserId() {
   const [localState, setLocalState] = useState(globalTalentUserId);
-
   useEffect(() => {
     const listener = (id: string | null) => setLocalState(id);
     globalStateListeners.add(listener);
-
-    // Sync with current global state
     setLocalState(globalTalentUserId);
-
     return () => {
       globalStateListeners.delete(listener);
     };
   }, []);
-
   return localState;
 }
 
@@ -54,21 +47,16 @@ function useGlobalTalentUserId() {
 const CACHE_DURATION = CACHE_DURATION_5_MINUTES * 1000; // Convert to milliseconds
 
 async function fetchTalentUser(walletAddress: string): Promise<{ id: string }> {
-  // Check cache first
   const cached = globalTalentUserCache.get(walletAddress);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return { id: cached.id };
   }
-
-  // If already fetching, return the existing promise
   if (globalFetchingPromise) {
     return globalFetchingPromise;
   }
-
   globalFetchingPromise = fetch(`/api/talent-user?id=${walletAddress}`)
     .then((response) => response.json())
     .then((data) => {
-      // Cache the result
       globalTalentUserCache.set(walletAddress, {
         id: data.id,
         timestamp: Date.now(),
@@ -78,47 +66,42 @@ async function fetchTalentUser(walletAddress: string): Promise<{ id: string }> {
     .finally(() => {
       globalFetchingPromise = null;
     });
-
   return globalFetchingPromise;
 }
 
-export const usePrivyAuth = ({
+export const useWalletAuth = ({
   onLoginComplete,
 }: {
   onLoginComplete?: () => void;
 }) => {
   const router = useRouter();
   const [fetchingTalentUser, setFetchingTalentUser] = useState(false);
-  const { ready, authenticated, user: privyUser, logout } = usePrivy();
+  const { address, isConnected, status } = useAccount();
+  const { disconnectAsync } = useDisconnect();
 
-  const { login } = useLogin({
-    onComplete: () => {
-      if (onLoginComplete) {
-        onLoginComplete();
-      }
-    },
-  });
+  const ready = status !== "reconnecting" && status !== "connecting";
+  const authenticated = isConnected;
 
-  // Use global state instead of local state
   const talentUserId = useGlobalTalentUserId();
 
   const handleLogin = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("talentUserId");
     }
-    login({ walletChainType: "ethereum-only" });
+    // Consumers should render a Connect Wallet UI from OnchainKit; this is a placeholder.
+    if (onLoginComplete) onLoginComplete();
   };
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await disconnectAsync();
       if (typeof window !== "undefined") {
         localStorage.removeItem("talentUserId");
       }
       setGlobalTalentUserId(null);
       router.push("/leaderboard");
     } catch (error) {
-      console.error("Error during logout:", error);
+      console.error("Error during disconnect:", error);
     }
   };
 
@@ -126,14 +109,12 @@ export const usePrivyAuth = ({
     try {
       setFetchingTalentUser(true);
       const data = await fetchTalentUser(walletAddress);
-
       if (typeof window !== "undefined") {
         localStorage.setItem("talentUserId", data.id);
       }
       setGlobalTalentUserId(data.id);
     } catch (error) {
       console.error("Error fetching user data:", error);
-      // Fallback to wallet address
       if (typeof window !== "undefined") {
         localStorage.setItem("talentUserId", walletAddress);
       }
@@ -144,68 +125,46 @@ export const usePrivyAuth = ({
   }, []);
 
   useEffect(() => {
-    // Clear state when not authenticated
     if (!authenticated) {
       setGlobalTalentUserId(null);
       return;
     }
-
-    const walletAddress = privyUser?.wallet?.address;
+    const walletAddress = address;
     if (!walletAddress) {
       return;
     }
-
-    // Check if we already have this user ID
     const id = getInitialTalentUserId();
-    // Only skip fetching if we have a UUID (not a wallet address)
-    // UUIDs have format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     const isUuid =
       id &&
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         id,
       );
-
     if (isUuid) {
       setGlobalTalentUserId(id);
       return;
     }
-
-    // If we have a wallet address stored but no UUID, we should fetch the UUID
-
-    // Check if already fetching to prevent redundant state updates
     if (fetchingTalentUser) {
       return;
     }
-
-    // Clear any existing debounce timer
     if (globalDebounceTimer.current) {
       clearTimeout(globalDebounceTimer.current);
     }
-
-    // Debounce the API call globally
     globalDebounceTimer.current = setTimeout(() => {
-      if (privyUser?.wallet?.address) {
-        debouncedFetchUser(privyUser.wallet.address);
+      if (walletAddress) {
+        debouncedFetchUser(walletAddress);
       }
     }, 300);
-
     return () => {
       if (globalDebounceTimer.current) {
         clearTimeout(globalDebounceTimer.current);
       }
     };
-  }, [
-    authenticated,
-    ready,
-    privyUser?.wallet?.address,
-    fetchingTalentUser,
-    debouncedFetchUser,
-  ]);
+  }, [authenticated, ready, address, fetchingTalentUser, debouncedFetchUser]);
 
   return {
     ready,
     authenticated,
-    privyUser,
+    walletAddress: address,
     talentId: talentUserId,
     handleLogin,
     handleLogout,

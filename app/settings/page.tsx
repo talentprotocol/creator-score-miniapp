@@ -27,16 +27,16 @@ import {
   Share,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
-import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { usePostHog } from "posthog-js/react";
 import { Typography } from "@/components/ui/typography";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
+  const { handleLogout, authenticated } = useWalletAuth({});
   const posthog = usePostHog();
   const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore();
 
