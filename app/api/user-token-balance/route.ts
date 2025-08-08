@@ -27,7 +27,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Get cached token balance
-    const balance = await getCachedUserTokenBalance(apiKey, talentUuid);
+    const cachedFunction = getCachedUserTokenBalance(talentUuid);
+    const balance = await cachedFunction(apiKey);
 
     return NextResponse.json({
       balance,

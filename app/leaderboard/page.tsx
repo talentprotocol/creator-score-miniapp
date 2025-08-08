@@ -117,7 +117,16 @@ function LeaderboardContent() {
       ? Math.max(0, lastTop200Score - creatorScore)
       : 0;
 
-  // Helper to calculate USDC rewards using top 200 scores with boost consideration
+  // Helper to calculate the reward multiplier based on total boosted scores
+  function calculateRewardMultiplier(): number {
+    const totalBoostedScores = top200Entries.reduce((sum, entry) => {
+      return sum + (entry.isBoosted ? entry.score * 1.1 : entry.score);
+    }, 0);
+
+    if (totalBoostedScores === 0) return 0;
+    return TOTAL_SPONSORS_POOL / totalBoostedScores;
+  }
+
   function getUsdcRewards(
     score: number,
     rank?: number,
@@ -126,22 +135,8 @@ function LeaderboardContent() {
     // Only top 200 creators earn rewards
     if (!rank || rank > 200) return "$0";
 
-    // Calculate boosted scores for all entries
-    const boostedScores = top200Entries.map((entry) => {
-      const baseScore = entry.score;
-      // Apply 10% boost if the entry is boosted
-      return entry.isBoosted ? baseScore * 1.1 : baseScore;
-    });
-
-    // Calculate total boosted scores from top200Entries
-    const totalBoostedScores = boostedScores.reduce(
-      (sum, boostedScore) => sum + boostedScore,
-      0,
-    );
-    if (totalBoostedScores === 0) return "$0";
-
-    // Calculate multiplier based on total boosted scores
-    const multiplier = TOTAL_SPONSORS_POOL / totalBoostedScores;
+    const multiplier = calculateRewardMultiplier();
+    if (multiplier === 0) return "$0";
 
     // Calculate reward based on boosted score if applicable
     const boostedScore = isBoosted ? score * 1.1 : score;
@@ -163,41 +158,16 @@ function LeaderboardContent() {
     const entry = top200Entries.find((e) => e.rank === rank);
     if (!entry?.isBoosted) return 0;
 
-    // Calculate total scores without boost (for base reward calculation)
-    const totalBaseScores = top200Entries.reduce(
-      (sum, entry) => sum + entry.score,
-      0,
-    );
-    if (totalBaseScores === 0) return 0;
+    const multiplier = calculateRewardMultiplier();
+    if (multiplier === 0) return 0;
 
-    // Calculate total boosted scores (for boosted reward calculation)
-    const totalBoostedScores = top200Entries.reduce((sum, entry) => {
-      return sum + (entry.isBoosted ? entry.score * 1.1 : entry.score);
-    }, 0);
-    if (totalBoostedScores === 0) return 0;
+    // Calculate rewards using the same multiplier
+    const baseReward = score * multiplier; // Base score reward
+    const boostedReward = score * 1.1 * multiplier; // Boosted score reward
 
-    // Calculate multipliers
-    const baseMultiplier = TOTAL_SPONSORS_POOL / totalBaseScores;
-    const boostedMultiplier = TOTAL_SPONSORS_POOL / totalBoostedScores;
-
-    // Calculate rewards
-    const baseReward = score * baseMultiplier;
-    const boostedReward = score * 1.1 * boostedMultiplier;
-
+    // Return the difference (boost amount)
     return boostedReward - baseReward;
   }
-
-  // Handler to navigate to profile page for a leaderboard entry
-  // function handleEntryClick(entry: LeaderboardEntry) {
-  //   const url = generateProfileUrl({
-  //     farcasterHandle: null, // We don't have farcaster handle from leaderboard data
-  //     talentId: entry.talent_protocol_id,
-  //   });
-
-  //   if (url) {
-  //     router.push(url);
-  //   }
-  // }
 
   // Handle tab changes with PostHog tracking
   const handleTabChange = (tabId: string) => {

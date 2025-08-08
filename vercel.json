@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/refresh-token-balances",
-      "schedule": "0 */6 * * *"
-    }
-  ]
-}

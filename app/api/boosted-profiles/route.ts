@@ -1,26 +1,15 @@
 import { NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { getBoostedProfilesData } from "@/app/services/leaderboardService";
+import { createServerErrorResponse, logApiError } from "@/lib/api-utils";
 
 export async function GET() {
   try {
-    // Force cache refresh by adding timestamp to cache key
-    const cacheKey = `${CACHE_KEYS.BOOSTED_PROFILES}-v2-${Math.floor(Date.now() / (1000 * 60 * 60))}`; // Change every hour
-
-    const boostedProfiles = await unstable_cache(
-      async () => {
-        return await getBoostedProfilesData();
-      },
-      [cacheKey],
-      { revalidate: CACHE_DURATION_1_HOUR },
-    )();
-
+    const boostedProfiles = await getBoostedProfilesData();
     return NextResponse.json({ profiles: boostedProfiles });
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch boosted profiles" },
-      { status: 500 },
-    );
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    logApiError("boosted-profiles", "fetch", errorMessage);
+    return createServerErrorResponse("Failed to fetch boosted profiles");
   }
 }

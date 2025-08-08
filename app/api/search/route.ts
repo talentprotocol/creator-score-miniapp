@@ -3,8 +3,7 @@ import { talentApiClient } from "@/lib/talent-api-client";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  // Accept both 'q' and 'query' parameters for better compatibility
-  const query = searchParams.get("query") || searchParams.get("q");
+  const query = searchParams.get("query");
   const page = parseInt(searchParams.get("page") || "1", 10);
   const perPage = parseInt(searchParams.get("per_page") || "10", 10);
 

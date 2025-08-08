@@ -64,18 +64,20 @@ async function getUserTokenBalanceFromAPI(
 /**
  * Cached function to get user's token balance
  */
-export const getCachedUserTokenBalance = unstable_cache(
-  async (apiKey: string, talentUuid: string): Promise<number> => {
-    try {
-      const balance = await getUserTokenBalanceFromAPI(apiKey, talentUuid);
-      return balance;
-    } catch (error) {
-      throw error;
-    }
-  },
-  [CACHE_KEYS.USER_TOKEN_BALANCE],
-  {
-    revalidate: CACHE_DURATION_1_HOUR,
-    tags: [CACHE_KEYS.USER_TOKEN_BALANCE],
-  },
-);
+export function getCachedUserTokenBalance(talentUuid: string) {
+  return unstable_cache(
+    async (apiKey: string): Promise<number> => {
+      try {
+        const balance = await getUserTokenBalanceFromAPI(apiKey, talentUuid);
+        return balance;
+      } catch (error) {
+        throw error;
+      }
+    },
+    [`${CACHE_KEYS.USER_TOKEN_BALANCE}-${talentUuid}`],
+    {
+      revalidate: CACHE_DURATION_1_HOUR,
+      tags: [`${CACHE_KEYS.USER_TOKEN_BALANCE}-${talentUuid}`],
+    },
+  );
+}

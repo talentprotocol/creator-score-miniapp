@@ -131,6 +131,16 @@ if (typeof window === "undefined") {
 // Active sponsors data
 export const ACTIVE_SPONSORS = [
   {
+    id: "base",
+    name: "Base",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/ce5460f6-40a2-4486-47c1-7801e4033e00/anim=false,fit=contain,f=auto,w=576",
+    amount: 2500,
+    handle: "@base",
+    rank: 1,
+    farcasterUrl: "https://farcaster.xyz/base",
+  },
+  {
     id: "talent",
     name: "Talent Protocol",
     avatar:
