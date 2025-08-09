@@ -138,21 +138,28 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     };
   });
 
-  // Sort by score and assign ranks
-  mapped.sort((a, b) => b.score - a.score);
+  // Sort by boosted score (rewards ordering) and assign ranks
+  mapped.sort((a, b) => {
+    const boostedA = a.isBoosted ? a.score * 1.1 : a.score;
+    const boostedB = b.isBoosted ? b.score * 1.1 : b.score;
+    return boostedB - boostedA;
+  });
 
-  let lastScore: number | null = null;
+  let lastBoostedScore: number | null = null;
   let lastRank = 0;
   let ties = 0;
   const ranked = mapped.map((entry, idx) => {
+    const currentBoostedScore = entry.isBoosted
+      ? entry.score * 1.1
+      : entry.score;
     let rank;
-    if (entry.score === lastScore) {
+    if (currentBoostedScore === lastBoostedScore) {
       rank = lastRank;
       ties++;
     } else {
       rank = idx + 1;
       if (ties > 0) rank = lastRank + ties;
-      lastScore = entry.score;
+      lastBoostedScore = currentBoostedScore;
       lastRank = rank;
       ties = 1;
     }

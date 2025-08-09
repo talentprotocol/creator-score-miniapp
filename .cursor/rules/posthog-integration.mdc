@@ -1,9 +1,7 @@
 ---
 description: apply when interacting with PostHog/analytics tasks
-globs: 
-alwaysApply: true
+alwaysApply: false
 ---
-
 Never hallucinate an API key. Instead, always use the API key populated in the .env file.
 
 # Feature flags

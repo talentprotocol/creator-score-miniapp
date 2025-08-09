@@ -596,18 +596,35 @@ export function formatDate(dateString: string): string {
   });
 }
 
-// Helper to format currency
+// Generic compact formatter without currency symbol (e.g., 2.09M, 3.01K, 780)
+export function formatCompactNumber(amount: number): string {
+  if (isNaN(amount) || !isFinite(amount)) return "—";
+  if (amount < 0) return "—";
+  if (amount === 0) return "0";
+
+  if (amount >= 1_000_000_000) {
+    return `${(amount / 1_000_000_000).toFixed(2)}B`;
+  }
+  if (amount >= 1_000_000) {
+    return `${(amount / 1_000_000).toFixed(2)}M`;
+  }
+  if (amount >= 10_000) {
+    return `${(amount / 1_000).toFixed(2)}K`;
+  }
+  const rounded = Math.round(amount);
+  return rounded >= 1000 ? rounded.toLocaleString() : `${rounded}`;
+}
+
+// USD-specific compact formatter (kept for backward compatibility with existing usages)
 export function formatCurrency(amount: number): string {
-  if (amount >= 1000000000) {
-    return `$${(amount / 1000000000).toFixed(2)}B`;
-  }
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(2)}M`;
-  }
-  if (amount >= 1000) {
-    return `$${formatWithK(amount)}`;
-  }
-  return `$${amount}`;
+  const compact = formatCompactNumber(amount);
+  if (compact === "—") return compact;
+  return `$${compact}`;
+}
+
+// Token amount formatter (no currency symbol; pair with ticker like $TALENT)
+export function formatTokenAmount(amount: number): string {
+  return formatCompactNumber(amount);
 }
 
 /**

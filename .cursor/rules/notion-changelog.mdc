@@ -1,0 +1,132 @@
+---
+description: Auto-generate Notion changelog entries when package.json version changes
+alwaysApply: false
+---
+# Cursor Rules for Automatic Changelog Generation
+
+## Package.json Version Monitoring
+When I modify package.json and change the version field:
+
+1. **Extract version info:**
+   - Read the new version from package.json
+   - Extract only the major.minor (X.Y) part, ignore patch (Z)
+   - Format as "vX.Y" (e.g., "v2.1")
+
+2. **Check for existing entry:**
+   - Search the Notion "Product Changelog" database for entries with "App" property: "Creator Score" OR entries with name starting with "Creator Score v"
+   - Database URL: https://www.notion.so/talentprotocol/d8921ac6c484431dad428039279898aa
+   - Use Notion MCP search tool to check if entry already exists
+
+3. **Analyze changes and generate content:**
+   - Review git commits since the last version tag/release
+   - Analyze code changes, PR descriptions, and commit messages
+   - Generate a concise one-line summary for the "Summary" property on Notion
+   - Create detailed changelog content organized by category
+   - Present the generated content for validation before creation
+
+4. **Validate generated content with user:**
+   - Present the generated changelog content:
+     - Version: vX.Y
+     - App: Creator Score
+     - Release Date: today's date
+     - Summary: (AI-generated one-line summary)
+     - Full changelog: (AI-generated detailed content)
+   - Ask if the content looks accurate and complete
+   - Allow me to request edits or approve as-is
+   - Wait for confirmation before proceeding
+
+5. **Create new changelog entry (after approval):**
+   - Only create if no existing entry found for this version AND user approves content
+   - Use Notion template: https://www.notion.so/talentprotocol/Product-Changelog-24afc9bb5319804ea688edc6dcc33642?p=24afc9bb5319801e9820c52e24d5d694
+   - Set properties:
+     - App: "Creator Score"
+     - Version: "vX.Y" (extracted version)
+     - Release Date: today's date
+     - Summary: (AI-generated summary)
+   - Use AI-generated content instead of template placeholders
+   - Also pick an appropriate icon/emoji for each changelog entry
+
+6. **Use Notion template for content:**
+   - Duplicate the template page: https://www.notion.so/talentprotocol/Product-Changelog-24afc9bb5319804ea688edc6dcc33642?p=24afc9bb5319801e9820c52e24d5d694
+   - Update the duplicated page with the correct properties
+   - Or create new page with template structure if duplication not available
+
+7. **Post-creation:**
+   - Confirm the entry was created successfully
+   - Provide the direct link to edit the new changelog entry
+   - Remind me to fill in the actual changes in the template sections
+
+8. **Use Notion template with AI content:**
+   - Duplicate the template page or create new page with template structure
+   - Replace template placeholders with AI-generated content
+   - Organize changes into appropriate sections (New Features, Bug Fixes, etc.)
+
+9. **Post-creation:**
+   - Confirm the entry was created successfully
+   - Provide the direct link to the new changelog entry
+   - Note that the content was AI-generated and can be edited if needed
+
+## Content Generation Guidelines:
+- **Summary**: One concise sentence describing the main theme of the release
+- **Changelog sections**:
+  - Analyze commit messages and code changes
+  - Group changes by type: New Features, Bug Fixes, Improvements, Breaking Changes
+  - Use clear, user-facing language (not technical implementation details)
+  - Focus on what users/stakeholders will notice
+  - Include only significant changes (ignore minor refactoring, typos, etc.)
+
+## Validation Flow Example:
+```
+🔄 Version bump detected: 2.1.0 → 2.2.0
+
+📊 Analyzing changes since v2.1...
+   • Found 12 commits
+   • Identified 3 new features, 5 bug fixes, 2 improvements
+
+📝 Generated changelog content:
+
+Summary: "Added user authentication system and improved overall application performance"
+
+## New Features
+- Implemented OAuth2 authentication with Google and GitHub
+- Added user profile management dashboard
+- Introduced dark mode toggle
+
+## Bug Fixes  
+- Fixed memory leak in data processing pipeline
+- Resolved UI rendering issues on mobile devices
+- Corrected timezone handling in date calculations
+
+## Improvements
+- Optimized database queries for 40% faster load times
+- Enhanced error messaging throughout the application
+
+✅ Does this content look accurate? (y/n/edit)
+```
+
+## Manual Command
+Also support a manual command "Create changelog entry" that:
+- Asks for the version if not clear from package.json
+- Analyzes changes since the last version
+- Generates summary and changelog content automatically
+- Follows the same validation flow
+- Uses the same template and process
+
+## Error Handling
+- If git history is not available, ask me to provide change information manually
+- If no significant changes detected, ask if I still want to create an entry
+- If Notion MCP is not available, show clear error message with setup instructions
+- If database is not accessible, provide the database URL and check permissions
+- If template is not accessible, fall back to basic template structure
+- If version extraction fails, ask me to specify the version manually
+- If user requests edits during validation, allow iterative refinement
+- If user cancels during validation, stop the process gracefully
+
+## Notes
+- Only trigger on actual version changes, not other package.json modifications
+- Always use "Creator Score" as the app name
+- Never create duplicate entries for the same X.Y version
+- Always validate generated content with user before creating entries
+- Focus on user-facing changes, not internal refactoring
+- Use clear, non-technical language in changelog entries
+- Template URL: https://www.notion.so/talentprotocol/Product-Changelog-24afc9bb5319804ea688edc6dcc33642?p=24afc9bb5319801e9820c52e24d5d694

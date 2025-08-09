@@ -15,8 +15,9 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
-import { Link2, Trophy, Coins } from "lucide-react";
+import { Link2, Trophy, Coins, Rocket } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { BOOST_CONFIG } from "@/lib/constants";
 
 interface HowToEarnModalProps {
   open: boolean;
@@ -30,14 +31,23 @@ function HowToEarnContent() {
         <div className="p-2 bg-purple-50 rounded-lg">
           <Link2 className="h-5 w-5 text-primary" />
         </div>
-        <p className="text-sm">Connect Multiple Accounts</p>
+        <p className="text-sm">Connect your Creator Accounts</p>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="p-2 bg-purple-50 rounded-lg">
           <Trophy className="h-5 w-5 text-primary" />
         </div>
-        <p className="text-sm">Reach Top 200 Leaderboard</p>
+        <p className="text-sm">Reach the Top 200 Leaderboard</p>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="p-2 bg-purple-50 rounded-lg">
+          <Rocket className="h-5 w-5 text-primary" />
+        </div>
+        <p className="text-sm">
+          Hold {BOOST_CONFIG.TOKEN_THRESHOLD}+ $TALENT for a 10% Boost
+        </p>
       </div>
 
       <div className="flex items-center gap-4">

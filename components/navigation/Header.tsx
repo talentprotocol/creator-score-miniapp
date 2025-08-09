@@ -72,7 +72,7 @@ export function Header() {
               ) : (
                 <button
                   onClick={handleTitleClick}
-                  className="h-9 cursor-pointer relative"
+                  className="h-9 w-24 cursor-pointer relative"
                   aria-label="Go to home"
                 >
                   <Image

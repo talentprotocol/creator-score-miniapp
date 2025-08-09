@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 7%;        /* #111111 - text-gray-900 */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
-    --primary: 255 71% 69%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
+    --background: 0 0% 100%;       /* #ffffff */
+    --foreground: 0 0% 7%;         /* #111111 - text-gray-900 */
+    --card: 0 0% 100%;             /* #ffffff */
+    --card-foreground: 0 0% 7%;    /* #111111 */
+    --popover: 0 0% 100%;          /* #ffffff */
+    --popover-foreground: 0 0% 7%; /* #111111 */
+    --primary: 255 71% 69%;        /* #9478E8 */
+    --primary-foreground: 0 0% 98%;/* #FAFAFA */
+    --secondary: 0 0% 96%;         /* #F5F5F5 */
+    --secondary-foreground: 0 0% 9%;/* #171717 */
     --muted: 0 0% 98%;             /* #FAFAFA - bg-gray-50 */
     --muted-foreground: 0 0% 60%;  /* #999999 - text-gray-400 */
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --accent: 0 0% 96%;            /* #F5F5F5 */
+    --accent-foreground: 0 0% 9%;  /* #171717 */
+    --destructive: 0 84% 60%;      /* #EF4343 */
+    --destructive-foreground: 0 0% 98%; /* #FAFAFA */
     --border: 0 0% 83%;            /* #d5d5d5 - border-gray-300 */
-    --input: 0 0% 83%;
-    --ring: 255 71% 69%;
+    --input: 0 0% 83%;             /* #d5d5d5 */
+    --ring: 255 71% 69%;           /* #9478E8 */
     --radius: 0.5rem;
 
     /* Brand Colors */

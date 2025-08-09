@@ -24,6 +24,7 @@ import { Callout } from "@/components/common/Callout";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
+import posthog from "posthog-js";
 import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -141,6 +142,21 @@ function LeaderboardContent() {
     }
   }
 
+  function getBoostAmountUsd(
+    score: number,
+    rank?: number,
+    isBoosted?: boolean,
+  ): string | null {
+    if (!rank || rank > 200 || !isBoosted) return null;
+    const multiplier = calculateRewardMultiplier();
+    if (multiplier === 0) return null;
+    const base = score * multiplier;
+    const boosted = score * 1.1 * multiplier;
+    const boost = boosted - base;
+    if (boost <= 0) return null;
+    return boost >= 1 ? `$${boost.toFixed(0)}` : `$${boost.toFixed(2)}`;
+  }
+
   // Handle tab changes with PostHog tracking
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -170,6 +186,11 @@ function LeaderboardContent() {
           tokenBalance={tokenBalance}
           tokenLoading={tokenLoading}
           isBoosted={userTop200Entry?.isBoosted}
+          boostAmountUsd={getBoostAmountUsd(
+            userTop200Entry?.score ?? creatorScore,
+            userTop200Entry?.rank,
+            userTop200Entry?.isBoosted,
+          )}
         />
       )}
 
@@ -251,9 +272,23 @@ function LeaderboardContent() {
                   secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
                   primaryMetricVariant: isBoosted ? "brand" : "default",
                   badge: isBoosted ? (
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100">
+                    <button
+                      type="button"
+                      className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                      aria-label="How to earn rewards boost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Optional: analytics
+                        try {
+                          posthog.capture("boost_badge_clicked", {
+                            location: "leaderboard_row",
+                          });
+                        } catch {}
+                        setHowToEarnOpen(true);
+                      }}
+                    >
                       <Rocket className="h-3 w-3 text-purple-600" />
-                    </div>
+                    </button>
                   ) : undefined,
                 };
               })}
