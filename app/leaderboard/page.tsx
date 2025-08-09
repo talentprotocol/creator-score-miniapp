@@ -68,8 +68,7 @@ function LeaderboardContent() {
   // Combine data from both auth paths
   const creatorScore = unifiedScore ?? 0;
   const avatarUrl = unifiedAvatar ?? user?.pfpUrl;
-  const name =
-    unifiedName ?? user?.displayName ?? user?.username ?? "Unknown user";
+  const name = unifiedName ?? user?.displayName ?? user?.username;
   const loadingStats = unifiedLoading;
 
   // Fetch user token balance
@@ -149,8 +148,8 @@ function LeaderboardContent() {
 
   return (
     <>
-      {/* My Rewards Hero - Show if we have any user context */}
-      {(user || name) && (
+      {/* My Rewards Hero - Show only when we have authenticated user context */}
+      {(user || unifiedName) && (
         <MyRewards
           rewards={
             creatorScore
@@ -163,7 +162,7 @@ function LeaderboardContent() {
           }
           score={creatorScore}
           avatarUrl={avatarUrl}
-          name={name}
+          name={name!}
           isLoading={loadingStats || (top200Loading && !userTop200Entry)}
           rank={userTop200Entry?.rank}
           pointsToTop200={pointsToTop200}
