@@ -253,6 +253,21 @@ function LeaderboardContent() {
                 ))}
               </div>
             )}
+            {/* Subtle column headings for Top 200 */}
+            {!top200Loading && top200Entries.length > 0 && (
+              <div className="flex items-center gap-3 px-3 py-2">
+                <span className="w-6 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Rank
+                </span>
+                <div className="w-8" />
+                <span className="flex-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Creator
+                </span>
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Reward
+                </span>
+              </div>
+            )}
             {/* Leaderboard list - show all 200 entries */}
             <CreatorList
               items={top200Entries.map((user) => {
@@ -303,36 +318,37 @@ function LeaderboardContent() {
         )}
 
         {activeTab === "sponsors" && (
-          <div className="overflow-hidden rounded-lg bg-gray-50">
-            {ACTIVE_SPONSORS.map((sponsor, index, array) => (
-              <div key={sponsor.id}>
-                <div
-                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => openExternalUrl(sponsor.farcasterUrl)}
-                >
-                  <span className="text-sm font-medium w-6">
-                    #{sponsor.rank}
-                  </span>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={sponsor.avatar} />
-                    <AvatarFallback>{sponsor.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{sponsor.name}</p>
-                    <p className="text-xs text-gray-600">{sponsor.handle}</p>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-sm font-medium">
-                      {formatCurrency(sponsor.amount)}
-                    </span>
-                  </div>
-                </div>
-                {index < array.length - 1 && (
-                  <div className="h-px bg-gray-200" />
-                )}
+          <>
+            {/* Subtle column headings for Sponsors (outside bordered list) */}
+            {ACTIVE_SPONSORS.length > 0 && (
+              <div className="flex items-center gap-3 px-3 py-2">
+                <span className="w-6 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Rank
+                </span>
+                <div className="w-8" />
+                <span className="flex-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Sponsor
+                </span>
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Amount
+                </span>
               </div>
-            ))}
-          </div>
+            )}
+            <CreatorList
+              items={ACTIVE_SPONSORS.map((sponsor) => ({
+                id: sponsor.id,
+                name: sponsor.name,
+                avatarUrl: sponsor.avatar,
+                rank: sponsor.rank,
+                primaryMetric: formatCurrency(sponsor.amount),
+                secondaryMetric: sponsor.handle,
+              }))}
+              onItemClick={(item) => {
+                const sponsor = ACTIVE_SPONSORS.find((s) => s.id === item.id);
+                if (sponsor) openExternalUrl(sponsor.farcasterUrl);
+              }}
+            />
+          </>
         )}
 
         {/* Sponsor Callout */}

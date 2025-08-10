@@ -51,7 +51,7 @@ export function MyRewards({
               <Button
                 variant="ghost"
                 onClick={onHowToEarnClick}
-                className="h-5 w-5 text-muted-foreground hover:text-primary"
+                className="h-5 w-5 px-2 text-muted-foreground hover:text-primary"
               >
                 <Icon icon={InfoIcon} size="sm" color="muted" />
                 <span className="sr-only">How to earn</span>
