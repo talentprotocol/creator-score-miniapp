@@ -242,6 +242,22 @@ import { Typography } from "@/components/ui/typography";
 - **Reduced motion** support for accessibility
 - **Consistent timing** across all interactions
 
+## Modal Backdrop (Blurred Scrim)
+
+### Shared Pattern
+- **Overlay utility**: `.modal-overlay`
+- **Default styles**: `bg-black/70 backdrop-blur-sm` with fade in/out via data state classes.
+- **Scope**: Applied to both `Dialog` (desktop) and `Drawer` (mobile) overlays for uniform feel.
+
+### Usage
+- The utility is defined in `app/theme.css` and used by `components/ui/dialog.tsx` and `components/ui/drawer.tsx`.
+- To customize per-use, pass `className` to `DialogOverlay` or `DrawerOverlay` and compose with `modal-overlay`.
+
+### Guidance
+- **Subtle by default**: stick with `backdrop-blur-sm` and `bg-black/70` for performance and clarity.
+- **Performance note**: backdrop blur can impact low-end devices; avoid increasing blur strength globally.
+- **No background scaling**: Drawers do not scale the background by default.
+
 ## Component Decision Tree
 
 ### When to Create New Components

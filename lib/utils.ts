@@ -37,6 +37,17 @@ export function calculatePointsToNextLevel(score: number, level: number) {
   return nextLevel.min - score;
 }
 
+/**
+ * Convert a raw Creator Score into a level number based on LEVEL_RANGES
+ */
+export function getLevelFromScore(score: number): number {
+  if (typeof score !== "number" || isNaN(score) || score < 0) return 1;
+  const levelInfo =
+    LEVEL_RANGES.find((range) => score >= range.min && score <= range.max) ||
+    LEVEL_RANGES[0];
+  return LEVEL_RANGES.indexOf(levelInfo) + 1;
+}
+
 export function getLevelBadgeColor(level: number | null): string {
   if (!level) return "bg-gray-500";
 

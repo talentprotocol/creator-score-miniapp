@@ -8,8 +8,8 @@ import { ChevronRight } from "lucide-react";
 import {
   calculateScoreProgress,
   calculatePointsToNextLevel,
+  getLevelFromScore,
 } from "@/lib/utils";
-import { LEVEL_RANGES } from "@/lib/constants";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 
@@ -22,15 +22,8 @@ export function CreatorScoreCard({ score, loading }: CreatorScoreCardProps) {
   const { context } = useMiniKit();
   const user = getUserContext(context);
 
-  // Calculate level using LEVEL_RANGES
-  const level = score
-    ? (() => {
-        const levelInfo = LEVEL_RANGES.find(
-          (range) => score >= range.min && score <= range.max,
-        );
-        return levelInfo ? LEVEL_RANGES.indexOf(levelInfo) + 1 : 1;
-      })()
-    : 1;
+  // Calculate level using shared helper
+  const level = score ? getLevelFromScore(score) : 1;
 
   // Calculate progress to next level
   const progress = score ? calculateScoreProgress(score, level) : 0;

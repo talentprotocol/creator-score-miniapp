@@ -20,7 +20,7 @@ import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { Gift } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { Typography } from "@/components/ui/typography";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import posthog from "posthog-js";
 
 export interface PerkModalProps {
@@ -29,7 +29,6 @@ export interface PerkModalProps {
   color?: "purple" | "green" | "blue" | "pink";
   title: string;
   subtitle?: string;
-  description: string;
   access?: string;
   distribution?: string;
   supply?: string;
@@ -39,13 +38,12 @@ export interface PerkModalProps {
   requiredLevel?: number; // default 3
   perkId: string; // analytics id, e.g., "screen_studio"
   onClaim?: () => void; // optional callback when CTA succeeds
+  iconUrl?: string;
+  iconAlt?: string;
 }
 
 function Content({
   color,
-  title,
-  subtitle,
-  description,
   access,
   distribution,
   supply,
@@ -61,20 +59,8 @@ function Content({
 
   return (
     <div className="space-y-6" {...(color ? { "data-accent": color } : {})}>
-      <div className="space-y-2">
-        <Typography as="h3" size="lg" weight="bold" color="default">
-          {title}
-        </Typography>
-        {subtitle && (
-          <Typography size="sm" color="muted">
-            {subtitle}
-          </Typography>
-        )}
-      </div>
-
       <div className="space-y-3">
         <div className="h-px bg-border" />
-        <Typography>{description}</Typography>
         <div className="space-y-2 text-sm">
           {access && (
             <div className="flex items-center justify-between">
@@ -108,13 +94,8 @@ function Content({
           }}
           disabled={!meetsLevel}
         >
-          {ctaLabel}
+          {meetsLevel ? ctaLabel : `Requires Level ${requiredLevel}`}
         </ButtonFullWidth>
-        {!meetsLevel && (
-          <Typography size="xs" color="muted">
-            Requires Level {requiredLevel}
-          </Typography>
-        )}
       </div>
     </div>
   );
@@ -135,10 +116,29 @@ export function PerkModal(props: PerkModalProps) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent {...(props.color ? { "data-accent": props.color } : {})}>
           <DialogHeader className="text-left">
-            <DialogTitle>Creator Perk</DialogTitle>
-            <DialogDescription>
-              Access exclusive offers as your Creator Score increases.
-            </DialogDescription>
+            <div className="flex items-start justify-between">
+              <DialogTitle>{props.title}</DialogTitle>
+              {props.iconUrl ? (
+                <Avatar className="h-5 w-5">
+                  <AvatarImage
+                    src={props.iconUrl}
+                    alt={props.iconAlt || "perk icon"}
+                  />
+                  <AvatarFallback className="p-0">
+                    <div className="h-5 w-5 rounded-full bg-brand/20 flex items-center justify-center">
+                      <Gift className="h-3 w-3 text-brand" />
+                    </div>
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="h-5 w-5 rounded-full bg-brand/20 flex items-center justify-center">
+                  <Gift className="h-3 w-3 text-brand" />
+                </div>
+              )}
+            </div>
+            {props.subtitle && (
+              <DialogDescription>{props.subtitle}</DialogDescription>
+            )}
           </DialogHeader>
           <Content requiredLevel={requiredLevel} {...contentProps} />
         </DialogContent>
@@ -150,10 +150,29 @@ export function PerkModal(props: PerkModalProps) {
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent {...(props.color ? { "data-accent": props.color } : {})}>
         <DrawerHeader className="text-left">
-          <DrawerTitle>Creator Perk</DrawerTitle>
-          <DrawerDescription>
-            Access exclusive offers as your Creator Score increases.
-          </DrawerDescription>
+          <div className="flex items-start justify-between">
+            <DrawerTitle>{props.title}</DrawerTitle>
+            {props.iconUrl ? (
+              <Avatar className="h-5 w-5">
+                <AvatarImage
+                  src={props.iconUrl}
+                  alt={props.iconAlt || "perk icon"}
+                />
+                <AvatarFallback className="p-0">
+                  <div className="h-5 w-5 rounded-full bg-brand/20 flex items-center justify-center">
+                    <Gift className="h-3 w-3 text-brand" />
+                  </div>
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div className="h-5 w-5 rounded-full bg-brand/20 flex items-center justify-center">
+                <Gift className="h-3 w-3 text-brand" />
+              </div>
+            )}
+          </div>
+          {props.subtitle && (
+            <DrawerDescription>{props.subtitle}</DrawerDescription>
+          )}
         </DrawerHeader>
         <div className="px-4 pb-8">
           <Content requiredLevel={requiredLevel} {...contentProps} />

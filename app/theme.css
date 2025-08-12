@@ -100,6 +100,13 @@
   }
 }
 
+@layer utilities {
+  /* Shared modal/drawer backdrop overlay */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0;
+  }
+}
+
 .mini-app-theme {
   --ock-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   --ock-border-radius: 0.75rem;

@@ -7,7 +7,12 @@ import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { sdk } from "@farcaster/frame-sdk";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
-import { formatWithK, formatCurrency, openExternalUrl } from "@/lib/utils";
+import {
+  formatWithK,
+  formatCurrency,
+  openExternalUrl,
+  getLevelFromScore,
+} from "@/lib/utils";
 import { CreatorList } from "@/components/common/CreatorList";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
@@ -94,6 +99,7 @@ function LeaderboardContent() {
   const avatarUrl = unifiedAvatar ?? user?.pfpUrl;
   const name = unifiedName ?? user?.displayName ?? user?.username;
   const loadingStats = unifiedLoading;
+  const level = getLevelFromScore(creatorScore);
 
   // Fetch user token balance
   const { balance: tokenBalance, loading: tokenLoading } =
@@ -272,7 +278,7 @@ function LeaderboardContent() {
                 color: "green",
                 icon: <HandHeart className="h-4 w-4" />,
                 title: "Pay It Forward",
-                description: "Give your rewards but keep your rank.",
+                description: "Give your rewards, keep your rank.",
                 dismissKey: "optout_callout_dismissed",
                 onClose: () => {
                   try {
@@ -362,40 +368,23 @@ function LeaderboardContent() {
         onOpenChange={(o) => setPerkOpen(o)}
         color="blue"
         title="Creator Perk: Screen Studio"
-        subtitle="Access exclusive offers as your Creator Score increases."
-        description="Get 1 month of Screen Studio for free"
-        access="Creator Score Level 3"
+        subtitle="Get 1 month of Screen Studio for free."
+        access="Creator Score: Level 3"
         distribution="First-Come, First-Served"
         supply="20 monthly subscriptions"
         ctaLabel="Claim via Form"
         ctaUrl="https://www.notion.com/product/forms"
-        level={0}
+        level={level}
         requiredLevel={3}
         perkId="screen_studio"
+        iconUrl="/logos/screen-studio.png"
+        iconAlt="Screen Studio"
         onClaim={() => {
           try {
             localStorage.setItem("perk_screen_studio_claimed", "true");
           } catch {}
           setPerkOpen(false);
         }}
-      />
-
-      {/* Perk Modal - Screen Studio */}
-      <PerkModal
-        open={perkOpen}
-        onOpenChange={(o) => setPerkOpen(o)}
-        color="blue"
-        title="Creator Perk: Screen Studio"
-        subtitle="Access exclusive offers as your Creator Score increases."
-        description="Get 1 month of Screen Studio for free"
-        access="Creator Score Level 3"
-        distribution="First-Come, First-Served"
-        supply="20 monthly subscriptions"
-        ctaLabel="Claim via Form"
-        ctaUrl="https://www.notion.com/product/forms"
-        level={0}
-        requiredLevel={3}
-        perkId="screen_studio"
       />
 
       {/* Simplified Stat Cards */}

@@ -1,4 +1,5 @@
 import { LEVEL_RANGES } from "@/lib/constants";
+import { getLevelFromScore } from "@/lib/utils";
 import { BuilderScore, CreatorScore, SCORER_SLUGS } from "./types";
 
 /**
@@ -47,11 +48,8 @@ async function getScoreForAddress(
     const calculatingEnqueuedAt =
       data.score?.calculating_score_enqueued_at ?? null;
 
-    const levelInfo =
-      LEVEL_RANGES.find(
-        (range) => points >= range.min && points <= range.max,
-      ) || LEVEL_RANGES[0];
-    const level = LEVEL_RANGES.indexOf(levelInfo) + 1;
+    const level = getLevelFromScore(points);
+    const levelInfo = LEVEL_RANGES[level - 1];
 
     return {
       score: points,
@@ -188,11 +186,8 @@ export async function getCreatorScoreForTalentId(
     const calculating = data.score?.calculating_score ?? false;
     const calculatingEnqueuedAt =
       data.score?.calculating_score_enqueued_at ?? null;
-    const levelInfo =
-      LEVEL_RANGES.find(
-        (range) => points >= range.min && points <= range.max,
-      ) || LEVEL_RANGES[0];
-    const level = LEVEL_RANGES.indexOf(levelInfo) + 1;
+    const level = getLevelFromScore(points);
+    const levelInfo = LEVEL_RANGES[level - 1];
     const result = {
       score: points,
       level,

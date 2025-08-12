@@ -9,9 +9,9 @@ import {
 import {
   calculateScoreProgress,
   calculatePointsToNextLevel,
+  getLevelFromScore,
 } from "@/lib/utils";
 import { useProfileContext } from "@/contexts/ProfileContext";
-import { LEVEL_RANGES } from "@/lib/constants";
 
 export function ScoreProgressAccordion() {
   const { profileData } = useProfileContext();
@@ -24,15 +24,8 @@ export function ScoreProgressAccordion() {
 
   const score = typeof creatorScore === "number" ? creatorScore : null;
 
-  // Calculate level using LEVEL_RANGES
-  const level = score
-    ? (() => {
-        const levelInfo = LEVEL_RANGES.find(
-          (range) => score >= range.min && score <= range.max,
-        );
-        return levelInfo ? LEVEL_RANGES.indexOf(levelInfo) + 1 : 1;
-      })()
-    : null;
+  // Calculate level using shared helper
+  const level = score !== null ? getLevelFromScore(score) : null;
 
   const progress = calculateScoreProgress(score ?? 0, level ?? 1);
   const pointsToNext = calculatePointsToNextLevel(score ?? 0, level ?? 1);
