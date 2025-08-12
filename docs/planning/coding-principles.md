@@ -9,6 +9,10 @@
 - **Shared Utilities:** All user lookups and profile loads go through a single resolver that abstracts identifier types into Talent UUID. Common logic extracted into shared services for maintainability and testability.
 - **Documentation:** All unique or opinionated decisions documented for clarity; best practices referenced but not over-explained.
 
+### Typography Usage
+
+- Always use `components/ui/typography.tsx` to set typography variants (size, weight, color). Avoid ad-hoc Tailwind text classes in components. This ensures semantic consistency and centralized control.
+
 ## DESIGN PRINCIPLES
 
 - **Navigation:** Mobile-first with fixed top header and bottom navigation bar.

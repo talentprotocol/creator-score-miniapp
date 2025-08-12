@@ -1,7 +1,12 @@
 import type { LeaderboardEntry } from "./types";
 import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
-import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
+import {
+  CACHE_KEYS,
+  CACHE_DURATION_1_HOUR,
+  CACHE_DURATION_10_MINUTES,
+} from "@/lib/cache-keys";
+import { talentApiClient } from "@/lib/talent-api-client";
 
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
@@ -312,6 +317,21 @@ export async function getBoostedProfilesData(): Promise<string[]> {
 
   return boostedProfiles;
 }
+
+// Total number of creators with Creator Score > 0, via Talent API advanced search pagination
+export const getActiveCreatorsCount = unstable_cache(
+  async () => {
+    const res = await talentApiClient.getActiveCreatorsCount();
+    try {
+      const json = await res.json();
+      return typeof json.total === "number" ? json.total : 0;
+    } catch {
+      return 0;
+    }
+  },
+  [CACHE_KEYS.LEADERBOARD + "-active-creators-count"],
+  { revalidate: CACHE_DURATION_10_MINUTES * 6 },
+);
 
 /**
  * Get boosted profiles via API route - called by hooks

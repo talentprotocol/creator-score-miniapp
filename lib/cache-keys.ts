@@ -1,6 +1,7 @@
 export const CACHE_KEYS = {
   LEADERBOARD_TOP_200: "leaderboard-top-200",
   LEADERBOARD_BASIC: "leaderboard-basic",
+  LEADERBOARD: "leaderboard",
   BOOSTED_PROFILES: "boosted-profiles",
   PROFILE_SEARCH: "profile-search",
   SHARE_IMAGE_DATA: "share-image-data",

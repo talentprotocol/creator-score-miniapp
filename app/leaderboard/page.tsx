@@ -12,14 +12,18 @@ import { CreatorList } from "@/components/common/CreatorList";
 import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
+import { RewardBoostsModal } from "@/components/modals/RewardBoostsModal";
 import {
   ACTIVE_SPONSORS,
   TOTAL_SPONSORS_POOL,
   ROUND_ENDS_AT,
+  BOOST_CONFIG,
 } from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
+import { CalloutCarousel } from "@/components/common/CalloutCarousel";
+import { HandHeart, Gift } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
@@ -28,6 +32,7 @@ import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Typography } from "@/components/ui/typography";
+import { PerkModal } from "@/components/modals/PerkModal";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -45,8 +50,26 @@ function LeaderboardContent() {
   const user = getUserContext(context);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
+  const [, setShowBoostCallout] = useState(true);
+  const [perkOpen, setPerkOpen] = useState(false);
+  // Season-aware dismissal for the "Rewards Boost" callout.
+  // We persist the user's dismissal in localStorage with a key that includes
+  // ROUND_ENDS_AT so the callout automatically reappears next rewards round.
+  const boostDismissKey = React.useMemo(
+    () => `boost_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
+    [],
+  );
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const dismissed = localStorage.getItem(boostDismissKey);
+      if (dismissed === "true") setShowBoostCallout(false);
+    } catch {}
+  }, [boostDismissKey]);
   const { talentUuid: userTalentUuid } = useFidToTalentUuid();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
+  const [rewardBoostsOpen, setRewardBoostsOpen] = useState(false);
   // const posthog = usePostHog();
 
   // Use optimized leaderboard hook for all data
@@ -55,6 +78,7 @@ function LeaderboardContent() {
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
+    activeCreatorsTotal,
   } = useLeaderboardData();
 
   // Use hooks for data fetching - both auth paths
@@ -182,6 +206,7 @@ function LeaderboardContent() {
           rank={userTop200Entry?.rank}
           pointsToTop200={pointsToTop200}
           onHowToEarnClick={() => setHowToEarnOpen(true)}
+          onBoostInfoClick={() => setRewardBoostsOpen(true)}
           tokenBalance={tokenBalance}
           tokenLoading={tokenLoading}
           isBoosted={userTop200Entry?.isBoosted}
@@ -190,14 +215,191 @@ function LeaderboardContent() {
             userTop200Entry?.rank,
             userTop200Entry?.isBoosted,
           )}
+          activeCreatorsTotal={activeCreatorsTotal}
         />
+      )}
+
+      {/* Callout Carousel (below MyRewards) - gated on user context */}
+      {(user || unifiedName) && (
+        <div className="mt-4 mb-2">
+          <CalloutCarousel
+            roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
+            items={(() => {
+              const items = [] as Array<{
+                id: string;
+                variant: "brand" | "muted";
+                color?: "purple" | "green" | "blue" | "pink";
+                icon?: React.ReactNode;
+                title: React.ReactNode;
+                description?: React.ReactNode;
+                href?: string;
+                external?: boolean;
+                onClick?: () => void;
+                dismissKey?: string;
+                permanentHideKey?: string;
+                onClose?: () => void;
+              }>;
+
+              // Boost
+              const base = {
+                id: "boost",
+                variant: "brand" as const,
+                color: "purple" as const,
+                icon: <Rocket className="h-4 w-4" />,
+                title: "10% Rewards Boost",
+                description: <>Hold 100+ $TALENT to earn a boost.</>,
+                href: "https://app.uniswap.org/swap?chain=base&inputCurrency=NATIVE&outputCurrency=0x9a33406165f562e16c3abd82fd1185482e01b49a",
+                external: true,
+              };
+              if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
+                items.push({
+                  ...base,
+                  dismissKey: "boost_callout_dismissed",
+                  onClose: () => {
+                    try {
+                      localStorage.setItem(boostDismissKey, "true");
+                    } catch {}
+                    setShowBoostCallout(false);
+                  },
+                });
+              } else {
+                items.push(base);
+              }
+              // OPTOUT (green) – visible to all
+              items.push({
+                id: "optout",
+                variant: "brand",
+                color: "green",
+                icon: <HandHeart className="h-4 w-4" />,
+                title: "Pay It Forward",
+                description: "Give your rewards but keep your rank.",
+                dismissKey: "optout_callout_dismissed",
+                onClose: () => {
+                  try {
+                    localStorage.setItem(
+                      `optout_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
+                      "true",
+                    );
+                  } catch {}
+                },
+              });
+
+              // PERK (blue) – visible to Level >= 3 users
+              // TODO: wire real level when available. For now, show perk by default.
+              const isLevel3Plus = true;
+              if (isLevel3Plus) {
+                items.push({
+                  id: "perk_screen_studio",
+                  variant: "brand",
+                  color: "blue",
+                  icon: <Gift className="h-4 w-4" />,
+                  title: "Free Screen Studio",
+                  description: "Claim 1 of 20 free monthly subscriptions.",
+                  href: undefined,
+                  external: undefined,
+                  onClick: () => {
+                    try {
+                      posthog.capture("perk_modal_open_intent", {
+                        perk: "screen_studio",
+                      });
+                    } catch {}
+                    setPerkOpen(true);
+                  },
+                  onClose: () => {
+                    posthog.capture("perk_callout_dismissed", {
+                      perk: "screen_studio",
+                    });
+                    try {
+                      localStorage.setItem(
+                        `perk_screen_studio_dismissed:${ROUND_ENDS_AT.toISOString()}`,
+                        "true",
+                      );
+                    } catch {}
+                  },
+                  dismissKey: "perk_screen_studio_dismissed",
+                  permanentHideKey: "perk_screen_studio_claimed",
+                });
+              }
+
+              return items;
+            })()}
+          />
+        </div>
       )}
 
       {/* How to Earn Modal */}
       <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
 
+      {/* Reward Boosts Modal (triggered only by MyRewards rocket) */}
+      <RewardBoostsModal
+        open={rewardBoostsOpen}
+        onOpenChange={setRewardBoostsOpen}
+        rewardUsd={getUsdcRewards(
+          userTop200Entry?.score ?? creatorScore,
+          userTop200Entry?.rank,
+          false,
+        )}
+        tokenBalance={tokenBalance}
+        boostUsd={
+          getBoostAmountUsd(
+            userTop200Entry?.score ?? creatorScore,
+            userTop200Entry?.rank,
+            true,
+          ) ?? "$0"
+        }
+        totalUsd={getUsdcRewards(
+          userTop200Entry?.score ?? creatorScore,
+          userTop200Entry?.rank,
+          userTop200Entry?.isBoosted,
+        )}
+        rank={userTop200Entry?.rank}
+        score={userTop200Entry?.score ?? creatorScore}
+      />
+
+      {/* Perk Modal - Screen Studio */}
+      <PerkModal
+        open={perkOpen}
+        onOpenChange={(o) => setPerkOpen(o)}
+        color="blue"
+        title="Creator Perk: Screen Studio"
+        subtitle="Access exclusive offers as your Creator Score increases."
+        description="Get 1 month of Screen Studio for free"
+        access="Creator Score Level 3"
+        distribution="First-Come, First-Served"
+        supply="20 monthly subscriptions"
+        ctaLabel="Claim via Form"
+        ctaUrl="https://www.notion.com/product/forms"
+        level={0}
+        requiredLevel={3}
+        perkId="screen_studio"
+        onClaim={() => {
+          try {
+            localStorage.setItem("perk_screen_studio_claimed", "true");
+          } catch {}
+          setPerkOpen(false);
+        }}
+      />
+
+      {/* Perk Modal - Screen Studio */}
+      <PerkModal
+        open={perkOpen}
+        onOpenChange={(o) => setPerkOpen(o)}
+        color="blue"
+        title="Creator Perk: Screen Studio"
+        subtitle="Access exclusive offers as your Creator Score increases."
+        description="Get 1 month of Screen Studio for free"
+        access="Creator Score Level 3"
+        distribution="First-Come, First-Served"
+        supply="20 monthly subscriptions"
+        ctaLabel="Claim via Form"
+        ctaUrl="https://www.notion.com/product/forms"
+        level={0}
+        requiredLevel={3}
+        perkId="screen_studio"
+      />
+
       {/* Simplified Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 mt-6">
+      <div className="grid grid-cols-2 gap-4 my-4">
         <StatCard
           title="Rewards Pool"
           value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
@@ -353,9 +555,17 @@ function LeaderboardContent() {
         {/* Sponsor Callout */}
         {activeTab === "sponsors" && (
           <div className="mt-4">
-            <Callout variant="brand" href="https://farcaster.xyz/juampi">
+            <Callout variant="brand">
               <Typography size="xs" color="brand">
-                Want to join as a sponsor? Reach out to @juampi
+                Want to join as a sponsor? Reach out to {""}
+                <button
+                  className="underline hover:no-underline"
+                  onClick={() =>
+                    openExternalUrl("https://farcaster.xyz/juampi", context)
+                  }
+                >
+                  @juampi
+                </button>
               </Typography>
             </Callout>
           </div>

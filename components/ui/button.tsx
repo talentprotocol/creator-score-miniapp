@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "border border-input bg-background hover:bg-muted",
-        brand: "bg-purple-100 text-purple-700 hover:bg-purple-200",
+        brand: "bg-brand/20 text-brand hover:bg-brand/30",
         destructive: "bg-red-100 text-red-700 hover:bg-red-200",
         ghost:
           "border-0 bg-transparent text-muted-foreground hover:text-foreground",
@@ -33,14 +33,16 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  color?: "purple" | "green" | "blue" | "pink"; // applies when variant="brand"
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, size, variant, asChild = false, ...props }, ref) => {
+  ({ className, size, variant, asChild = false, color, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
         className={cn(buttonVariants({ size, variant, className }))}
+        {...(variant === "brand" && color ? { "data-accent": color } : {})}
         ref={ref}
         {...props}
       />

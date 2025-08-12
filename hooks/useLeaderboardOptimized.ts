@@ -13,6 +13,7 @@ export interface UseLeaderboardOptimizedReturn {
   boostedCreatorsCount?: number;
   lastUpdated?: string | null;
   nextUpdate?: string | null;
+  activeCreatorsTotal?: number | null;
   refetch: () => void;
 }
 
@@ -21,6 +22,9 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeCreatorsTotal, setActiveCreatorsTotal] = useState<number | null>(
+    null,
+  );
   const [boostedCreatorsCount, setBoostedCreatorsCount] = useState<
     number | undefined
   >(undefined);
@@ -95,6 +99,24 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     loadBasicData();
   }, [loadBasicData]);
 
+  // Fetch total active creators (Creator Score > 0) once
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/leaderboard/active-creators-count");
+        if (!res.ok) throw new Error("Failed to fetch count");
+        const json = await res.json();
+        if (!cancelled) setActiveCreatorsTotal(json.total ?? null);
+      } catch {
+        if (!cancelled) setActiveCreatorsTotal(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return {
     entries,
     loading,
@@ -103,6 +125,7 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     boostedCreatorsCount,
     lastUpdated,
     nextUpdate,
+    activeCreatorsTotal,
     refetch,
   };
 }

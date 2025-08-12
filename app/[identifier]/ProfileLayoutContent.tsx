@@ -18,13 +18,14 @@ import { useProfileActions } from "@/hooks/useProfileActions";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
-import { Share, RotateCcw, Loader2 } from "lucide-react";
+import { Share, RotateCcw, Loader2, AtSign } from "lucide-react";
 import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
-import { Typography } from "@/components/ui/typography";
+
+import { ButtonFullWidth } from "@/components/ui/button-full-width";
 
 interface ProfileData {
   creatorScore: number | undefined;
@@ -344,11 +345,11 @@ function ProfileLayoutContentInner({
         {/* Increase Score Callout - Only show for own profile */}
         {isOwnProfile && !hasNoScore && (
           <div className="mt-4">
-            <Callout
+            <ButtonFullWidth
               variant="brand"
+              icon={<AtSign className="h-4 w-4" />}
               href="/settings"
               onClick={() => {
-                // Track connect accounts callout click
                 posthog?.capture("profile_connect_accounts_clicked", {
                   creator_score: creatorScore,
                   total_earnings: totalEarnings,
@@ -359,10 +360,8 @@ function ProfileLayoutContentInner({
                 });
               }}
             >
-              <Typography size="xs" color="brand">
-                Connect accounts to increase your Creator Score
-              </Typography>
-            </Callout>
+              Connect accounts to increase your Creator Score
+            </ButtonFullWidth>
           </div>
         )}
       </Section>

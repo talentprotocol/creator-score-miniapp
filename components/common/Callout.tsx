@@ -1,115 +1,158 @@
 import * as React from "react";
-import { ArrowRight, ExternalLink, X } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { cn, openExternalUrl } from "@/lib/utils";
+import { Typography } from "@/components/ui/typography";
 
 interface CalloutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  mode?: "informative" | "interactive"; // deprecated: interactivity inferred from href and onClose
   href?: string;
-  variant?: "brand" | "neutral";
-  icon?: React.ReactNode;
   external?: boolean;
+  variant?: "brand" | "muted";
+  color?: "purple" | "green" | "blue" | "pink"; // applies when variant="brand"
+  icon?: React.ReactNode;
   className?: string;
-  onClick?: () => void;
   onClose?: () => void;
+  onClick?: () => void;
 }
 
 export function Callout({
   children,
+  title,
+  description,
+  // mode deprecated / ignored
   href,
-  variant = "brand",
-  icon,
   external,
+  variant = "brand",
+  color,
+  icon,
   className,
-  onClick,
   onClose,
+  onClick,
 }: CalloutProps) {
-  // Show left icon when provided
   const shouldShowLeftIcon = !!icon;
+  const hasStructured = !!title || !!description;
   const { context } = useMiniKit();
-  const isExternal = external ?? href?.startsWith("http");
-  const RightIcon = isExternal ? ExternalLink : ArrowRight;
+  const router = useRouter();
+  const hasHref = !!href;
+  const showArrow = hasHref && !onClose; // suppress arrow when dismissible
+  const isExternal = external ?? (href ? href.startsWith("http") : false);
 
   const content = (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3 w-full">
         {shouldShowLeftIcon && (
           <div
-            className={`h-4 w-4 ${variant === "brand" ? "text-purple-700" : "text-muted-foreground"}`}
+            className={cn(
+              "h-5 w-5 shrink-0 mt-0.5",
+              variant === "brand"
+                ? "text-[hsl(var(--brand-accent))]"
+                : "text-foreground",
+            )}
+            {...(variant === "brand" && color ? { "data-accent": color } : {})}
           >
-            {React.cloneElement(icon as React.ReactElement, {
-              className: "h-4 w-4",
-            })}
+            {icon}
           </div>
         )}
-        <span
-          className={`font-medium max-w-[38ch] sm:max-w-[80ch] overflow-hidden text-ellipsis whitespace-nowrap ${variant === "brand" ? "text-purple-700" : variant === "neutral" ? "text-muted-foreground" : ""}`}
-        >
-          {children}
-        </span>
+        <div className="min-w-0 flex-1 text-left">
+          {hasStructured ? (
+            <div className="space-y-1">
+              {title && (
+                <Typography
+                  size="base"
+                  weight="medium"
+                  color={variant === "brand" ? "brand" : "default"}
+                >
+                  {title}
+                </Typography>
+              )}
+              {description && (
+                <Typography size="sm" color="muted">
+                  {description}
+                </Typography>
+              )}
+              {!title && !description && children}
+            </div>
+          ) : (
+            <div className="text-left">{children}</div>
+          )}
+        </div>
+        {showArrow ? (
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
+        ) : null}
+        {onClose && (
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className={
+              "h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 hover:opacity-80"
+            }
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
-      {href && (
-        <RightIcon
-          className={`h-4 w-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5 ${variant === "brand" ? "text-purple-700" : "text-muted-foreground"}`}
-        />
-      )}
-      {onClose && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className={`h-4 w-4 shrink-0 transition-colors duration-150 ${variant === "brand" ? "text-purple-700 hover:text-purple-800" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
     </>
   );
 
   const baseStyles =
-    "w-full flex items-center justify-between px-6 py-4 h-auto rounded-xl transition-colors duration-150";
+    "w-full flex items-start justify-between px-4 py-4 h-auto rounded-xl transition-colors duration-150";
 
   const variantStyles = {
-    brand: href
-      ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
-      : "bg-purple-100 text-purple-700",
-    neutral: href
-      ? "bg-muted text-muted-foreground hover:bg-gray-200"
-      : "bg-muted text-muted-foreground",
+    brand: "bg-brand/10 text-foreground",
+    muted: "bg-muted text-foreground",
   };
 
   const styles = cn(
     baseStyles,
     variantStyles[variant],
-    href && "group cursor-pointer",
+    hasHref && "group cursor-pointer",
     className,
   );
 
-  const handleClick = async (e: React.MouseEvent) => {
-    // Call custom onClick handler if provided
+  const dataBrand =
+    variant === "brand" && color ? { "data-accent": color } : {};
+
+  const handleRootClick = async (e: React.MouseEvent) => {
     if (onClick) {
       onClick();
+      return;
     }
-
-    if (isExternal && href) {
-      e.preventDefault();
-      await openExternalUrl(href, context);
+    if (hasHref && href) {
+      if (isExternal) {
+        e.preventDefault();
+        await openExternalUrl(href, context);
+      } else {
+        router.push(href);
+      }
     }
   };
 
-  if (href) {
-    return isExternal ? (
-      <button onClick={handleClick} className={styles}>
-        {content}
-      </button>
-    ) : (
-      <Link href={href} className={styles} onClick={onClick}>
-        {content}
-      </Link>
-    );
-  }
-
-  return <div className={styles}>{content}</div>;
+  return (
+    <div
+      className={styles}
+      {...dataBrand}
+      role={hasHref || onClick ? "button" : undefined}
+      tabIndex={hasHref || onClick ? 0 : undefined}
+      onClick={handleRootClick}
+      onKeyDown={(e) => {
+        if ((hasHref || onClick) && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          // Trigger click flow
+          (async () => handleRootClick(e as unknown as React.MouseEvent))();
+        }
+      }}
+    >
+      {content}
+    </div>
+  );
 }

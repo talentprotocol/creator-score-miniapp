@@ -598,6 +598,60 @@ export class TalentApiClient {
       );
     }
   }
+
+  /**
+   * Get the total number of profiles with Creator Score > 0 using the
+   * Advanced Search endpoint pagination metadata.
+   * Note: Caching is handled at the service layer; this method performs a direct fetch.
+   */
+  async getActiveCreatorsCount(): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    try {
+      const requestData = {
+        query: { score: { min: 1, scorer: "Creator Score" } },
+        returnItems: false,
+        per_page: 25,
+        page: 1,
+      } as const;
+
+      const queryParams = new URLSearchParams();
+      Object.entries(requestData).forEach(([key, value]) => {
+        queryParams.append(key, JSON.stringify(value));
+      });
+
+      const url = `${TALENT_API_BASE}/search/advanced/profiles?${queryParams.toString()}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "X-API-KEY": this.apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Talent API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const total = data?.pagination?.total ?? 0;
+      return NextResponse.json({ total }, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "getActiveCreatorsCount",
+        "advanced_search",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse(
+        `Failed to fetch active creators count: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
 }
 
 // Export a default instance

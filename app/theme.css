@@ -25,11 +25,14 @@
     --ring: 255 71% 69%;           /* #9478E8 */
     --radius: 0.5rem;
 
-    /* Brand Colors */
-    --creator-purple: 251 71% 69%;  /* #8E7BE5 - Primary */
-    --creator-green: 72 69% 82%;    /* #EBF4B4 - Secondary */
-    --creator-blue: 187 78% 72%;    /* #82DEED - Secondary */
-    --creator-pink: 315 75% 75%;    /* #E879C7 - Secondary */
+    /* Brand Colors (aligned to Tailwind shades) */
+    --creator-purple: 272 72% 47%;  /* Tailwind purple-700  #7e22ce */
+    --creator-green: 85 85% 35%;    /* Tailwind lime-700    #65a30d */
+    --creator-blue: 193 82% 31%;    /* Tailwind cyan-700    #0e7490 */
+    --creator-pink: 335 78% 42%;    /* Tailwind pink-700    #be185d */
+
+    /* Dynamic Brand Accent Slot (default to purple) */
+    --brand-accent: var(--creator-purple);
   }
  
   .dark {
@@ -54,6 +57,18 @@
     --ring: 255 71% 69%;
   }
 }
+
+:root[data-accent="purple"],
+[data-accent="purple"] { --brand-accent: var(--creator-purple); }
+
+:root[data-accent="green"],
+[data-accent="green"] { --brand-accent: var(--creator-green); }
+
+:root[data-accent="blue"],
+[data-accent="blue"] { --brand-accent: var(--creator-blue); }
+
+:root[data-accent="pink"],
+[data-accent="pink"] { --brand-accent: var(--creator-pink); }
 
 :root {
   --app-background: #ffffff;

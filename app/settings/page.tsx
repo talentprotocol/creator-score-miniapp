@@ -31,7 +31,6 @@ import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
-import { Typography } from "@/components/ui/typography";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -183,49 +182,51 @@ export default function SettingsPage() {
 
         {/* About */}
         <div className="mt-2">
-          <Callout
-            variant="neutral"
-            icon={<Info />}
+          <ButtonFullWidth
+            variant="muted"
+            icon={<Info className="h-4 w-4" />}
             href="https://talentprotocol.com/about"
             external
             onClick={() => handleExternalLinkClick("about")}
           >
-            <Typography size="sm">About</Typography>
-          </Callout>
+            <span className="font-medium">About</span>
+          </ButtonFullWidth>
         </div>
 
         {/* Dev Docs */}
         <div className="mt-2">
-          <Callout
-            variant="neutral"
-            icon={<FileText />}
+          <ButtonFullWidth
+            variant="muted"
+            icon={<FileText className="h-4 w-4" />}
             href="https://docs.talentprotocol.com/"
             external
             onClick={() => handleExternalLinkClick("dev_docs")}
           >
-            <Typography size="sm">Dev Docs</Typography>
-          </Callout>
+            <span className="font-medium">Dev Docs</span>
+          </ButtonFullWidth>
         </div>
 
         {/* Support */}
         <div className="mt-2">
-          <Callout
-            variant="neutral"
-            icon={<MessageCircle />}
+          <ButtonFullWidth
+            variant="muted"
+            icon={<MessageCircle className="h-4 w-4" />}
             href="https://talentprotocol.com/support"
             external
             onClick={() => handleExternalLinkClick("support")}
           >
-            <Typography size="sm">Support</Typography>
-          </Callout>
+            <span className="font-medium">Support</span>
+          </ButtonFullWidth>
         </div>
 
         {/* Log Out - with extra spacing above */}
         {authenticated && (
           <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
             <ButtonFullWidth
+              variant="muted"
               icon={<LogOut className="h-4 w-4" />}
               onClick={handleLogoutClick}
+              showRightIcon={false}
             >
               <span className="font-medium">Log Out</span>
             </ButtonFullWidth>
