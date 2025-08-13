@@ -100,6 +100,7 @@ function Content({
       <ButtonFullWidth
         variant="brand"
         icon={<Coins className="h-4 w-4" />}
+        align="left"
         href={getTalentUrl}
       >
         Get $TALENT

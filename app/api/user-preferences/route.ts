@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase-client";
+import {
+  getUserPreferencesByTalentUuid,
+  updateUserPreferencesAtomic,
+} from "@/app/services/userPreferencesService";
 import {
   validateCreatorCategory,
   validateTalentUUID,
@@ -33,23 +36,8 @@ export async function GET(
   }
 
   try {
-    const { data, error } = await supabase
-      .from("user_preferences")
-      .select("creator_category")
-      .eq("talent_uuid", talentUUID)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") {
-        // No rows returned - user has no preferences
-        return NextResponse.json({ creator_category: null });
-      }
-      throw error;
-    }
-
-    return NextResponse.json({
-      creator_category: data?.creator_category || null,
-    });
+    const prefs = await getUserPreferencesByTalentUuid(talentUUID);
+    return NextResponse.json(prefs);
   } catch (error) {
     console.error("Error fetching user preferences:", error);
     return NextResponse.json(
@@ -63,8 +51,14 @@ export async function POST(
   req: NextRequest,
 ): Promise<NextResponse<UserPreferencesSuccess | UserPreferencesError>> {
   try {
-    const { talent_uuid, creator_category }: UserPreferencesUpdateRequest =
-      await req.json();
+    const {
+      talent_uuid,
+      creator_category,
+      add_dismissed_id,
+      add_permanently_hidden_id,
+      remove_dismissed_id,
+      remove_permanently_hidden_id,
+    }: UserPreferencesUpdateRequest = await req.json();
 
     if (!talent_uuid) {
       return NextResponse.json(
@@ -90,26 +84,16 @@ export async function POST(
       }
     }
 
-    const { data, error } = await supabase
-      .from("user_preferences")
-      .upsert(
-        {
-          talent_uuid,
-          creator_category,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "talent_uuid",
-        },
-      )
-      .select()
-      .single();
+    const result = await updateUserPreferencesAtomic({
+      talent_uuid,
+      creator_category,
+      add_dismissed_id,
+      add_permanently_hidden_id,
+      remove_dismissed_id,
+      remove_permanently_hidden_id,
+    });
 
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error updating user preferences:", error);
     return NextResponse.json(

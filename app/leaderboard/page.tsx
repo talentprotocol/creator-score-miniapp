@@ -41,6 +41,7 @@ import { useRouter } from "next/navigation";
 import { Typography } from "@/components/ui/typography";
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
+import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -111,6 +112,14 @@ function LeaderboardContent() {
   // Fetch user token balance
   const { balance: tokenBalance, loading: tokenLoading } =
     useUserTokenBalance(userTalentUuid);
+
+  // Server-persisted callout preferences
+  const {
+    dismissedIds: dismissedCalloutIds,
+    permanentlyHiddenIds: permanentlyHiddenCalloutIds,
+    addDismissedId,
+    addPermanentlyHiddenId,
+  } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Countdown state
   const [countdown, setCountdown] = useState(() =>
@@ -237,6 +246,10 @@ function LeaderboardContent() {
         <div className="mt-4 mb-2">
           <CalloutCarousel
             roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
+            dismissedIds={dismissedCalloutIds}
+            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+            onPersistDismiss={(id) => addDismissedId(id)}
+            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
             items={(() => {
               const items = [] as Array<{
                 id: string;
@@ -303,13 +316,13 @@ function LeaderboardContent() {
                 variant: "brand",
                 color: "blue",
                 icon: <Gift className="h-4 w-4" />,
-                title: "Free Screen Studio",
+                title: "Creator Perk",
                 description:
                   perkStatus?.status === "closed"
                     ? "Entries closed. Winners announced Aug 21"
                     : perkStatus?.status === "entered"
                       ? "You're in! 20 winners announced Aug 21"
-                      : "Win 1 of 20 monthly subscriptions.",
+                      : "Get a free Screen Studio subscription.",
                 href: undefined,
                 external: undefined,
                 onClick: () => {

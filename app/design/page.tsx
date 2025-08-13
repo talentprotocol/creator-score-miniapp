@@ -128,20 +128,6 @@ export default function DesignPage() {
   const [isClicked, setIsClicked] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("icons");
 
-  // Only show design system in development
-  if (process.env.NODE_ENV === "production") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-semibold">Design System</h1>
-          <p className="text-muted-foreground">
-            Design system is only available in development environment.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const tabs = [
     { id: "icons", label: "Icons" },
     { id: "buttons", label: "Buttons" },
@@ -355,6 +341,7 @@ export default function DesignPage() {
                     <ButtonFullWidth
                       variant="default"
                       icon={<Settings className="h-4 w-4" />}
+                      align="left"
                       href="/settings"
                     >
                       Settings (Variant: Default)
@@ -363,6 +350,7 @@ export default function DesignPage() {
                     <ButtonFullWidth
                       variant="brand"
                       icon={<Heart className="h-4 w-4" />}
+                      align="left"
                     >
                       Follow (Variant: Brand)
                     </ButtonFullWidth>
@@ -370,6 +358,7 @@ export default function DesignPage() {
                     <ButtonFullWidth
                       variant="destructive"
                       icon={<Trash2 className="h-4 w-4" />}
+                      align="left"
                     >
                       Delete (Variant: Destructive)
                     </ButtonFullWidth>
@@ -377,6 +366,7 @@ export default function DesignPage() {
                     <ButtonFullWidth
                       variant="muted"
                       icon={<Info className="h-4 w-4" />}
+                      align="left"
                     >
                       More info (Variant: Muted)
                     </ButtonFullWidth>
@@ -388,8 +378,9 @@ export default function DesignPage() {
                     </div>
                     <div>
                       Props: icon (required), href/external (optional), variant:
-                      default | brand | destructive | muted, showRightIcon
-                      (optional), onClick, etc.
+                      default | brand | destructive | muted, align: left |
+                      center (default auto: left when href present; center
+                      otherwise), showRightIcon (optional), onClick, etc.
                     </div>
                     <div>Default keeps border; muted has no border.</div>
                     <div>

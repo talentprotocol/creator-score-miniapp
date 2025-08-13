@@ -16,6 +16,7 @@ interface ButtonFullWidthProps extends Omit<ButtonProps, "variant"> {
   variant?: ButtonBaseVariant | "muted";
   color?: "purple" | "green" | "blue" | "pink"; // applies when variant="brand"
   showRightIcon?: boolean;
+  align?: "left" | "center"; // layout alignment (default: center)
 }
 
 const ButtonFullWidth = React.forwardRef<
@@ -33,6 +34,7 @@ const ButtonFullWidth = React.forwardRef<
       variant,
       color,
       showRightIcon,
+      align,
       ...props
     },
     ref,
@@ -40,9 +42,15 @@ const ButtonFullWidth = React.forwardRef<
     const { context } = useMiniKit();
     const isExternal = external ?? (href ? href.startsWith("http") : false);
     const isMutedVariant = variant === "muted";
+    const computedAlign = align ?? (href ? "left" : "center");
 
     const content = (
-      <div className="flex w-full items-center justify-between gap-3">
+      <div
+        className={cn(
+          "flex w-full items-center gap-3",
+          computedAlign === "center" ? "justify-center" : "justify-between",
+        )}
+      >
         <div className="flex min-w-0 items-center gap-3">
           <span
             className={cn(
@@ -67,7 +75,10 @@ const ButtonFullWidth = React.forwardRef<
                   ? "destructive"
                   : "default"
             }
-            className="truncate text-left"
+            className={cn(
+              "truncate",
+              computedAlign === "center" ? "text-center" : "text-left",
+            )}
             {...(variant === "brand" && color ? { "data-accent": color } : {})}
           >
             {children}

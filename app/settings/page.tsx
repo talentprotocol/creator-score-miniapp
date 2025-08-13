@@ -185,6 +185,7 @@ export default function SettingsPage() {
           <ButtonFullWidth
             variant="muted"
             icon={<Info className="h-4 w-4" />}
+            align="left"
             href="https://talentprotocol.com/about"
             external
             onClick={() => handleExternalLinkClick("about")}
@@ -198,6 +199,7 @@ export default function SettingsPage() {
           <ButtonFullWidth
             variant="muted"
             icon={<FileText className="h-4 w-4" />}
+            align="left"
             href="https://docs.talentprotocol.com/"
             external
             onClick={() => handleExternalLinkClick("dev_docs")}
@@ -211,6 +213,7 @@ export default function SettingsPage() {
           <ButtonFullWidth
             variant="muted"
             icon={<MessageCircle className="h-4 w-4" />}
+            align="left"
             href="https://talentprotocol.com/support"
             external
             onClick={() => handleExternalLinkClick("support")}
@@ -225,6 +228,7 @@ export default function SettingsPage() {
             <ButtonFullWidth
               variant="muted"
               icon={<LogOut className="h-4 w-4" />}
+              align="left"
               onClick={handleLogoutClick}
               showRightIcon={false}
             >
@@ -239,6 +243,7 @@ export default function SettingsPage() {
             <ButtonFullWidth
               variant="destructive"
               icon={<Share className="h-4 w-4" />}
+              align="left"
               onClick={openForTesting}
             >
               Test Share Score Modal

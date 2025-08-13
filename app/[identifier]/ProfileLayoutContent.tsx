@@ -348,6 +348,7 @@ function ProfileLayoutContentInner({
             <ButtonFullWidth
               variant="brand"
               icon={<AtSign className="h-4 w-4" />}
+              align="left"
               href="/settings"
               onClick={() => {
                 posthog?.capture("profile_connect_accounts_clicked", {

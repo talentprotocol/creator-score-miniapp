@@ -45,7 +45,8 @@ export async function GET() {
       splashImageUrl: frameMetadata.splashImageUrl,
       splashBackgroundColor: frameMetadata.splashBackgroundColor,
       homeUrl: baseUrl,
-      webhookUrl: process.env.FARCASTER_WEBHOOK_URL,
+      webhookUrl:
+        process.env.FARCASTER_WEBHOOK_URL || process.env.NEYNAR_WEBHOOKURL,
       primaryCategory: frameMetadata.primaryCategory,
       tags: frameMetadata.tags,
       heroImageUrl: frameMetadata.heroImageUrl,

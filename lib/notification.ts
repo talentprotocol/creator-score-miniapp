@@ -1,5 +1,5 @@
 import type { FrameNotificationDetails } from "@farcaster/frame-sdk";
-import { getCachedData, setCachedData, clearCache } from "./redis";
+import { getCachedData, setCachedData } from "./utils";
 
 const notificationServiceKey =
   process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ?? "minikit";
@@ -13,6 +13,7 @@ export async function getUserNotificationDetails(
 ): Promise<FrameNotificationDetails | null> {
   return getCachedData<FrameNotificationDetails>(
     getUserNotificationDetailsKey(fid),
+    60 * 60 * 1000, // 1 hour TTL to match previous behavior
   );
 }
 
@@ -26,5 +27,12 @@ export async function setUserNotificationDetails(
 export async function deleteUserNotificationDetails(
   fid: number,
 ): Promise<void> {
-  clearCache(getUserNotificationDetailsKey(fid));
+  const key = getUserNotificationDetailsKey(fid);
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // no-op
+    }
+  }
 }
