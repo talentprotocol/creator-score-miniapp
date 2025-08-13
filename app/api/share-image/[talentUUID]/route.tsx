@@ -11,7 +11,9 @@ import {
 import {
   calculateTotalFollowers,
   convertEthToUsdc,
+  convertPolToUsdc,
   getEthUsdcPrice,
+  getPolUsdPrice,
   formatK,
   formatNumberWithSuffix,
 } from "@/lib/utils";
@@ -96,7 +98,10 @@ export async function GET(
     const creatorScore = creatorScoreData.score || 0;
 
     // Calculate total earnings (PRESERVED EXACTLY - same logic as layout.tsx)
-    const ethPrice = await getEthUsdcPrice();
+    const [ethPrice, polPrice] = await Promise.all([
+      getEthUsdcPrice(),
+      getPolUsdPrice(),
+    ]);
 
     const issuerTotals = new Map<string, number>();
 
@@ -136,6 +141,12 @@ export async function GET(
         let usdValue = 0;
         if (point.uom === "ETH") {
           usdValue = convertEthToUsdc(value, ethPrice);
+        } else if (
+          point.uom === "$POL" ||
+          point.uom === "POL" ||
+          point.uom === "MATIC"
+        ) {
+          usdValue = convertPolToUsdc(value, polPrice);
         } else if (point.uom === "USDC" || point.uom === "USD") {
           usdValue = value;
         }

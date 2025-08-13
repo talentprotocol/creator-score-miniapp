@@ -23,6 +23,40 @@ export function CredentialAccordion({
   onCredentialClick,
   className,
 }: CredentialAccordionProps) {
+  function cleanLabel(label: string, issuer: string): string {
+    const prefix = `${issuer} `;
+    return label.startsWith(prefix) ? label.slice(prefix.length) : label;
+  }
+
+  function renderReadableValue(
+    issuer: string,
+    label: string,
+    readableValue: string | null,
+    uom: string | null,
+    points: number,
+  ): string {
+    // Exception: Farcaster Engagement should not display readable value
+    const normalizedIssuer = issuer.toLowerCase();
+    const normalizedLabel = label.toLowerCase();
+    if (
+      normalizedIssuer === "farcaster" &&
+      (normalizedLabel === "engagement" ||
+        normalizedLabel.includes("engagement"))
+    ) {
+      return "";
+    }
+
+    if (uom === "boolean") {
+      return points > 0 ? "True" : "False";
+    }
+
+    if (!readableValue) {
+      return "—";
+    }
+
+    // USD and ETH are formatted with prefixes inside formatReadableValue
+    return formatReadableValue(readableValue, uom);
+  }
   const handleCredentialClick = async (e: React.MouseEvent, url: string) => {
     e.preventDefault();
     if (onCredentialClick) {
@@ -74,39 +108,24 @@ export function CredentialAccordion({
                         }
                         className="text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        {pt.label}
+                        {cleanLabel(pt.label, issuer.issuer)}
                       </a>
                     ) : (
-                      pt.label
+                      cleanLabel(pt.label, issuer.issuer)
                     )}
                   </span>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {pt.max_score !== null ? (
                       <>
-                        {pt.readable_value ? (
-                          <>
-                            {pt.uom === "USDC" || pt.uom === "USD" ? (
-                              <>
-                                {formatReadableValue(pt.readable_value, pt.uom)}
-                                {pt.uom && (
-                                  <span className="ml-1">{pt.uom}</span>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                {formatReadableValue(pt.readable_value, pt.uom)}
-                                {pt.uom && (
-                                  <span className="ml-1">{pt.uom}</span>
-                                )}
-                              </>
-                            )}
-                          </>
-                        ) : null}
-                        {pt.readable_value && (
-                          <span className="mx-1 text-muted-foreground">
-                            &middot;
-                          </span>
-                        )}
+                        <span className="text-xs text-foreground whitespace-nowrap">
+                          {renderReadableValue(
+                            issuer.issuer,
+                            pt.label,
+                            pt.readable_value,
+                            pt.uom,
+                            pt.value,
+                          )}
+                        </span>
                         <span className="font-medium text-xs text-muted-foreground whitespace-nowrap">
                           {pt.value}/{pt.max_score}{" "}
                           {pt.value === 1 ? "pt" : "pts"}

@@ -14,7 +14,7 @@ export const TOTAL_EARNINGS_CONFIG: TotalEarningsConfig = {
   // These credentials represent money earned by creating content (using slugs)
   creatorEarnings: [
     "mirror_creator_rewards",
-    // "mirror_creator_rewards_pol", // Mirror earnings on POL (we need to convert this to USD first)
+    "mirror_creator_rewards_pol", // Mirror earnings on POL (converted to USD)
     "warpcast_rewards_usdc", // Farcaster Creator Rewards
     "zora_creator_rewards",
     "zora_coin_earnings", // Coin Earnings from Zora

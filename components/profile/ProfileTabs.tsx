@@ -12,7 +12,7 @@ export function ProfileTabs({
   talentUUID,
   identifier,
 }: ProfileTabsProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
 
   // Determine active tab from URL pathname
   const activeTab = pathname.endsWith("/posts")

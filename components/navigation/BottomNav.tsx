@@ -65,12 +65,13 @@ export function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t pb-safe md:hidden">
         <div className="max-w-xl mx-auto flex items-center justify-around h-[88px]">
           {navItems.map((item) => {
+            const current = pathname || "";
             const isActive =
               item.href === "/"
-                ? pathname === item.href
-                : pathname.startsWith(item.href) ||
+                ? current === item.href
+                : current.startsWith(item.href) ||
                   (item.alternateHrefs?.some((href) =>
-                    pathname.startsWith(href),
+                    current.startsWith(href),
                   ) ??
                     false);
 
