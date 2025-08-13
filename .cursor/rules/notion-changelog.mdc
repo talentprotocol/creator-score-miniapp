@@ -4,6 +4,33 @@ alwaysApply: false
 ---
 # Cursor Rules for Automatic Changelog Generation
 
+## Single-operation flow (DO THIS)
+
+When package.json version changes:
+
+1) Extract version → vX.Y (ignore patch)
+2) Prepare content (summary + detailed changelog) and show for approval
+3) After approval, perform ONE atomic create-or-update in the Product Changelog database:
+   - Parent database ID: d8921ac6c484431dad428039279898aa (Product Changelog)
+   - Create if no entry exists with Version = vX.Y and App = "Creator Score"; otherwise update that entry
+   - Set properties in the same operation:
+     - App: "Creator Score"
+     - Version: "vX.Y"
+     - Release Date (UTC): today → set `date:Release Date:start`
+     - Summary: generated one-liner
+   - Set page icon: default 🎁 (gift). Alternatives: 🎠 (carousel), 💎 (perks), 🏆 (winners)
+   - Insert the full changelog content as the page body
+
+4) Post-create verification (no manual steps):
+   - Ensure the page exists under the Product Changelog database (not as a standalone page)
+   - Properties (App, Version, Release Date, Summary) are populated
+   - Return the created/updated page URL in chat
+
+Notes:
+- Never create a standalone page; always use the database parent_id.
+- Always default Release Date to UTC unless a different date is specified.
+- If a duplicate vX.Y exists for “Creator Score,” update instead of creating.
+
 ## Package.json Version Monitoring
 When I modify package.json and change the version field:
 
