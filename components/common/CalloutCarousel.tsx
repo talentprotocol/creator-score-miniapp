@@ -48,7 +48,7 @@ export function CalloutCarousel({
   roundEndsAtIso,
   className,
   onDismiss,
-  autoAdvanceMs = 3000,
+  autoAdvanceMs = 5000,
   dismissedIds,
   permanentlyHiddenIds,
   onPersistDismiss,
@@ -63,6 +63,8 @@ export function CalloutCarousel({
   const intervalRef = React.useRef<number | null>(null);
   const isInteractingRef = React.useRef<boolean>(false);
   const [cycle, setCycle] = React.useState<number>(0);
+  const [autoDirection, setAutoDirection] = React.useState<1 | -1>(1);
+  const animRef = React.useRef<number | null>(null);
 
   // Compute filtered list on mount and when items change
   React.useEffect(() => {
@@ -138,6 +140,37 @@ export function CalloutCarousel({
     [],
   );
 
+  // rAF-based animated scroll for controlled duration (used for auto-advance)
+  const animateToIndex = React.useCallback(
+    (targetIndex: number, durationMs = 500) => {
+      const el = containerRef.current;
+      if (!el) return;
+      if (animRef.current) {
+        cancelAnimationFrame(animRef.current);
+        animRef.current = null;
+      }
+      const width = el.clientWidth;
+      const startLeft = el.scrollLeft;
+      const endLeft = targetIndex * width;
+      const distance = endLeft - startLeft;
+      const startTime = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - startTime) / durationMs);
+        // ease-in-out cubic
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        el.scrollLeft = startLeft + distance * ease;
+        if (t < 1) {
+          animRef.current = requestAnimationFrame(step);
+        } else {
+          animRef.current = null;
+          setCurrentIndex(targetIndex);
+        }
+      };
+      animRef.current = requestAnimationFrame(step);
+    },
+    [],
+  );
+
   // Handle scroll to track current index
   const handleScroll = React.useCallback(() => {
     const el = containerRef.current;
@@ -155,11 +188,25 @@ export function CalloutCarousel({
     if (isInteractingRef.current) return;
 
     intervalRef.current = window.setInterval(() => {
-      const next = currentIndex + 1;
-      const target = Math.min(next, slides.length - 1);
-      scrollToIndex(target, true);
+      const lastIndex = slides.length - 1;
+      let dir = autoDirection;
+      let next = currentIndex + dir;
+      if (next > lastIndex) {
+        dir = -1;
+        next = currentIndex - 1;
+      } else if (next < 0) {
+        dir = 1;
+        next = currentIndex + 1;
+      }
+      setAutoDirection(dir);
+      const target = Math.max(0, Math.min(lastIndex, next));
+      animateToIndex(target, 500);
     }, autoAdvanceMs);
     return () => {
+      if (animRef.current) {
+        cancelAnimationFrame(animRef.current);
+        animRef.current = null;
+      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -170,8 +217,9 @@ export function CalloutCarousel({
     slides.length,
     autoAdvanceMs,
     hasMultiple,
-    scrollToIndex,
+    animateToIndex,
     cycle,
+    autoDirection,
   ]);
 
   const handlePointerDown = () => {
@@ -179,6 +227,10 @@ export function CalloutCarousel({
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
+    }
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
     }
   };
   const handlePointerUp = () => {
@@ -233,7 +285,7 @@ export function CalloutCarousel({
       <div className={cn("w-full", className)}>
         <div
           className={cn(
-            "transition-all duration-200",
+            "transition-all duration-500",
             closingId === item.id && "opacity-0 -translate-x-2",
           )}
         >
@@ -270,7 +322,7 @@ export function CalloutCarousel({
             key={item.id}
             className={cn(
               "min-w-full snap-start", // one slide per viewport
-              "transition-all duration-300",
+              "transition-all duration-500",
               closingId === item.id && "opacity-0 -translate-x-2",
             )}
           >
