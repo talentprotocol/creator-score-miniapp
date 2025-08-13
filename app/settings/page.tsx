@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
-  const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore();
+  const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore(false);
 
   const {
     accounts,

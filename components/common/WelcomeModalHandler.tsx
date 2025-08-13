@@ -4,7 +4,7 @@ import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreMod
 import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
 
 export function WelcomeModalHandler() {
-  const { isOpen, onOpenChange } = useShareCreatorScore();
+  const { isOpen, onOpenChange } = useShareCreatorScore(true);
 
   return <ShareCreatorScoreModal open={isOpen} onOpenChange={onOpenChange} />;
 }

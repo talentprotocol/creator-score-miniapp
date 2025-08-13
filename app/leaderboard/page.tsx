@@ -103,7 +103,10 @@ function LeaderboardContent() {
   const name = unifiedName ?? user?.displayName ?? user?.username;
   const loadingStats = unifiedLoading;
   const level = getLevelFromScore(creatorScore);
-  const { data: perkStatus } = usePerkEntry("screen_studio", userTalentUuid);
+  const { data: perkStatus, refresh: refreshPerkStatus } = usePerkEntry(
+    "screen_studio",
+    userTalentUuid,
+  );
 
   // Fetch user token balance
   const { balance: tokenBalance, loading: tokenLoading } =
@@ -374,7 +377,8 @@ function LeaderboardContent() {
         iconUrl="/logos/screen-studio.png"
         iconAlt="Screen Studio"
         onClaim={() => {
-          setPerkOpen(false);
+          // Keep modal open; refresh callout state immediately
+          refreshPerkStatus();
         }}
       />
 
