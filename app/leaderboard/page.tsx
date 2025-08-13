@@ -312,18 +312,15 @@ function LeaderboardContent() {
                     setPerkOpen(true);
                   },
                   onClose: () => {
-                    posthog.capture("perk_callout_dismissed", {
-                      perk: "screen_studio",
-                    });
+                    // Analytics only; persistence handled by carousel via permanentHideKey
                     try {
-                      localStorage.setItem(
-                        `perk_screen_studio_dismissed:${ROUND_ENDS_AT.toISOString()}`,
-                        "true",
-                      );
+                      posthog.capture("perk_callout_dismissed", {
+                        perk: "screen_studio",
+                      });
                     } catch {}
                   },
-                  dismissKey: "perk_screen_studio_dismissed",
-                  permanentHideKey: "perk_screen_studio_claimed",
+                  // Permanent hide for both dismiss and claim
+                  permanentHideKey: "perk_screen_studio_hidden",
                 });
               }
 
@@ -381,7 +378,8 @@ function LeaderboardContent() {
         iconAlt="Screen Studio"
         onClaim={() => {
           try {
-            localStorage.setItem("perk_screen_studio_claimed", "true");
+            // Hide PERK callout permanently after claim
+            localStorage.setItem("perk_screen_studio_hidden", "true");
           } catch {}
           setPerkOpen(false);
         }}

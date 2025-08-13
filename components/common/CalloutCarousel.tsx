@@ -78,6 +78,10 @@ export function CalloutCarousel({
     // Delay removal for a subtle fade/translate animation
     window.setTimeout(() => {
       try {
+        // Persist permanent hide if provided
+        if (item.permanentHideKey) {
+          localStorage.setItem(item.permanentHideKey, "true");
+        }
         if (item.dismissKey) {
           const key = `${item.dismissKey}:${roundEndsAtIso}`;
           localStorage.setItem(key, "true");
