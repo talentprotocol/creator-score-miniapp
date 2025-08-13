@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
@@ -61,6 +62,7 @@ function LeaderboardContent() {
   const [activeTab, setActiveTab] = useState("creators");
   const [, setShowBoostCallout] = useState(true);
   const [perkOpen, setPerkOpen] = useState(false);
+  const searchParams = useSearchParams();
   // Season-aware dismissal for the "Rewards Boost" callout.
   // We persist the user's dismissal in localStorage with a key that includes
   // ROUND_ENDS_AT so the callout automatically reappears next rewards round.
@@ -206,6 +208,14 @@ function LeaderboardContent() {
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
   };
+
+  useEffect(() => {
+    try {
+      const perk = searchParams?.get("perk");
+      if (perk === "screen-studio") setPerkOpen(true);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

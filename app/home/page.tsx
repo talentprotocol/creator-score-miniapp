@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
