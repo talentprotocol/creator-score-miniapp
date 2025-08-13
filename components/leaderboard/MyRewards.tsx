@@ -3,7 +3,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { InfoIcon, Rocket } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
-import { formatTokenAmount } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { BOOST_CONFIG } from "@/lib/constants";
 import posthog from "posthog-js";
@@ -17,10 +16,12 @@ interface MyRewardsProps {
   rank?: number;
   pointsToTop200?: number;
   onHowToEarnClick?: () => void;
+  onBoostInfoClick?: () => void;
   tokenBalance?: number | null;
   tokenLoading?: boolean;
   isBoosted?: boolean; // New prop for boost status
   boostAmountUsd?: string | null; // Exact boost amount (formatted with $)
+  activeCreatorsTotal?: number | null;
 }
 
 export function MyRewards({
@@ -32,15 +33,25 @@ export function MyRewards({
   rank,
   pointsToTop200,
   onHowToEarnClick,
+  onBoostInfoClick,
   tokenBalance,
   tokenLoading = false,
   isBoosted = false,
-  boostAmountUsd = null,
+  activeCreatorsTotal = null,
 }: MyRewardsProps) {
   const isTop200 = rank !== undefined && rank <= 200;
+  const denominator =
+    activeCreatorsTotal && activeCreatorsTotal > 0 ? activeCreatorsTotal : 200;
+  const topPercentNum = isTop200 && rank ? (rank / denominator) * 100 : null;
+  const topPercentDisplay =
+    topPercentNum !== null
+      ? topPercentNum < 1
+        ? Math.max(0.1, topPercentNum).toFixed(1)
+        : Math.ceil(topPercentNum).toString()
+      : null;
 
   return (
-    <div className="w-full bg-purple-50 rounded-lg">
+    <div className="w-full bg-brand/10 rounded-lg">
       <div className="p-6 flex justify-between items-start gap-6">
         <div className="space-y-1.5 min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -74,64 +85,93 @@ export function MyRewards({
                 >
                   {isTop200 ? rewards : score.toString()}
                 </p>
-                {isTop200 && isBoosted && (
-                  <button
-                    type="button"
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
-                    aria-label="How to earn rewards boost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      posthog.capture("boost_badge_clicked", {
-                        location: "my_rewards",
-                      });
-                      onHowToEarnClick?.();
-                    }}
-                  >
-                    <Rocket className="h-3 w-3 text-purple-600" />
-                  </button>
-                )}
+                {(isTop200 || !isTop200) &&
+                  (isBoosted ? (
+                    <button
+                      type="button"
+                      className={cn(
+                        "inline-flex items-center gap-1.5 h-6 rounded-full px-2.5 focus:outline-none focus:ring-2",
+                        "bg-brand/20 hover:bg-brand/30 focus:ring-brand/30 text-brand",
+                      )}
+                      aria-label="How to earn rewards boost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        posthog.capture("boost_badge_clicked", {
+                          location: "my_rewards",
+                        });
+                        onBoostInfoClick?.();
+                      }}
+                    >
+                      <Rocket className="h-3 w-3 text-brand" />
+                      <span className="text-[10px] font-semibold tracking-wide">
+                        BOOSTED
+                      </span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex h-6 w-6 items-center justify-center rounded-full focus:outline-none focus:ring-2",
+                        "bg-muted text-muted-foreground cursor-pointer",
+                      )}
+                      aria-label="How to earn rewards boost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        posthog.capture("boost_badge_clicked", {
+                          location: "my_rewards",
+                        });
+                        onBoostInfoClick?.();
+                      }}
+                    >
+                      <Rocket className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                {isTop200
-                  ? `Congrats, you're the top ${rank} creator!`
-                  : pointsToTop200
-                    ? `${pointsToTop200} points left to earn rewards.`
-                    : "Calculating your position..."}
+                {tokenLoading ? (
+                  "Loading token balance..."
+                ) : isBoosted ? (
+                  <>
+                    You’re receiving a{" "}
+                    <span className="font-semibold">10%</span> boost!
+                  </>
+                ) : tokenBalance !== null &&
+                  tokenBalance !== undefined &&
+                  tokenBalance >= BOOST_CONFIG.TOKEN_THRESHOLD ? (
+                  <>
+                    You’re eligible for a{" "}
+                    <span className="font-semibold">10%</span> boost.
+                  </>
+                ) : (
+                  <>
+                    Hold{" "}
+                    <span className="font-semibold">
+                      {BOOST_CONFIG.TOKEN_THRESHOLD}+ $TALENT
+                    </span>{" "}
+                    for a boost!
+                  </>
+                )}
               </p>
-              {/* Token balance display */}
-              {tokenBalance !== null && tokenBalance !== undefined && (
-                <p className="text-xs text-muted-foreground">
-                  {tokenLoading ? (
-                    "Loading token balance..."
-                  ) : tokenBalance >= BOOST_CONFIG.TOKEN_THRESHOLD ? (
-                    <>
-                      You own{" "}
-                      <span className="font-semibold">
-                        {formatTokenAmount(tokenBalance)} $TALENT
-                      </span>{" "}
-                      and are receiving{" "}
-                      {isTop200 && isBoosted && boostAmountUsd ? (
-                        <>
-                          <span className="font-semibold">
-                            {boostAmountUsd}
-                          </span>{" "}
-                          in rewards boost!
-                        </>
-                      ) : (
-                        <>a rewards boost!</>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      Hold at least{" "}
-                      <span className="font-semibold">
-                        {BOOST_CONFIG.TOKEN_THRESHOLD} $TALENT
-                      </span>{" "}
-                      to get a 10% rewards boost!
-                    </>
-                  )}
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                {isTop200 ? (
+                  <>
+                    You’re a{" "}
+                    <span className="font-semibold">
+                      top {topPercentDisplay}%
+                    </span>{" "}
+                    onchain creator.
+                  </>
+                ) : pointsToTop200 !== undefined && pointsToTop200 !== null ? (
+                  <>
+                    <span className="font-semibold">
+                      {pointsToTop200} points
+                    </span>{" "}
+                    left to earn rewards.
+                  </>
+                ) : (
+                  "Calculating your position..."
+                )}
+              </p>
             </>
           )}
         </div>

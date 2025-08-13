@@ -37,6 +37,17 @@ export function calculatePointsToNextLevel(score: number, level: number) {
   return nextLevel.min - score;
 }
 
+/**
+ * Convert a raw Creator Score into a level number based on LEVEL_RANGES
+ */
+export function getLevelFromScore(score: number): number {
+  if (typeof score !== "number" || isNaN(score) || score < 0) return 1;
+  const levelInfo =
+    LEVEL_RANGES.find((range) => score >= range.min && score <= range.max) ||
+    LEVEL_RANGES[0];
+  return LEVEL_RANGES.indexOf(levelInfo) + 1;
+}
+
 export function getLevelBadgeColor(level: number | null): string {
   if (!level) return "bg-gray-500";
 
@@ -253,7 +264,12 @@ export function formatRewardValue(num: number): string {
 export function formatK(num: number | string): string {
   const n = typeof num === "string" ? parseFloat(num.replace(/,/g, "")) : num;
   if (isNaN(n)) return "0";
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  // For three-digit thousands (>= 100,000), show no decimals and floor
+  if (n >= 100_000 && n < 1_000_000) {
+    return `${Math.floor(n / 1000)}K`;
+  }
+  // Default compact format for thousands
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return n.toString();
 }
 

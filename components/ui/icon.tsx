@@ -6,6 +6,7 @@ export interface IconProps extends React.ComponentPropsWithoutRef<"svg"> {
   icon: LucideIcon;
   size?: "sm" | "md" | "lg";
   color?: "primary" | "muted" | "brand" | "error";
+  brandColor?: "purple" | "green" | "blue" | "pink"; // applies when color="brand"
   disabled?: boolean;
   isActive?: boolean;
 }
@@ -19,7 +20,7 @@ const iconSizes = {
 const iconColors = {
   primary: "text-foreground",
   muted: "text-muted-foreground",
-  brand: "text-purple-500", // Reserved for special moments
+  brand: "text-brand",
   error: "text-destructive",
 } as const;
 
@@ -27,6 +28,7 @@ export function Icon({
   icon: IconComponent,
   size = "md",
   color = "muted",
+  brandColor,
   disabled = false,
   isActive = false,
   className,
@@ -54,6 +56,9 @@ export function Icon({
 
         className,
       )}
+      {...(color === "brand" && brandColor
+        ? { "data-accent": brandColor }
+        : {})}
       {...props}
     />
   );

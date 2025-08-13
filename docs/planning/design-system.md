@@ -36,6 +36,13 @@
    - Data visualization (SegmentedBar, PostsChart)
    - Brand identity moments
 
+### Brand Accent System (core)
+- **Token**: Tailwind `brand` color maps to `hsl(var(--brand-accent))`.
+- **Defaults**: `--brand-accent` defaults to purple-700. Secondary accents map to Tailwind shades: lime-700, cyan-700, pink-700.
+- **Override (per scope)**: Set `data-accent="purple|green|blue|pink"` on any wrapper to swap the accent.
+- **Utilities**: Use `text-brand`, `bg-brand/10`, `bg-brand/20`, `hover:bg-brand/30` for washes and states.
+- **Components**: Brand variants accept `color?: 'purple'|'green'|'blue'|'pink'` to set the accent per instance.
+
 ## Component Patterns
 
 ### Cards
@@ -55,6 +62,15 @@
 ### Buttons
 **Base Button**: Standard semantic variants with consistent sizing
 **ButtonFullWidth**: Section-level actions with required icons and left alignment
+
+### Callouts & Carousel
+- **Callout variants**: `brand` and `muted`. Brand reads `text-brand`/`bg-brand/20`.
+- **Accent control**: Set per-instance via `color` prop (`purple|green|blue|pink`) or wrapper `data-accent`.
+- **Typography**: Title = `size="base"` + `weight="medium"` (brand color for `brand`, default otherwise). Description = `size="sm"`, `color="muted"`. Left-aligned.
+- **Icons**: Left icon uses brand accent for `brand`, `text-foreground` for `muted`. Right arrow/close `X` are `text-muted-foreground`.
+- **Interactivity**: Entire callout clickable when `href` is set. If `onClose` is present, close takes priority but the rest remains clickable.
+- **Dismissal**: Season-aware persistence in `localStorage` using a round-specific key.
+- **CalloutCarousel**: Mobile-first horizontal snap (`snap-x snap-mandatory`), one slide per viewport, hides scrollbar, aligns with page padding (no negative margins), disables overflow when single item.
 
 ### Interactive States
 - **Hover**: `hover:bg-muted/50` for non-card elements
@@ -116,6 +132,10 @@ import { Typography } from "@/components/ui/typography";
 - **Element**: `p`, `span`, `div`, `h1`-`h6`
 
 > **Note**: The Typography component (`components/ui/typography.tsx`) is the single source of truth for all typography values. Refer to the component implementation for the complete list of available options.
+
+### Guidance
+
+- Always use `components/ui/typography.tsx` to set typography variants (size, weight, color) in components and pages. Avoid ad‑hoc Tailwind text classes for text styling to maintain semantic, theme-safe consistency.
 
 ### Typography Principles
 - **Semantic Colors**: Use `default`, `muted`, or `brand` colors for consistent theming
@@ -221,6 +241,22 @@ import { Typography } from "@/components/ui/typography";
 - **Hardware acceleration** for smooth animations
 - **Reduced motion** support for accessibility
 - **Consistent timing** across all interactions
+
+## Modal Backdrop (Blurred Scrim)
+
+### Shared Pattern
+- **Overlay utility**: `.modal-overlay`
+- **Default styles**: `bg-black/70 backdrop-blur-sm` with fade in/out via data state classes.
+- **Scope**: Applied to both `Dialog` (desktop) and `Drawer` (mobile) overlays for uniform feel.
+
+### Usage
+- The utility is defined in `app/theme.css` and used by `components/ui/dialog.tsx` and `components/ui/drawer.tsx`.
+- To customize per-use, pass `className` to `DialogOverlay` or `DrawerOverlay` and compose with `modal-overlay`.
+
+### Guidance
+- **Subtle by default**: stick with `backdrop-blur-sm` and `bg-black/70` for performance and clarity.
+- **Performance note**: backdrop blur can impact low-end devices; avoid increasing blur strength globally.
+- **No background scaling**: Drawers do not scale the background by default.
 
 ## Component Decision Tree
 

@@ -32,7 +32,6 @@ import { RewardsBoostsCard } from "@/components/home/RewardsBoostsCard";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { BadgeCard } from "@/components/badges/BadgeCard";
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
-import { Typography } from "@/components/ui/typography";
 
 function IconDemo({
   icon,
@@ -128,20 +127,6 @@ function Spinner({ className }: { className?: string }) {
 export default function DesignPage() {
   const [isClicked, setIsClicked] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("icons");
-
-  // Only show design system in development
-  if (process.env.NODE_ENV === "production") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-semibold">Design System</h1>
-          <p className="text-muted-foreground">
-            Design system is only available in development environment.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const tabs = [
     { id: "icons", label: "Icons" },
@@ -356,22 +341,34 @@ export default function DesignPage() {
                     <ButtonFullWidth
                       variant="default"
                       icon={<Settings className="h-4 w-4" />}
+                      align="left"
+                      href="/settings"
                     >
-                      Settings (Default)
+                      Settings (Variant: Default)
                     </ButtonFullWidth>
 
                     <ButtonFullWidth
                       variant="brand"
                       icon={<Heart className="h-4 w-4" />}
+                      align="left"
                     >
-                      Follow (Brand)
+                      Follow (Variant: Brand)
                     </ButtonFullWidth>
 
                     <ButtonFullWidth
                       variant="destructive"
                       icon={<Trash2 className="h-4 w-4" />}
+                      align="left"
                     >
-                      Delete Account (Destructive)
+                      Delete (Variant: Destructive)
+                    </ButtonFullWidth>
+
+                    <ButtonFullWidth
+                      variant="muted"
+                      icon={<Info className="h-4 w-4" />}
+                      align="left"
+                    >
+                      More info (Variant: Muted)
                     </ButtonFullWidth>
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground font-mono space-y-1">
@@ -380,7 +377,15 @@ export default function DesignPage() {
                       py-4 h-auto rounded-xl
                     </div>
                     <div>
-                      Props: icon (required), styling, size, onClick, etc.
+                      Props: icon (required), href/external (optional), variant:
+                      default | brand | destructive | muted, align: left |
+                      center (default auto: left when href present; center
+                      otherwise), showRightIcon (optional), onClick, etc.
+                    </div>
+                    <div>Default keeps border; muted has no border.</div>
+                    <div>
+                      Label uses Typography base with variant color; left and
+                      right icons match variant color.
                     </div>
                   </div>
                 </div>
@@ -422,10 +427,9 @@ export default function DesignPage() {
 
             <Section title="Callout Components">
               <div className="space-y-6">
-                {/* Static Callouts */}
                 <div>
                   <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    Static Callouts
+                    Informational Callouts
                     <a
                       href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/common/Callout.tsx"
                       target="_blank"
@@ -436,14 +440,20 @@ export default function DesignPage() {
                     </a>
                   </h3>
                   <div className="space-y-3">
-                    <Callout variant="brand" icon={<Info />} onClose={() => {}}>
-                      Brand callout - not clickable
-                    </Callout>
-                    <Callout variant="neutral" onClose={() => {}}>
-                      <Typography size="xs" color="muted">
-                        This is a neutral callout with close button
-                      </Typography>
-                    </Callout>
+                    <Callout
+                      variant="brand"
+                      icon={<Info className="h-4 w-4" />}
+                      onClose={() => {}}
+                      title="Get an extra boost for sharing videos"
+                      description="Post a video on Farcaster to earn +500 bonus points this week"
+                    />
+                    <Callout
+                      variant="muted"
+                      icon={<Info className="h-4 w-4" />}
+                      onClose={() => {}}
+                      title="Profile visibility"
+                      description="Complete your profile to increase discoverability"
+                    />
                   </div>
                 </div>
 
@@ -454,55 +464,32 @@ export default function DesignPage() {
                   </h3>
                   <div className="space-y-3">
                     <Callout
+                      mode="interactive"
                       variant="brand"
+                      icon={<Info className="h-4 w-4" />}
+                      href="/leaderboard"
+                      title="Explore Leaderboard"
+                      description="Tap to browse top creators"
+                    />
+                    <Callout
+                      mode="interactive"
+                      variant="muted"
+                      icon={<FileText className="h-4 w-4" />}
                       href="https://example.com"
                       external
-                      icon={<Heart />}
-                    >
-                      Brand callout - external link
-                    </Callout>
-                    <Callout
-                      variant="neutral"
-                      href="https://example.com"
-                      external
-                      icon={<FileText />}
-                    >
-                      Neutral callout - external link
-                    </Callout>
-                    <Callout
-                      variant="brand"
-                      href="/profile"
-                      icon={<Settings />}
-                    >
-                      Brand callout - internal link
-                    </Callout>
-                    <Callout variant="neutral" href="/profile">
-                      <Typography size="xs" color="muted">
-                        This is a neutral callout with link
-                      </Typography>
-                    </Callout>
+                      title="Read the docs"
+                      description="Opens external link"
+                    />
                   </div>
                 </div>
 
                 <div className="text-xs text-muted-foreground font-mono space-y-1">
+                  <div>Brand: bg-purple-100</div>
+                  <div>Muted: bg-muted</div>
+                  <div>Structure: left icon + title + description</div>
                   <div>
-                    Brand: bg-purple-100 text-purple-700 hover:bg-purple-200
-                  </div>
-                  <div>
-                    Neutral: bg-muted text-muted-foreground hover:bg-muted/80
-                  </div>
-                  <div>
-                    Interactive: hover:scale-[1.02] active:scale-[0.98]
-                    cursor-pointer
-                  </div>
-                  <div>Icon animation: group-hover:translate-x-0.5</div>
-                  <div>Icons: h-4 w-4 text-muted-foreground</div>
-                  <div>
-                    Text sizes: text-sm (default), text-xs (for longer text)
-                  </div>
-                  <div>
-                    Auto behavior: text-xs hides left icon, text-sm shows left
-                    icon
+                    Modes: informative (dismissible) | interactive (clickable
+                    with arrow)
                   </div>
                 </div>
               </div>
