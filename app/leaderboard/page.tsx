@@ -23,6 +23,8 @@ import {
   TOTAL_SPONSORS_POOL,
   ROUND_ENDS_AT,
   BOOST_CONFIG,
+  LEVEL_RANGES,
+  PERK_DRAW_DEADLINE_UTC,
 } from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
@@ -38,6 +40,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Typography } from "@/components/ui/typography";
 import { PerkModal } from "@/components/modals/PerkModal";
+import { usePerkEntry } from "@/hooks/usePerkEntry";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -100,6 +103,7 @@ function LeaderboardContent() {
   const name = unifiedName ?? user?.displayName ?? user?.username;
   const loadingStats = unifiedLoading;
   const level = getLevelFromScore(creatorScore);
+  const { data: perkStatus } = usePerkEntry("screen_studio", userTalentUuid);
 
   // Fetch user token balance
   const { balance: tokenBalance, loading: tokenLoading } =
@@ -246,7 +250,7 @@ function LeaderboardContent() {
                 onClose?: () => void;
               }>;
 
-              // Boost
+              // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
               const base = {
                 id: "boost",
                 variant: "brand" as const,
@@ -271,7 +275,7 @@ function LeaderboardContent() {
               } else {
                 items.push(base);
               }
-              // OPTOUT (green) – visible to all
+              // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
               items.push({
                 id: "optout",
                 variant: "brand",
@@ -290,39 +294,31 @@ function LeaderboardContent() {
                 },
               });
 
-              // PERK (blue) – visible to Level >= 3 users
-              // TODO: wire real level when available. For now, show perk by default.
-              const isLevel3Plus = true;
-              if (isLevel3Plus) {
-                items.push({
-                  id: "perk_screen_studio",
-                  variant: "brand",
-                  color: "blue",
-                  icon: <Gift className="h-4 w-4" />,
-                  title: "Free Screen Studio",
-                  description: "Claim 1 of 20 free monthly subscriptions.",
-                  href: undefined,
-                  external: undefined,
-                  onClick: () => {
-                    try {
-                      posthog.capture("perk_modal_open_intent", {
-                        perk: "screen_studio",
-                      });
-                    } catch {}
-                    setPerkOpen(true);
-                  },
-                  onClose: () => {
-                    // Analytics only; persistence handled by carousel via permanentHideKey
-                    try {
-                      posthog.capture("perk_callout_dismissed", {
-                        perk: "screen_studio",
-                      });
-                    } catch {}
-                  },
-                  // Permanent hide for both dismiss and claim
-                  permanentHideKey: "perk_screen_studio_hidden",
-                });
-              }
+              // CREATOR PERK (blue) – interactive, non-dismissible; reflects entered state
+              items.push({
+                id: "perk_screen_studio",
+                variant: "brand",
+                color: "blue",
+                icon: <Gift className="h-4 w-4" />,
+                title: "Free Screen Studio",
+                description:
+                  perkStatus?.status === "closed"
+                    ? "Entries closed. Winners announced Aug 21"
+                    : perkStatus?.status === "entered"
+                      ? "You're in! 20 winners announced Aug 21"
+                      : "Win 1 of 20 monthly subscriptions.",
+                href: undefined,
+                external: undefined,
+                onClick: () => {
+                  try {
+                    posthog.capture("perk_draw_open", {
+                      perk: "screen_studio",
+                    });
+                  } catch {}
+                  setPerkOpen(true);
+                },
+                // Non-dismissible for this interactive callout
+              });
 
               return items;
             })()}
@@ -366,21 +362,18 @@ function LeaderboardContent() {
         color="blue"
         title="Creator Perk: Screen Studio"
         subtitle="Get 1 month of Screen Studio for free."
-        access="Creator Score: Level 3"
-        distribution="First-Come, First-Served"
+        access={`Level 3 (Creator Score ≥ ${LEVEL_RANGES[2].min})`}
+        distribution="Draw"
         supply="20 monthly subscriptions"
-        ctaLabel="Claim via Form"
-        ctaUrl="https://www.notion.com/product/forms"
+        ctaLabel="Enter"
         level={level}
         requiredLevel={3}
         perkId="screen_studio"
+        talentUUID={userTalentUuid ?? null}
+        deadlineIso={PERK_DRAW_DEADLINE_UTC.toISOString()}
         iconUrl="/logos/screen-studio.png"
         iconAlt="Screen Studio"
         onClaim={() => {
-          try {
-            // Hide PERK callout permanently after claim
-            localStorage.setItem("perk_screen_studio_hidden", "true");
-          } catch {}
           setPerkOpen(false);
         }}
       />

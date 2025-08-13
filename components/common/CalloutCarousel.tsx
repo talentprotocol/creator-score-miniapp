@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Callout } from "@/components/common/Callout";
 import { cn } from "@/lib/utils";
+import { CALLOUT_FLAGS } from "@/lib/constants";
 import posthog from "posthog-js";
 
 export interface CalloutCarouselItem {
@@ -15,6 +16,8 @@ export interface CalloutCarouselItem {
   href?: string;
   external?: boolean;
   onClick?: () => void;
+  // Local per-item enable/disable within this carousel instance
+  enabled?: boolean;
   // Presence of onClose indicates dismissible; the actual persistence/removal is handled here
   onClose?: () => void;
   // Optional season-aware storage key to persist dismissal for this item
@@ -46,9 +49,20 @@ export function CalloutCarousel({
   }, []);
 
   React.useEffect(() => {
-    if (!mounted) return;
+    if (!mounted) {
+      setVisible([]);
+      return;
+    }
     try {
       const filtered = items.filter((item) => {
+        // Global flag check (id must match CALLOUT_FLAGS keys)
+        if (Object.prototype.hasOwnProperty.call(CALLOUT_FLAGS, item.id)) {
+          if (!CALLOUT_FLAGS[item.id as keyof typeof CALLOUT_FLAGS]) {
+            return false;
+          }
+        }
+        // Local per-item disable
+        if (item.enabled === false) return false;
         if (
           item.permanentHideKey &&
           localStorage.getItem(item.permanentHideKey) === "true"

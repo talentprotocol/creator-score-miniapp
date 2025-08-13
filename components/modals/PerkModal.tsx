@@ -17,11 +17,13 @@ import {
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
-import { Gift } from "lucide-react";
+import { Gift, Lock, Check, Ban } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import posthog from "posthog-js";
+import { Loader2 } from "lucide-react";
+import { usePerkEntry } from "@/hooks/usePerkEntry";
 
 export interface PerkModalProps {
   open: boolean;
@@ -32,14 +34,15 @@ export interface PerkModalProps {
   access?: string;
   distribution?: string;
   supply?: string;
-  ctaLabel: string;
-  ctaUrl: string;
+  ctaLabel: string; // label when enabled
   level?: number; // current user level
   requiredLevel?: number; // default 3
   perkId: string; // analytics id, e.g., "screen_studio"
   onClaim?: () => void; // optional callback when CTA succeeds
   iconUrl?: string;
   iconAlt?: string;
+  talentUUID?: string | null;
+  deadlineIso?: string; // UTC ISO string for entry deadline
 }
 
 function Content({
@@ -48,14 +51,58 @@ function Content({
   distribution,
   supply,
   ctaLabel,
-  ctaUrl,
   level = 0,
   requiredLevel = 3,
   perkId,
   onClaim,
+  talentUUID,
+  deadlineIso,
 }: Omit<PerkModalProps, "open" | "onOpenChange">) {
   const { context } = useMiniKit();
   const meetsLevel = (level ?? 0) >= (requiredLevel ?? 3);
+  const { data, loading, enter } = usePerkEntry(perkId, talentUUID);
+  const status = data?.status;
+
+  const isNotEligible = !meetsLevel;
+  const isEntered = status === "entered";
+  const isClosed = status === "closed";
+  const computedVariant =
+    isNotEligible || isClosed ? "muted" : ("brand" as const);
+  const computedIcon = loading ? (
+    <Loader2 className="h-4 w-4 animate-spin" />
+  ) : isNotEligible ? (
+    <Lock className="h-4 w-4" />
+  ) : isEntered ? (
+    <Check className="h-4 w-4" />
+  ) : isClosed ? (
+    <Ban className="h-4 w-4" />
+  ) : (
+    <Gift className="h-4 w-4" />
+  );
+
+  function formatDeadline(iso?: string): string | null {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso);
+      const month = d.toLocaleString("en-US", { month: "short" });
+      const day = d.getUTCDate();
+      const hours = String(d.getUTCHours()).padStart(2, "0");
+      const minutes = String(d.getUTCMinutes()).padStart(2, "0");
+      const j = day % 10;
+      const k = day % 100;
+      const suffix =
+        j == 1 && k != 11
+          ? "st"
+          : j == 2 && k != 12
+            ? "nd"
+            : j == 3 && k != 13
+              ? "rd"
+              : "th";
+      return `${month} ${day}${suffix} ${hours}:${minutes} UTC`;
+    } catch {
+      return null;
+    }
+  }
 
   return (
     <div className="space-y-6" {...(color ? { "data-accent": color } : {})}>
@@ -80,22 +127,53 @@ function Content({
               <span>{supply}</span>
             </div>
           )}
+          {formatDeadline(deadlineIso ?? data?.deadlineIso) && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Deadline</span>
+              <span>{formatDeadline(deadlineIso ?? data?.deadlineIso)}</span>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="space-y-2">
         <ButtonFullWidth
-          variant="brand"
-          icon={<Gift className="h-4 w-4" />}
+          variant={computedVariant}
+          icon={computedIcon}
           onClick={async () => {
-            posthog.capture("perk_cta_clicked", { perk: perkId });
-            await openExternalUrl(ctaUrl, context);
-            onClaim?.();
+            posthog.capture("perk_draw_enter_success", { perk: perkId });
+            const res = await enter();
+            if (res.ok) {
+              onClaim?.();
+            }
           }}
-          disabled={!meetsLevel}
+          disabled={loading || isNotEligible || isEntered || isClosed}
         >
-          {meetsLevel ? ctaLabel : `Requires Level ${requiredLevel}`}
+          {(() => {
+            if (isNotEligible) return `Requires Level ${requiredLevel}`;
+            if (isEntered) return "You'" + "re in!";
+            if (isClosed) return "Entries closed";
+            return ctaLabel;
+          })()}
         </ButtonFullWidth>
+        {/* Success message */}
+        {status === "entered" && (
+          <div className="text-xs text-center space-y-1">
+            <div className="text-muted-foreground">
+              Winners will be announced on{" "}
+              <button
+                type="button"
+                className="underline hover:no-underline"
+                onClick={() =>
+                  openExternalUrl("https://farcaster.xyz/talent", context)
+                }
+              >
+                Farcaster
+              </button>{" "}
+              on Aug 21st, and we’ll reach out to winners via DM.
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -116,7 +194,7 @@ export function PerkModal(props: PerkModalProps) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent {...(props.color ? { "data-accent": props.color } : {})}>
           <DialogHeader className="text-left">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
               <DialogTitle>{props.title}</DialogTitle>
               {props.iconUrl ? (
                 <Avatar className="h-5 w-5">
@@ -150,7 +228,7 @@ export function PerkModal(props: PerkModalProps) {
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent {...(props.color ? { "data-accent": props.color } : {})}>
         <DrawerHeader className="text-left">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
             <DrawerTitle>{props.title}</DrawerTitle>
             {props.iconUrl ? (
               <Avatar className="h-5 w-5">
