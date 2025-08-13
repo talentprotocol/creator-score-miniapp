@@ -30,6 +30,7 @@ Notes:
 - Never create a standalone page; always use the database parent_id.
 - Always default Release Date to UTC unless a different date is specified.
 - If a duplicate vX.Y exists for “Creator Score,” update instead of creating.
+- Do not include the Summary in the page content body; Summary is a page property only.
 
 ## Package.json Version Monitoring
 When I modify package.json and change the version field:
@@ -95,6 +96,7 @@ When I modify package.json and change the version field:
 
 ## Content Generation Guidelines:
 - **Summary**: One concise sentence describing the main theme of the release
+- Do not duplicate the Summary inside the page content; keep it as a property only.
 - **Changelog sections**:
   - Analyze commit messages and code changes
   - Group changes by type: New Features, Bug Fixes, Improvements, Breaking Changes
