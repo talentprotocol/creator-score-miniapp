@@ -33,14 +33,14 @@ interface CalloutCarouselProps {
   onDismiss?: (id: string) => void;
   // Auto-advance interval in ms; set 0 or undefined to disable
   autoAdvanceMs?: number;
-  // Whether to loop slides when swiping across edges
-  loop?: boolean;
   // Server-provided persisted dismissal state (optional)
   dismissedIds?: string[];
   permanentlyHiddenIds?: string[];
   // Persist callbacks to store server-side (optional)
   onPersistDismiss?: (id: string) => void;
   onPersistPermanentHide?: (id: string) => void;
+  // Visual indicator (dots)
+  showDots?: boolean;
 }
 
 export function CalloutCarousel({
@@ -49,11 +49,11 @@ export function CalloutCarousel({
   className,
   onDismiss,
   autoAdvanceMs = 3000,
-  loop = true,
   dismissedIds,
   permanentlyHiddenIds,
   onPersistDismiss,
   onPersistPermanentHide,
+  showDots = true,
 }: CalloutCarouselProps) {
   const [mounted, setMounted] = React.useState(false);
   const [closingId, setClosingId] = React.useState<string | null>(null);
@@ -62,6 +62,7 @@ export function CalloutCarousel({
   const [currentIndex, setCurrentIndex] = React.useState<number>(0);
   const intervalRef = React.useRef<number | null>(null);
   const isInteractingRef = React.useRef<boolean>(false);
+  const [cycle, setCycle] = React.useState<number>(0);
 
   // Compute filtered list on mount and when items change
   React.useEffect(() => {
@@ -108,28 +109,20 @@ export function CalloutCarousel({
     }
   }, [items, roundEndsAtIso, mounted, dismissedIds, permanentlyHiddenIds]);
 
-  // Derive slides with edge clones for looping when applicable
+  // Derive slides (no looping)
   const hasMultiple = visible.length > 1;
-  const useLoop = loop && hasMultiple;
-  const slides: CalloutCarouselItem[] = React.useMemo(() => {
-    if (useLoop) {
-      const first = visible[0];
-      const last = visible[visible.length - 1];
-      return [last, ...visible, first];
-    }
-    return visible;
-  }, [visible, useLoop]);
+  const slides: CalloutCarouselItem[] = React.useMemo(() => visible, [visible]);
 
   // Ensure starting index is correct when slides change
   React.useEffect(() => {
-    const startIndex = useLoop ? 1 : 0;
+    const startIndex = 0;
     setCurrentIndex(startIndex);
     const el = containerRef.current;
     if (el) {
       const width = el.clientWidth;
       el.scrollTo({ left: startIndex * width, behavior: "auto" });
     }
-  }, [slides.length, useLoop]);
+  }, [slides.length]);
 
   const scrollToIndex = React.useCallback(
     (targetIndex: number, smooth = true) => {
@@ -145,7 +138,7 @@ export function CalloutCarousel({
     [],
   );
 
-  // Handle scroll to track current index and loop jump logic
+  // Handle scroll to track current index
   const handleScroll = React.useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -154,26 +147,16 @@ export function CalloutCarousel({
     if (rawIndex !== currentIndex) {
       setCurrentIndex(rawIndex);
     }
-    if (useLoop) {
-      // Jump from clones to real slides without animation
-      if (rawIndex === 0) {
-        // at clone-last, jump to last real
-        const lastReal = slides.length - 2;
-        window.requestAnimationFrame(() => scrollToIndex(lastReal, false));
-      } else if (rawIndex === slides.length - 1) {
-        // at clone-first, jump to first real
-        window.requestAnimationFrame(() => scrollToIndex(1, false));
-      }
-    }
-  }, [currentIndex, slides.length, useLoop, scrollToIndex]);
+  }, [currentIndex, scrollToIndex]);
 
-  // Auto-advance interval
+  // Auto-advance interval (disabled by default)
   React.useEffect(() => {
     if (!hasMultiple || !autoAdvanceMs || autoAdvanceMs <= 0) return;
     if (isInteractingRef.current) return;
+
     intervalRef.current = window.setInterval(() => {
       const next = currentIndex + 1;
-      const target = useLoop ? next : Math.min(next, slides.length - 1);
+      const target = Math.min(next, slides.length - 1);
       scrollToIndex(target, true);
     }, autoAdvanceMs);
     return () => {
@@ -185,10 +168,10 @@ export function CalloutCarousel({
   }, [
     currentIndex,
     slides.length,
-    useLoop,
     autoAdvanceMs,
     hasMultiple,
     scrollToIndex,
+    cycle,
   ]);
 
   const handlePointerDown = () => {
@@ -200,6 +183,8 @@ export function CalloutCarousel({
   };
   const handlePointerUp = () => {
     isInteractingRef.current = false;
+    // trigger restart of timers
+    setCycle((c) => c + 1);
   };
 
   if (!mounted || visible.length === 0) return null;
@@ -214,7 +199,7 @@ export function CalloutCarousel({
       const active = slides[currentIndex];
       if (active && active.id === item.id) {
         const next = currentIndex + 1;
-        const target = useLoop ? next : Math.min(next, slides.length - 1);
+        const target = Math.min(next, slides.length - 1);
         scrollToIndex(target, true);
       }
     }
@@ -285,7 +270,7 @@ export function CalloutCarousel({
             key={item.id}
             className={cn(
               "min-w-full snap-start", // one slide per viewport
-              "transition-all duration-200",
+              "transition-all duration-300",
               closingId === item.id && "opacity-0 -translate-x-2",
             )}
           >
@@ -303,6 +288,25 @@ export function CalloutCarousel({
           </div>
         ))}
       </div>
+      {showDots && hasMultiple && (
+        <div
+          className="mt-2 flex items-center justify-center gap-1.5"
+          aria-hidden
+        >
+          {visible.map((_, i) => {
+            const isActive = i === currentIndex;
+            return (
+              <span
+                key={i}
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  isActive ? "bg-foreground/70" : "bg-muted-foreground/30",
+                )}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
