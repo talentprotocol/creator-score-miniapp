@@ -14,6 +14,7 @@ When package.json version changes:
    - Parent database ID: d8921ac6c484431dad428039279898aa (Product Changelog)
    - Create if no entry exists with Version = vX.Y and App = "Creator Score"; otherwise update that entry
    - Set properties in the same operation:
+     - Title: "Creator Score vX.Y" (include app name prefix)
      - App: "Creator Score"
      - Version: "vX.Y"
      - Release Date (UTC): today → set `date:Release Date:start`
