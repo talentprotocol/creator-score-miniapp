@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 
 export function useBackButton() {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
 
   // Track navigation history

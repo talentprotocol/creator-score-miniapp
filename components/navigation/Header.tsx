@@ -95,12 +95,13 @@ export function Header() {
             style={{ display: "none" }}
           >
             {navItems.map((item) => {
+              const current = pathname || "";
               const isActive =
                 item.href === "/"
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href) ||
+                  ? current === item.href
+                  : current.startsWith(item.href) ||
                     (item.alternateHrefs?.some((href) =>
-                      pathname.startsWith(href),
+                      current.startsWith(href),
                     ) ??
                       false);
 

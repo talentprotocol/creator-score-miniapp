@@ -10,7 +10,9 @@ import { getAllPostsForTalentId } from "@/app/services/postsService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 import {
   getEthUsdcPrice,
+  getPolUsdPrice,
   convertEthToUsdc,
+  convertPolToUsdc,
   formatK,
   formatNumberWithSuffix,
 } from "@/lib/utils";
@@ -82,7 +84,10 @@ export async function generateMetadata({
     }, 0);
 
     // Calculate total earnings (simplified version for metadata)
-    const ethPrice = await getEthUsdcPrice();
+    const [ethPrice, polPrice] = await Promise.all([
+      getEthUsdcPrice(),
+      getPolUsdPrice(),
+    ]);
     const issuerTotals = new Map<string, number>();
 
     credentials.forEach((credentialGroup) => {
@@ -121,6 +126,13 @@ export async function generateMetadata({
           readable.includes("Ξ")
         ) {
           usdValue = convertEthToUsdc(value, ethPrice);
+        } else if (
+          uom === "$POL" ||
+          uom === "POL" ||
+          uom === "MATIC" ||
+          readable.includes("POL")
+        ) {
+          usdValue = convertPolToUsdc(value, polPrice);
         } else if (uom === "USDC" || uom === "USD" || readable.includes("$")) {
           usdValue = value;
         }
@@ -300,7 +312,10 @@ export default async function ProfileLayout({
   }));
 
   // Calculate total earnings using the same sophisticated logic as the original system
-  const ethPrice = await getEthUsdcPrice();
+  const [ethPrice, polPrice] = await Promise.all([
+    getEthUsdcPrice(),
+    getPolUsdPrice(),
+  ]);
   const issuerTotals = new Map<string, number>();
 
   // Process each credential group (same logic as useProfileEarningsBreakdown)
@@ -343,6 +358,8 @@ export default async function ProfileLayout({
       const uom = point.uom || "";
       if (uom === "ETH") {
         usdValue = convertEthToUsdc(value, ethPrice);
+      } else if (uom === "$POL" || uom === "POL" || uom === "MATIC") {
+        usdValue = convertPolToUsdc(value, polPrice);
       } else if (uom === "USDC" || uom === "USD") {
         usdValue = value;
       }

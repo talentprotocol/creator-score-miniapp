@@ -111,6 +111,42 @@ export function convertEthToUsdc(ethAmount: number, ethPrice: number): number {
   return ethAmount * ethPrice;
 }
 
+// POL (Polygon) price in USD using Coinbase MATIC-USD spot
+export async function getPolUsdPrice(): Promise<number> {
+  const cacheKey = "pol_usd_price";
+
+  const cachedPrice = getCachedData<number>(
+    cacheKey,
+    CACHE_DURATIONS.ETH_PRICE,
+  );
+  if (cachedPrice !== null && cachedPrice !== undefined) {
+    return cachedPrice;
+  }
+
+  try {
+    const response = await fetch(
+      "https://api.coinbase.com/v2/prices/MATIC-USD/spot",
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    const price = parseFloat(data.data?.amount);
+    if (isNaN(price) || price <= 0) {
+      throw new Error("Invalid price data");
+    }
+    setCachedData(cacheKey, price);
+    return price;
+  } catch {
+    // Conservative fallback
+    return 1; // $1 per POL fallback to avoid exploding totals
+  }
+}
+
+export function convertPolToUsdc(polAmount: number, polPrice: number): number {
+  return polAmount * polPrice;
+}
+
 export function formatNumberWithSuffix(num: number): string {
   // Handle invalid numbers - return error indicator instead of $0
   if (isNaN(num) || !isFinite(num)) {
@@ -260,9 +296,9 @@ export function formatReadableValue(
   if (!value) return "";
   // If it's already a non-numeric descriptive value, return as is
   if (/[a-zA-Z]/.test(value) && !/^[0-9.]+$/.test(value)) {
-    // Format dates like "2021-08-11 00:22:57 UTC" when uom indicates date
+    // For account age credentials we want to keep human text like "2 years"
     if (uom === "creation date") {
-      return formatDate(value);
+      return value;
     }
     return value;
   }
@@ -272,13 +308,16 @@ export function formatReadableValue(
 
   // Currency: USDC/USD
   if (uom === "USDC" || uom === "USD") {
-    if (num >= 1000) return formatNumberWithSuffix(num);
-    return num >= 1 ? `$${num.toFixed(2)}` : `$${num.toFixed(3)}`;
+    // Use 1 decimal for non-integers, 0 decimals for whole numbers
+    if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(1)}B`;
+    if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 10_000) return `$${(num / 1_000).toFixed(1)}K`;
+    return Number.isInteger(num) ? `$${num.toFixed(0)}` : `$${num.toFixed(1)}`;
   }
 
   // Special handling for ETH values
   if (uom === "ETH") {
-    return num.toFixed(3);
+    return `Ξ${num.toFixed(3)}`;
   }
 
   // Count-like units: display as integer with compact K when large
