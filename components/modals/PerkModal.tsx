@@ -133,8 +133,6 @@ function Content({
               <span>{supply}</span>
             </div>
           )}
-<<<<<<< Updated upstream
-=======
           {url && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">URL</span>
@@ -147,7 +145,6 @@ function Content({
               </button>
             </div>
           )}
->>>>>>> Stashed changes
           {formatDeadline(deadlineIso ?? data?.deadlineIso) && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Deadline</span>
@@ -191,7 +188,7 @@ function Content({
               >
                 Farcaster
               </button>{" "}
-              on Aug 21st, and we’ll reach out to winners via DM.
+              <span>on Aug 21st, and we&apos;ll reach out to winners via DM.</span>
             </div>
           </div>
         )}
