@@ -191,11 +191,11 @@ export const TOTAL_SPONSORS_POOL = ACTIVE_SPONSORS.reduce(
 export const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
 // Creator Perk (Draw) timeline
-// Entries close on Aug 20th 23:59 UTC, winners drawn on Aug 21st (UTC)
+// Entries close on Aug 22nd 14:59 UTC, winners drawn on Aug 22nd 15:00 UTC
 export const PERK_DRAW_DEADLINE_UTC = new Date(
-  Date.UTC(2025, 7, 20, 23, 59, 0),
+  Date.UTC(2025, 7, 22, 14, 59, 59),
 );
-export const PERK_DRAW_DATE_UTC = new Date(Date.UTC(2025, 7, 21, 0, 0, 0));
+export const PERK_DRAW_DATE_UTC = new Date(Date.UTC(2025, 7, 23, 15, 0, 0));
 
 // Boost configuration
 export const BOOST_CONFIG = {

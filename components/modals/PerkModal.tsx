@@ -34,6 +34,7 @@ export interface PerkModalProps {
   access?: string;
   distribution?: string;
   supply?: string;
+  url?: string; // URL property for the perk
   ctaLabel: string; // label when enabled
   level?: number; // current user level
   requiredLevel?: number; // default 3
@@ -50,6 +51,7 @@ function Content({
   access,
   distribution,
   supply,
+  url,
   ctaLabel,
   level = 0,
   requiredLevel = 3,
@@ -125,6 +127,18 @@ function Content({
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Supply</span>
               <span>{supply}</span>
+            </div>
+          )}
+          {url && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">URL</span>
+              <button
+                type="button"
+                className="underline hover:no-underline"
+                onClick={() => openExternalUrl(url, context)}
+              >
+                {url}
+              </button>
             </div>
           )}
           {formatDeadline(deadlineIso ?? data?.deadlineIso) && (

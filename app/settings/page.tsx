@@ -181,7 +181,7 @@ export default function SettingsPage() {
         />
 
         {/* About */}
-        <div className="mt-2">
+        {/* <div className="mt-2">
           <ButtonFullWidth
             variant="muted"
             icon={<Info className="h-4 w-4" />}
@@ -192,7 +192,7 @@ export default function SettingsPage() {
           >
             <span className="font-medium">About</span>
           </ButtonFullWidth>
-        </div>
+        </div> */}
 
         {/* Dev Docs */}
         <div className="mt-2">
@@ -214,7 +214,7 @@ export default function SettingsPage() {
             variant="muted"
             icon={<MessageCircle className="h-4 w-4" />}
             align="left"
-            href="https://talentprotocol.com/support"
+            href="https://discord.com/invite/talentprotocol"
             external
             onClick={() => handleExternalLinkClick("support")}
           >

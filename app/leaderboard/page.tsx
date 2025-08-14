@@ -391,6 +391,7 @@ function LeaderboardContent() {
         access={`Level 3 (Creator Score ≥ ${LEVEL_RANGES[2].min})`}
         distribution="Draw"
         supply="20 monthly subscriptions"
+        url="https://screen.studio/"
         ctaLabel="Enter"
         level={level}
         requiredLevel={3}
