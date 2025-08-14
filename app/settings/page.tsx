@@ -21,7 +21,6 @@ import {
   Users,
   Wallet,
   Settings,
-  Info,
   CheckCircle,
   XCircle,
   Share,
