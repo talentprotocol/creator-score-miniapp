@@ -24,6 +24,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import posthog from "posthog-js";
 import { Loader2 } from "lucide-react";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
+import { PERK_DRAW_DATE_UTC } from "@/lib/constants";
 
 export interface PerkModalProps {
   open: boolean;
@@ -189,7 +190,12 @@ function Content({
                 Farcaster
               </button>{" "}
               <span>
-                on Aug 21st, and we&apos;ll reach out to winners via DM.
+                on{" "}
+                {PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
+                st, and we&apos;ll reach out to winners via DM.
               </span>
             </div>
           </div>
