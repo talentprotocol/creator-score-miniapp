@@ -188,7 +188,9 @@ function Content({
               >
                 Farcaster
               </button>{" "}
-              <span>on Aug 21st, and we&apos;ll reach out to winners via DM.</span>
+              <span>
+                on Aug 21st, and we&apos;ll reach out to winners via DM.
+              </span>
             </div>
           </div>
         )}
