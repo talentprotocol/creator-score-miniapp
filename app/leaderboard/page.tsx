@@ -26,6 +26,7 @@ import {
   BOOST_CONFIG,
   LEVEL_RANGES,
   PERK_DRAW_DEADLINE_UTC,
+  PERK_DRAW_DATE_UTC,
 } from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
@@ -329,9 +330,9 @@ function LeaderboardContent() {
                 title: "Creator Perk",
                 description:
                   perkStatus?.status === "closed"
-                    ? "Entries closed. Winners announced Aug 21"
+                    ? `Entries closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
                     : perkStatus?.status === "entered"
-                      ? "You're in! 20 winners announced Aug 21"
+                      ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
                       : "Get a free Screen Studio subscription.",
                 href: undefined,
                 external: undefined,

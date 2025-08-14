@@ -106,6 +106,10 @@ function Content({
     }
   }
 
+  function formatUrl(url: string): string {
+    return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+
   return (
     <div className="space-y-6" {...(color ? { "data-accent": color } : {})}>
       <div className="space-y-3">
@@ -129,6 +133,8 @@ function Content({
               <span>{supply}</span>
             </div>
           )}
+<<<<<<< Updated upstream
+=======
           {url && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">URL</span>
@@ -137,10 +143,11 @@ function Content({
                 className="underline hover:no-underline"
                 onClick={() => openExternalUrl(url, context)}
               >
-                {url}
+                {formatUrl(url)}
               </button>
             </div>
           )}
+>>>>>>> Stashed changes
           {formatDeadline(deadlineIso ?? data?.deadlineIso) && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Deadline</span>
