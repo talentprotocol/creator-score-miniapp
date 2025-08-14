@@ -1,0 +1,214 @@
+import { NextResponse } from "next/server";
+
+type RequestBody = {
+  title: string;
+  body: string;
+  targetUrl: string; // may be relative (e.g., /home?perk=screen-studio)
+  fids: number[];
+  dryRun?: boolean;
+  limit?: number;
+  testingMode?: boolean; // when true, restrict to only FID 8446
+};
+
+function unauthorized(message = "Unauthorized") {
+  return NextResponse.json({ error: message }, { status: 401 });
+}
+
+function badRequest(message: string) {
+  return NextResponse.json({ error: message }, { status: 400 });
+}
+
+export async function POST(request: Request) {
+  const authHeader =
+    request.headers.get("authorization") ||
+    request.headers.get("Authorization");
+  const expected = process.env.ADMIN_API_TOKEN;
+  if (!expected) {
+    return NextResponse.json(
+      { error: "Server not configured: ADMIN_API_TOKEN missing" },
+      { status: 500 },
+    );
+  }
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return unauthorized("Missing Bearer token");
+  }
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (token !== expected) {
+    return unauthorized("Invalid token");
+  }
+
+  let body: RequestBody;
+  try {
+    body = (await request.json()) as RequestBody;
+  } catch {
+    return badRequest("Invalid JSON body");
+  }
+
+  const {
+    title,
+    body: message,
+    targetUrl,
+    fids,
+    dryRun = true,
+    limit,
+    testingMode = true,
+  } = body;
+
+  if (!title || !message || !targetUrl || !Array.isArray(fids)) {
+    return badRequest("Required fields: title, body, targetUrl, fids[]");
+  }
+  if (title.length > 32) {
+    return badRequest("Title must be <= 32 characters");
+  }
+  if (message.length > 128) {
+    return badRequest("Body must be <= 128 characters");
+  }
+
+  // Validate target URL: allow relative paths, or absolute matching the PROD base.
+  // Use NOTIFICATION_BASE_URL if provided; otherwise default to prod domain to avoid localhost in previews.
+  const notifBaseUrl =
+    process.env.NOTIFICATION_BASE_URL || "https://www.creatorscore.app";
+  let isValidTarget = false;
+  try {
+    if (targetUrl.startsWith("/")) {
+      isValidTarget = true;
+    } else {
+      const u = new URL(targetUrl);
+      const b = new URL(notifBaseUrl);
+      isValidTarget = u.host === b.host && u.protocol === b.protocol;
+    }
+  } catch {
+    // If parsing fails and it's not a relative path
+    isValidTarget = targetUrl.startsWith("/");
+  }
+  if (!isValidTarget) {
+    return badRequest(
+      "targetUrl must be a relative path or an absolute URL on the app's domain",
+    );
+  }
+
+  // Testing guard: restrict to only FID 8446 if enabled
+  const allowedTestingFids = new Set([8446]);
+  const filteredFids = (
+    testingMode ? fids.filter((f) => allowedTestingFids.has(f)) : fids
+  ).filter((n) => Number.isInteger(n) && n > 0);
+
+  const limitedFids =
+    typeof limit === "number" && limit > 0
+      ? filteredFids.slice(0, limit)
+      : filteredFids;
+
+  // Construct absolute target URL for preview
+  const absoluteTarget = targetUrl.startsWith("/")
+    ? new URL(targetUrl, notifBaseUrl).toString()
+    : targetUrl;
+
+  // Dry-run: return preview and audience only; DO NOT SEND
+  if (dryRun) {
+    return NextResponse.json({
+      state: "dry_run",
+      audienceSize: limitedFids.length,
+      fidsPreview: limitedFids.slice(0, 20),
+      payloadPreview: {
+        title,
+        body: message,
+        targetUrl: absoluteTarget,
+      },
+      testingModeApplied: testingMode,
+    });
+  }
+
+  // Live send via Neynar
+  try {
+    const { NeynarAPIClient } = await import("@neynar/nodejs-sdk");
+    const apiKey = process.env.NEYNAR_API_KEY;
+    if (!apiKey)
+      return NextResponse.json(
+        { error: "NEYNAR_API_KEY not set" },
+        { status: 500 },
+      );
+
+    const client = new NeynarAPIClient({ apiKey });
+    const batches: number[][] = [];
+    for (let i = 0; i < limitedFids.length; i += 100) {
+      batches.push(limitedFids.slice(i, i + 100));
+    }
+
+    const results = [] as Array<{
+      batchSize: number;
+      ok: boolean;
+      error?: string;
+    }>;
+    // Note: Neynar expects a valid UUID if provided. We'll omit it to avoid format issues.
+
+    for (let idx = 0; idx < batches.length; idx++) {
+      const batch = batches[idx];
+      try {
+        await client.publishFrameNotifications({
+          targetFids: batch,
+          notification: {
+            title,
+            body: message,
+            target_url: absoluteTarget,
+          },
+        });
+        results.push({ batchSize: batch.length, ok: true });
+        // Small delay to avoid potential rate limits
+        await new Promise((r) => setTimeout(r, 500));
+      } catch (e) {
+        const err = e as unknown as { response?: { data?: unknown } };
+        const details = err?.response?.data;
+        const message = e instanceof Error ? e.message : String(e);
+        results.push({
+          batchSize: batch.length,
+          ok: false,
+          error: details ? JSON.stringify(details) : message,
+        });
+      }
+    }
+
+    const successCount = results
+      .filter((r) => r.ok)
+      .reduce((s, r) => s + r.batchSize, 0);
+    const failedCount = limitedFids.length - successCount;
+    // PostHog + Supabase audit (best-effort)
+    try {
+      const { supabase } = await import("@/lib/supabase-client");
+      const { default: PostHogClient } = await import("@/lib/posthog");
+      const ph = PostHogClient();
+      ph.capture({
+        distinctId: "admin",
+        event: "notifications_sent",
+        properties: {
+          campaign: "screen_studio",
+          audience_size: limitedFids.length,
+          success_count: successCount,
+          failed_count: failedCount,
+          batches: results.length,
+        },
+      });
+      ph.shutdown();
+      await supabase.from("notification_runs").insert({
+        campaign: "screen_studio",
+        title,
+        body: message,
+        target_url: absoluteTarget,
+        audience_size: limitedFids.length,
+        success_count: successCount,
+        failed_count: failedCount,
+        failed_fids: results.filter((r) => !r.ok),
+        dry_run: false,
+      });
+    } catch {}
+
+    return NextResponse.json({
+      state: "sent",
+      batches: results.length,
+      successCount,
+      failedCount,
+      results,
+    });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
+}

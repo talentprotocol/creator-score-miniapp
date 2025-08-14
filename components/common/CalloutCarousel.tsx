@@ -48,7 +48,7 @@ export function CalloutCarousel({
   roundEndsAtIso,
   className,
   onDismiss,
-  autoAdvanceMs = 5000,
+  autoAdvanceMs = 3000,
   dismissedIds,
   permanentlyHiddenIds,
   onPersistDismiss,
@@ -65,6 +65,21 @@ export function CalloutCarousel({
   const [cycle, setCycle] = React.useState<number>(0);
   const [autoDirection, setAutoDirection] = React.useState<1 | -1>(1);
   const animRef = React.useRef<number | null>(null);
+  const isAnimatingRef = React.useRef<boolean>(false);
+
+  // Effective horizontal stride: container width plus horizontal gap
+  const getSlideStride = React.useCallback((el: HTMLDivElement) => {
+    const width = el.clientWidth;
+    let gap = 0;
+    try {
+      const cs = window.getComputedStyle(el);
+      const colGapStr =
+        cs.getPropertyValue("column-gap") || cs.getPropertyValue("gap") || "0";
+      const colGap = parseFloat(colGapStr);
+      if (!Number.isNaN(colGap)) gap = colGap;
+    } catch {}
+    return width + gap;
+  }, []);
 
   // Compute filtered list on mount and when items change
   React.useEffect(() => {
@@ -121,23 +136,23 @@ export function CalloutCarousel({
     setCurrentIndex(startIndex);
     const el = containerRef.current;
     if (el) {
-      const width = el.clientWidth;
-      el.scrollTo({ left: startIndex * width, behavior: "auto" });
+      const stride = getSlideStride(el);
+      el.scrollTo({ left: startIndex * stride, behavior: "auto" });
     }
-  }, [slides.length]);
+  }, [slides.length, getSlideStride]);
 
   const scrollToIndex = React.useCallback(
     (targetIndex: number, smooth = true) => {
       const el = containerRef.current;
       if (!el) return;
-      const width = el.clientWidth;
+      const stride = getSlideStride(el);
       el.scrollTo({
-        left: targetIndex * width,
+        left: targetIndex * stride,
         behavior: smooth ? "smooth" : "auto",
       });
       setCurrentIndex(targetIndex);
     },
-    [],
+    [getSlideStride],
   );
 
   // rAF-based animated scroll for controlled duration (used for auto-advance)
@@ -149,9 +164,13 @@ export function CalloutCarousel({
         cancelAnimationFrame(animRef.current);
         animRef.current = null;
       }
-      const width = el.clientWidth;
+      // Disable scroll snap during programmatic animation to avoid instant snapping
+      const previousSnap = el.style.scrollSnapType;
+      el.style.scrollSnapType = "none";
+      isAnimatingRef.current = true;
+      const stride = getSlideStride(el);
       const startLeft = el.scrollLeft;
-      const endLeft = targetIndex * width;
+      const endLeft = targetIndex * stride;
       const distance = endLeft - startLeft;
       const startTime = performance.now();
       const step = (now: number) => {
@@ -164,23 +183,36 @@ export function CalloutCarousel({
         } else {
           animRef.current = null;
           setCurrentIndex(targetIndex);
+          // Restore scroll snap
+          el.style.scrollSnapType = previousSnap;
+          // Ensure exact alignment at the end of animation
+          el.scrollLeft = endLeft;
+          // Next-frame hard align in case of subpixel rounding or layout changes
+          requestAnimationFrame(() => {
+            try {
+              const strideNow = getSlideStride(el) || stride;
+              el.scrollTo({ left: targetIndex * strideNow, behavior: "auto" });
+            } catch {}
+          });
+          isAnimatingRef.current = false;
         }
       };
       animRef.current = requestAnimationFrame(step);
     },
-    [],
+    [getSlideStride],
   );
 
   // Handle scroll to track current index
   const handleScroll = React.useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
-    const width = el.clientWidth || 1;
-    const rawIndex = Math.round(el.scrollLeft / width);
+    if (isAnimatingRef.current) return;
+    const stride = getSlideStride(el) || 1;
+    const rawIndex = Math.round(el.scrollLeft / stride);
     if (rawIndex !== currentIndex) {
       setCurrentIndex(rawIndex);
     }
-  }, [currentIndex, scrollToIndex]);
+  }, [currentIndex, getSlideStride]);
 
   // Auto-advance interval (disabled by default)
   React.useEffect(() => {
@@ -200,7 +232,7 @@ export function CalloutCarousel({
       }
       setAutoDirection(dir);
       const target = Math.max(0, Math.min(lastIndex, next));
-      animateToIndex(target, 500);
+      animateToIndex(target, 1000);
     }, autoAdvanceMs);
     return () => {
       if (animRef.current) {
@@ -232,6 +264,11 @@ export function CalloutCarousel({
       cancelAnimationFrame(animRef.current);
       animRef.current = null;
     }
+    const el = containerRef.current;
+    if (el) {
+      el.style.scrollSnapType = "";
+    }
+    isAnimatingRef.current = false;
   };
   const handlePointerUp = () => {
     isInteractingRef.current = false;
