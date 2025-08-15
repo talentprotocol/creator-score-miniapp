@@ -115,7 +115,7 @@ export function Callout({
   const styles = cn(
     baseStyles,
     variantStyles[variant],
-    hasHref && "group cursor-pointer",
+    (hasHref || onClick) && "group cursor-pointer",
     className,
   );
 

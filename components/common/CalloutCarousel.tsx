@@ -334,6 +334,7 @@ export function CalloutCarousel({
             description={item.description}
             href={item.href}
             external={item.external}
+            onClick={item.onClick}
             onClose={item.onClose ? () => handleDismiss(item) : undefined}
           />
         </div>
