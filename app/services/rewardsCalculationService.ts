@@ -24,7 +24,7 @@ export interface UserRewardCalculation {
 
 /**
  * Service for calculating rewards with opt-out support
- * Follows the algorithm: Boost calculation first, then opt-out handling
+ * Follows the algorithm: Boost calculation first (only for 100+ TALENT holders), then opt-out handling
  */
 export class RewardsCalculationService {
   /**
@@ -40,7 +40,7 @@ export class RewardsCalculationService {
     // Step 1: Apply boost calculation to all eligible users (top 200)
     const eligibleEntries = entries.slice(0, 200);
 
-    // Step 2: Calculate boosted scores for all eligible users
+    // Step 2: Calculate boosted scores ONLY for users with 100+ TALENT tokens
     const boostedEntries = eligibleEntries.map((entry) => ({
       ...entry,
       boostedScore: entry.isBoosted ? entry.score * 1.1 : entry.score,
@@ -147,7 +147,7 @@ export class RewardsCalculationService {
    * Calculate individual user reward (for display purposes)
    * @param score - User's base score
    * @param rank - User's rank
-   * @param isBoosted - Whether user has boost
+   * @param isBoosted - Whether user has boost (100+ TALENT tokens)
    * @param isOptedOut - Whether user has opted out
    * @param entries - Top 200 entries for calculation context
    * @returns Formatted reward string
@@ -165,7 +165,7 @@ export class RewardsCalculationService {
     // If opted out, show $0
     if (isOptedOut) return "$0";
 
-    // Calculate boosted score
+    // Calculate boosted score (only if user has 100+ TALENT tokens)
     const boostedScore = isBoosted ? score * 1.1 : score;
 
     // Get multiplier from current leaderboard state
