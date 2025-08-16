@@ -159,14 +159,14 @@ function LeaderboardContent() {
       : 0;
 
   // Helper to calculate the reward multiplier based on total boosted scores
-  function calculateRewardMultiplier(): number {
-    const totalBoostedScores = top200Entries.reduce((sum, entry) => {
-      return sum + (entry.isBoosted ? entry.score * 1.1 : entry.score);
-    }, 0);
+  // function calculateRewardMultiplier(): number {
+  //   const totalBoostedScores = top200Entries.reduce((sum, entry) => {
+  //     return sum + (entry.isBoosted ? entry.score * 1.1 : entry.score);
+  //   }, 0);
 
-    if (totalBoostedScores === 0) return 0;
-    return TOTAL_SPONSORS_POOL / totalBoostedScores;
-  }
+  //   if (totalBoostedScores === 0) return 0;
+  //   return TOTAL_SPONSORS_POOL / totalBoostedScores;
+  // }
 
   function getUsdcRewards(
     score: number,

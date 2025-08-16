@@ -9,7 +9,6 @@ import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
-import { TOTAL_SPONSORS_POOL } from "@/lib/constants";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 interface PotentialRewardsCardProps {

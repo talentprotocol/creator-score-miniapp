@@ -1,0 +1,17 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+- Tech stack: Next.JS, React, Tailwind, ShadCN, Supabase postgres, npm
+- Use `npx shadcn add` to add new shadcn components.
+- You are not able to see or modify .env files directly - so tell the user what they should add to the file if needed.
+- Avoid classes/OOP and use a functional programming style.
+- Never try to start the app itself (I have it running in a separate terminal)
+- When conducting data schema changes that impact the database, just write the sql to a file and I will run it myself
+
+- Interact with Supabase, Posthog and Notion directly via MCP
+- Interact with GitHub using CLI commands
+
+- Follow @coding-principles.md and @design-system.md when proposing implementation plans

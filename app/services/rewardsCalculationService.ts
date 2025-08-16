@@ -51,10 +51,10 @@ export class RewardsCalculationService {
     const activeEntries = boostedEntries.filter((entry) => !entry.isOptedOut);
 
     // Step 4: Calculate total pool and opted-out contribution
-    const totalOptedOutContribution = optedOutEntries.reduce(
-      (sum, entry) => sum + entry.boostedScore,
-      0,
-    );
+    // const totalOptedOutContribution = optedOutEntries.reduce(
+    //   (sum, entry) => sum + entry.boostedScore,
+    //   0,
+    // );
 
     // Step 5: Calculate multiplier for remaining users
     // Remaining users share the full pool proportionally
