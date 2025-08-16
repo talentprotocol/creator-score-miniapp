@@ -26,13 +26,10 @@
     --radius: 0.5rem;
 
     /* Brand Colors (aligned to Tailwind shades) */
-    --creator-purple: 272 72% 47%;  /* Tailwind purple-700  #7e22ce */
-    --creator-green: 85 85% 35%;    /* Tailwind lime-700    #65a30d */
-    --creator-blue: 193 82% 31%;    /* Tailwind cyan-700    #0e7490 */
-    --creator-pink: 335 78% 42%;    /* Tailwind pink-700    #be185d */
-
-    /* Dynamic Brand Accent Slot (default to purple) */
-    --brand-accent: var(--creator-purple);
+    --creator-purple: 259 92% 65%;  /* Tailwind purple-600  #9333ea */
+    --creator-green: 142 71% 36%;   /* Tailwind green-600   #16a34a */
+    --creator-blue: 188 94% 35%;    /* Tailwind cyan-600    #0891b2 */
+    --creator-pink: 327 73% 50%;    /* Tailwind pink-600    #db2777 */
   }
  
   .dark {
@@ -58,17 +55,7 @@
   }
 }
 
-:root[data-accent="purple"],
-[data-accent="purple"] { --brand-accent: var(--creator-purple); }
-
-:root[data-accent="green"],
-[data-accent="green"] { --brand-accent: var(--creator-green); }
-
-:root[data-accent="blue"],
-[data-accent="blue"] { --brand-accent: var(--creator-blue); }
-
-:root[data-accent="pink"],
-[data-accent="pink"] { --brand-accent: var(--creator-pink); }
+/* Brand accent system removed - now using direct Tailwind classes */
 
 :root {
   --app-background: #ffffff;
@@ -105,6 +92,32 @@
   .modal-overlay {
     @apply fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0;
   }
+
+  /* Brand Color Utilities - Semantic access to brand colors */
+  .text-brand-green { color: hsl(var(--creator-green)); }
+  .text-brand-green-muted { color: hsl(var(--creator-green) / 0.7); }
+  .bg-brand-green { background-color: hsl(var(--creator-green)); }
+  .bg-brand-green-light { background-color: hsl(var(--creator-green) / 0.1); }
+  .bg-brand-green-dark { background-color: hsl(var(--creator-green) / 0.2); }
+  
+  .text-brand-purple { color: hsl(var(--creator-purple)); }
+  .text-brand-purple-muted { color: hsl(var(--creator-purple) / 0.7); }
+  .bg-brand-purple { background-color: hsl(var(--creator-purple)); }
+  .bg-brand-purple-light { background-color: hsl(var(--creator-purple) / 0.1); }
+  .bg-brand-purple-dark { background-color: hsl(var(--creator-purple) / 0.2); }
+  
+  .text-brand-blue { color: hsl(var(--creator-blue)); }
+  .text-brand-blue-muted { color: hsl(var(--creator-blue) / 0.7); }
+  .bg-brand-blue { background-color: hsl(var(--creator-blue)); }
+  .bg-brand-blue-light { background-color: hsl(var(--creator-blue) / 0.1); }
+  .bg-brand-blue-dark { background-color: hsl(var(--creator-blue) / 0.2); }
+  
+  .text-brand-pink { color: hsl(var(--creator-pink)); }
+  .text-brand-pink-muted { color: hsl(var(--creator-pink) / 0.7); }
+  .bg-brand-pink { background-color: hsl(var(--creator-pink)); }
+  .bg-brand-pink-light { background-color: hsl(var(--creator-pink) / 0.1); }
+  .bg-brand-pink-dark { background-color: hsl(var(--creator-pink) / 0.2); }
+  
 }
 
 .mini-app-theme {

@@ -53,7 +53,6 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
             icon={badge.icon}
             size="md"
             color={badge.completed ? "brand" : "muted"}
-            className={badge.completed ? "fill-current" : ""}
           />
         </div>
         <div>

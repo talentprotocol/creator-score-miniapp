@@ -33,27 +33,44 @@ export class OptoutService {
         };
       }
 
-      // Check if user already opted out
       const { data: existingPrefs } = await supabase
         .from("user_preferences")
-        .select("rewards_optout")
+        .select("rewards_optout, callout_prefs")
         .eq("talent_uuid", talent_uuid)
         .single();
 
-      if (existingPrefs?.rewards_optout === true) {
-        return {
-          success: false,
-          error: "User has already opted out of rewards",
-        };
-      }
+      // Build new callout prefs ensuring 'optout' is permanently hidden
+      type CalloutPrefs = {
+        dismissedIds?: string[];
+        permanentlyHiddenIds?: string[];
+      };
+      const currentPrefs: CalloutPrefs =
+        (existingPrefs?.callout_prefs as CalloutPrefs | null) ?? {};
+      const currentDismissed = Array.isArray(currentPrefs.dismissedIds)
+        ? currentPrefs.dismissedIds
+        : [];
+      const currentHidden = Array.isArray(currentPrefs.permanentlyHiddenIds)
+        ? currentPrefs.permanentlyHiddenIds
+        : [];
+      const nextHidden = currentHidden.includes("optout")
+        ? currentHidden
+        : [...currentHidden, "optout"];
+      const nextCalloutPrefs: CalloutPrefs = {
+        dismissedIds: currentDismissed,
+        permanentlyHiddenIds: nextHidden,
+      };
 
-      // Update user preferences to opt out
+      // If user already opted out, we still ensure callout_prefs is updated
       const { data, error } = await supabase
         .from("user_preferences")
         .upsert(
           {
             talent_uuid,
             rewards_optout: true,
+            callout_prefs: nextCalloutPrefs as unknown as Record<
+              string,
+              unknown
+            >,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "talent_uuid" },

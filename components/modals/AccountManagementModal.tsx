@@ -93,7 +93,7 @@ export function AccountManagementModal({
             <Button
               onClick={handleManageAccounts}
               className="w-full"
-              variant="brand"
+              variant="brand-purple"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Manage in Talent App
@@ -121,7 +121,7 @@ export function AccountManagementModal({
           <Button
             onClick={handleManageAccounts}
             className="w-full"
-            variant="brand"
+            variant="brand-purple"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Manage in Talent App

@@ -2,12 +2,13 @@
 
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { SectionAccordion } from "@/components/common/SectionAccordion";
 import { Callout } from "@/components/common/Callout";
 import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
+import { PayItForwardSection } from "@/components/settings/PayItForwardSection";
 import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
@@ -24,19 +25,26 @@ import {
   CheckCircle,
   XCircle,
   Share,
+  HandHeart,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
+import { useSearchParams } from "next/navigation";
 
-export default function SettingsPage() {
+// Separate component that uses search params
+function SettingsContent() {
   const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore(false);
+  const searchParams = useSearchParams();
+
+  // Check if we should auto-expand a specific section
+  const autoExpandSection = searchParams?.get("section");
 
   const {
     accounts,
@@ -130,6 +138,7 @@ export default function SettingsPage() {
         <SectionAccordion
           type="multiple"
           variant="gray"
+          defaultExpanded={autoExpandSection ? [autoExpandSection] : []}
           sections={[
             {
               id: "connected-socials",
@@ -152,6 +161,12 @@ export default function SettingsPage() {
                   onAction={performAction}
                 />
               ),
+            },
+            {
+              id: "pay-it-forward",
+              title: "Pay It Forward",
+              icon: <HandHeart className="h-4 w-4" />,
+              content: <PayItForwardSection />,
             },
             {
               id: "proof-of-humanity",
@@ -178,20 +193,6 @@ export default function SettingsPage() {
             },
           ]}
         />
-
-        {/* About */}
-        {/* <div className="mt-2">
-          <ButtonFullWidth
-            variant="muted"
-            icon={<Info className="h-4 w-4" />}
-            align="left"
-            href="https://talentprotocol.com/about"
-            external
-            onClick={() => handleExternalLinkClick("about")}
-          >
-            <span className="font-medium">About</span>
-          </ButtonFullWidth>
-        </div> */}
 
         {/* Dev Docs */}
         <div className="mt-2">
@@ -284,5 +285,13 @@ export default function SettingsPage() {
       {/* Share Score Modal */}
       <ShareCreatorScoreModal open={isOpen} onOpenChange={onOpenChange} />
     </PageContainer>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div>Loading settings...</div>}>
+      <SettingsContent />
+    </Suspense>
   );
 }

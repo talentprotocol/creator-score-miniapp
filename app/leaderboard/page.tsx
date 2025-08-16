@@ -189,15 +189,15 @@ function LeaderboardContent() {
     isBoosted?: boolean,
   ): string | null {
     if (!rank || rank > 200 || !isBoosted) return null;
-    
+
     // Use the centralized service to get the multiplier
     const summary = RewardsCalculationService.getRewardsSummary(top200Entries);
     if (summary.multiplier === 0) return null;
-    
+
     const base = score * summary.multiplier;
     const boosted = score * 1.1 * summary.multiplier;
     const boost = boosted - base;
-    
+
     if (boost <= 0) return null;
     return boost >= 1 ? `$${boost.toFixed(0)}` : `$${boost.toFixed(2)}`;
   }
@@ -246,6 +246,7 @@ function LeaderboardContent() {
             userTop200Entry?.isBoosted,
           )}
           activeCreatorsTotal={activeCreatorsTotal}
+          isOptedOut={userTop200Entry?.isOptedOut}
         />
       )}
 
@@ -261,8 +262,12 @@ function LeaderboardContent() {
             items={(() => {
               const items = [] as Array<{
                 id: string;
-                variant: "brand" | "muted";
-                color?: "purple" | "green" | "blue" | "pink";
+                variant:
+                  | "brand-purple"
+                  | "brand-green"
+                  | "brand-blue"
+                  | "brand-pink"
+                  | "muted";
                 icon?: React.ReactNode;
                 title: React.ReactNode;
                 description?: React.ReactNode;
@@ -277,8 +282,7 @@ function LeaderboardContent() {
               // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
               const base = {
                 id: "boost",
-                variant: "brand" as const,
-                color: "purple" as const,
+                variant: "brand-purple" as const,
                 icon: <Rocket className="h-4 w-4" />,
                 title: "10% Rewards Boost",
                 description: <>Hold 100+ $TALENT to earn a boost.</>,
@@ -302,11 +306,11 @@ function LeaderboardContent() {
               // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
               items.push({
                 id: "optout",
-                variant: "brand",
-                color: "green",
+                variant: "brand-green",
                 icon: <HandHeart className="h-4 w-4" />,
                 title: "Pay It Forward",
                 description: "Give your rewards, keep your rank.",
+                href: "/settings?section=pay-it-forward",
                 dismissKey: "optout_callout_dismissed",
                 onClose: () => {
                   try {
@@ -321,8 +325,7 @@ function LeaderboardContent() {
               // CREATOR PERK (blue) – interactive, non-dismissible; reflects entered state
               items.push({
                 id: "perk_screen_studio",
-                variant: "brand",
-                color: "blue",
+                variant: "brand-blue",
                 icon: <Gift className="h-4 w-4" />,
                 title: "Creator Perk",
                 description:
@@ -383,7 +386,6 @@ function LeaderboardContent() {
       <PerkModal
         open={perkOpen}
         onOpenChange={(o) => setPerkOpen(o)}
-        color="blue"
         title="Creator Perk: Screen Studio"
         subtitle="Get 1 month of Screen Studio for free."
         access={`Level 3 (Creator Score ≥ ${LEVEL_RANGES[2].min})`}
@@ -480,6 +482,7 @@ function LeaderboardContent() {
               items={top200Entries.map((user) => {
                 // Check if user is boosted
                 const isBoosted = user.isBoosted;
+                const isOptedOut = user.isOptedOut;
 
                 return {
                   id: user.id,
@@ -492,11 +495,22 @@ function LeaderboardContent() {
                     isBoosted,
                   ),
                   secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
-                  primaryMetricVariant: isBoosted ? "brand" : "default",
-                  badge: isBoosted ? (
+                  primaryMetricVariant: isOptedOut
+                    ? "muted"
+                    : isBoosted
+                      ? "brand-purple"
+                      : "default",
+                  isOptedOut: isOptedOut,
+                  // Note: Crossed-out styling is handled by CreatorList component via isOptedOut prop
+                  badge: isOptedOut ? (
+                    // OptOut badge (green HandHeart) - takes precedence over boost
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light">
+                      <HandHeart className="h-3 w-3 text-brand-green" />
+                    </div>
+                  ) : isBoosted ? (
                     <button
                       type="button"
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                      className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-light hover:bg-brand-purple-dark focus:outline-none focus:ring-2 focus:ring-brand-purple"
                       aria-label="How to earn rewards boost"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -509,7 +523,7 @@ function LeaderboardContent() {
                         setHowToEarnOpen(true);
                       }}
                     >
-                      <Rocket className="h-3 w-3 text-purple-600" />
+                      <Rocket className="h-3 w-3 text-brand-purple" />
                     </button>
                   ) : undefined,
                 };
@@ -561,8 +575,12 @@ function LeaderboardContent() {
         {/* Sponsor Callout */}
         {activeTab === "sponsors" && (
           <div className="mt-4">
-            <Callout variant="brand">
-              <Typography size="xs" color="brand">
+            <Callout variant="brand-purple">
+              <Typography
+                size="xs"
+                color="default"
+                className="text-brand-purple"
+              >
                 Want to join as a sponsor? Reach out to {""}
                 <button
                   className="underline hover:no-underline"

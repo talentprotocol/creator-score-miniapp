@@ -89,7 +89,7 @@ export function CategorySelectionModal({
         <Button
           onClick={handleConfirm}
           className="flex-1"
-          variant="brand"
+          variant="brand-purple"
           disabled={!selectedCategory}
         >
           Save

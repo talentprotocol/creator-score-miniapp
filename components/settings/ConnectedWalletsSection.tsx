@@ -71,7 +71,7 @@ export function ConnectedWalletsSection({
         <Button
           onClick={() => setModalOpen(true)}
           className="w-full"
-          variant="brand"
+          variant="brand-purple"
           disabled={isConnecting}
         >
           {isConnecting ? (
@@ -102,7 +102,7 @@ export function ConnectedWalletsSection({
       <Button
         onClick={handleConnectWallet}
         className="w-full"
-        variant="brand"
+        variant="brand-purple"
         disabled={isConnecting}
       >
         {isConnecting ? (

@@ -285,7 +285,11 @@ function ProfileLayoutContentInner({
 
         {/* Action buttons - show for all profiles */}
         <div className="flex flex-row gap-4 w-full mt-6">
-          <Button onClick={handleShareStats} variant="brand" className="flex-1">
+          <Button
+            onClick={handleShareStats}
+            variant="brand-purple"
+            className="flex-1"
+          >
             <Share className="w-4 h-4 mr-2" />
             Share Stats
           </Button>
@@ -346,7 +350,7 @@ function ProfileLayoutContentInner({
         {isOwnProfile && !hasNoScore && (
           <div className="mt-4">
             <ButtonFullWidth
-              variant="brand"
+              variant="brand-purple"
               icon={<AtSign className="h-4 w-4" />}
               align="left"
               href="/settings"

@@ -50,7 +50,7 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         brand: {
-          DEFAULT: "hsl(var(--brand-accent))",
+          DEFAULT: "hsl(var(--creator-purple))",
         },
         card: {
           DEFAULT: "hsl(var(--card))",

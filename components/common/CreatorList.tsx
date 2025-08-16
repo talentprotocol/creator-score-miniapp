@@ -10,11 +10,12 @@ export interface CreatorItem {
   name: string;
   avatarUrl?: string;
   rank?: number;
-  primaryMetric?: string; // e.g., "$1,250" for rewards
+  primaryMetric?: string;
   primaryMetricLoading?: boolean; // New prop for partial loading
   secondaryMetric?: string; // e.g., "Creator Score: 5,230"
   badge?: React.ReactNode; // Optional badge (e.g., rocket for boosted users)
-  primaryMetricVariant?: "default" | "brand" | "muted"; // New prop for styling variants
+  primaryMetricVariant?: "default" | "brand-purple" | "muted"; // New prop for styling variants
+  isOptedOut?: boolean; // New prop for opt-out styling
 }
 
 interface CreatorListProps {
@@ -37,7 +38,7 @@ export function CreatorList({
   // Variant styles for primary metric
   const variantStyles = {
     default: "text-sm font-medium",
-    brand: "text-sm font-medium text-purple-700",
+    "brand-purple": "text-sm font-medium text-brand-purple",
     muted: "text-sm font-medium text-muted-foreground",
   } as const;
 
@@ -128,6 +129,8 @@ export function CreatorList({
                             variantStyles[
                               item.primaryMetricVariant || "default"
                             ],
+                            // Add opt-out styling when applicable
+                            item.isOptedOut && "text-brand-green line-through",
                           )}
                         >
                           {item.primaryMetric}

@@ -100,7 +100,7 @@ Users can opt out of receiving rewards to pay them forward to other creators. Th
 1. Create rewards distribution settings section
 2. Update leaderboard badges and rewards display
 3. Enable callout and configure navigation to settings
-4. **Refactor existing inline rewards calculations** to use the new centralized service
+4. Refactor existing inline rewards calculations to use the new centralized service
 
 ### Phase 4: Integration & Testing
 1. Connect all components

@@ -153,7 +153,7 @@ export function ConnectedSocialsSection({
                   ? "default"
                   : connectedAccount
                     ? "default"
-                    : "brand"
+                    : "brand-purple"
               }
               disabled={platform.comingSoon}
             >

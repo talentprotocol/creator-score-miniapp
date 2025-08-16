@@ -12,13 +12,6 @@ export default function ProfileScorePage({}: ProfileScorePageProps) {
     <div className="space-y-6">
       <ScoreProgressAccordion />
       <ScoreDataPoints />
-      {/* <Callout
-        variant="brand"
-        href="https://farcaster.xyz/juampi"
-        textSize="xs"
-      >
-        Have new credential ideas or feedback? Reach out to @juampi
-      </Callout> */}
     </div>
   );
 }

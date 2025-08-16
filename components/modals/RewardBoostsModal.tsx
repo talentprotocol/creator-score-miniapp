@@ -70,8 +70,8 @@ function Content({
             <span>{boostDisplay}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-purple-700">Total Reward</span>
-            <span className="font-medium text-purple-700">{totalUsd}</span>
+            <span className="text-brand-purple">Total Reward</span>
+            <span className="font-medium text-brand-purple">{totalUsd}</span>
           </div>
         </div>
       </div>
@@ -98,7 +98,7 @@ function Content({
       </div>
 
       <ButtonFullWidth
-        variant="brand"
+        variant="brand-purple"
         icon={<Coins className="h-4 w-4" />}
         align="left"
         href={getTalentUrl}
