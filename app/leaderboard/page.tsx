@@ -44,6 +44,7 @@ import { Typography } from "@/components/ui/typography";
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
+import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -172,22 +173,14 @@ function LeaderboardContent() {
     rank?: number,
     isBoosted?: boolean,
   ): string {
-    // Only top 200 creators earn rewards
-    if (!rank || rank > 200) return "$0";
-
-    const multiplier = calculateRewardMultiplier();
-    if (multiplier === 0) return "$0";
-
-    // Calculate reward based on boosted score if applicable
-    const boostedScore = isBoosted ? score * 1.1 : score;
-    const reward = boostedScore * multiplier;
-
-    // Format as currency
-    if (reward >= 1) {
-      return `$${reward.toFixed(0)}`;
-    } else {
-      return `$${reward.toFixed(2)}`;
-    }
+    // Use the centralized rewards calculation service
+    return RewardsCalculationService.calculateUserReward(
+      score,
+      rank || 0,
+      isBoosted || false,
+      false, // isOptedOut - will be updated when we integrate opt-out status
+      top200Entries,
+    );
   }
 
   function getBoostAmountUsd(
@@ -196,11 +189,15 @@ function LeaderboardContent() {
     isBoosted?: boolean,
   ): string | null {
     if (!rank || rank > 200 || !isBoosted) return null;
-    const multiplier = calculateRewardMultiplier();
-    if (multiplier === 0) return null;
-    const base = score * multiplier;
-    const boosted = score * 1.1 * multiplier;
+    
+    // Use the centralized service to get the multiplier
+    const summary = RewardsCalculationService.getRewardsSummary(top200Entries);
+    if (summary.multiplier === 0) return null;
+    
+    const base = score * summary.multiplier;
+    const boosted = score * 1.1 * summary.multiplier;
     const boost = boosted - base;
+    
     if (boost <= 0) return null;
     return boost >= 1 ? `$${boost.toFixed(0)}` : `$${boost.toFixed(2)}`;
   }
