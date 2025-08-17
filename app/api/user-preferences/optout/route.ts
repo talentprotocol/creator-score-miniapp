@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 import { OptoutService } from "@/app/services/optoutService";
 import { validateTalentUUID } from "@/lib/validation";
 
-export async function POST(
-  req: NextRequest,
-): Promise<
+export async function POST(req: NextRequest): Promise<
   NextResponse<{
     success: boolean;
     data?: Record<string, unknown>;
@@ -49,10 +48,12 @@ export async function POST(
 
     // Predictable server cache refresh for leaderboard data (optional, safe no-op if tags unused)
     try {
-      revalidateTag("leaderboard-basic");
-      revalidateTag("leaderboard-top-200");
-      // Note: boosted profiles tag is not necessary for opt-out
-      console.log("[OptOut API] Revalidated tags: leaderboard-basic, leaderboard-top-200");
+      // Only revalidate basic leaderboard dependencies; Top 200 doesn't change on opt-out
+      revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
+      console.log(
+        "[OptOut API] Revalidated tag:",
+        CACHE_KEYS.LEADERBOARD_BASIC,
+      );
     } catch {}
 
     return NextResponse.json(result);
@@ -65,9 +66,7 @@ export async function POST(
   }
 }
 
-export async function GET(
-  req: NextRequest,
-): Promise<
+export async function GET(req: NextRequest): Promise<
   NextResponse<{
     success: boolean;
     data?: Record<string, unknown>;

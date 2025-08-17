@@ -93,7 +93,10 @@ export async function fetchTop200Entries(): Promise<Profile[]> {
       return allProfiles.slice(0, totalNeeded);
     },
     [CACHE_KEYS.LEADERBOARD_TOP_200],
-    { revalidate: CACHE_DURATION_1_HOUR, tags: ["leaderboard-top-200"] },
+    {
+      revalidate: CACHE_DURATION_1_HOUR,
+      tags: [CACHE_KEYS.LEADERBOARD_TOP_200],
+    },
   )();
 
   return profiles;
@@ -323,7 +326,7 @@ export async function getBoostedProfilesData(): Promise<string[]> {
       return await getBoostedProfilesViaSearch();
     },
     [CACHE_KEYS.BOOSTED_PROFILES],
-    { revalidate: CACHE_DURATION_1_HOUR, tags: ["leaderboard-basic"] },
+    { revalidate: CACHE_DURATION_1_HOUR, tags: [CACHE_KEYS.LEADERBOARD_BASIC] },
   )();
 
   return boostedProfiles;
