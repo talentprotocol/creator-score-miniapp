@@ -221,48 +221,88 @@ function LeaderboardContent() {
     <>
       {/* My Rewards Hero - Show only when we have authenticated user context */}
       {(user || unifiedName) && (
-        <MyRewards
-          rewards={
-            creatorScore
-              ? getUsdcRewards(
-                  creatorScore,
-                  userTop200Entry?.rank,
-                  userTop200Entry?.isBoosted,
-                )
-              : "$0"
-          }
-          score={creatorScore}
-          avatarUrl={avatarUrl}
-          name={name!}
-          isLoading={loadingStats || (top200Loading && !userTop200Entry)}
-          rank={userTop200Entry?.rank}
-          pointsToTop200={pointsToTop200}
-          onHowToEarnClick={() => setHowToEarnOpen(true)}
-          onBoostInfoClick={() => setRewardBoostsOpen(true)}
-          tokenBalance={tokenBalance}
-          tokenLoading={tokenLoading}
-          isBoosted={userTop200Entry?.isBoosted}
-          boostAmountUsd={getBoostAmountUsd(
-            userTop200Entry?.score ?? creatorScore,
-            userTop200Entry?.rank,
-            userTop200Entry?.isBoosted,
+        <>
+          {/* Show skeleton when loading, actual component when ready */}
+          {(loadingStats || (top200Loading && !userTop200Entry)) ? (
+            <div className="bg-white rounded-2xl p-6 mb-4 shadow-sm border">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-4 rounded-full" />
+                  </div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Skeleton className="h-12 w-16" />
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+                <Skeleton className="h-16 w-16 rounded-full" />
+              </div>
+            </div>
+          ) : (
+            <MyRewards
+              rewards={
+                creatorScore
+                  ? getUsdcRewards(
+                      creatorScore,
+                      userTop200Entry?.rank,
+                      userTop200Entry?.isBoosted,
+                    )
+                  : "$0"
+              }
+              score={creatorScore}
+              avatarUrl={avatarUrl}
+              name={name!}
+              isLoading={false}
+              rank={userTop200Entry?.rank}
+              pointsToTop200={pointsToTop200}
+              onHowToEarnClick={() => setHowToEarnOpen(true)}
+              onBoostInfoClick={() => setRewardBoostsOpen(true)}
+              tokenBalance={tokenBalance}
+              tokenLoading={tokenLoading}
+              isBoosted={userTop200Entry?.isBoosted}
+              boostAmountUsd={getBoostAmountUsd(
+                userTop200Entry?.score ?? creatorScore,
+                userTop200Entry?.rank,
+                userTop200Entry?.isBoosted,
+              )}
+              activeCreatorsTotal={activeCreatorsTotal}
+              isOptedOut={userTop200Entry?.isOptedOut}
+              onOptOutBadgeClick={() =>
+                router.push("/settings?section=pay-it-forward")
+              }
+            />
           )}
-          activeCreatorsTotal={activeCreatorsTotal}
-          isOptedOut={userTop200Entry?.isOptedOut}
-          onOptOutBadgeClick={() => router.push("/settings?section=pay-it-forward")}
-        />
+        </>
       )}
 
       {/* Callout Carousel (below MyRewards) - gated on user context */}
       {(user || unifiedName) && (
         <div className="mt-4 mb-2">
-          <CalloutCarousel
-            roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
-            dismissedIds={dismissedCalloutIds}
-            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-            onPersistDismiss={(id) => addDismissedId(id)}
-            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-            items={(() => {
+          {/* Show skeleton when loading, actual component when ready */}
+          {(loadingStats || (top200Loading && !userTop200Entry)) ? (
+            <div className="bg-white rounded-2xl p-4 shadow-sm border">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-48" />
+                <div className="ml-auto">
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <CalloutCarousel
+              roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
+              dismissedIds={dismissedCalloutIds}
+              permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+              onPersistDismiss={(id) => addDismissedId(id)}
+              onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+              items={(() => {
               const items = [] as Array<{
                 id: string;
                 variant:
@@ -352,7 +392,8 @@ function LeaderboardContent() {
 
               return items;
             })()}
-          />
+            />
+          )}
         </div>
       )}
 
