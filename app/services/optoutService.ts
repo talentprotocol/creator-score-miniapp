@@ -39,7 +39,8 @@ export class OptoutService {
         .eq("talent_uuid", talent_uuid)
         .single();
 
-      // Build new callout prefs ensuring 'optout' is permanently hidden
+      // Build new callout prefs ensuring 'optout' callout is permanently hidden after opt-out
+      // This prevents the opt-out callout from appearing again for users who have already opted out
       type CalloutPrefs = {
         dismissedIds?: string[];
         permanentlyHiddenIds?: string[];
@@ -52,6 +53,7 @@ export class OptoutService {
       const currentHidden = Array.isArray(currentPrefs.permanentlyHiddenIds)
         ? currentPrefs.permanentlyHiddenIds
         : [];
+      // Add 'optout' to permanently hidden callouts if not already present
       const nextHidden = currentHidden.includes("optout")
         ? currentHidden
         : [...currentHidden, "optout"];

@@ -28,7 +28,8 @@ The app operates as a mobile-first web application built on Next.js, designed to
 - **Profile Management**: Comprehensive creator profiles with credential tracking and social account linking
 
 ### Advanced Features
-- **TALENT Token Integration**: 10% reward boost for users holding 1000+ TALENT tokens
+- **TALENT Token Integration**: 10% reward boost for users holding 100+ TALENT tokens
+- **Pay It Forward**: Creators can opt out of rewards to redistribute them to other creators while maintaining leaderboard position
 - **Badge System**: Achievement-based badges for milestones in creator score, earnings, and platform engagement
 - **Multi-Platform Support**: Integration with Ethereum, Base, Farcaster, Lens, Twitter, GitHub, and other social platforms
 - **Notification System**: In-app notifications and webhook support for real-time updates
@@ -81,7 +82,7 @@ The app operates within the Talent Protocol ecosystem, where:
 - ✅ Core creator scoring and leaderboard system
 - ✅ TALENT token boost integration
 - ✅ Multi-platform credential tracking
+- ✅ Pay It Forward (rewards opt-out) system
 - 🔄 Badge system (Phase 1 - Database & Core Logic)
-- 📋 Opt-out functionality planning
 
 The app serves as a critical infrastructure piece for the creator economy, providing transparency, gamification, and financial incentives for quality content creation across onchain platforms.

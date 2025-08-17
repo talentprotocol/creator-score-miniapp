@@ -1,12 +1,13 @@
 # Creator Score MiniApp
 
-A Farcaster Frame MiniApp that shows creator scores, leaderboards, and rewards.
+A Farcaster MiniApp that shows creator scores, leaderboards, and rewards.
 
 ## Features
 
 - **Creator Score Display** - View your creator score and ranking
 - **Leaderboard** - See top creators and sponsors
 - **Rewards Calculation** - Calculate potential rewards based on leaderboard position
+- **Pay It Forward** - Opt out of rewards to redistribute them to other creators while keeping leaderboard position
 - **Profile Management** - Connect wallets and social accounts
 - **Account association** - Allows users to add your frame to their account, enables notifications
 
@@ -46,6 +47,12 @@ npm run dev
 - Wallet connection (Ethereum, Base, etc.)
 - Social account linking (Farcaster, Lens, etc.)
 - Credential management
+
+### Rewards System
+- **Boost Multiplier** - 10% reward boost for users holding 100+ $TALENT tokens
+- **Pay It Forward** - Allow creators to donate their entire reward allocation to other creators
+- **Smart Redistribution** - Opted-out rewards are redistributed proportionally among remaining eligible creators
+- **Badge System** - Visual indicators for boosted and opted-out users
 
 ### Notifications
 - In-app notification system

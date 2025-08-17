@@ -4,6 +4,16 @@ import { CACHE_KEYS } from "@/lib/cache-keys";
 import { OptoutService } from "@/app/services/optoutService";
 import { validateTalentUUID } from "@/lib/validation";
 
+/**
+ * POST /api/user-preferences/optout
+ *
+ * Allows creators to opt out of receiving rewards (Pay It Forward feature).
+ * Their rewards are redistributed proportionally among remaining eligible creators.
+ *
+ * @param req.body.talent_uuid - User's Talent Protocol UUID
+ * @param req.body.confirm_optout - Must be true to confirm the irreversible decision
+ * @returns Success/error response with updated opt-out status
+ */
 export async function POST(req: NextRequest): Promise<
   NextResponse<{
     success: boolean;
@@ -66,6 +76,14 @@ export async function POST(req: NextRequest): Promise<
   }
 }
 
+/**
+ * GET /api/user-preferences/optout?talent_uuid=<uuid>
+ *
+ * Check if a user has opted out of rewards.
+ *
+ * @param req.searchParams.talent_uuid - User's Talent Protocol UUID
+ * @returns Current opt-out status
+ */
 export async function GET(req: NextRequest): Promise<
   NextResponse<{
     success: boolean;

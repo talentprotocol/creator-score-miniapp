@@ -7,6 +7,19 @@ import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 import { CheckCircle, AlertCircle } from "lucide-react";
 
+/**
+ * PayItForwardSection Component
+ *
+ * Provides the user interface for creators to opt out of receiving rewards.
+ * The opted-out rewards are redistributed proportionally to other eligible creators.
+ *
+ * Features:
+ * - Shows current reward amount (crossed out if already opted out)
+ * - Requires explicit confirmation to prevent accidental opt-outs
+ * - Provides visual feedback with success/error states
+ * - Updates leaderboard data immediately after successful opt-out
+ * - Integrates with PostHog analytics for user behavior tracking
+ */
 export function PayItForwardSection() {
   const [isOptingOut, setIsOptingOut] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);

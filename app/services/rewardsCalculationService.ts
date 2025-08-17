@@ -23,8 +23,16 @@ export interface UserRewardCalculation {
 }
 
 /**
- * Service for calculating rewards with opt-out support
- * Follows the algorithm: Boost calculation first (only for 100+ TALENT holders), then opt-out handling
+ * Service for calculating rewards with opt-out support.
+ *
+ * Rewards Redistribution Algorithm:
+ * 1. Apply 1.1x boost multiplier to users with 100+ TALENT tokens
+ * 2. Filter out opted-out users from reward recipients
+ * 3. Redistribute the full reward pool proportionally among remaining eligible creators
+ * 4. Opted-out users contribute their boosted score to the pool but receive $0
+ *
+ * This ensures the total reward pool ($8,850) remains constant while allowing
+ * generous creators to increase rewards for others through the Pay It Forward feature.
  */
 export class RewardsCalculationService {
   /**
