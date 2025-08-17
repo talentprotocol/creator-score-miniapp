@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { OptoutService } from "@/app/services/optoutService";
 import { validateTalentUUID } from "@/lib/validation";
 
@@ -45,6 +46,14 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    // Predictable server cache refresh for leaderboard data (optional, safe no-op if tags unused)
+    try {
+      revalidateTag("leaderboard-basic");
+      revalidateTag("leaderboard-top-200");
+      // Note: boosted profiles tag is not necessary for opt-out
+      console.log("[OptOut API] Revalidated tags: leaderboard-basic, leaderboard-top-200");
+    } catch {}
 
     return NextResponse.json(result);
   } catch (error) {

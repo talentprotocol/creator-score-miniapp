@@ -13,7 +13,8 @@ export function PayItForwardSection() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { talentUuid } = useFidToTalentUuid();
-  const { entries: top200Entries, refetch } = useLeaderboardData();
+  const { entries: top200Entries, refetch, updateUserOptOutStatus } =
+    useLeaderboardData();
 
   const userTop200Entry = top200Entries.find(
     (entry) => entry.talent_protocol_id === talentUuid,
@@ -55,8 +56,15 @@ export function PayItForwardSection() {
 
       if (response.ok && result.success) {
         setSuccess(true);
-        // Success - show success state and refresh leaderboard data
-        refetch(); // Refresh leaderboard data to show updated opt-out status
+        try {
+          console.log("[OptOut] Success. Instant UI update + scheduled force-fresh refetch");
+          // Instant UI update of in-memory + local cache
+          updateUserOptOutStatus(talentUuid, true);
+          // Schedule a force-fresh refetch to clear local cache and repopulate from server
+          setTimeout(() => {
+            refetch(true);
+          }, 100);
+        } catch {}
       } else {
         const errorMessage = result.error || "Failed to pay it forward";
         setError(errorMessage);
