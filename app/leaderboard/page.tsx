@@ -215,7 +215,7 @@ function LeaderboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isLoggedIn = !!user;
+  const isLoggedIn = !!(user || unifiedName);
 
   return (
     <>
@@ -249,6 +249,7 @@ function LeaderboardContent() {
           )}
           activeCreatorsTotal={activeCreatorsTotal}
           isOptedOut={userTop200Entry?.isOptedOut}
+          onOptOutBadgeClick={() => router.push("/settings?section=pay-it-forward")}
         />
       )}
 

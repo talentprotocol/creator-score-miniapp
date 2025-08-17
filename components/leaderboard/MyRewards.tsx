@@ -17,6 +17,7 @@ interface MyRewardsProps {
   pointsToTop200?: number;
   onHowToEarnClick?: () => void;
   onBoostInfoClick?: () => void;
+  onOptOutBadgeClick?: () => void;
   tokenBalance?: number | null;
   tokenLoading?: boolean;
   isBoosted?: boolean; // New prop for boost status
@@ -35,6 +36,7 @@ export function MyRewards({
   pointsToTop200,
   onHowToEarnClick,
   onBoostInfoClick,
+  onOptOutBadgeClick,
   tokenBalance,
   tokenLoading = false,
   isBoosted = false,
@@ -91,12 +93,35 @@ export function MyRewards({
                 {(isTop200 || !isTop200) &&
                   (isOptedOut ? (
                     // PAY FORWARD badge (takes precedence over boost)
-                    <div className="inline-flex items-center gap-1.5 h-6 rounded-full px-2.5 bg-brand-green-light text-brand-green">
-                      <HandHeart className="h-3 w-3 text-brand-green" />
-                      <span className="text-[10px] font-semibold tracking-wide">
-                        PAID FORWARD
-                      </span>
-                    </div>
+                    onOptOutBadgeClick ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 h-6 rounded-full px-2.5 bg-brand-green-light hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-brand-green text-brand-green"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Optional: analytics
+                          try {
+                            posthog.capture("optout_badge_clicked", {
+                              location: "my_rewards",
+                            });
+                          } catch {}
+                          onOptOutBadgeClick();
+                        }}
+                        aria-label="View Pay It Forward settings"
+                      >
+                        <HandHeart className="h-3 w-3 text-brand-green" />
+                        <span className="text-[10px] font-semibold tracking-wide">
+                          PAID FORWARD
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5 h-6 rounded-full px-2.5 bg-brand-green-light text-brand-green">
+                        <HandHeart className="h-3 w-3 text-brand-green" />
+                        <span className="text-[10px] font-semibold tracking-wide">
+                          PAID FORWARD
+                        </span>
+                      </div>
+                    )
                   ) : isBoosted ? (
                     <button
                       type="button"
