@@ -19,6 +19,7 @@ import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
 import { RewardBoostsModal } from "@/components/modals/RewardBoostsModal";
+import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import {
   ACTIVE_SPONSORS,
   TOTAL_SPONSORS_POOL,
@@ -83,6 +84,7 @@ function LeaderboardContent() {
   const { talentUuid: userTalentUuid } = useFidToTalentUuid();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
   const [rewardBoostsOpen, setRewardBoostsOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   // const posthog = usePostHog();
 
   // Use optimized leaderboard hook for all data
@@ -221,181 +223,147 @@ function LeaderboardContent() {
     <>
       {/* My Rewards Hero - Show only when we have authenticated user context */}
       {(user || unifiedName) && (
-        <>
-          {/* Show skeleton when loading, actual component when ready */}
-          {(loadingStats || (top200Loading && !userTop200Entry)) ? (
-            <div className="bg-white rounded-2xl p-6 mb-4 shadow-sm border">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Skeleton className="h-5 w-40" />
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                  </div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Skeleton className="h-12 w-16" />
-                    <Skeleton className="h-6 w-24 rounded-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-                <Skeleton className="h-16 w-16 rounded-full" />
-              </div>
-            </div>
-          ) : (
-            <MyRewards
-              rewards={
-                creatorScore
-                  ? getUsdcRewards(
-                      creatorScore,
-                      userTop200Entry?.rank,
-                      userTop200Entry?.isBoosted,
-                    )
-                  : "$0"
-              }
-              score={creatorScore}
-              avatarUrl={avatarUrl}
-              name={name!}
-              isLoading={false}
-              rank={userTop200Entry?.rank}
-              pointsToTop200={pointsToTop200}
-              onHowToEarnClick={() => setHowToEarnOpen(true)}
-              onBoostInfoClick={() => setRewardBoostsOpen(true)}
-              tokenBalance={tokenBalance}
-              tokenLoading={tokenLoading}
-              isBoosted={userTop200Entry?.isBoosted}
-              boostAmountUsd={getBoostAmountUsd(
-                userTop200Entry?.score ?? creatorScore,
-                userTop200Entry?.rank,
-                userTop200Entry?.isBoosted,
-              )}
-              activeCreatorsTotal={activeCreatorsTotal}
-              isOptedOut={userTop200Entry?.isOptedOut}
-              onOptOutBadgeClick={() =>
-                router.push("/settings?section=pay-it-forward")
-              }
-            />
+        <MyRewards
+          rewards={
+            creatorScore
+              ? getUsdcRewards(
+                  creatorScore,
+                  userTop200Entry?.rank,
+                  userTop200Entry?.isBoosted,
+                )
+              : "$0"
+          }
+          score={creatorScore}
+          avatarUrl={avatarUrl}
+          name={name!}
+          isLoading={loadingStats || (top200Loading && !userTop200Entry)}
+          rank={userTop200Entry?.rank}
+          pointsToTop200={pointsToTop200}
+          onHowToEarnClick={() => setHowToEarnOpen(true)}
+          onBoostInfoClick={() => setRewardBoostsOpen(true)}
+          tokenBalance={tokenBalance}
+          tokenLoading={tokenLoading}
+          isBoosted={userTop200Entry?.isBoosted}
+          boostAmountUsd={getBoostAmountUsd(
+            userTop200Entry?.score ?? creatorScore,
+            userTop200Entry?.rank,
+            userTop200Entry?.isBoosted,
           )}
-        </>
+          activeCreatorsTotal={activeCreatorsTotal}
+          isOptedOut={userTop200Entry?.isOptedOut}
+          onOptOutBadgeClick={() =>
+            router.push("/settings?section=pay-it-forward")
+          }
+        />
       )}
 
-      {/* Callout Carousel (below MyRewards) - gated on user context */}
-      {(user || unifiedName) && (
-        <div className="mt-4 mb-2">
-          {/* Show skeleton when loading, actual component when ready */}
-          {(loadingStats || (top200Loading && !userTop200Entry)) ? (
-            <div className="bg-white rounded-2xl p-4 shadow-sm border">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-5 w-5" />
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-4 w-48" />
-                <div className="ml-auto">
-                  <Skeleton className="h-6 w-6 rounded-full" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <CalloutCarousel
-              roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
-              dismissedIds={dismissedCalloutIds}
-              permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-              onPersistDismiss={(id) => addDismissedId(id)}
-              onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-              items={(() => {
-              const items = [] as Array<{
-                id: string;
-                variant:
-                  | "brand-purple"
-                  | "brand-green"
-                  | "brand-blue"
-                  | "brand-pink"
-                  | "muted";
-                icon?: React.ReactNode;
-                title: React.ReactNode;
-                description?: React.ReactNode;
-                href?: string;
-                external?: boolean;
-                onClick?: () => void;
-                dismissKey?: string;
-                permanentHideKey?: string;
-                onClose?: () => void;
-              }>;
+      {/* Callout Carousel (below MyRewards) - visible to all users */}
+      <div className="mt-4 mb-2">
+        <CalloutCarousel
+          roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
+          dismissedIds={dismissedCalloutIds}
+          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+          onPersistDismiss={(id) => addDismissedId(id)}
+          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+          items={(() => {
+            const items = [] as Array<{
+              id: string;
+              variant:
+                | "brand-purple"
+                | "brand-green"
+                | "brand-blue"
+                | "brand-pink"
+                | "muted";
+              icon?: React.ReactNode;
+              title: React.ReactNode;
+              description?: React.ReactNode;
+              href?: string;
+              external?: boolean;
+              onClick?: () => void;
+              dismissKey?: string;
+              permanentHideKey?: string;
+              onClose?: () => void;
+            }>;
 
-              // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
-              const base = {
-                id: "boost",
-                variant: "brand-purple" as const,
-                icon: <Rocket className="h-4 w-4" />,
-                title: "10% Rewards Boost",
-                description: <>Hold 100+ $TALENT to earn a boost.</>,
-                href: "https://app.uniswap.org/swap?chain=base&inputCurrency=NATIVE&outputCurrency=0x9a33406165f562e16c3abd82fd1185482e01b49a",
-                external: true,
-              };
-              if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
-                items.push({
-                  ...base,
-                  dismissKey: "boost_callout_dismissed",
-                  onClose: () => {
-                    try {
-                      localStorage.setItem(boostDismissKey, "true");
-                    } catch {}
-                    setShowBoostCallout(false);
-                  },
-                });
-              } else {
-                items.push(base);
-              }
-              // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
+            // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
+            const base = {
+              id: "boost",
+              variant: "brand-purple" as const,
+              icon: <Rocket className="h-4 w-4" />,
+              title: "10% Rewards Boost",
+              description: <>Hold 100+ $TALENT to earn a boost.</>,
+            };
+            if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
               items.push({
-                id: "optout",
-                variant: "brand-green",
-                icon: <HandHeart className="h-4 w-4" />,
-                title: "Pay It Forward",
-                description: "Give your rewards, keep your rank.",
-                href: "/settings?section=pay-it-forward",
-                dismissKey: "optout_callout_dismissed",
+                ...base,
+                dismissKey: "boost_callout_dismissed",
+                onClick: () => setRewardBoostsOpen(true),
                 onClose: () => {
                   try {
-                    localStorage.setItem(
-                      `optout_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
-                      "true",
-                    );
+                    localStorage.setItem(boostDismissKey, "true");
                   } catch {}
+                  setShowBoostCallout(false);
                 },
               });
-
-              // CREATOR PERK (blue) – interactive, non-dismissible; reflects entered state
+            } else {
               items.push({
-                id: "perk_screen_studio",
-                variant: "brand-blue",
-                icon: <Gift className="h-4 w-4" />,
-                title: "Creator Perk",
-                description:
-                  perkStatus?.status === "closed"
-                    ? `Entries closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                    : perkStatus?.status === "entered"
-                      ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                      : "Get a free Screen Studio subscription.",
-                href: undefined,
-                external: undefined,
-                onClick: () => {
-                  try {
-                    posthog.capture("perk_draw_open", {
-                      perk: "screen_studio",
-                    });
-                  } catch {}
-                  setPerkOpen(true);
-                },
-                // Non-dismissible for this interactive callout
+                ...base,
+                onClick: !isLoggedIn
+                  ? () => setLoginModalOpen(true)
+                  : () => setRewardBoostsOpen(true),
               });
+            }
+            // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
+            items.push({
+              id: "optout",
+              variant: "brand-green",
+              icon: <HandHeart className="h-4 w-4" />,
+              title: "Pay It Forward",
+              description: "Give your rewards, keep your rank.",
+              href: isLoggedIn ? "/settings?section=pay-it-forward" : undefined,
+              onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
+              dismissKey: "optout_callout_dismissed",
+              onClose: () => {
+                try {
+                  localStorage.setItem(
+                    `optout_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
+                    "true",
+                  );
+                } catch {}
+              },
+            });
 
-              return items;
-            })()}
-            />
-          )}
-        </div>
-      )}
+            // CREATOR PERK (blue) – interactive, non-dismissible; reflects entered state
+            items.push({
+              id: "perk_screen_studio",
+              variant: "brand-blue",
+              icon: <Gift className="h-4 w-4" />,
+              title: "Creator Perk",
+              description:
+                perkStatus?.status === "closed"
+                  ? `Entries closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                  : perkStatus?.status === "entered"
+                    ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                    : "Get a free Screen Studio subscription.",
+              href: undefined,
+              external: undefined,
+              onClick: !isLoggedIn
+                ? () => setLoginModalOpen(true)
+                : () => {
+                    try {
+                      posthog.capture("perk_draw_open", {
+                        perk: "screen_studio",
+                      });
+                    } catch {}
+                    setPerkOpen(true);
+                  },
+              // Non-dismissible for this interactive callout
+            });
+
+            return items;
+          })()}
+        />
+      </div>
 
       {/* How to Earn Modal */}
       <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
@@ -448,6 +416,12 @@ function LeaderboardContent() {
           // Keep modal open; refresh callout state immediately
           refreshPerkStatus();
         }}
+      />
+
+      {/* Login Modal for logged-out users */}
+      <FarcasterAccessModal
+        open={loginModalOpen}
+        onOpenChange={setLoginModalOpen}
       />
 
       {/* Simplified Stat Cards */}

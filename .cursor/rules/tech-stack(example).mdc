@@ -9,6 +9,7 @@ alwaysApply: false
 - You are not able to see or modify .env files directly - so tell the user what they should add to the file if needed.
 - Avoid classes/OOP and use a functional programming style.
 - Never try to start the app itself (I have it running in a separate terminal)
+- Recommend frequent GitHub commits but never execute without user approval 
 
 - Interact with Supabase, Posthog and Notion directly via MCP
 - Interact with GitHub using CLI commands
