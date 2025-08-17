@@ -4,7 +4,13 @@ import { validateTalentUUID } from "@/lib/validation";
 
 export async function POST(
   req: NextRequest,
-): Promise<NextResponse<{ success: boolean; data?: Record<string, unknown>; error?: string }>> {
+): Promise<
+  NextResponse<{
+    success: boolean;
+    data?: Record<string, unknown>;
+    error?: string;
+  }>
+> {
   try {
     const { talent_uuid, confirm_optout } = await req.json();
 
@@ -52,7 +58,13 @@ export async function POST(
 
 export async function GET(
   req: NextRequest,
-): Promise<NextResponse<{ success: boolean; data?: Record<string, unknown>; error?: string }>> {
+): Promise<
+  NextResponse<{
+    success: boolean;
+    data?: Record<string, unknown>;
+    error?: string;
+  }>
+> {
   try {
     const { searchParams } = req.nextUrl;
     const talent_uuid = searchParams.get("talent_uuid");

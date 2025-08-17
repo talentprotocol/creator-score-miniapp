@@ -215,6 +215,8 @@ function LeaderboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const isLoggedIn = !!user;
+
   return (
     <>
       {/* My Rewards Hero - Show only when we have authenticated user context */}
@@ -504,9 +506,29 @@ function LeaderboardContent() {
                   // Note: Crossed-out styling is handled by CreatorList component via isOptedOut prop
                   badge: isOptedOut ? (
                     // OptOut badge (green HandHeart) - takes precedence over boost
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light">
-                      <HandHeart className="h-3 w-3 text-brand-green" />
-                    </div>
+                    isLoggedIn ? (
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-brand-green"
+                        aria-label="View Pay It Forward settings"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Optional: analytics
+                          try {
+                            posthog.capture("optout_badge_clicked", {
+                              location: "leaderboard_row",
+                            });
+                          } catch {}
+                          router.push("/settings?section=pay-it-forward");
+                        }}
+                      >
+                        <HandHeart className="h-3 w-3 text-brand-green" />
+                      </button>
+                    ) : (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light">
+                        <HandHeart className="h-3 w-3 text-brand-green" />
+                      </div>
+                    )
                   ) : isBoosted ? (
                     <button
                       type="button"

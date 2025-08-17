@@ -84,13 +84,15 @@ export function PayItForwardSection() {
         <div className="space-y-4">
           {/* Description: Explains what the feature does and its benefits */}
           <Typography size="base" className="text-foreground">
-            Give your reward allocation back to other creators, earn a special
-            badge and keep your leaderboard position.
+            Give your rewards back to other creators, keep your leaderboard
+            position and earn a special badge.
           </Typography>
 
           {/* Current Rewards Display: Shows user's potential rewards amount */}
           <div className="flex items-center justify-between">
-            <Typography size="base">Your Current Rewards</Typography>
+            <Typography size="base" weight="medium">
+              Your Rewards
+            </Typography>
             <Typography
               size="xl"
               weight="medium"
