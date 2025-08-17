@@ -13,8 +13,11 @@ export function PayItForwardSection() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { talentUuid } = useFidToTalentUuid();
-  const { entries: top200Entries, refetch, updateUserOptOutStatus } =
-    useLeaderboardData();
+  const {
+    entries: top200Entries,
+    refetch,
+    updateUserOptOutStatus,
+  } = useLeaderboardData();
 
   const userTop200Entry = top200Entries.find(
     (entry) => entry.talent_protocol_id === talentUuid,
@@ -57,7 +60,9 @@ export function PayItForwardSection() {
       if (response.ok && result.success) {
         setSuccess(true);
         try {
-          console.log("[OptOut] Success. Instant UI update + scheduled force-fresh refetch");
+          console.log(
+            "[OptOut] Success. Instant UI update + scheduled force-fresh refetch",
+          );
           // Instant UI update of in-memory + local cache
           updateUserOptOutStatus(talentUuid, true);
           // Schedule a force-fresh refetch to clear local cache and repopulate from server
@@ -124,8 +129,8 @@ export function PayItForwardSection() {
                 htmlFor="confirm-optout"
                 className="text-sm text-muted-foreground"
               >
-                I understand that I am donating all my rewards and this decision
-                cannot be reversed.
+                I understand that I&apos;m opting out of receiving rewards and
+                that this decision is irreversible.
               </label>
             </div>
           ) : null}
