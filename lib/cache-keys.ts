@@ -28,6 +28,7 @@ export const CACHE_KEYS = {
   EARNINGS_BREAKDOWN: "earnings-breakdown",
   ETH_USDC_PRICE: "eth-usdc-price",
   FID_TO_TALENT_UUID: "fid-to-talent-uuid",
+  USER_BADGES: "user-badges",
 };
 
 export const CACHE_DURATION_1_SECOND = 1; // 1 second

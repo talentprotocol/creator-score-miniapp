@@ -1,12 +1,13 @@
 ****## Creator Score Badges — Technical Plan (0002)
 
 ### Context
-- Build a Badges experience for the Creator Score app. MVP is compute-on-read (no DB tables), using config-driven logic and server-side caching. Only private detail route now: `app/badges/[badgeSlug]/page.tsx`.
+- Build a Badges experience for the Creator Score app. MVP is compute-on-read (no DB tables), using config-driven logic and server-side caching. Only private routes for MVP: `app/badges/page.tsx` and `app/badges/[badgeSlug]/page.tsx`. Public profile routes deferred to post-MVP.
 - Badge categories and levels per the brief in `docs/temp/creator_badges_brief.md`:
   - Creator Score Level (6 levels based on `LEVEL_RANGES` in `lib/constants.ts`)
   - Metrics: Total Earnings (10, 100, 1k, 10k, 25k, 100k); Total Followers (100, 1k, 10k, 25k, 100k, 250k)
   - Platforms: Talent ($TALENT 100, 1k, 10k via token balance); Base (onchain_out_transactions 10, 100, 1k)
-- Rules: “Total Followers” sums across all connected socials; Earned date is shown simply as “Earned” (no timestamp) until persistence exists; Share images out-of-scope for this phase.
+- Rules: "Total Followers" sums across all connected socials; Earned date is shown simply as "Earned" (no timestamp) until persistence exists; Share images out-of-scope for this phase.
+- UI: Custom artwork for badges (not brand colors); use semantic colors for UI elements; Typography component for all text.
 
 ### File mapping
 - New
@@ -29,10 +30,10 @@
 
 ### API shapes
 - GET `/api/badges`
-  - Request: infer current user via existing user context/resolver (Talent UUID).
+  - Request: resolve current user via `lib/user-resolver.ts` patterns (Talent UUID).
   - Response: `{ sections: Array<{ id, title, badges: Array<{ slug, title, description, state: "earned" | "locked", valueLabel, progressPct, artwork: { earnedUrl, lockedUrl } }> }>, summary?: { earnedCount, completionPct } }`.
 - GET `/api/badges/[badgeSlug]`
-  - Request: `{ badgeSlug }` + current user (Talent UUID).
+  - Request: `{ badgeSlug }` + resolve current user via `lib/user-resolver.ts`.
   - Response: `{ slug, title, state, valueLabel, progressPct, earnedLevels?: number, peersStat?: { text: string } }`.
 
 ### Computation rules (pseudocode)
@@ -76,29 +77,93 @@
 
 ### Service design (Hook → API Route → Service)
 - badgesService.ts
-  - getBadgesForUser(talentUuid: string): returns sections and badge states per above. Uses `unstable_cache` keyed by `{talentUuid}` and tags: `USER_BADGES-{talentUuid}`; revalidate ~15m.
+  - getBadgesForUser(talentUuid: string): returns sections and badge states per above. Uses `unstable_cache` with proper cache keys from `lib/cache-keys.ts` and tags: `USER_BADGES-{talentUuid}`; revalidate 5min.
   - getBadgeDetail(talentUuid: string, badgeSlug: string): computes a single badge detail.
 - API routes
-  - `/api/badges`: resolves current user’s `talentUuid`, calls `getBadgesForUser`, returns JSON.
-  - `/api/badges/[badgeSlug]`: resolves `talentUuid`, calls `getBadgeDetail`.
+  - `/api/badges`: uses `lib/user-resolver.ts` to resolve current user's `talentUuid`, calls `getBadgesForUser`, returns JSON with proper error handling.
+  - `/api/badges/[badgeSlug]`: uses `lib/user-resolver.ts` to resolve `talentUuid`, calls `getBadgeDetail`.
 - Client
-  - `useBadges`: fetch `/api/badges`; return sections, derived completion summary.
-  - Detail page: RSC/server fetch to `/api/badges/[badgeSlug]` and render.
+  - `useBadges`: fetch `/api/badges`; return `{data, loading, error}` pattern with sections and derived completion summary.
+  - Detail page: RSC/server fetch to `/api/badges/[badgeSlug]` and render with error boundaries.
 
 ### UI/Design-system notes
-- Use existing `components/ui/*` and `components/badges/*`. No brand colors on icons; use semantic tokens. Mobile-first; interactions on click (not hover).
-- Badge grid: 3 columns on mobile per brief; use Tailwind utilities matching existing patterns (semantic classes, Typography component where applicable).
+- Use existing `components/ui/*` and `components/badges/*`. Follow semantic-first color approach; use `components/ui/typography.tsx` for all text. Mobile-first; interactions on click (not hover).
+- Badge grid: 3 columns on mobile per brief; use Tailwind utilities matching existing patterns.
 - Earned vs Locked:
-  - Earned: full-color artwork and valueLabel "Earned".
-  - Locked: grayscale artwork, thin progress bar, valueLabel "X more needed" derived from thresholds.
+  - Earned: full-color custom artwork and valueLabel "Earned".
+  - Locked: grayscale custom artwork, thin progress bar, valueLabel "X more needed" derived from thresholds.
 - Artwork paths: `public/images/badges/<badge-slug>/<level_slug>-earned.png` and `...-locked.png`. Fallback to placeholder when missing.
+- Error handling: Include skeleton loaders, error boundaries, graceful fallbacks - no crashes.
 
 ### Minimal data contract for components
-- BadgeCard input: `{ slug, title, state, artworkUrl, onClick }`
+- BadgeCard input: `{ slug, title, state, artworkUrl, onClick }` (follows existing patterns)
 - BadgeModal input: `{ slug, title, state, valueLabel, progressPct, artwork: { earnedUrl, lockedUrl } }`
+- All text via Typography component; follow `{data, loading, error}` pattern in hooks
 
 ### Phase scope (MVP)
 - Compute-on-read only (no DB). No public profile routes yet. No share images.
 - Ship: API routes, service, config, detail page, hook + listing page wired to real data.
+
+## Implementation Deltas & Discoveries
+
+### 🔧 Technical Adjustments Made
+- **Platform badges temporarily disabled**: Commented out `computePlatformTalentBadges` and `computePlatformBaseBadges` functions due to missing artwork. Functions preserved with TODO comments for easy restoration.
+- **Image fallback strategy**: Replaced placeholder PNG files with Lucide Medal icons (`<Medal />`) for graceful fallback when badge artwork fails to load. This prevents infinite API request loops.
+- **Development authentication**: Added development fallback to use default Talent Protocol user UUID when Farcaster context is unavailable, enabling local testing without authentication setup.
+- **API route structure**: Both `/api/badges` and `/api/badges/[badgeSlug]` use the same user resolution pattern for consistency.
+
+### 🎨 UI/UX Improvements
+- **Responsive badge grid**: Implemented 2-column grid on mobile (instead of 3) for better touch targets and visual balance.
+- **Progress visualization**: Added thin progress bars for locked badges showing completion percentage.
+- **Error handling**: Implemented comprehensive error states with skeleton loaders and error boundaries.
+- **Typography consistency**: All text now uses the `Typography` component as planned, ensuring consistent styling.
+
+### 📱 Mobile-First Enhancements
+- **Touch interactions**: Badge cards use `active:scale-95` for tactile feedback on mobile.
+- **Modal responsiveness**: BadgeModal automatically switches between Dialog (desktop) and Drawer (mobile) based on screen size.
+- **Loading states**: Skeleton loaders provide immediate visual feedback during data fetching.
+
+### 🚀 Performance Optimizations
+- **Server-side caching**: 5-minute cache duration with proper cache keys (`USER_BADGES`) for optimal performance.
+- **Image optimization**: Graceful fallback to icons prevents broken image requests and improves perceived performance.
+- **Efficient data fetching**: Single API call loads all badge data, reducing network overhead.
+
+## Follow-Up Plan (Post-MVP)
+
+### 🎯 Phase 2: Platform Badges & Artwork
+- **Restore platform badges**: Uncomment and test `computePlatformTalentBadges` and `computePlatformBaseBadges` functions.
+- **Complete artwork set**: Design and implement all missing badge artwork files following the established naming convention.
+- **Artwork validation**: Add automated checks to ensure all badge artwork files exist before enabling platform badges.
+
+### 🌐 Phase 3: Public Routes & Sharing
+- **Public badge pages**: Implement `app/badges/[badgeSlug]/page.tsx` for public badge viewing.
+- **Share functionality**: Add share buttons and social media integration for earned badges.
+- **Badge URLs**: Create SEO-friendly public URLs for individual badges and badge collections.
+
+### 💾 Phase 4: Persistence & History
+- **Database tables**: Create tables for storing badge earning history, dates, and user progress.
+- **Badge analytics**: Track badge unlock patterns and user engagement metrics.
+- **Achievement system**: Add notifications and celebrations for newly earned badges.
+
+### 🔍 Phase 5: Advanced Features
+- **Badge collections**: Group badges into themed collections with special rewards.
+- **Seasonal badges**: Implement time-limited badges and special events.
+- **Badge marketplace**: Allow users to showcase and trade rare badges (if applicable).
+
+### 📊 Phase 6: Analytics & Insights
+- **PostHog integration**: Add comprehensive analytics for badge interactions and user behavior.
+- **Performance metrics**: Track badge loading times and user engagement patterns.
+- **A/B testing**: Experiment with different badge designs and unlock mechanisms.
+
+### 🧪 Testing & Quality Assurance
+- **Unit tests**: Add comprehensive test coverage for badge computation logic.
+- **Integration tests**: Test badge API endpoints with various user scenarios.
+- **Performance testing**: Validate caching effectiveness and API response times.
+- **Accessibility audit**: Ensure badge system meets WCAG guidelines.
+
+### 📚 Documentation & Maintenance
+- **API documentation**: Create comprehensive API reference for badge endpoints.
+- **Component library**: Document badge components in Storybook or similar tool.
+- **Maintenance guide**: Document badge artwork requirements and update procedures.
 
 

@@ -1,32 +1,61 @@
 import { useState, useEffect } from "react";
-import { BadgeSection, mockBadgeData } from "@/lib/badge-data";
+import type { BadgesResponse } from "@/app/services/badgesService";
 
-export function useBadges() {
-  const [data, setData] = useState<BadgeSection[] | null>(null);
+interface UseBadgesReturn {
+  data: BadgesResponse | null;
+  loading: boolean;
+  error: string | null;
+}
+
+/**
+ * BADGES HOOK
+ *
+ * React hook for fetching badge data from the API with standard loading/error states.
+ * Follows the project's {data, loading, error} pattern for consistency.
+ *
+ * @param userId - Optional user ID for development/testing (bypasses Farcaster auth)
+ * @returns Object with badge data, loading state, and error state
+ */
+export function useBadges(userId?: string): UseBadgesReturn {
+  const [data, setData] = useState<BadgesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    /** Fetch badge data from API with proper error handling */
     async function fetchBadges() {
       try {
         setLoading(true);
         setError(null);
 
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Build query params for development/testing
+        const params = new URLSearchParams();
+        if (userId) {
+          params.append("userId", userId);
+        }
 
-        // For now, return mock data
-        // Later this can be replaced with: const response = await fetch('/api/badges');
-        setData(mockBadgeData);
+        const queryString = params.toString();
+        const url = `/api/badges${queryString ? `?${queryString}` : ""}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch badges: ${response.status}`);
+        }
+
+        const badgesData = await response.json();
+        setData(badgesData);
       } catch (err) {
+        console.error("[useBadges] Error:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch badges");
+        setData(null);
       } finally {
         setLoading(false);
       }
     }
 
     fetchBadges();
-  }, []);
+  }, [userId]); // Re-fetch when userId changes
 
   return {
     data,

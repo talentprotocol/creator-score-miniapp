@@ -30,7 +30,7 @@ import { CreatorScoreCard } from "@/components/home/CreatorScoreCard";
 import { PotentialRewardsCard } from "@/components/home/PotentialRewardsCard";
 import { RewardsBoostsCard } from "@/components/home/RewardsBoostsCard";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
-import { BadgeCard } from "@/components/badges/BadgeCard";
+
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
 
 function IconDemo({
@@ -776,26 +776,13 @@ export default function DesignPage() {
                     </a>
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <BadgeCard
-                      badge={{
-                        id: "1",
-                        name: "First Post",
-                        description: "Made your first post",
-                        icon: Trophy,
-                        completed: true,
-                      }}
-                      onBadgeClick={() => alert("Badge clicked!")}
-                    />
-                    <BadgeCard
-                      badge={{
-                        id: "2",
-                        name: "100 Followers",
-                        description: "Reached 100 followers",
-                        icon: Users,
-                        completed: false,
-                      }}
-                      onBadgeClick={() => alert("Badge clicked!")}
-                    />
+                    {/* Mock Badge for Design Showcase */}
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-lg flex items-center justify-center text-white shadow-lg">
+                      <Trophy className="w-8 h-8" />
+                    </div>
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center text-white shadow-lg">
+                      <Users className="w-8 h-8" />
+                    </div>
                   </div>
                 </div>
 
