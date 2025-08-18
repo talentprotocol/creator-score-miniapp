@@ -1,5 +1,5 @@
-import { parseFormattedNumber } from "@/lib/utils";
 import { BOOST_CONFIG } from "@/lib/constants";
+import { getDataPointsSum } from "./dataPointsService";
 
 export interface TokenBalanceData {
   balance: number;
@@ -12,46 +12,13 @@ export interface TokenBalanceData {
  */
 export async function getTokenBalanceForProfileManual(
   profileId: string,
-  apiKey: string,
+  _apiKey: string, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<TokenBalanceData> {
   try {
-    const res = await fetch(
-      `https://api.talentprotocol.com/data_points?id=${profileId}&slugs=talent_protocol_talent_holder`,
-      {
-        headers: {
-          Accept: "application/json",
-          "X-API-KEY": apiKey,
-        },
-      },
-    );
-
-    if (!res.ok) {
-      return {
-        balance: 0,
-        lastUpdated: new Date().toISOString(),
-        isBoosted: false,
-      };
-    }
-
-    const json = await res.json();
-
-    if (!json.data_points || json.data_points.length === 0) {
-      return {
-        balance: 0,
-        lastUpdated: new Date().toISOString(),
-        isBoosted: false,
-      };
-    }
-
-    // Sum all readable_values for token balance
-    const balance = json.data_points.reduce(
-      (sum: number, dp: { readable_value?: string }) => {
-        const readableValue = dp.readable_value || "0";
-        const parsedValue = parseFormattedNumber(readableValue);
-        return sum + parsedValue;
-      },
-      0,
-    );
+    // Use the new dataPointsService instead of direct API call
+    const balance = await getDataPointsSum(profileId, [
+      "talent_protocol_talent_holder",
+    ]);
 
     const isBoosted = balance >= BOOST_CONFIG.TOKEN_THRESHOLD;
     const lastUpdated = new Date().toISOString();

@@ -39,13 +39,13 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     // Parse URL to check for development parameters
     const url = new URL(request.url);
-    const userIdParam = url.searchParams.get("userId");
+    const talentUuidParam = url.searchParams.get("talentUuid");
 
     let talentUuid: string | null = null;
 
-    if (userIdParam) {
+    if (talentUuidParam) {
       // Direct UUID provided for development/testing
-      talentUuid = userIdParam;
+      talentUuid = talentUuidParam;
     } else if (context?.fid) {
       // Resolve from Farcaster context
       const user = await resolveTalentUser(String(context.fid));

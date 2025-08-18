@@ -15,8 +15,8 @@
   - `app/api/badges/[badgeSlug]/route.ts`: Returns computed details for a single badge (to power the detail page).
   - `app/badges/[badgeSlug]/page.tsx`: Private badge details page (SSR/RSC), uses the API above.
   - `app/services/badgesService.ts`: Pure service that computes badges from existing profile data and credentials. No client-side external API calls.
+  - `lib/badge-content.ts`: Centralized badge content configuration (titles, descriptions, thresholds, labels) separated from business logic.
 - Updates
-  - `lib/badge-data.ts`: Replace mock with a config map (badge slugs, categories, thresholds, artwork paths). Keep types; export constants for categories/levels and helpers.
   - `hooks/useBadges.ts`: Fetch from `/api/badges` instead of returning mock data.
   - `components/badges/BadgeCard.tsx` and `components/badges/BadgeModal.tsx`: Ensure props cover Earned/Locked states, artwork URLs, “X more needed” copy, and optional thin progress bar.
   - `app/badges/page.tsx`: Continue to render sections/grid, but now backed by real data from the hook.
@@ -85,6 +85,15 @@
 - Client
   - `useBadges`: fetch `/api/badges`; return `{data, loading, error}` pattern with sections and derived completion summary.
   - Detail page: RSC/server fetch to `/api/badges/[badgeSlug]` and render with error boundaries.
+
+### Content-Logic Separation Architecture
+- **Content Configuration**: `lib/badge-content.ts` contains all badge titles, descriptions, thresholds, and labels
+- **Business Logic**: `badgesService.ts` focuses purely on computation and data transformation
+
+### Badge Structure & Hierarchy
+- **Sections** (Top level): Trophies, Metrics, Platforms
+- **Badges** (Second level): Creator Score, Total Earnings, Total Followers, Talent Protocol, Base, Streaks
+- **Levels** (Third level): Threshold-based naming (e.g., "100", "500", "1K" for Creator Score; "1 Day", "2 Days" for Streaks)
 
 ### UI/Design-system notes
 - Use existing `components/ui/*` and `components/badges/*`. Follow semantic-first color approach; use `components/ui/typography.tsx` for all text. Mobile-first; interactions on click (not hover).

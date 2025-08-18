@@ -3,11 +3,11 @@ import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 import { LEVEL_RANGES } from "@/lib/constants";
 import { getCreatorScoreForTalentId } from "./scoresService";
 import { getSocialAccountsForTalentId } from "./socialAccountsService";
-// import { getCachedUserTokenBalance } from "./tokenBalanceService"; // TODO: Re-enable when platform badges are restored
+import { getCachedUserTokenBalance } from "./tokenBalanceService";
 import { getCredentialsForTalentId } from "./credentialsService";
-import { getCreatorEarningsCredentials } from "@/lib/total-earnings-config";
+import { getDataPointsSum } from "./dataPointsService";
+
 import {
-  BADGE_SECTIONS,
   getBadgeContent,
   getBadgeThresholds,
   getBadgeLabels,
@@ -127,8 +127,8 @@ function getArtworkUrls(
 ): { earnedUrl: string; lockedUrl: string } {
   const basePath = `/images/badges/${badgeSlug}`;
   return {
-    earnedUrl: `${basePath}/${levelSlug}-earned.png`,
-    lockedUrl: `${basePath}/${levelSlug}-locked.png`,
+    earnedUrl: `${basePath}/${badgeSlug}-${levelSlug}-earned.png`,
+    lockedUrl: `${basePath}/${badgeSlug}-${levelSlug}-locked.png`,
   };
 }
 
@@ -150,12 +150,12 @@ async function computeCreatorScoreBadges(
 
     return {
       slug: levelSlug,
-      title: `${content.title} ${content.labels[index]}`,
-      description: formatBadgeDescription(content.category, level),
+      title: content.labels[index],
+      description: formatBadgeDescription(content.slug, level),
       state: earned ? "earned" : "locked",
       valueLabel: earned ? "Earned" : `${score} of ${range.min}`,
       progressPct: progress,
-      artwork: getArtworkUrls("creator-score", levelSlug),
+      artwork: getArtworkUrls("creator-score", level.toString()),
     };
   });
 }
@@ -196,9 +196,9 @@ async function computeTotalEarningsBadges(
 
     return {
       slug: levelSlug,
-      title: `${labels[index]} in Earnings`,
+      title: content.labels[index],
       description: formatBadgeDescription(
-        content.category,
+        content.slug,
         index + 1,
         labels[index],
       ),
@@ -210,7 +210,7 @@ async function computeTotalEarningsBadges(
         uom,
       ),
       progressPct: progress,
-      artwork: getArtworkUrls("total-earnings", levelSlug),
+      artwork: getArtworkUrls("total-earnings", (index + 1).toString()),
     };
   });
 }
@@ -240,9 +240,9 @@ async function computeTotalFollowersBadges(
 
     return {
       slug: levelSlug,
-      title: `${labels[index]} Followers`,
+      title: content.labels[index],
       description: formatBadgeDescription(
-        content.category,
+        content.slug,
         index + 1,
         labels[index],
       ),
@@ -254,94 +254,130 @@ async function computeTotalFollowersBadges(
         uom,
       ),
       progressPct: progress,
-      artwork: getArtworkUrls("total-followers", levelSlug),
+      artwork: getArtworkUrls("total-followers", (index + 1).toString()),
     };
   });
 }
 
-// TODO: Re-enable when platform badge artwork is ready
-// async function computePlatformTalentBadges(
-//   talentUuid: string,
-// ): Promise<BadgeState[]> {
-//   if (!process.env.TALENT_API_KEY) {
-//     return [];
-//   }
-//
-//   const getCachedBalance = getCachedUserTokenBalance(talentUuid);
-//   const balance = await getCachedBalance(process.env.TALENT_API_KEY);
-//   const content = getBadgeContent("platform-talent");
-//
-//   if (!content) return [];
-//
-//   const thresholds = getBadgeThresholds("platform-talent");
-//   const labels = getBadgeLabels("platform-talent");
-//   const uom = getBadgeUOM("platform-talent");
-//
-//   return thresholds.map((threshold, index) => {
-//     const earned = balance >= threshold;
-//     const progress = earned ? 100 : clampToPct((balance / threshold) * 100);
-//     const levelSlug = `platform-talent-${labels[index].toLowerCase()}`;
-//
-//     return {
-//       slug: levelSlug,
-//       title: `${content.title}: ${labels[index]}`,
-//       description: formatBadgeDescription(content.category, index + 1, labels[index]),
-//       state: earned ? "earned" : "locked",
-//       valueLabel: formatValueLabel(
-//         earned ? "earned" : "locked",
-//         balance,
-//         threshold,
-//         uom,
-//       ),
-//       progressPct: progress,
-//       artwork: getArtworkUrls("platform-talent", levelSlug),
-//     };
-//   });
-// }
+async function computeStreaksBadges(
+  _talentUuid: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+): Promise<BadgeState[]> {
+  // TODO: Implement streaks logic when we have the data source
+  // For now, return empty array until we can compute actual streak data
+  const content = getBadgeContent("streaks");
 
-// TODO: Re-enable when platform badge artwork is ready
-// async function computePlatformBaseBadges(
-//   talentUuid: string,
-// ): Promise<BadgeState[]> {
-//   const credentials = await getCredentialsForTalentId(talentUuid);
-//   const content = getBadgeContent("platform-base");
-//
-//   if (!content) return [];
-//
-//   let baseTxCount = 0;
-//   credentials.forEach((group) => {
-//     group.points.forEach((point) => {
-//       if (point.slug === "onchain_out_transactions") {
-//         baseTxCount = parseNumber(point.readable_value);
-//       }
-//     });
-//   });
-//
-//   const thresholds = getBadgeThresholds("platform-base");
-//   const labels = getBadgeLabels("platform-base");
-//   const uom = getBadgeUOM("platform-base");
-//
-//   return thresholds.map((threshold, index) => {
-//     const earned = baseTxCount >= threshold;
-//     const progress = earned ? 100 : clampToPct((baseTxCount / threshold) * 100);
-//     const levelSlug = `platform-base-l${index + 1}`;
-//
-//     return {
-//       slug: levelSlug,
-//       title: `${content.title}: ${labels[index]}`,
-//       description: formatBadgeDescription(content.category, index + 1, threshold),
-//       state: earned ? "earned" : "locked",
-//       valueLabel: formatValueLabel(
-//         earned ? "earned" : "locked",
-//         baseTxCount,
-//         threshold,
-//         uom,
-//       ),
-//       progressPct: progress,
-//       artwork: getArtworkUrls("platform-base", levelSlug),
-//     };
-//   });
-// }
+  if (!content) return [];
+
+  const thresholds = getBadgeThresholds("streaks");
+  const labels = getBadgeLabels("streaks");
+  const uom = getBadgeUOM("streaks");
+
+  // Placeholder: all badges locked until we implement streak calculation
+  return thresholds.map((threshold, index) => {
+    const levelSlug = `streaks-${threshold}`;
+
+    return {
+      slug: levelSlug,
+      title: content.labels[index],
+      description: formatBadgeDescription(
+        content.slug,
+        index + 1,
+        labels[index],
+      ),
+      state: "locked" as const,
+      valueLabel: formatValueLabel("locked", 0, threshold, uom),
+      progressPct: 0,
+      artwork: getArtworkUrls("streaks", (index + 1).toString()),
+    };
+  });
+}
+
+async function computePlatformTalentBadges(
+  talentUuid: string,
+): Promise<BadgeState[]> {
+  const content = getBadgeContent("platform-talent");
+  if (!content) return [];
+
+  // Use existing token balance service for $TALENT balance
+  if (!process.env.TALENT_API_KEY) {
+    return [];
+  }
+
+  const getCachedBalance = getCachedUserTokenBalance(talentUuid);
+  const talentBalance = await getCachedBalance(process.env.TALENT_API_KEY);
+
+  const thresholds = getBadgeThresholds("platform-talent");
+  const labels = getBadgeLabels("platform-talent");
+  const uom = getBadgeUOM("platform-talent");
+
+  return thresholds.map((threshold, index) => {
+    const earned = talentBalance >= threshold;
+    const progress = earned
+      ? 100
+      : clampToPct((talentBalance / threshold) * 100);
+    const levelSlug = `platform-talent-${labels[index].toLowerCase()}`;
+
+    return {
+      slug: levelSlug,
+      title: content.labels[index],
+      description: formatBadgeDescription(
+        content.slug,
+        index + 1,
+        labels[index],
+      ),
+      state: earned ? "earned" : "locked",
+      valueLabel: formatValueLabel(
+        earned ? "earned" : "locked",
+        talentBalance,
+        threshold,
+        uom,
+      ),
+      progressPct: progress,
+      artwork: getArtworkUrls("talent", (index + 1).toString()),
+    };
+  });
+}
+
+async function computePlatformBaseBadges(
+  talentUuid: string,
+): Promise<BadgeState[]> {
+  const content = getBadgeContent("platform-base");
+  if (!content) return [];
+
+  // Use generic data points service to get base_out_transactions sum
+  const baseTxCount = await getDataPointsSum(talentUuid, [
+    "base_out_transactions",
+  ]);
+
+  const thresholds = getBadgeThresholds("platform-base");
+  const labels = getBadgeLabels("platform-base");
+  const uom = getBadgeUOM("platform-base");
+
+  return thresholds.map((threshold, index) => {
+    const earned = baseTxCount >= threshold;
+    const progress = earned ? 100 : clampToPct((baseTxCount / threshold) * 100);
+    const levelSlug = `platform-base-${labels[index].toLowerCase()}`;
+
+    return {
+      slug: levelSlug,
+      title: content.labels[index],
+      description: formatBadgeDescription(
+        content.slug,
+        index + 1,
+        labels[index],
+      ),
+      state: earned ? "earned" : "locked",
+      valueLabel: formatValueLabel(
+        earned ? "earned" : "locked",
+        baseTxCount,
+        threshold,
+        uom,
+      ),
+      progressPct: progress,
+      artwork: getArtworkUrls("base", (index + 1).toString()),
+    };
+  });
+}
 
 // Main service functions
 async function getBadgesForUserUncached(
@@ -352,36 +388,34 @@ async function getBadgesForUserUncached(
       creatorScoreBadges,
       totalEarningsBadges,
       totalFollowersBadges,
-      // Platform badges are disabled for now (missing artwork)
-      // platformTalentBadges,
-      // platformBaseBadges,
+      streaksBadges,
+      platformTalentBadges,
+      platformBaseBadges,
     ] = await Promise.all([
       computeCreatorScoreBadges(talentUuid),
       computeTotalEarningsBadges(talentUuid),
       computeTotalFollowersBadges(talentUuid),
-      // computePlatformTalentBadges(talentUuid),
-      // computePlatformBaseBadges(talentUuid),
+      computeStreaksBadges(talentUuid),
+      computePlatformTalentBadges(talentUuid),
+      computePlatformBaseBadges(talentUuid),
     ]);
 
     const sections: BadgeSection[] = [
       {
         id: "trophies",
-        title:
-          BADGE_SECTIONS.find((s) => s.id === "creator-score")?.title ||
-          "Creator Score",
-        badges: creatorScoreBadges,
+        title: "Trophies",
+        badges: [...creatorScoreBadges, ...streaksBadges],
       },
       {
         id: "metrics",
         title: "Metrics",
         badges: [...totalEarningsBadges, ...totalFollowersBadges],
       },
-      // TODO: Re-enable platforms section when artwork is ready
-      // {
-      //   id: "platforms",
-      //   title: BADGE_SECTIONS.find(s => s.id === "platform-talent")?.title || "Platforms",
-      //   badges: [...platformTalentBadges, ...platformBaseBadges],
-      // },
+      {
+        id: "platforms",
+        title: "Platforms",
+        badges: [...platformTalentBadges, ...platformBaseBadges],
+      },
     ];
 
     // Calculate summary

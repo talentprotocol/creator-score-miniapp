@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { getBadgesForUser } from "@/app/services/badgesService";
 import { resolveTalentUser } from "@/lib/user-resolver";
 import { getUserContext } from "@/lib/user-context";

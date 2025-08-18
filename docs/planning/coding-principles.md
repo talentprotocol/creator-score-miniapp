@@ -8,6 +8,7 @@
 - **Development Mode:** `NEXT_PUBLIC_DEV_MODE=true` bypasses authentication flows with hardcoded wallet address for rapid UI development.
 - **Shared Utilities:** All user lookups and profile loads go through a single resolver that abstracts identifier types into Talent UUID. Common logic extracted into shared services for maintainability and testability.
 - **Documentation:** All unique or opinionated decisions documented for clarity; best practices referenced but not over-explained.
+- **Talent API Data Usage:** Always ignore `points_calculation_logic` in Talent API responses and use only top-level credential fields (slug, points, readable_value, uom, max_score, etc.) for all logic and display.
 
 ### Typography Usage
 
@@ -111,6 +112,10 @@ External APIs → API Clients → Services → API Routes → Hooks → Pure UI 
 - **Page Components**: Accept only routing/identifier props, use hooks for data
 - **UI Components**: Pure functions receiving all data via props, no API calls
 - **Reusability**: Default to shadcn/ui, create custom components only for unique UX needs
+
+### Content Management Principles
+
+- **Content-Logic Separation**: Always separate content (copy, labels, descriptions) from business logic (computation, validation, data processing) by storing user-facing text in dedicated configuration files.
 
 ### User Resolution System
 

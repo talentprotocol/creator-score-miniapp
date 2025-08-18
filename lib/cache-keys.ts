@@ -29,6 +29,7 @@ export const CACHE_KEYS = {
   ETH_USDC_PRICE: "eth-usdc-price",
   FID_TO_TALENT_UUID: "fid-to-talent-uuid",
   USER_BADGES: "user-badges",
+  DATA_POINTS_SUM: "data-points-sum",
 };
 
 export const CACHE_DURATION_1_SECOND = 1; // 1 second
