@@ -182,27 +182,23 @@ export function formatNumberWithSuffix(num: number): string {
  * Calculate total earnings from credentials by summing up creator earnings
  * and converting ETH to USDC using current market price.
  *
+ * UPDATED: Now follows project rule to ignore points_calculation_logic
+ * and uses only top-level credential fields (slug, readable_value, uom).
+ *
  * FIXED: Previously had a data structure mismatch where currency detection
  * was checking readable_value (e.g., "2.67") for "ETH" instead of the
  * original value field (e.g., "1.6341052597675584 ETH"). Now correctly uses:
  * - readable_value for clean numeric amount
- * - original value field for currency detection
+ * - uom field for currency detection
  *
  * UPDATED: Now uses credential slugs instead of names for reliable earnings
  * detection, preventing issues with display name variations.
  */
 export async function calculateTotalRewards(
   credentials: Array<{
-    name: string;
     slug?: string;
-    points_calculation_logic?: {
-      data_points: Array<{
-        name?: string;
-        value: string | null;
-        readable_value: string | null;
-        uom?: string | null;
-      }>;
-    };
+    readable_value: string | null;
+    uom: string | null;
   }>,
   getEthUsdcPriceFn: () => Promise<number>,
 ): Promise<number> {
@@ -215,42 +211,31 @@ export async function calculateTotalRewards(
     if (!isEarnings) {
       return sum;
     }
-    if (!credential.points_calculation_logic?.data_points) {
+
+    if (!credential.readable_value) {
       return sum;
     }
-    const credentialTotal =
-      credential.points_calculation_logic.data_points.reduce(
-        (acc, dataPoint) => {
-          if (!dataPoint.readable_value && !dataPoint.value) {
-            return acc;
-          }
-          const cleanValue = dataPoint.readable_value || dataPoint.value || "";
-          const originalValue = dataPoint.value || "";
-          let value: number;
-          const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
-          if (numericValue.includes("K")) {
-            value = parseFloat(numericValue.replace("K", "")) * 1000;
-          } else if (numericValue.includes("M")) {
-            value = parseFloat(numericValue.replace("M", "")) * 1000000;
-          } else {
-            value = parseFloat(numericValue);
-          }
-          if (isNaN(value)) {
-            return acc;
-          }
-          let contribution = 0;
-          // This fixes the issue where readable_value (e.g., "2.67") was being checked for "ETH"
-          // instead of the original value field (e.g., "1.6341052597675584 ETH")
-          if (originalValue.includes("ETH")) {
-            contribution = convertEthToUsdc(value, ethPrice);
-          } else if (originalValue.includes("USDC")) {
-            contribution = value;
-          }
-          return acc + contribution;
-        },
-        0,
-      );
-    return sum + credentialTotal;
+
+    // Use the existing parseFormattedNumber utility for consistent parsing
+    const value = parseFormattedNumber(credential.readable_value);
+    if (isNaN(value)) {
+      return sum;
+    }
+
+    let contribution = 0;
+    const uom = credential.uom || "";
+
+    // Handle different UOMs (ETH, USDC, USD)
+    if (uom === "ETH") {
+      contribution = convertEthToUsdc(value, ethPrice);
+    } else if (uom === "USDC" || uom === "USD") {
+      contribution = value;
+    } else {
+      // For unknown UOMs, assume USD
+      contribution = value;
+    }
+
+    return sum + contribution;
   }, 0);
 
   return total;
