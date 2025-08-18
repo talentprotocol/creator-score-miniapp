@@ -2,10 +2,12 @@ import type { BadgeState } from "@/app/services/badgesService";
 import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface BadgeCardProps {
   badge: BadgeState;
   onBadgeClick: (badge: BadgeState) => void;
+  priority?: boolean;
 }
 
 /**
@@ -21,7 +23,11 @@ interface BadgeCardProps {
  * - Typography component for consistent text styling
  * - Active scale animation for mobile-first interaction
  */
-export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
+export function BadgeCard({
+  badge,
+  onBadgeClick,
+  priority = false,
+}: BadgeCardProps) {
   const isEarned = badge.state === "earned";
   const [imageError, setImageError] = useState(false);
 
@@ -49,14 +55,17 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
             <Medal className="w-12 h-12" />
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={isEarned ? badge.artwork.earnedUrl : badge.artwork.lockedUrl}
             alt={badge.title}
+            width={128}
+            height={128}
+            quality={85}
             className={`w-full h-full object-contain ${
               !isEarned ? "grayscale opacity-60" : ""
             }`}
             onError={() => setImageError(true)}
+            priority={priority}
           />
         )}
       </div>

@@ -168,11 +168,12 @@ export default function BadgesPage() {
 
                 {/* Badge grid */}
                 <div className="grid grid-cols-3 gap-x-4 gap-y-6">
-                  {section.badges.map((badge) => (
+                  {section.badges.map((badge, index) => (
                     <BadgeCard
                       key={badge.slug}
                       badge={badge}
                       onBadgeClick={handleBadgeClick}
+                      priority={index < 6} // Prioritize first 6 badges in each section
                     />
                   ))}
                 </div>

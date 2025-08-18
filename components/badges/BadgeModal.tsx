@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import type { BadgeState } from "@/app/services/badgesService";
 import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";
+import Image from "next/image";
 
 interface BadgeModalProps {
   badge: BadgeState | null;
@@ -68,7 +69,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
     <div className="space-y-6 text-center">
       <div className="flex flex-col items-center gap-4">
         {/* Large Badge Artwork */}
-        <div className="w-24 h-24 relative">
+        <div className="w-64 h-64 relative">
           {imageError ? (
             // Fallback icon when image fails to load
             <div
@@ -78,17 +79,20 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
                   : "border-muted-foreground/50 text-muted-foreground/50"
               }`}
             >
-              <Medal className="w-12 h-12" />
+              <Medal className="w-32 h-32" />
             </div>
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={isEarned ? badge.artwork.earnedUrl : badge.artwork.lockedUrl}
               alt={badge.title}
+              width={256}
+              height={256}
+              quality={85}
               className={`w-full h-full object-contain ${
                 !isEarned ? "grayscale opacity-60" : ""
               }`}
               onError={() => setImageError(true)}
+              priority={true}
             />
           )}
         </div>
@@ -108,7 +112,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <div className="space-y-2">
           <div className="w-full bg-muted rounded-full h-2">
             <div
-              className="bg-muted-foreground h-2 rounded-full transition-all"
+              className="bg-brand-green h-2 rounded-full transition-all"
               style={{ width: `${Math.min(badge.progressPct, 100)}%` }}
             />
           </div>
@@ -122,7 +126,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <Button
           onClick={onClose}
           className="w-full"
-          variant={isEarned ? "default" : "ghost"}
+          variant="brand-purple"
         >
           {isEarned ? "Share Badge" : "Let's do this!"}
         </Button>
@@ -137,7 +141,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <Dialog open={!!badge} onOpenChange={onClose}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Badge Details</DialogTitle>
+              <DialogTitle>{badge.title}</DialogTitle>
             </DialogHeader>
             <ModalContent />
           </DialogContent>
@@ -149,7 +153,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <Drawer open={!!badge} onOpenChange={onClose}>
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle>Badge Details</DrawerTitle>
+              <DrawerTitle>{badge.title}</DrawerTitle>
             </DrawerHeader>
             <div className="px-4 pb-4">
               <ModalContent />

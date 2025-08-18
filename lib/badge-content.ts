@@ -137,9 +137,9 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
   reown: {
     slug: "reown",
     title: "Reown",
-    description: "Complete {amount} wallet connect airdrop tasks",
+    description: "Earn {amount} $WCT from wallet connect airdrop",
     thresholds: [1, 10, 100],
-    labels: ["1 Task", "10 Tasks", "100 Tasks"],
+    labels: ["1 $WCT", "10 $WCT", "100 $WCT"],
     uom: "$WCT",
   },
 };
