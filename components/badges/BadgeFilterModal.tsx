@@ -1,8 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -74,7 +84,10 @@ function Content({
             }}
             onCheckedChange={handleAllToggle}
           />
-          <label htmlFor="all-sections" className="flex-1 cursor-pointer text-right">
+          <label
+            htmlFor="all-sections"
+            className="flex-1 cursor-pointer text-right"
+          >
             <Typography size="base" weight="medium">
               All Sections
             </Typography>
@@ -89,7 +102,10 @@ function Content({
               checked={selectedSections.includes(section.id)}
               onCheckedChange={() => onSectionToggle(section.id)}
             />
-            <label htmlFor={section.id} className="flex-1 cursor-pointer text-right">
+            <label
+              htmlFor={section.id}
+              className="flex-1 cursor-pointer text-right"
+            >
               <Typography size="base" weight="medium">
                 {section.title}
               </Typography>
