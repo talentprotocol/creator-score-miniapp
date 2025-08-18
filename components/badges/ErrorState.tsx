@@ -14,9 +14,7 @@ export function ErrorState({ error }: ErrorStateProps) {
         </p>
       </div>
 
-      <Callout>
-        {error}
-      </Callout>
+      <Callout>{error}</Callout>
     </div>
   );
 }

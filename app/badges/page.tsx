@@ -121,77 +121,85 @@ export default function BadgesPage() {
   }
 
   return (
-    <PageContainer noPadding>
-      {/* Header section */}
-      <Section variant="header">
-        <div className="flex items-center justify-between">
-          <div>
-            <Typography as="h1" size="2xl" weight="bold">
-              Badges
-            </Typography>
-            <Typography color="muted">
-              {badgesData.summary.earnedCount} badges earned,{" "}
-              {badgesData.summary.completionPct}% completed
-            </Typography>
+    <>
+      <PageContainer noPadding>
+        {/* Header section */}
+        <Section variant="header">
+          <div className="flex items-center justify-between">
+            <div>
+              <Typography as="h1" size="2xl" weight="bold">
+                Badges
+              </Typography>
+              <Typography color="muted">
+                {badgesData.summary.earnedCount} badges earned,{" "}
+                {badgesData.summary.completionPct}% completed
+              </Typography>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterModalOpen(true)}
+              className="h-10 w-10 p-0 self-start"
+            >
+              <Settings2 className="h-5 w-5 text-foreground" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setFilterModalOpen(true)}
-            className="h-10 w-10 p-0 self-start"
-          >
-            <Settings2 className="h-5 w-5 text-foreground" />
-          </Button>
-        </div>
-      </Section>
+        </Section>
 
-      {/* Content section */}
-      <Section variant="content">
-        <div className="space-y-8">
-          {filteredSections.map((section, sectionIndex) => {
-            const earnedCount = section.badges.filter(
-              (badge) => badge.state === "earned",
-            ).length;
-            const totalCount = section.badges.length;
+        {/* Content section */}
+        <Section variant="content">
+          <div className="space-y-8">
+            {filteredSections.map((section) => {
+              const earnedCount = section.badges.filter(
+                (badge) => badge.state === "earned",
+              ).length;
+              const totalCount = section.badges.length;
 
-            return (
-              <div key={section.id} className="badge-section">
-                {/* Section separator - full width (outside content padding) */}
-                {sectionIndex > 0 && (
-                  <div className="w-full h-px bg-border my-8 -mx-6" />
-                )}
+              return (
+                <div key={section.id} className="badge-section">
+                  {/* Section title with count */}
+                  <Typography as="h2" size="lg" weight="bold" className="mb-6">
+                    {section.title} ({earnedCount}/{totalCount})
+                  </Typography>
 
-                {/* Section title with count */}
-                <Typography as="h2" size="lg" weight="bold" className="mb-6">
-                  {section.title} ({earnedCount}/{totalCount})
-                </Typography>
-
-                {/* Badge grid */}
-                <div className="grid grid-cols-3 gap-x-4 gap-y-6">
-                  {section.badges.map((badge, index) => (
-                    <BadgeCard
-                      key={badge.slug}
-                      badge={badge}
-                      onBadgeClick={handleBadgeClick}
-                      priority={index < 6} // Prioritize first 6 badges in each section
-                    />
-                  ))}
+                  {/* Badge grid */}
+                  <div className="grid grid-cols-3 gap-x-4 gap-y-6">
+                    {section.badges.map((badge, index) => (
+                      <BadgeCard
+                        key={badge.slug}
+                        badge={badge}
+                        onBadgeClick={handleBadgeClick}
+                        priority={index < 6} // Prioritize first 6 badges in each section
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </Section>
+      </PageContainer>
 
-        <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
+      {/* Full-width dividing lines between sections - outside PageContainer constraints */}
+      {filteredSections.map((section, sectionIndex) => {
+        if (sectionIndex === 0) return null; // Skip first section
 
-        <BadgeFilterModal
-          open={filterModalOpen}
-          onOpenChange={setFilterModalOpen}
-          sections={availableSections}
-          selectedSections={selectedSections}
-          onSectionToggle={handleSectionToggle}
-        />
-      </Section>
-    </PageContainer>
+        return (
+          <Section key={`divider-${section.id}`} variant="full-width">
+            <div className="h-px bg-border my-8" />
+          </Section>
+        );
+      })}
+
+      <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
+
+      <BadgeFilterModal
+        open={filterModalOpen}
+        onOpenChange={setFilterModalOpen}
+        sections={availableSections}
+        selectedSections={selectedSections}
+        onSectionToggle={handleSectionToggle}
+      />
+    </>
   );
 }
