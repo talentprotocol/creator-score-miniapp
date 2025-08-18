@@ -23,16 +23,12 @@ import { getUserContext } from "@/lib/user-context";
  */
 export async function GET(request: Request) {
   try {
-    console.log("[GET /api/badges] Request received");
-    
     // Get Farcaster context from headers (for MiniApp) or fallback
     const context = getUserContext(null); // In real usage, this would get actual context
-    console.log("[GET /api/badges] Context:", context);
 
     // Parse URL to check for development parameters
     const url = new URL(request.url);
     const userIdParam = url.searchParams.get("userId");
-    console.log("[GET /api/badges] userIdParam:", userIdParam);
 
     let talentUuid: string | null = null;
 
@@ -40,44 +36,26 @@ export async function GET(request: Request) {
     if (userIdParam) {
       // 1. Direct UUID provided for development/testing via ?userId=<uuid>
       talentUuid = userIdParam;
-      console.log("[GET /api/badges] Using userIdParam:", talentUuid);
     } else if (context?.fid) {
-      // 2. Resolve from Farcaster context (production MiniApp usage)
-      console.log("[GET /api/badges] Resolving from Farcaster context:", context.fid);
+      // 2. Farcaster ID from context (MiniApp)
       const user = await resolveTalentUser(String(context.fid));
       talentUuid = user?.id || null;
-      console.log("[GET /api/badges] Resolved user:", user);
-    } else if (process.env.NODE_ENV === "development") {
-      // 3. Development fallback: use Talent Protocol default user for local testing
-      talentUuid = "bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"; // @macedo
-      console.log("[GET /api/badges] Using development fallback:", talentUuid);
+    } else {
+      // 3. Development fallback (for testing without context)
+      talentUuid = "bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"; // Test user
     }
 
-    console.log("[GET /api/badges] Final talentUuid:", talentUuid);
-
-    // Ensure we have a valid user to fetch badges for
+    // Validate we have a user to work with
     if (!talentUuid) {
-      console.log("[GET /api/badges] No talentUuid found, returning 404");
-      return NextResponse.json(
-        { error: "User not found or not authenticated" },
-        { status: 404 },
-      );
+      return new Response("User not found", { status: 404 });
     }
 
-    console.log("[GET /api/badges] Calling getBadgesForUser with:", talentUuid);
-    
-    // Fetch computed badge data from service layer
-    // This includes all badge states, progress calculations, and artwork URLs
-    const badges = await getBadgesForUser(talentUuid);
-    
-    console.log("[GET /api/badges] Badges fetched successfully, count:", badges.sections.length);
+    // Fetch badges for the resolved user
+    const badgesData = await getBadgesForUser(talentUuid);
 
-    return NextResponse.json(badges);
+    return Response.json(badgesData);
   } catch (error) {
-    console.error("[GET /api/badges] Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch badges" },
-      { status: 500 },
-    );
+    console.error("Error fetching badges:", error);
+    return new Response("Internal server error", { status: 500 });
   }
 }
