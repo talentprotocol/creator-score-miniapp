@@ -88,8 +88,25 @@ Every page follows this pattern:
 ```tsx
 <PageContainer noPadding>
   <Section variant="header">     {/* Title and context */}
-  <Section variant="full-width"> {/* Tabs, navigation */}
   <Section variant="content">    {/* Main content */}
+</PageContainer>
+
+{/* Full-width elements OUTSIDE PageContainer for edge-to-edge display */}
+<Section variant="full-width">   {/* Tabs, navigation, dividers */}
+```
+
+### Full-Width Edge-to-Edge Pattern
+**Principle**: For true edge-to-edge display, **don't use PageContainer** on pages that need full-width elements. Instead, use Section variants directly:
+
+```tsx
+// ✅ CORRECT: No PageContainer, direct Section usage
+<Section variant="header">...</Section>
+<Section variant="full-width">...</Section>  {/* Truly full-width */}
+<Section variant="content">...</Section>
+
+// ❌ WRONG: PageContainer constrains full-width elements
+<PageContainer noPadding>
+  <Section variant="full-width">...</Section>  {/* Still constrained by max-w-xl */}
 </PageContainer>
 ```
 
