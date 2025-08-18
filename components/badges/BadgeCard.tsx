@@ -61,20 +61,12 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
         )}
       </div>
 
-      {/* Badge Title */}
+      {/* Badge Title and Value - no gap between them */}
       <div className="text-center">
-        <Typography
-          size="sm"
-          weight="medium"
-          color={isEarned ? "default" : "muted"}
-        >
+        <Typography size="sm" weight="normal">
           {badge.title}
         </Typography>
-      </div>
-
-      {/* Badge Value/Progress */}
-      <div className="text-center w-full">
-        <Typography size="xs" color="muted">
+        <Typography size="xs" weight="light" color="muted">
           {badge.valueLabel}
         </Typography>
 
@@ -82,7 +74,7 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
         {!isEarned && badge.progressPct > 0 && (
           <div className="w-full bg-muted rounded-full h-1 mt-1">
             <div
-              className="bg-muted-foreground h-1 rounded-full transition-all"
+              className="bg-brand-green h-1 rounded-full transition-all"
               style={{ width: `${Math.min(badge.progressPct, 100)}%` }}
             />
           </div>
