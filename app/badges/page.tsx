@@ -127,7 +127,7 @@ export default function BadgesPage() {
         <div className="flex items-center justify-between">
           <div>
             <Typography as="h1" size="2xl" weight="bold">
-              All Badges
+              Badges
             </Typography>
             <Typography color="muted">
               {badgesData.summary.earnedCount} badges earned,{" "}
@@ -157,7 +157,7 @@ export default function BadgesPage() {
             return (
               <div key={section.id} className="badge-section">
                 {/* Section separator */}
-                <div className="h-px bg-muted mb-4" />
+                <div className="h-0.5 bg-border mb-4" />
 
                 {/* Section title with count */}
                 <Typography as="h2" size="lg" weight="bold" className="mb-6">

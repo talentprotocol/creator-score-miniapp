@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ function Content({
       {/* Header */}
       <div className="flex items-center justify-between">
         <Typography as="h2" size="lg" weight="bold">
-          Select
+          Filter Badges
         </Typography>
         <Button
           variant="ghost"
@@ -61,9 +61,9 @@ function Content({
       </div>
 
       {/* Filter Options */}
-      <div className="space-y-0">
+      <div className="space-y-4">
         {/* All sections checkbox */}
-        <div className="flex items-center space-x-3 py-3">
+        <div className="flex items-center space-x-3">
           <Checkbox
             id="all-sections"
             checked={allSelected}
@@ -74,32 +74,26 @@ function Content({
             }}
             onCheckedChange={handleAllToggle}
           />
-          <label htmlFor="all-sections" className="flex-1 cursor-pointer">
+          <label htmlFor="all-sections" className="flex-1 cursor-pointer text-right">
             <Typography size="base" weight="medium">
               All Sections
             </Typography>
           </label>
         </div>
 
-        {/* Separator after All checkbox */}
-        <div className="h-px bg-muted" />
-
         {/* Individual section checkboxes */}
-        {sections.map((section, index) => (
-          <div key={section.id}>
-            <div className="flex items-center space-x-3 py-3">
-              <Checkbox
-                id={section.id}
-                checked={selectedSections.includes(section.id)}
-                onCheckedChange={() => onSectionToggle(section.id)}
-              />
-              <label htmlFor={section.id} className="flex-1 cursor-pointer">
-                <Typography size="base" weight="medium">
-                  {section.title}
-                </Typography>
-              </label>
-            </div>
-            {index < sections.length - 1 && <div className="h-px bg-muted" />}
+        {sections.map((section) => (
+          <div key={section.id} className="flex items-center space-x-3">
+            <Checkbox
+              id={section.id}
+              checked={selectedSections.includes(section.id)}
+              onCheckedChange={() => onSectionToggle(section.id)}
+            />
+            <label htmlFor={section.id} className="flex-1 cursor-pointer text-right">
+              <Typography size="base" weight="medium">
+                {section.title}
+              </Typography>
+            </label>
           </div>
         ))}
       </div>
@@ -121,6 +115,7 @@ export function BadgeFilterModal({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent>
           <DrawerHeader className="px-4 pb-0">
+            <DrawerTitle className="sr-only">Filter Badges</DrawerTitle>
             <Content
               sections={sections}
               selectedSections={selectedSections}
@@ -137,6 +132,7 @@ export function BadgeFilterModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
+          <DialogTitle className="sr-only">Filter Badges</DialogTitle>
           <Content
             sections={sections}
             selectedSections={selectedSections}

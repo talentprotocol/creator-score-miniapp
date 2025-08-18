@@ -3,7 +3,7 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import { User, Trophy, Settings2, Search } from "lucide-react";
+import { User, Trophy, Settings, Search } from "lucide-react";
 
 export function useUserNavigation() {
   const { context } = useMiniKit();
@@ -45,7 +45,7 @@ export function useUserNavigation() {
   // Settings item for top nav
   const settingsItem = {
     href: "/settings",
-    icon: Settings2,
+    icon: Settings,
     label: "Settings",
   };
 
