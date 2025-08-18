@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
+import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 // Using native textarea to avoid adding new UI primitives
 
 interface NotificationHistory {
@@ -24,6 +25,7 @@ interface NotificationHistory {
 const AdminNotificationsPage: React.FC = () => {
   const { context } = useMiniKit();
   const user = getUserContext(context);
+  const { talentId } = usePrivyAuth({});
   const [token, setToken] = useState<string>("");
   const [title, setTitle] = useState<string>("Eligible: Free Screen Studio");
   const [body, setBody] = useState<string>(
@@ -41,6 +43,9 @@ const AdminNotificationsPage: React.FC = () => {
   const [fetchingUsers, setFetchingUsers] = useState<boolean>(false);
   const [history, setHistory] = useState<NotificationHistory[]>([]);
   const [fetchingHistory, setFetchingHistory] = useState<boolean>(false);
+
+  // Check if user is authenticated via either Farcaster or Privy
+  const isAuthenticated = user || talentId;
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_api_token");
@@ -157,9 +162,9 @@ const AdminNotificationsPage: React.FC = () => {
             </span>
           </div>
           <div className="text-xs text-muted-foreground">
-            {user?.fid ? (
+            {isAuthenticated ? (
               <>
-                Authenticated as FID: {user.fid}
+                Authenticated as FID: {user?.fid || talentId}
                 <br />
                 <span className="text-orange-600">
                   ⚠️ Using token-based auth (legacy mode)
@@ -193,58 +198,6 @@ const AdminNotificationsPage: React.FC = () => {
           {userCount !== null && (
             <div className="text-sm font-medium text-green-600">
               ✅ {userCount} users have notifications enabled
-            </div>
-          )}
-        </div>
-
-        {/* Notification History Section */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-muted-foreground">
-              Notification History (Real sends only)
-            </label>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={fetchNotificationHistory}
-              disabled={fetchingHistory}
-            >
-              {fetchingHistory ? "Loading..." : "Refresh History"}
-            </Button>
-          </div>
-          {history.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-blue-600">
-                📊 {history.length} notifications sent
-              </div>
-              <div className="max-h-64 overflow-y-auto border rounded-md p-2">
-                <table className="w-full text-xs">
-                  <thead className="border-b">
-                    <tr>
-                      <th className="text-left p-1">Title</th>
-                      <th className="text-left p-1">Audience</th>
-                      <th className="text-left p-1">Success</th>
-                      <th className="text-left p-1">Failed</th>
-                      <th className="text-left p-1">Sent</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((notification) => (
-                      <tr key={notification.id} className="border-b border-gray-100">
-                        <td className="p-1 max-w-32 truncate" title={notification.title}>
-                          {notification.title}
-                        </td>
-                        <td className="p-1">{notification.audience_size}</td>
-                        <td className="p-1 text-green-600">{notification.success_count}</td>
-                        <td className="p-1 text-red-600">{notification.failed_count}</td>
-                        <td className="p-1 text-gray-500">
-                          {new Date(notification.sent_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
         </div>
@@ -318,6 +271,58 @@ const AdminNotificationsPage: React.FC = () => {
           <pre className="text-xs whitespace-pre-wrap bg-muted p-3 rounded-md">
             {result}
           </pre>
+        </div>
+
+        {/* Notification History Section - Moved to bottom */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-muted-foreground">
+              Notification History (Real sends only)
+            </label>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={fetchNotificationHistory}
+              disabled={fetchingHistory}
+            >
+              {fetchingHistory ? "Loading..." : "Refresh History"}
+            </Button>
+          </div>
+          {history.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-blue-600">
+                📊 {history.length} notifications sent
+              </div>
+              <div className="max-h-64 overflow-y-auto border rounded-md p-2">
+                <table className="w-full text-xs">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left p-1">Title</th>
+                      <th className="text-left p-1">Audience</th>
+                      <th className="text-left p-1">Success</th>
+                      <th className="text-left p-1">Failed</th>
+                      <th className="text-left p-1">Sent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((notification) => (
+                      <tr key={notification.id} className="border-b border-gray-100">
+                        <td className="p-1 max-w-32 truncate" title={notification.title}>
+                          {notification.title}
+                        </td>
+                        <td className="p-1">{notification.audience_size}</td>
+                        <td className="p-1 text-green-600">{notification.success_count}</td>
+                        <td className="p-1 text-red-600">{notification.failed_count}</td>
+                        <td className="p-1 text-gray-500">
+                          {new Date(notification.sent_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

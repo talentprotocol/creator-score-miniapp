@@ -118,10 +118,36 @@ export async function POST(request: Request) {
 
   // Dry-run: return preview and audience only; DO NOT SEND
   if (dryRun) {
+    let audienceSize = limitedFids.length;
+    let fidsPreview = limitedFids.slice(0, 20);
+    
+    // If sending to all users, fetch the actual count
+    if (fids.length === 0) {
+      try {
+        // Fetch user count from the users API
+        const usersResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/admin/notifications/users`, {
+          headers: {
+            'Authorization': `Bearer ${request.headers.get('authorization')?.replace('Bearer ', '') || ''}`,
+          },
+        });
+        
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          audienceSize = usersData.count || 0;
+          fidsPreview = (usersData.fids || []).slice(0, 20);
+        }
+      } catch (error) {
+        console.error('Error fetching user count for dry run:', error);
+        // Fallback to 0 if we can't fetch the count
+        audienceSize = 0;
+        fidsPreview = [];
+      }
+    }
+    
     return NextResponse.json({
       state: "dry_run",
-      audienceSize: limitedFids.length,
-      fidsPreview: limitedFids.slice(0, 20),
+      audienceSize,
+      fidsPreview,
       payloadPreview: {
         title,
         body: message,
