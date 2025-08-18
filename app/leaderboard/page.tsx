@@ -438,24 +438,26 @@ function LeaderboardContent() {
         />
       </div>
 
-      {/* Full width tabs - outside PageContainer constraints */}
-      <div className="w-full border-b border-border bg-background">
-        <TabNavigation
-          tabs={[
-            {
-              id: "creators",
-              label: "Top 200",
-            },
-            {
-              id: "sponsors",
-              label: "Sponsors",
-              count: ACTIVE_SPONSORS.length,
-            },
-          ]}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-      </div>
+      {/* Full width tabs */}
+      <Section variant="full-width">
+        <div className="w-full border-b border-border bg-background">
+          <TabNavigation
+            tabs={[
+              {
+                id: "creators",
+                label: "Top 200",
+              },
+              {
+                id: "sponsors",
+                label: "Sponsors",
+                count: ACTIVE_SPONSORS.length,
+              },
+            ]}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
+      </Section>
 
       {/* Content section */}
       <Section variant="content" animate>
