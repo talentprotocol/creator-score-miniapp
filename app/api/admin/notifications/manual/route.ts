@@ -1,4 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+// Define the Neynar token interface
+interface NeynarToken {
+  fid: number;
+  token?: string;
+  enabled?: boolean;
+  object?: string;
+  url?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // Admin UUIDs - hardcoded for security
 const ADMIN_UUIDS = ["bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"];
@@ -21,25 +33,30 @@ function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const authHeader =
     request.headers.get("authorization") ||
     request.headers.get("Authorization");
-  
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return unauthorized("Missing Bearer token");
   }
-  
+
   const token = authHeader.slice("Bearer ".length).trim();
-  
+
   // Check if it's the old admin token (temporary backward compatibility)
   if (token === process.env.ADMIN_API_TOKEN) {
     // Legacy admin token access - allow but log for security
-    console.warn("Admin access via legacy token - consider upgrading to proper auth");
+    console.warn(
+      "Admin access via legacy token - consider upgrading to proper auth",
+    );
   } else {
     // Check if it's a Talent UUID for proper admin verification
     if (!ADMIN_UUIDS.includes(token)) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 },
+      );
     }
   }
 
@@ -50,14 +67,7 @@ export async function POST(request: Request) {
     return badRequest("Invalid JSON body");
   }
 
-  const {
-    title,
-    body: message,
-    targetUrl,
-    fids,
-    dryRun = true,
-    limit,
-  } = body;
+  const { title, body: message, targetUrl, fids, dryRun = true, limit } = body;
 
   if (!title || !message || !targetUrl || !Array.isArray(fids)) {
     return badRequest("Required fields: title, body, targetUrl, fids[]");
@@ -115,34 +125,90 @@ export async function POST(request: Request) {
   if (dryRun) {
     let audienceSize = limitedFids.length;
     let fidsPreview = limitedFids.slice(0, 20);
-    
+
     // If sending to all users, fetch the actual count
     if (fids.length === 0) {
       try {
-        // Fetch user count from the users API
-        const usersResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/admin/notifications/users`, {
-          headers: {
-            'Authorization': `Bearer ${request.headers.get('authorization')?.replace('Bearer ', '') || ''}`,
-          },
-        });
-        
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          audienceSize = usersData.count || 0;
-          fidsPreview = (usersData.fids || []).slice(0, 20);
+        // Use the same Neynar API call as the live send for consistency
+        const neynarApiKey = process.env.NEYNAR_API_KEY;
+        if (!neynarApiKey) {
+          throw new Error("NEYNAR_API_KEY not set");
         }
+
+        // Fetch the actual count of users with notifications enabled
+        let allTokens: NeynarToken[] = [];
+        let cursor: string | null = null;
+        let hasMore = true;
+
+        while (hasMore) {
+          const url = new URL(
+            "https://api.neynar.com/v2/farcaster/frame/notification_tokens",
+          );
+          if (cursor) {
+            url.searchParams.set("cursor", cursor);
+          }
+
+          const response = await fetch(url.toString(), {
+            headers: {
+              api_key: neynarApiKey,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch notification tokens: ${response.statusText}`,
+            );
+          }
+
+          const data = await response.json();
+
+          let tokens: NeynarToken[] = [];
+          if (data.tokens) {
+            tokens = data.tokens;
+          } else if (data.notification_tokens) {
+            tokens = data.notification_tokens;
+          } else if (Array.isArray(data)) {
+            tokens = data;
+          }
+
+          allTokens = allTokens.concat(tokens);
+
+          if (data.next && data.next.cursor) {
+            cursor = data.next.cursor;
+          } else {
+            hasMore = false;
+          }
+
+          if (allTokens.length > 1000) {
+            // Safety check
+            console.warn("Reached 1000 users limit, stopping pagination");
+            break;
+          }
+        }
+
+        audienceSize = allTokens.length;
+        fidsPreview = allTokens
+          .slice(0, 20)
+          .map((token: NeynarToken) => token.fid);
+        console.log(
+          `Dry run: Actual users with notifications enabled: ${audienceSize}`,
+        );
       } catch (error) {
-        console.error('Error fetching user count for dry run:', error);
+        console.error("Error fetching user count for dry run:", error);
         // Fallback to 0 if we can't fetch the count
         audienceSize = 0;
         fidsPreview = [];
       }
     }
-    
+
     return NextResponse.json({
       state: "dry_run",
       audienceSize,
       fidsPreview,
+      message:
+        fids.length === 0
+          ? `Preview: Would send to ${audienceSize} users with notifications enabled (showing first 20 FIDs)`
+          : `Preview: Would send to ${audienceSize} specific users (showing first 20 FIDs)`,
       payloadPreview: {
         title,
         body: message,
@@ -165,6 +231,75 @@ export async function POST(request: Request) {
 
     // If sending to all users, use empty targetFids
     if (targetFids.length === 0) {
+      // First, get the actual count of users with notifications enabled
+      let actualUserCount = 0;
+      try {
+        const neynarApiKey = process.env.NEYNAR_API_KEY;
+        if (!neynarApiKey) {
+          throw new Error("NEYNAR_API_KEY not set");
+        }
+
+        // Fetch the actual count of users with notifications enabled
+        let allTokens: NeynarToken[] = [];
+        let cursor: string | null = null;
+        let hasMore = true;
+
+        while (hasMore) {
+          const url = new URL(
+            "https://api.neynar.com/v2/farcaster/frame/notification_tokens",
+          );
+          if (cursor) {
+            url.searchParams.set("cursor", cursor);
+          }
+
+          const response = await fetch(url.toString(), {
+            headers: {
+              api_key: neynarApiKey,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch notification tokens: ${response.statusText}`,
+            );
+          }
+
+          const data = await response.json();
+
+          let tokens: NeynarToken[] = [];
+          if (data.tokens) {
+            tokens = data.tokens;
+          } else if (data.notification_tokens) {
+            tokens = data.notification_tokens;
+          } else if (Array.isArray(data)) {
+            tokens = data;
+          }
+
+          allTokens = allTokens.concat(tokens);
+
+          if (data.next && data.next.cursor) {
+            cursor = data.next.cursor;
+          } else {
+            hasMore = false;
+          }
+
+          if (allTokens.length > 1000) {
+            // Safety check
+            console.warn("Reached 1000 users limit, stopping pagination");
+            break;
+          }
+        }
+
+        actualUserCount = allTokens.length;
+        console.log(
+          `Actual users with notifications enabled: ${actualUserCount}`,
+        );
+      } catch (countError) {
+        console.error("Failed to get actual user count:", countError);
+        // Fallback to -1 if we can't get the count
+        actualUserCount = -1;
+      }
+
       const response = await client.publishFrameNotifications({
         targetFids: [], // This sends to ALL users with notifications enabled
         notification: {
@@ -187,6 +322,7 @@ export async function POST(request: Request) {
             title,
             body: message,
             target_url: absoluteTarget,
+            actual_user_count: actualUserCount,
           },
         });
         ph.shutdown();
@@ -196,8 +332,8 @@ export async function POST(request: Request) {
           title,
           body: message,
           target_url: absoluteTarget,
-          audience_size: -1, // -1 indicates "all users"
-          success_count: -1,
+          audience_size: actualUserCount, // Use actual count instead of -1
+          success_count: actualUserCount, // Use actual count instead of -1
           failed_count: 0,
           failed_fids: [],
           dry_run: false,
@@ -208,7 +344,8 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         state: "sent_to_all",
-        message: "Notification sent to all users with notifications enabled",
+        message: `Notification sent to ${actualUserCount} users with notifications enabled`,
+        actualUserCount,
         response,
       });
     }

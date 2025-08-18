@@ -131,7 +131,7 @@ const AdminNotificationsPage: React.FC = () => {
       });
       const json = await res.json();
       setResult(JSON.stringify(json, null, 2));
-      
+
       // Refresh history after sending a notification
       if (!dryRun) {
         fetchNotificationHistory();
@@ -208,9 +208,9 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Title (≤ 32)</label>
-          <Input 
-            value={title} 
-            onChange={(e) => setTitle(e.target.value)} 
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter notification title (max 32 characters)"
           />
         </div>
@@ -276,9 +276,25 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Result</label>
-          <pre className="text-xs whitespace-pre-wrap bg-muted p-3 rounded-md">
-            {result}
-          </pre>
+          {result && (
+            <>
+              {(() => {
+                try {
+                  const jsonResult = JSON.parse(result);
+                  return jsonResult.message ? (
+                    <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                      {jsonResult.message}
+                    </div>
+                  ) : null;
+                } catch {
+                  return null;
+                }
+              })()}
+              <pre className="text-xs whitespace-pre-wrap bg-muted p-3 rounded-md">
+                {result}
+              </pre>
+            </>
+          )}
         </div>
 
         {/* Notification History Section - Moved to bottom */}
@@ -314,13 +330,29 @@ const AdminNotificationsPage: React.FC = () => {
                   </thead>
                   <tbody>
                     {history.map((notification) => (
-                      <tr key={notification.id} className="border-b border-gray-100">
-                        <td className="p-1 max-w-32 truncate" title={notification.title}>
+                      <tr
+                        key={notification.id}
+                        className="border-b border-gray-100"
+                      >
+                        <td
+                          className="p-1 max-w-32 truncate"
+                          title={notification.title}
+                        >
                           {notification.title}
                         </td>
-                        <td className="p-1">{notification.audience_size}</td>
-                        <td className="p-1 text-green-600">{notification.success_count}</td>
-                        <td className="p-1 text-red-600">{notification.failed_count}</td>
+                        <td className="p-1">
+                          {notification.audience_size === -1
+                            ? "All"
+                            : notification.audience_size}
+                        </td>
+                        <td className="p-1 text-green-600">
+                          {notification.success_count === -1
+                            ? "All"
+                            : notification.success_count}
+                        </td>
+                        <td className="p-1 text-red-600">
+                          {notification.failed_count}
+                        </td>
                         <td className="p-1 text-gray-500">
                           {new Date(notification.sent_at).toLocaleDateString()}
                         </td>
