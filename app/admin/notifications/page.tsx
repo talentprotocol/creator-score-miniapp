@@ -14,9 +14,8 @@ const AdminNotificationsPage: React.FC = () => {
   const [targetUrl, setTargetUrl] = useState<string>(
     "/leaderboard?perk=screen-studio",
   );
-  const [fidsText, setFidsText] = useState<string>("8446");
-  const [limit, setLimit] = useState<string>("1");
-  const [dryRun, setDryRun] = useState<boolean>(true);
+         const [fidsText, setFidsText] = useState<string>("8446");
+       const [dryRun, setDryRun] = useState<boolean>(true);
   const [testingMode, setTestingMode] = useState<boolean>(true);
   const [result, setResult] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -44,6 +43,8 @@ const AdminNotificationsPage: React.FC = () => {
         setUserCount(data.count);
         // Auto-populate FIDs field with "all" to indicate sending to everyone
         setFidsText("all");
+        // Show the full response in the Result area
+        setResult(JSON.stringify(data, null, 2));
       } else {
         setResult(JSON.stringify(data, null, 2));
       }
@@ -86,7 +87,6 @@ const AdminNotificationsPage: React.FC = () => {
           fids,
           dryRun,
           testingMode,
-          limit: Number(limit) > 0 ? Number(limit) : undefined,
         }),
       });
       const json = await res.json();
@@ -166,20 +166,14 @@ const AdminNotificationsPage: React.FC = () => {
             placeholder="8446 or all"
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Limit</label>
-            <Input value={limit} onChange={(e) => setLimit(e.target.value)} />
-          </div>
-          <div className="space-y-2 flex items-end gap-2">
-            <label className="text-sm text-muted-foreground">Dry run</label>
-            <input
-              type="checkbox"
-              checked={dryRun}
-              onChange={(e) => setDryRun(e.target.checked)}
-            />
-          </div>
-        </div>
+                     <div className="space-y-2 flex items-center gap-2">
+               <label className="text-sm text-muted-foreground">Dry run</label>
+               <input
+                 type="checkbox"
+                 checked={dryRun}
+                 onChange={(e) => setDryRun(e.target.checked)}
+               />
+             </div>
         <div className="space-y-2 flex items-center gap-2">
           <label className="text-sm text-muted-foreground">
             Testing mode (restrict to FID 8446)
