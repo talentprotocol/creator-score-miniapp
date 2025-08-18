@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SectionAccordion } from "@/components/common/SectionAccordion";
 import { useBadges } from "@/hooks/useBadges";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import type { BadgeState } from "@/app/services/badgesService";
 import {
   BadgeModal,
@@ -29,9 +30,16 @@ import { Typography } from "@/components/ui/typography";
  * - Uses SectionAccordion for collapsible badge categories
  */
 export default function BadgesPage() {
-  // Fetch badges data with standard {data, loading, error} pattern
-  // For development, you can pass a userId parameter to useBadges()
-  const { data: badgesData, loading, error } = useBadges();
+  // Get current user's talent UUID (works for both Farcaster and Privy)
+  const { talentUuid, loading: userLoading } = useFidToTalentUuid();
+
+  // Fetch badges data with the user ID (only when we have a valid UUID)
+  const {
+    data: badgesData,
+    loading: badgesLoading,
+    error,
+  } = useBadges(talentUuid || undefined);
+
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
 
   /** Handle badge card clicks to open detailed modal */
@@ -44,7 +52,19 @@ export default function BadgesPage() {
     setSelectedBadge(null);
   };
 
-  if (loading) {
+  // Show loading while resolving user
+  if (userLoading) {
+    return <LoadingState />;
+  }
+
+  // Show error if no user context
+  if (!talentUuid) {
+    return (
+      <ErrorState error="Please connect your wallet or Farcaster account to view badges" />
+    );
+  }
+
+  if (badgesLoading) {
     return <LoadingState />;
   }
 
