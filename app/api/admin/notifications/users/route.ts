@@ -37,42 +37,66 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch notification tokens from Neynar
-    // Using the correct endpoint from Neynar docs
-    const response = await fetch(
-      "https://api.neynar.com/v2/farcaster/frame/notification_tokens",
-      {
-        headers: {
-          "api_key": neynarApiKey,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("Neynar API error:", response.status, errorData);
-      return NextResponse.json(
-        {
-          error: "Failed to fetch from Neynar",
-          details: errorData,
-          status: response.status,
-        },
-        { status: 500 },
-      );
-    }
-
-    const data = await response.json();
-    console.log("Neynar API response:", JSON.stringify(data, null, 2));
+    // Fetch ALL notification tokens from Neynar with pagination
+    let allTokens: any[] = [];
+    let cursor: string | null = null;
+    let hasMore = true;
     
-    // Handle different possible response structures from Neynar
-    let tokens = [];
-    if (data.tokens) {
-      tokens = data.tokens;
-    } else if (data.notification_tokens) {
-      tokens = data.notification_tokens;
-    } else if (Array.isArray(data)) {
-      tokens = data;
+    while (hasMore) {
+      const url = new URL("https://api.neynar.com/v2/farcaster/frame/notification_tokens");
+      if (cursor) {
+        url.searchParams.set("cursor", cursor);
+      }
+      
+      const response = await fetch(url.toString(), {
+        headers: {
+          api_key: neynarApiKey,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Neynar API error:", response.status, errorData);
+        return NextResponse.json(
+          {
+            error: "Failed to fetch from Neynar",
+            details: errorData,
+            status: response.status,
+          },
+          { status: 500 },
+        );
+      }
+
+      const data = await response.json();
+      console.log(`Neynar API response (cursor: ${cursor || 'initial'}):`, JSON.stringify(data, null, 2));
+      
+      // Handle different possible response structures from Neynar
+      let tokens = [];
+      if (data.tokens) {
+        tokens = data.tokens;
+      } else if (data.notification_tokens) {
+        tokens = data.notification_tokens;
+      } else if (Array.isArray(data)) {
+        tokens = data;
+      }
+      
+      allTokens = allTokens.concat(tokens);
+      
+      // Check if there are more pages
+      if (data.next && data.next.cursor) {
+        cursor = data.next.cursor;
+      } else {
+        hasMore = false;
+      }
+      
+      // Safety check to prevent infinite loops
+      if (allTokens.length > 1000) {
+        console.warn("Reached 1000 users limit, stopping pagination");
+        break;
+      }
     }
+    
+    console.log(`Total users fetched: ${allTokens.length}`);
     
     // Extract FIDs from the tokens
     interface NeynarToken {
@@ -81,12 +105,12 @@ export async function GET(request: NextRequest) {
       enabled?: boolean;
     }
     
-    const fids = tokens.map((token: NeynarToken) => token.fid) || [];
+    const fids = allTokens.map((token: NeynarToken) => token.fid) || [];
     
     return NextResponse.json({
       count: fids.length,
       fids: fids,
-      tokens: tokens,
+      tokens: allTokens,
     });
   } catch (error) {
     console.error("Error fetching notification users:", error);
