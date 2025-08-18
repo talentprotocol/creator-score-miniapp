@@ -127,8 +127,8 @@ function getArtworkUrls(
 ): { earnedUrl: string; lockedUrl: string } {
   const basePath = `/images/badges/${badgeSlug}`;
   return {
-    earnedUrl: `${basePath}/${badgeSlug}-${levelSlug}-earned.png`,
-    lockedUrl: `${basePath}/${badgeSlug}-${levelSlug}-locked.png`,
+    earnedUrl: `${basePath}/${badgeSlug}-${levelSlug}-earned.webp`,
+    lockedUrl: `${basePath}/${badgeSlug}-${levelSlug}-locked.webp`,
   };
 }
 

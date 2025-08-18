@@ -44,20 +44,12 @@ export async function POST(request: NextRequest) {
 
   const token = authHeader.slice("Bearer ".length).trim();
 
-  // Check if it's the old admin token (temporary backward compatibility)
-  if (token === process.env.ADMIN_API_TOKEN) {
-    // Legacy admin token access - allow but log for security
-    console.warn(
-      "Admin access via legacy token - consider upgrading to proper auth",
+  // Check if it's a Talent UUID for admin verification
+  if (!ADMIN_UUIDS.includes(token)) {
+    return NextResponse.json(
+      { error: "Admin access required" },
+      { status: 403 },
     );
-  } else {
-    // Check if it's a Talent UUID for proper admin verification
-    if (!ADMIN_UUIDS.includes(token)) {
-      return NextResponse.json(
-        { error: "Admin access required" },
-        { status: 403 },
-      );
-    }
   }
 
   let body: RequestBody;

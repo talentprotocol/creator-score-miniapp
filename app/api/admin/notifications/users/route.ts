@@ -4,28 +4,22 @@ import { NextRequest, NextResponse } from "next/server";
 const ADMIN_UUIDS = ["bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"];
 
 export async function GET(request: NextRequest) {
-  // First check Bearer token for backward compatibility
-  const authHeader = request.headers.get("authorization");
+  const authHeader =
+    request.headers.get("authorization") ||
+    request.headers.get("Authorization");
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const token = authHeader.substring(7);
+  const token = authHeader.slice("Bearer ".length).trim();
 
-  // Check if it's the old admin token (temporary backward compatibility)
-  if (token === process.env.ADMIN_API_TOKEN) {
-    // Legacy admin token access - allow but log for security
-    console.warn(
-      "Admin access via legacy token - consider upgrading to proper auth",
+  // Check if it's a Talent UUID for admin verification
+  if (!ADMIN_UUIDS.includes(token)) {
+    return NextResponse.json(
+      { error: "Admin access required" },
+      { status: 500 },
     );
-  } else {
-    // Check if it's a Talent UUID for proper admin verification
-    if (!ADMIN_UUIDS.includes(token)) {
-      return NextResponse.json(
-        { error: "Admin access required" },
-        { status: 403 },
-      );
-    }
   }
 
   try {

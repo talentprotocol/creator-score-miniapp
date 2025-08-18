@@ -30,7 +30,7 @@ const AdminNotificationsPage: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [body, setBody] = useState<string>("");
   const [targetUrl, setTargetUrl] = useState<string>("");
-  const [fidsText, setFidsText] = useState<string>("");
+  const [fidsText, setFidsText] = useState<string>("8446, 6730");
   const [dryRun, setDryRun] = useState<boolean>(true);
   const [testingMode, setTestingMode] = useState<boolean>(true);
   const [result, setResult] = useState<string>("");
@@ -44,13 +44,13 @@ const AdminNotificationsPage: React.FC = () => {
   const isAuthenticated = user || talentId;
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("admin_api_token");
+    const saved = sessionStorage.getItem("admin_uuid");
     if (saved) setToken(saved);
   }, []);
 
   function persistToken(val: string) {
     setToken(val);
-    sessionStorage.setItem("admin_api_token", val);
+    sessionStorage.setItem("admin_uuid", val);
   }
 
   async function fetchNotificationUsers() {
@@ -161,14 +161,14 @@ const AdminNotificationsPage: React.FC = () => {
               <>
                 Authenticated as FID: {user?.fid || talentId}
                 <br />
-                <span className="text-orange-600">
-                  ⚠️ Using token-based auth (legacy mode)
+                <span className="text-green-600">
+                  ✅ Using UUID-based admin verification
                 </span>
               </>
             ) : (
               <>
                 <span className="text-orange-600">
-                  ⚠️ No Farcaster context - using token-based auth
+                  ⚠️ No Farcaster context - using UUID-based auth
                 </span>
               </>
             )}
@@ -198,10 +198,10 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">Admin Token</label>
+          <label className="text-sm text-muted-foreground">Admin UUID</label>
           <Input
             type="password"
-            placeholder="Paste ADMIN_API_TOKEN"
+            placeholder="Paste your Talent UUID (e.g., bd9d2b22-1b5b-43d3-b559-c53cbf1b7891)"
             value={token}
             onChange={(e) => persistToken(e.target.value)}
           />
