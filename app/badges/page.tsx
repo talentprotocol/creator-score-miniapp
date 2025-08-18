@@ -101,8 +101,8 @@ export default function BadgesPage() {
     return <LoadingState />;
   }
 
-  // Show error if no user context
-  if (!talentUuid) {
+  // Show error if no user context after loading is complete
+  if (!userLoading && !talentUuid) {
     return (
       <ErrorState error="Please connect your wallet or Farcaster account to view badges" />
     );
