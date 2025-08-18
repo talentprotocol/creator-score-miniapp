@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+// Admin UUIDs - hardcoded for security
+const ADMIN_UUIDS = ["bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"];
+
 type RequestBody = {
   title: string;
   body: string;
@@ -22,19 +25,22 @@ export async function POST(request: Request) {
   const authHeader =
     request.headers.get("authorization") ||
     request.headers.get("Authorization");
-  const expected = process.env.ADMIN_API_TOKEN;
-  if (!expected) {
-    return NextResponse.json(
-      { error: "Server not configured: ADMIN_API_TOKEN missing" },
-      { status: 500 },
-    );
-  }
+  
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return unauthorized("Missing Bearer token");
   }
+  
   const token = authHeader.slice("Bearer ".length).trim();
-  if (token !== expected) {
-    return unauthorized("Invalid token");
+  
+  // Check if it's the old admin token (temporary backward compatibility)
+  if (token === process.env.ADMIN_API_TOKEN) {
+    // Legacy admin token access - allow but log for security
+    console.warn("Admin access via legacy token - consider upgrading to proper auth");
+  } else {
+    // Check if it's a Talent UUID for proper admin verification
+    if (!ADMIN_UUIDS.includes(token)) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
   }
 
   let body: RequestBody;

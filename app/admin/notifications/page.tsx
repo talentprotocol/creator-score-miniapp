@@ -3,9 +3,27 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { getUserContext } from "@/lib/user-context";
 // Using native textarea to avoid adding new UI primitives
 
+interface NotificationHistory {
+  id: string;
+  campaign: string;
+  title: string;
+  body: string;
+  target_url: string;
+  audience_size: number;
+  success_count: number;
+  failed_count: number;
+  sent_at: string;
+  failed_fids: number[];
+  dry_run: boolean;
+}
+
 const AdminNotificationsPage: React.FC = () => {
+  const { context } = useMiniKit();
+  const user = getUserContext(context);
   const [token, setToken] = useState<string>("");
   const [title, setTitle] = useState<string>("Eligible: Free Screen Studio");
   const [body, setBody] = useState<string>(
@@ -14,13 +32,15 @@ const AdminNotificationsPage: React.FC = () => {
   const [targetUrl, setTargetUrl] = useState<string>(
     "/leaderboard?perk=screen-studio",
   );
-         const [fidsText, setFidsText] = useState<string>("8446");
-       const [dryRun, setDryRun] = useState<boolean>(true);
+  const [fidsText, setFidsText] = useState<string>("8446");
+  const [dryRun, setDryRun] = useState<boolean>(true);
   const [testingMode, setTestingMode] = useState<boolean>(true);
   const [result, setResult] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [userCount, setUserCount] = useState<number | null>(null);
   const [fetchingUsers, setFetchingUsers] = useState<boolean>(false);
+  const [history, setHistory] = useState<NotificationHistory[]>([]);
+  const [fetchingHistory, setFetchingHistory] = useState<boolean>(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_api_token");
@@ -52,6 +72,26 @@ const AdminNotificationsPage: React.FC = () => {
       setResult(String(e));
     } finally {
       setFetchingUsers(false);
+    }
+  }
+
+  async function fetchNotificationHistory() {
+    setFetchingHistory(true);
+    try {
+      const res = await fetch("/api/admin/notifications/history", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.history) {
+        setHistory(data.history);
+        setResult(`✅ Fetched ${data.count} notification history records`);
+      } else {
+        setResult(JSON.stringify(data, null, 2));
+      }
+    } catch (e) {
+      setResult(String(e));
+    } finally {
+      setFetchingHistory(false);
     }
   }
 
@@ -91,6 +131,11 @@ const AdminNotificationsPage: React.FC = () => {
       });
       const json = await res.json();
       setResult(JSON.stringify(json, null, 2));
+      
+      // Refresh history after sending a notification
+      if (!dryRun) {
+        fetchNotificationHistory();
+      }
     } catch (e) {
       setResult(String(e));
     } finally {
@@ -102,6 +147,33 @@ const AdminNotificationsPage: React.FC = () => {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-xl mx-auto w-full p-4 space-y-4">
         <h1 className="text-lg font-semibold">Manual Notifications</h1>
+
+        {/* Admin Status Section */}
+        <div className="space-y-2 p-3 border rounded-md bg-muted/50">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Admin Access</span>
+            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+              ✅ Active
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {user?.fid ? (
+              <>
+                Authenticated as FID: {user.fid}
+                <br />
+                <span className="text-orange-600">
+                  ⚠️ Using token-based auth (legacy mode)
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-orange-600">
+                  ⚠️ No Farcaster context - using token-based auth
+                </span>
+              </>
+            )}
+          </div>
+        </div>
 
         {/* User Count Section */}
         <div className="space-y-2">
@@ -121,6 +193,58 @@ const AdminNotificationsPage: React.FC = () => {
           {userCount !== null && (
             <div className="text-sm font-medium text-green-600">
               ✅ {userCount} users have notifications enabled
+            </div>
+          )}
+        </div>
+
+        {/* Notification History Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-muted-foreground">
+              Notification History (Real sends only)
+            </label>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={fetchNotificationHistory}
+              disabled={fetchingHistory}
+            >
+              {fetchingHistory ? "Loading..." : "Refresh History"}
+            </Button>
+          </div>
+          {history.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-blue-600">
+                📊 {history.length} notifications sent
+              </div>
+              <div className="max-h-64 overflow-y-auto border rounded-md p-2">
+                <table className="w-full text-xs">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left p-1">Title</th>
+                      <th className="text-left p-1">Audience</th>
+                      <th className="text-left p-1">Success</th>
+                      <th className="text-left p-1">Failed</th>
+                      <th className="text-left p-1">Sent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((notification) => (
+                      <tr key={notification.id} className="border-b border-gray-100">
+                        <td className="p-1 max-w-32 truncate" title={notification.title}>
+                          {notification.title}
+                        </td>
+                        <td className="p-1">{notification.audience_size}</td>
+                        <td className="p-1 text-green-600">{notification.success_count}</td>
+                        <td className="p-1 text-red-600">{notification.failed_count}</td>
+                        <td className="p-1 text-gray-500">
+                          {new Date(notification.sent_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -166,14 +290,14 @@ const AdminNotificationsPage: React.FC = () => {
             placeholder="8446 or all"
           />
         </div>
-                     <div className="space-y-2 flex items-center gap-2">
-               <label className="text-sm text-muted-foreground">Dry run</label>
-               <input
-                 type="checkbox"
-                 checked={dryRun}
-                 onChange={(e) => setDryRun(e.target.checked)}
-               />
-             </div>
+        <div className="space-y-2 flex items-center gap-2">
+          <label className="text-sm text-muted-foreground">Dry run</label>
+          <input
+            type="checkbox"
+            checked={dryRun}
+            onChange={(e) => setDryRun(e.target.checked)}
+          />
+        </div>
         <div className="space-y-2 flex items-center gap-2">
           <label className="text-sm text-muted-foreground">
             Testing mode (restrict to FID 8446)
