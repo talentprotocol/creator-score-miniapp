@@ -24,18 +24,24 @@ export function useBadges(userId?: string): UseBadgesReturn {
   useEffect(() => {
     /** Fetch badge data from API with proper error handling */
     async function fetchBadges() {
+      // Don't fetch if no userId is provided
+      if (!userId) {
+        setLoading(false);
+        setData(null);
+        setError(null);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
 
         // Build query params for development/testing
         const params = new URLSearchParams();
-        if (userId) {
-          params.append("userId", userId);
-        }
+        params.append("userId", userId);
 
         const queryString = params.toString();
-        const url = `/api/badges${queryString ? `?${queryString}` : ""}`;
+        const url = `/api/badges?${queryString}`;
 
         const response = await fetch(url);
         if (!response.ok) {
