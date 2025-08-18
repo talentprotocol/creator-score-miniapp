@@ -21,9 +21,6 @@ export function useBadges(userId?: string): UseBadgesReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Debug logging
-  console.log("[useBadges] Hook called with userId:", userId);
-
   useEffect(() => {
     /** Fetch badge data from API with proper error handling */
     async function fetchBadges() {
@@ -39,32 +36,23 @@ export function useBadges(userId?: string): UseBadgesReturn {
 
         const queryString = params.toString();
         const url = `/api/badges${queryString ? `?${queryString}` : ""}`;
-        
-        console.log("[useBadges] Fetching from URL:", url, "userId:", userId);
 
         const response = await fetch(url);
-
         if (!response.ok) {
           throw new Error(`Failed to fetch badges: ${response.status}`);
         }
 
-        const badgesData = await response.json();
-        setData(badgesData);
+        const result = await response.json();
+        setData(result);
       } catch (err) {
-        console.error("[useBadges] Error:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch badges");
-        setData(null);
       } finally {
         setLoading(false);
       }
     }
 
     fetchBadges();
-  }, [userId]); // Re-fetch when userId changes
+  }, [userId]);
 
-  return {
-    data,
-    loading,
-    error,
-  };
+  return { data, loading, error };
 }

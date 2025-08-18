@@ -32,10 +32,7 @@ import { Typography } from "@/components/ui/typography";
 export default function BadgesPage() {
   // Get current user's talent UUID (works for both Farcaster and Privy)
   const { talentUuid, loading: userLoading } = useFidToTalentUuid();
-  
-  // Debug logging
-  console.log("[BadgesPage] talentUuid:", talentUuid, "userLoading:", userLoading);
-  
+
   // Only fetch badges when we have a valid UUID
   const {
     data: badgesData,
@@ -57,17 +54,15 @@ export default function BadgesPage() {
 
   // Show loading while resolving user
   if (userLoading) {
-    console.log("[BadgesPage] Still loading user, showing loading state");
     return <LoadingState />;
   }
 
   // Show error if no user context
   if (!talentUuid) {
-    console.log("[BadgesPage] No talentUuid, showing error state");
-    return <ErrorState error="Please connect your wallet or Farcaster account to view badges" />;
+    return (
+      <ErrorState error="Please connect your wallet or Farcaster account to view badges" />
+    );
   }
-
-  console.log("[BadgesPage] User resolved, talentUuid:", talentUuid, "badgesLoading:", badgesLoading, "error:", error);
 
   if (badgesLoading) {
     return <LoadingState />;
