@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -26,7 +26,6 @@ const AdminNotificationsPage: React.FC = () => {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const { talentId } = usePrivyAuth({});
-  const [token, setToken] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [body, setBody] = useState<string>("");
   const [targetUrl, setTargetUrl] = useState<string>("");
@@ -43,21 +42,20 @@ const AdminNotificationsPage: React.FC = () => {
   // Check if user is authenticated via either Farcaster or Privy
   const isAuthenticated = user || talentId;
 
-  useEffect(() => {
-    const saved = sessionStorage.getItem("admin_uuid");
-    if (saved) setToken(saved);
-  }, []);
-
-  function persistToken(val: string) {
-    setToken(val);
-    sessionStorage.setItem("admin_uuid", val);
-  }
+  // Remove the useEffect and persistToken function since they're no longer needed
 
   async function fetchNotificationUsers() {
     setFetchingUsers(true);
     try {
+      // Use the user's actual FID or talentId for authentication
+      const authToken = user?.fid || talentId;
+      if (!authToken) {
+        setResult("❌ Not authenticated - please connect your wallet or Farcaster account");
+        return;
+      }
+
       const res = await fetch("/api/admin/notifications/users", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();
       if (data.count !== undefined) {
@@ -79,8 +77,15 @@ const AdminNotificationsPage: React.FC = () => {
   async function fetchNotificationHistory() {
     setFetchingHistory(true);
     try {
+      // Use the user's actual FID or talentId for authentication
+      const authToken = user?.fid || talentId;
+      if (!authToken) {
+        setResult("❌ Not authenticated - please connect your wallet or Farcaster account");
+        return;
+      }
+
       const res = await fetch("/api/admin/notifications/history", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();
       if (data.history) {
@@ -100,6 +105,14 @@ const AdminNotificationsPage: React.FC = () => {
     setLoading(true);
     setResult("");
     try {
+      // Use the user's actual FID or talentId for authentication
+      const authToken = user?.fid || talentId;
+      if (!authToken) {
+        setResult("❌ Not authenticated - please connect your wallet or Farcaster account");
+        setLoading(false);
+        return;
+      }
+
       let fids: number[] = [];
 
       if (fidsText.trim() === "all") {
@@ -119,8 +132,7 @@ const AdminNotificationsPage: React.FC = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({
           title,
           body,
@@ -197,15 +209,6 @@ const AdminNotificationsPage: React.FC = () => {
           )}
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">Admin UUID</label>
-          <Input
-            type="password"
-            placeholder="Paste your Talent UUID (e.g., bd9d2b22-1b5b-43d3-b559-c53cbf1b7891)"
-            value={token}
-            onChange={(e) => persistToken(e.target.value)}
-          />
-        </div>
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Title (≤ 32)</label>
           <Input
@@ -317,6 +320,12 @@ const AdminNotificationsPage: React.FC = () => {
               <div className="text-sm font-medium text-blue-600">
                 📊 {history.length} notifications sent
               </div>
+              {history.some(n => n.audience_size === -1) && (
+                <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                  ℹ️ Some entries show &quot;All (legacy data)&quot; - these are from before we fixed the counting system. 
+                  New notifications will show actual numbers.
+                </div>
+              )}
               <div className="max-h-64 overflow-y-auto border rounded-md p-2">
                 <table className="w-full text-xs">
                   <thead className="border-b">
@@ -342,12 +351,12 @@ const AdminNotificationsPage: React.FC = () => {
                         </td>
                         <td className="p-1">
                           {notification.audience_size === -1
-                            ? "All"
+                            ? "All (legacy data)"
                             : notification.audience_size}
                         </td>
                         <td className="p-1 text-green-600">
                           {notification.success_count === -1
-                            ? "All"
+                            ? "All (legacy data)"
                             : notification.success_count}
                         </td>
                         <td className="p-1 text-red-600">

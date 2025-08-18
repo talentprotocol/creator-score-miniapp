@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       console.error("Supabase error:", error);
       return NextResponse.json(
         { error: "Failed to fetch notification history" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching notification history:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
