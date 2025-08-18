@@ -116,8 +116,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     uom: "followers",
   },
 
-  "platform-talent": {
-    slug: "platform-talent",
+  talent: {
+    slug: "talent",
     title: "Talent Protocol",
     description: "Hold {amount} $TALENT tokens",
     thresholds: [100, 1000, 10000],
@@ -125,13 +125,22 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     uom: "$TALENT",
   },
 
-  "platform-base": {
-    slug: "platform-base",
+  base: {
+    slug: "base",
     title: "Base Network",
     description: "Make {amount}+ transactions on Base",
     thresholds: [10, 100, 1000],
     labels: ["10 Transactions", "100 Transactions", "1K Transactions"],
     uom: "transactions",
+  },
+
+  reown: {
+    slug: "reown",
+    title: "Reown",
+    description: "Complete {amount} wallet connect airdrop tasks",
+    thresholds: [1, 10, 100],
+    labels: ["1 Task", "10 Tasks", "100 Tasks"],
+    uom: "$WCT",
   },
 };
 

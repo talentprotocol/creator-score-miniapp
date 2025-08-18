@@ -98,14 +98,10 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
             {badge.title}
           </Typography>
           <Typography size="sm" color="muted">
-            {badge.valueLabel}
+            {badge.description}
           </Typography>
         </div>
       </div>
-
-      <Typography size="sm" color="muted">
-        {badge.description}
-      </Typography>
 
       {/* Progress bar for locked badges */}
       {!isEarned && badge.progressPct > 0 && (
@@ -116,8 +112,8 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
               style={{ width: `${Math.min(badge.progressPct, 100)}%` }}
             />
           </div>
-          <Typography size="xs" color="muted">
-            {Math.round(badge.progressPct)}% complete
+          <Typography size="sm" color="muted">
+            {badge.valueLabel}
           </Typography>
         </div>
       )}

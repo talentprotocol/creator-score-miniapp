@@ -36,7 +36,7 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
       onClick={() => onBadgeClick(badge)}
     >
       {/* Badge Artwork */}
-      <div className="w-16 h-16 relative">
+      <div className="w-28 h-28 relative">
         {imageError ? (
           // Fallback icon when image fails to load
           <div
@@ -46,7 +46,7 @@ export function BadgeCard({ badge, onBadgeClick }: BadgeCardProps) {
                 : "border-muted-foreground/50 text-muted-foreground/50"
             }`}
           >
-            <Medal className="w-8 h-8" />
+            <Medal className="w-12 h-12" />
           </div>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
