@@ -137,7 +137,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <Dialog open={!!badge} onOpenChange={onClose}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{badge.title}</DialogTitle>
+              <DialogTitle>{badge.categoryName}</DialogTitle>
             </DialogHeader>
             <ModalContent />
           </DialogContent>
@@ -149,7 +149,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <Drawer open={!!badge} onOpenChange={onClose}>
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle>{badge.title}</DrawerTitle>
+              <DrawerTitle>{badge.categoryName}</DrawerTitle>
             </DrawerHeader>
             <div className="px-4 pb-4">
               <ModalContent />

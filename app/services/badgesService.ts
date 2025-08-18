@@ -47,6 +47,7 @@ export interface BadgeState {
     earnedUrl: string;
     lockedUrl: string;
   };
+  categoryName: string; // Badge category name (e.g., "Creator Score", "Streaks")
 }
 
 export interface BadgeSection {
@@ -196,6 +197,7 @@ async function computeCreatorScoreBadges(
       valueLabel: earned ? "Earned" : `${score} of ${range.min}`,
       progressPct: progress,
       artwork: getArtworkUrls("creator-score", level.toString()),
+      categoryName: content.title,
     };
   });
 }
@@ -252,6 +254,7 @@ async function computeTotalEarningsBadges(
       ),
       progressPct: progress,
       artwork: getArtworkUrls("total-earnings", (index + 1).toString()),
+      categoryName: content.title,
     };
   });
 }
@@ -297,6 +300,7 @@ async function computeTotalFollowersBadges(
       ),
       progressPct: progress,
       artwork: getArtworkUrls("total-followers", (index + 1).toString()),
+      categoryName: content.title,
     };
   });
 }
@@ -330,6 +334,7 @@ async function computeStreaksBadges(
       valueLabel: formatValueLabel("locked", content.slug, 0, threshold, uom),
       progressPct: 0,
       artwork: getArtworkUrls("streaks", (index + 1).toString()),
+      categoryName: content.title,
     };
   });
 }
@@ -377,6 +382,7 @@ async function computePlatformTalentBadges(
       ),
       progressPct: progress,
       artwork: getArtworkUrls("talent", (index + 1).toString()),
+      categoryName: content.title,
     };
   });
 }
@@ -419,6 +425,7 @@ async function computePlatformBaseBadges(
       ),
       progressPct: progress,
       artwork: getArtworkUrls("base", (index + 1).toString()),
+      categoryName: content.title,
     };
   });
 }
@@ -463,6 +470,7 @@ async function computePlatformReownBadges(
       ),
       progressPct: progress,
       artwork: getArtworkUrls("reowen", (index + 1).toString()),
+      categoryName: content.title,
     };
   });
 }

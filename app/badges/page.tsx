@@ -138,9 +138,9 @@ export default function BadgesPage() {
             variant="ghost"
             size="sm"
             onClick={() => setFilterModalOpen(true)}
-            className="h-10 w-10 p-0"
+            className="h-10 w-10 p-0 self-start"
           >
-            <Settings2 className="h-5 w-5" />
+            <Settings2 className="h-5 w-5 text-foreground" />
           </Button>
         </div>
       </Section>
@@ -148,7 +148,7 @@ export default function BadgesPage() {
       {/* Content section */}
       <Section variant="content">
         <div className="space-y-8">
-          {filteredSections.map((section) => {
+          {filteredSections.map((section, sectionIndex) => {
             const earnedCount = section.badges.filter(
               (badge) => badge.state === "earned",
             ).length;
@@ -156,10 +156,10 @@ export default function BadgesPage() {
 
             return (
               <div key={section.id} className="badge-section">
-                {/* Section separator - full width */}
-                <Section variant="full-width">
-                  <div className="h-px bg-border m-6" />
-                </Section>
+                {/* Section separator - full width (outside content padding) */}
+                {sectionIndex > 0 && (
+                  <div className="w-full h-px bg-border -mx-6 my-8" />
+                )}
 
                 {/* Section title with count */}
                 <Typography as="h2" size="lg" weight="bold" className="mb-6">
