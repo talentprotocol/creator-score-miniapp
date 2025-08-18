@@ -87,6 +87,13 @@ export async function POST(request: Request) {
     );
   }
 
+  // Handle "all" FIDs case
+  let targetFids = fids;
+  if (fids.length === 0) {
+    // Empty array means send to all users with notifications enabled
+    targetFids = [];
+  }
+
   // Testing guard: restrict to only FID 8446 if enabled
   const allowedTestingFids = new Set([8446]);
   const filteredFids = (
@@ -129,6 +136,57 @@ export async function POST(request: Request) {
       );
 
     const client = new NeynarAPIClient({ apiKey });
+
+    // If sending to all users, use empty targetFids
+    if (targetFids.length === 0) {
+      const response = await client.publishFrameNotifications({
+        targetFids: [], // This sends to ALL users with notifications enabled
+        notification: {
+          title,
+          body: message,
+          target_url: absoluteTarget,
+        },
+      });
+
+      // Log success
+      try {
+        const { supabase } = await import("@/lib/supabase-client");
+        const { default: PostHogClient } = await import("@/lib/posthog");
+        const ph = PostHogClient();
+        ph.capture({
+          distinctId: "admin",
+          event: "notifications_sent_to_all",
+          properties: {
+            campaign: "screen_studio",
+            title,
+            body: message,
+            target_url: absoluteTarget,
+          },
+        });
+        ph.shutdown();
+
+        await supabase.from("notification_runs").insert({
+          campaign: "screen_studio",
+          title,
+          body: message,
+          target_url: absoluteTarget,
+          audience_size: -1, // -1 indicates "all users"
+          success_count: -1,
+          failed_count: 0,
+          failed_fids: [],
+          dry_run: false,
+        });
+      } catch (auditError) {
+        console.error("Failed to log notification audit:", auditError);
+      }
+
+      return NextResponse.json({
+        state: "sent_to_all",
+        message: "Notification sent to all users with notifications enabled",
+        response,
+      });
+    }
+
     const batches: number[][] = [];
     for (let i = 0; i < limitedFids.length; i += 100) {
       batches.push(limitedFids.slice(i, i + 100));

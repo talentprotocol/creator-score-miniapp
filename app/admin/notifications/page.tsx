@@ -20,6 +20,8 @@ const AdminNotificationsPage: React.FC = () => {
   const [testingMode, setTestingMode] = useState<boolean>(true);
   const [result, setResult] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [fetchingUsers, setFetchingUsers] = useState<boolean>(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_api_token");
@@ -31,16 +33,45 @@ const AdminNotificationsPage: React.FC = () => {
     sessionStorage.setItem("admin_api_token", val);
   }
 
+  async function fetchNotificationUsers() {
+    setFetchingUsers(true);
+    try {
+      const res = await fetch("/api/admin/notifications/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.count !== undefined) {
+        setUserCount(data.count);
+        // Auto-populate FIDs field with "all" to indicate sending to everyone
+        setFidsText("all");
+      } else {
+        setResult(JSON.stringify(data, null, 2));
+      }
+    } catch (e) {
+      setResult(String(e));
+    } finally {
+      setFetchingUsers(false);
+    }
+  }
+
   async function callApi() {
     setLoading(true);
     setResult("");
     try {
-      const fids = fidsText
-        .split(/[,\s]+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((s) => Number(s))
-        .filter((n) => Number.isInteger(n) && n > 0);
+      let fids: number[] = [];
+
+      if (fidsText.trim() === "all") {
+        // Send to all users with notifications enabled
+        fids = [];
+      } else {
+        // Parse specific FIDs
+        fids = fidsText
+          .split(/[,\s]+/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((s) => Number(s))
+          .filter((n) => Number.isInteger(n) && n > 0);
+      }
 
       const res = await fetch("/api/admin/notifications/manual", {
         method: "POST",
@@ -71,6 +102,29 @@ const AdminNotificationsPage: React.FC = () => {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-xl mx-auto w-full p-4 space-y-4">
         <h1 className="text-lg font-semibold">Manual Notifications</h1>
+
+        {/* User Count Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-muted-foreground">
+              Users with notifications enabled
+            </label>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={fetchNotificationUsers}
+              disabled={fetchingUsers}
+            >
+              {fetchingUsers ? "Fetching..." : "Fetch Count"}
+            </Button>
+          </div>
+          {userCount !== null && (
+            <div className="text-sm font-medium text-green-600">
+              ✅ {userCount} users have notifications enabled
+            </div>
+          )}
+        </div>
+
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Admin Token</label>
           <Input
@@ -102,13 +156,14 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">
-            FIDs (comma or space separated)
+            FIDs (comma separated, or type &quot;all&quot; for everyone)
           </label>
           <textarea
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             rows={2}
             value={fidsText}
             onChange={(e) => setFidsText(e.target.value)}
+            placeholder="8446 or all"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
