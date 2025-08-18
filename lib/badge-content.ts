@@ -130,7 +130,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     title: "Base Network",
     description: "Make {amount}+ transactions on Base",
     thresholds: [10, 100, 1000],
-    labels: ["10 Transactions", "100 Transactions", "1K Transactions"],
+    labels: ["10 txs", "100 txs", "1K txs"],
     uom: "transactions",
   },
 

@@ -15,7 +15,7 @@ export function ErrorState({ error }: ErrorStateProps) {
       </div>
 
       <Callout>
-        <strong>Error loading badges:</strong> {error}
+        {error}
       </Callout>
     </div>
   );
