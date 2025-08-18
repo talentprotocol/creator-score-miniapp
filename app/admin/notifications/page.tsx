@@ -127,7 +127,6 @@ const AdminNotificationsPage: React.FC = () => {
           targetUrl,
           fids,
           dryRun,
-          testingMode,
         }),
       });
       const json = await res.json();
@@ -255,12 +254,19 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
         <div className="space-y-2 flex items-center gap-2">
           <label className="text-sm text-muted-foreground">
-            Testing mode (restrict to FID 8446)
+            Testing mode (adds FIDs 8446, 6730)
           </label>
           <input
             type="checkbox"
             checked={testingMode}
-            onChange={(e) => setTestingMode(e.target.checked)}
+            onChange={(e) => {
+              setTestingMode(e.target.checked);
+              if (e.target.checked) {
+                setFidsText("8446, 6730");
+              } else {
+                setFidsText("");
+              }
+            }}
           />
         </div>
         <div className="flex gap-2">

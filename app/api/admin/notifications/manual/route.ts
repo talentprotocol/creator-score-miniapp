@@ -57,7 +57,6 @@ export async function POST(request: Request) {
     fids,
     dryRun = true,
     limit,
-    testingMode = true,
   } = body;
 
   if (!title || !message || !targetUrl || !Array.isArray(fids)) {
@@ -100,11 +99,7 @@ export async function POST(request: Request) {
     targetFids = [];
   }
 
-  // Testing guard: restrict to only FID 8446 if enabled
-  const allowedTestingFids = new Set([8446]);
-  const filteredFids = (
-    testingMode ? fids.filter((f) => allowedTestingFids.has(f)) : fids
-  ).filter((n) => Number.isInteger(n) && n > 0);
+  const filteredFids = targetFids.filter((n) => Number.isInteger(n) && n > 0);
 
   const limitedFids =
     typeof limit === "number" && limit > 0
@@ -153,7 +148,6 @@ export async function POST(request: Request) {
         body: message,
         targetUrl: absoluteTarget,
       },
-      testingModeApplied: testingMode,
     });
   }
 
