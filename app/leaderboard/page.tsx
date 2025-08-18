@@ -212,8 +212,10 @@ function LeaderboardContent() {
 
   return (
     <>
-      {/* My Rewards Hero - Show only when we have authenticated user context */}
-      {(user || unifiedName) && (
+      {/* Container for all content above tabs */}
+      <div className="p-4">
+        {/* My Rewards Hero - Show only when we have authenticated user context */}
+        {(user || unifiedName) && (
         <MyRewards
           rewards={
             creatorScore
@@ -437,6 +439,7 @@ function LeaderboardContent() {
           value={`${countdown.days}d ${countdown.hours}h`}
         />
       </div>
+    </div>
 
       {/* Full width tabs - outside PageContainer constraints */}
       <Section variant="full-width">
