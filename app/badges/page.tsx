@@ -156,8 +156,10 @@ export default function BadgesPage() {
 
             return (
               <div key={section.id} className="badge-section">
-                {/* Section separator */}
-                <div className="h-0.5 bg-border mb-4" />
+                {/* Section separator - full width */}
+                <Section variant="full-width">
+                  <div className="h-px bg-border mb-4" />
+                </Section>
 
                 {/* Section title with count */}
                 <Typography as="h2" size="lg" weight="bold" className="mb-6">

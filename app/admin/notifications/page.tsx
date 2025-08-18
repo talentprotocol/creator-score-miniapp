@@ -50,7 +50,9 @@ const AdminNotificationsPage: React.FC = () => {
       // Use the user's actual FID or talentId for authentication
       const authToken = user?.fid || talentId;
       if (!authToken) {
-        setResult("❌ Not authenticated - please connect your wallet or Farcaster account");
+        setResult(
+          "❌ Not authenticated - please connect your wallet or Farcaster account",
+        );
         return;
       }
 
@@ -80,7 +82,9 @@ const AdminNotificationsPage: React.FC = () => {
       // Use the user's actual FID or talentId for authentication
       const authToken = user?.fid || talentId;
       if (!authToken) {
-        setResult("❌ Not authenticated - please connect your wallet or Farcaster account");
+        setResult(
+          "❌ Not authenticated - please connect your wallet or Farcaster account",
+        );
         return;
       }
 
@@ -108,7 +112,9 @@ const AdminNotificationsPage: React.FC = () => {
       // Use the user's actual FID or talentId for authentication
       const authToken = user?.fid || talentId;
       if (!authToken) {
-        setResult("❌ Not authenticated - please connect your wallet or Farcaster account");
+        setResult(
+          "❌ Not authenticated - please connect your wallet or Farcaster account",
+        );
         setLoading(false);
         return;
       }
@@ -132,7 +138,8 @@ const AdminNotificationsPage: React.FC = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}` },
+          Authorization: `Bearer ${authToken}`,
+        },
         body: JSON.stringify({
           title,
           body,
@@ -320,10 +327,11 @@ const AdminNotificationsPage: React.FC = () => {
               <div className="text-sm font-medium text-blue-600">
                 📊 {history.length} notifications sent
               </div>
-              {history.some(n => n.audience_size === -1) && (
+              {history.some((n) => n.audience_size === -1) && (
                 <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
-                  ℹ️ Some entries show &quot;All (legacy data)&quot; - these are from before we fixed the counting system. 
-                  New notifications will show actual numbers.
+                  ℹ️ Some entries show &quot;All (legacy data)&quot; - these are
+                  from before we fixed the counting system. New notifications
+                  will show actual numbers.
                 </div>
               )}
               <div className="max-h-64 overflow-y-auto border rounded-md p-2">
