@@ -123,11 +123,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
       )}
 
       <div className="flex justify-center">
-        <Button
-          onClick={onClose}
-          className="w-full"
-          variant="brand-purple"
-        >
+        <Button onClick={onClose} className="w-full" variant="brand-purple">
           {isEarned ? "Share Badge" : "Let's do this!"}
         </Button>
       </div>
