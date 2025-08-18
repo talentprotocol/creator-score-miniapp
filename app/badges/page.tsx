@@ -145,20 +145,20 @@ export default function BadgesPage() {
         </div>
       </Section>
 
-      {/* Content section */}
-      <Section variant="content">
-        <div className="space-y-8">
-          {filteredSections.map((section) => {
-            const earnedCount = section.badges.filter(
-              (badge) => badge.state === "earned",
-            ).length;
-            const totalCount = section.badges.length;
-
-            return (
-              <div key={section.id} className="badge-section">
+      {/* Content sections with interleaved dividers */}
+      {filteredSections.map((section, sectionIndex) => (
+        <div key={section.id}>
+          <Section variant="content">
+            <div className="space-y-8">
+              <div className="badge-section">
                 {/* Section title with count */}
                 <Typography as="h2" size="lg" weight="bold" className="mb-6">
-                  {section.title} ({earnedCount}/{totalCount})
+                  {section.title} (
+                  {
+                    section.badges.filter((badge) => badge.state === "earned")
+                      .length
+                  }
+                  /{section.badges.length})
                 </Typography>
 
                 {/* Badge grid */}
@@ -173,21 +173,17 @@ export default function BadgesPage() {
                   ))}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </Section>
-
-      {/* Full-width dividing lines between sections */}
-      {filteredSections.map((section, sectionIndex) => {
-        if (sectionIndex === 0) return null; // Skip first section
-
-        return (
-          <Section key={`divider-${section.id}`} variant="full-width">
-            <div className="h-px bg-border my-8" />
+            </div>
           </Section>
-        );
-      })}
+
+          {/* Full-width dividing line after each section (except the last) */}
+          {sectionIndex < filteredSections.length - 1 && (
+            <Section variant="full-width">
+              <div className="h-px bg-border my-8" />
+            </Section>
+          )}
+        </div>
+      ))}
 
       <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
 
