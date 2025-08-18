@@ -38,16 +38,30 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch ALL notification tokens from Neynar with pagination
-    let allTokens: any[] = [];
+    let allTokens: NeynarToken[] = [];
     let cursor: string | null = null;
     let hasMore = true;
-    
+
+    // Define the token interface
+    interface NeynarToken {
+      fid: number;
+      token?: string;
+      enabled?: boolean;
+      object?: string;
+      url?: string;
+      status?: string;
+      created_at?: string;
+      updated_at?: string;
+    }
+
     while (hasMore) {
-      const url = new URL("https://api.neynar.com/v2/farcaster/frame/notification_tokens");
+      const url = new URL(
+        "https://api.neynar.com/v2/farcaster/frame/notification_tokens",
+      );
       if (cursor) {
         url.searchParams.set("cursor", cursor);
       }
-      
+
       const response = await fetch(url.toString(), {
         headers: {
           api_key: neynarApiKey,
@@ -68,8 +82,11 @@ export async function GET(request: NextRequest) {
       }
 
       const data = await response.json();
-      console.log(`Neynar API response (cursor: ${cursor || 'initial'}):`, JSON.stringify(data, null, 2));
-      
+      console.log(
+        `Neynar API response (cursor: ${cursor || "initial"}):`,
+        JSON.stringify(data, null, 2),
+      );
+
       // Handle different possible response structures from Neynar
       let tokens = [];
       if (data.tokens) {
@@ -79,34 +96,28 @@ export async function GET(request: NextRequest) {
       } else if (Array.isArray(data)) {
         tokens = data;
       }
-      
+
       allTokens = allTokens.concat(tokens);
-      
+
       // Check if there are more pages
       if (data.next && data.next.cursor) {
         cursor = data.next.cursor;
       } else {
         hasMore = false;
       }
-      
+
       // Safety check to prevent infinite loops
       if (allTokens.length > 1000) {
         console.warn("Reached 1000 users limit, stopping pagination");
         break;
       }
     }
-    
+
     console.log(`Total users fetched: ${allTokens.length}`);
-    
+
     // Extract FIDs from the tokens
-    interface NeynarToken {
-      fid: number;
-      token?: string;
-      enabled?: boolean;
-    }
-    
     const fids = allTokens.map((token: NeynarToken) => token.fid) || [];
-    
+
     return NextResponse.json({
       count: fids.length,
       fids: fids,

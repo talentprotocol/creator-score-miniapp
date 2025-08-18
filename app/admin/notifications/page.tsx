@@ -27,14 +27,10 @@ const AdminNotificationsPage: React.FC = () => {
   const user = getUserContext(context);
   const { talentId } = usePrivyAuth({});
   const [token, setToken] = useState<string>("");
-  const [title, setTitle] = useState<string>("Eligible: Free Screen Studio");
-  const [body, setBody] = useState<string>(
-    "Creators with Score 80+ can enter a draw to win a Screen Studio monthly subscription. Open to enter.",
-  );
-  const [targetUrl, setTargetUrl] = useState<string>(
-    "/leaderboard?perk=screen-studio",
-  );
-  const [fidsText, setFidsText] = useState<string>("8446");
+  const [title, setTitle] = useState<string>("");
+  const [body, setBody] = useState<string>("");
+  const [targetUrl, setTargetUrl] = useState<string>("");
+  const [fidsText, setFidsText] = useState<string>("");
   const [dryRun, setDryRun] = useState<boolean>(true);
   const [testingMode, setTestingMode] = useState<boolean>(true);
   const [result, setResult] = useState<string>("");
@@ -213,15 +209,20 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Title (≤ 32)</label>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+            placeholder="Enter notification title (max 32 characters)"
+          />
         </div>
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Body (≤ 128)</label>
           <textarea
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-input bg-background px-3 py-3 text-sm"
             rows={3}
             value={body}
             onChange={(e) => setBody(e.target.value)}
+            placeholder="Enter notification message (max 128 characters)"
           />
         </div>
         <div className="space-y-2">
@@ -229,6 +230,7 @@ const AdminNotificationsPage: React.FC = () => {
           <Input
             value={targetUrl}
             onChange={(e) => setTargetUrl(e.target.value)}
+            placeholder="e.g., /leaderboard?perk=screen-studio"
           />
         </div>
         <div className="space-y-2">
@@ -240,7 +242,7 @@ const AdminNotificationsPage: React.FC = () => {
             rows={2}
             value={fidsText}
             onChange={(e) => setFidsText(e.target.value)}
-            placeholder="8446 or all"
+            placeholder="e.g., 8446, 374478 or type 'all' for everyone"
           />
         </div>
         <div className="space-y-2 flex items-center gap-2">
