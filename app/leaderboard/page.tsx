@@ -438,8 +438,8 @@ function LeaderboardContent() {
         />
       </div>
 
-      {/* Full width tabs */}
-      <Section variant="full-width">
+      {/* Full width tabs - outside PageContainer constraints */}
+      <div className="w-full border-b border-border bg-background">
         <TabNavigation
           tabs={[
             {
@@ -455,7 +455,7 @@ function LeaderboardContent() {
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
-      </Section>
+      </div>
 
       {/* Content section */}
       <Section variant="content" animate>
