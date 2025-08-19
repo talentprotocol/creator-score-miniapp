@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -57,14 +58,12 @@ function Content({
     <>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Typography as="h2" size="lg" weight="bold">
-          Filter Badges
-        </Typography>
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
           className="h-8 w-8 p-0"
+          aria-label="Close filter modal"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -83,10 +82,12 @@ function Content({
               }
             }}
             onCheckedChange={handleAllToggle}
+            aria-describedby="all-sections-description"
           />
           <label
+            id="all-sections-description"
             htmlFor="all-sections"
-            className="flex-1 cursor-pointer text-right"
+            className="flex-1 cursor-pointer text-left"
           >
             <Typography size="base" weight="medium">
               All Sections
@@ -101,8 +102,10 @@ function Content({
               id={section.id}
               checked={selectedSections.includes(section.id)}
               onCheckedChange={() => onSectionToggle(section.id)}
+              aria-describedby={`${section.id}-description`}
             />
             <label
+              id={`${section.id}-description`}
               htmlFor={section.id}
               className="flex-1 cursor-pointer text-left"
             >
@@ -131,7 +134,10 @@ export function BadgeFilterModal({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent>
           <DrawerHeader className="px-4 pb-4">
-            <DrawerTitle className="sr-only">Filter Badges</DrawerTitle>
+            <DrawerTitle>Filter Badges</DrawerTitle>
+            <Typography size="sm" color="muted" className="mt-1">
+              Select sections to filter the badges.
+            </Typography>
             <Content
               sections={sections}
               selectedSections={selectedSections}
@@ -148,7 +154,10 @@ export function BadgeFilterModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="sr-only">Filter Badges</DialogTitle>
+          <DialogTitle>Filter Badges</DialogTitle>
+          <DialogDescription>
+            Select sections to filter the badges.
+          </DialogDescription>
           <Content
             sections={sections}
             selectedSections={selectedSections}
