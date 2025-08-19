@@ -11,7 +11,7 @@ import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
-import { detectClient, composeCast } from "@/lib/utils";
+import { detectClient, openExternalUrl } from "@/lib/utils";
 
 /**
  * PayItForwardSection Component
@@ -154,10 +154,9 @@ export function PayItForwardSection() {
   };
 
   // Handle Farcaster sharing from modal
-  const handleShareFarcaster = useCallback(() => {
+  const handleShareFarcaster = useCallback(async () => {
     const profileUrl = `https://creatorscore.app/${talentUuid}`;
     const farcasterText = `I paid forward 100% of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score mini app, built by @talent 👇`;
-    const twitterText = `I paid forward 100% of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score App, built by @TalentProtocol 👇`;
 
     // Track Farcaster share
     posthog?.capture("pay_it_forward_share_farcaster_clicked", {
@@ -165,9 +164,26 @@ export function PayItForwardSection() {
       current_rewards: currentRewards,
     });
 
-    // Use the composeCast function for cross-platform sharing
-    composeCast(farcasterText, twitterText, [profileUrl], context);
-  }, [talentUuid, currentRewards, posthog, context]);
+    if (client === "farcaster" || client === "base") {
+      try {
+        const { sdk } = await import("@farcaster/frame-sdk");
+        await sdk.actions.composeCast({
+          text: farcasterText,
+          embeds: [profileUrl],
+        });
+      } catch (error) {
+        console.error("Failed to compose cast:", error);
+      }
+    } else {
+      // Open Farcaster web app with pre-filled cast for browser
+      const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
+      if (client === "browser") {
+        window.open(farcasterUrl, "_blank");
+      } else {
+        openExternalUrl(farcasterUrl, null, client);
+      }
+    }
+  }, [talentUuid, currentRewards, posthog, client]);
 
   // Handle Twitter sharing from modal
   const handleShareTwitter = useCallback(() => {
@@ -180,10 +196,12 @@ export function PayItForwardSection() {
       current_rewards: currentRewards,
     });
 
-    // Open Twitter web app with pre-filled tweet
+    // Always use web URL for Twitter sharing
     const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
     if (client === "browser") {
       window.open(twitterUrl, "_blank");
+    } else {
+      openExternalUrl(twitterUrl, null, client);
     }
   }, [talentUuid, currentRewards, posthog, client]);
 
@@ -192,15 +210,15 @@ export function PayItForwardSection() {
       <div className="rounded-lg border bg-white p-4">
         <div className="space-y-4">
           {/* Description: Explains what the feature does and its benefits */}
-          <Typography size="base" className="text-foreground">
+          <Typography size="base" weight="medium" className="text-foreground">
             Donate your rewards to the remaining creators, keep your leaderboard
-            position and earn a special onchain badge (via EAS).
+            position and earn a special onchain badge.
           </Typography>
 
           {/* Current Rewards Display: Shows user's potential rewards amount */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
             <Typography size="base" weight="medium">
-              Your Rewards
+              Your Rewards:
             </Typography>
             <Typography
               size="xl"
@@ -271,6 +289,25 @@ export function PayItForwardSection() {
                     : "Confirm and Pay It Forward"}
             </ButtonFullWidth>
           )}
+
+          {/* TEMP: Test button for confetti animation */}
+          {process.env.NODE_ENV === "development" && (
+            <button
+              onClick={() => {
+                console.log("Test button clicked!");
+                console.log("confettiRef.current:", confettiRef.current);
+                if (confettiRef.current) {
+                  console.log("Calling fireSideCannons...");
+                  confettiRef.current.fireSideCannons();
+                } else {
+                  console.log("confettiRef.current is null");
+                }
+              }}
+              className="mt-4 w-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            >
+              🎉 Test Confetti Animation (Dev Only)
+            </button>
+          )}
         </div>
       </div>
 
@@ -291,6 +328,8 @@ export function PayItForwardSection() {
         onShareTwitter={handleShareTwitter}
         appClient={client}
         disableTwitter={client !== "browser"}
+        title="Share Your Good Deed"
+        description="Let the world know you support creators"
       />
     </div>
   );

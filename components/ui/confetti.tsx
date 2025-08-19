@@ -36,7 +36,7 @@ const ConfettiContext = createContext<Api>({} as Api);
 const Confetti = forwardRef<ConfettiRef, Props>((props, ref) => {
   const {
     options,
-    globalOptions = { resize: true, useWorker: true },
+    globalOptions = { resize: true, useWorker: false },
     manualstart = false,
     children,
     ...rest
@@ -86,8 +86,16 @@ const Confetti = forwardRef<ConfettiRef, Props>((props, ref) => {
   );
 
   const fireSideCannons = useCallback(() => {
-    if (prefersReducedMotion.current || !instanceRef.current) return;
+    console.log("fireSideCannons called!");
+    console.log("prefersReducedMotion.current:", prefersReducedMotion.current);
+    console.log("instanceRef.current:", instanceRef.current);
 
+    if (prefersReducedMotion.current || !instanceRef.current) {
+      console.log("Exiting early - reduced motion or no instance");
+      return;
+    }
+
+    console.log("Starting side cannons animation...");
     const duration = 3 * 1000; // 3 seconds
     const end = Date.now() + duration;
 
