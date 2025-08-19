@@ -103,7 +103,7 @@
 **PageContainer provides:**
 - **Layout structure**: `min-h-screen` + `overflow-y-auto` + `relative`
 - **Max-width constraint**: `max-w-xl` (576px) for consistent mobile design
-- **Bottom spacing**: `pb-24` for mobile navigation
+- **Responsive bottom spacing**: `pb-4` (desktop) + `md:pb-24` (mobile)
 - **No horizontal padding**: Section variants handle all content spacing
 
 ### Spacing Scale

@@ -256,7 +256,7 @@ function ProfileLayoutContentInner({
   // Profile data comes from server-side, no loading state needed
   if (!profile) {
     return (
-      <PageContainer noPadding>
+      <PageContainer>
         <Section variant="content">
           <Callout>
             <strong>Error loading profile:</strong> Profile not found
@@ -266,8 +266,20 @@ function ProfileLayoutContentInner({
     );
   }
 
+  if (!profileData) {
+    return (
+      <PageContainer>
+        <Section variant="content">
+          <Callout>
+            <strong>Error loading profile data:</strong> No data available
+          </Callout>
+        </Section>
+      </PageContainer>
+    );
+  }
+
   return (
-    <PageContainer noPadding>
+    <PageContainer>
       {/* Header section */}
       <Section variant="header">
         <ProfileHeader

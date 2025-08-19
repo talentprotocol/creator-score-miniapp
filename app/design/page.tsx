@@ -1387,7 +1387,7 @@ export default function DesignPage() {
   };
 
   return (
-    <PageContainer noPadding className="bg-holographic">
+    <PageContainer className="bg-holographic">
       {/* Header section with padding */}
       <div className="px-4 py-6">
         <h1 className="text-xl font-semibold">Design System</h1>

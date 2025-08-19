@@ -433,24 +433,25 @@ async function computePlatformBaseBadges(
 async function computePlatformReownBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const content = getBadgeContent("reowen");
+  const content = getBadgeContent("reown");
   if (!content) return [];
 
   // Get wallet_connect_airdrop_one data point
-  const reowenTaskCount = await getDataPointsSum(talentUuid, [
+  // TODO: Replace with actual data point when available
+  const reownTaskCount = await getDataPointsSum(talentUuid, [
     "wallet_connect_airdrop_one",
   ]);
 
-  const thresholds = getBadgeThresholds("reowen");
-  const labels = getBadgeLabels("reowen");
-  const uom = getBadgeUOM("reowen");
+  const thresholds = getBadgeThresholds("reown");
+  const labels = getBadgeLabels("reown");
+  const uom = getBadgeUOM("reown");
 
   return thresholds.map((threshold, index) => {
-    const earned = reowenTaskCount >= threshold;
+    const earned = reownTaskCount >= threshold;
     const progress = earned
       ? 100
-      : clampToPct((reowenTaskCount / threshold) * 100);
-    const levelSlug = `reowen-${labels[index].toLowerCase().replace(/\s+/g, "-")}`;
+      : clampToPct((reownTaskCount / threshold) * 100);
+    const levelSlug = `reown-${labels[index].toLowerCase().replace(/\s+/g, "-")}`;
 
     return {
       slug: levelSlug,
@@ -460,16 +461,16 @@ async function computePlatformReownBadges(
         index + 1,
         labels[index],
       ),
-      state: earned ? "earned" : "locked",
+      state: (earned ? "earned" : "locked") as "earned" | "locked",
       valueLabel: formatValueLabel(
         earned ? "earned" : "locked",
         content.slug,
-        reowenTaskCount,
+        reownTaskCount,
         threshold,
         uom,
       ),
       progressPct: progress,
-      artwork: getArtworkUrls("reowen", (index + 1).toString()),
+      artwork: getArtworkUrls("reown", (index + 1).toString()),
       categoryName: content.title,
     };
   });
