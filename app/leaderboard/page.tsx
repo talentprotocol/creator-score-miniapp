@@ -211,7 +211,7 @@ function LeaderboardContent() {
   const isLoggedIn = !!(user || unifiedName);
 
   return (
-    <>
+    <div className="max-w-xl mx-auto w-full pb-24">
       {/* Header section with all elements above tabs */}
       <Section variant="header">
         {/* My Rewards Hero - Show only when we have authenticated user context */}
@@ -747,7 +747,7 @@ function LeaderboardContent() {
           </div>
         )}
       </Section>
-    </>
+    </div>
   );
 }
 

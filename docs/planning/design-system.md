@@ -105,6 +105,43 @@
 - **Pattern 1**: Pages with only content sections (home, settings, profile)
 - **Pattern 2**: Pages that need edge-to-edge elements (tabs, dividers, navigation)
 
+### App-Wide Max-Width Constraint
+**All pages must maintain a maximum width of 576px (`max-w-xl`) for consistent mobile-first design.**
+
+**Implementation Options:**
+
+**Option 1: Use PageContainer (Recommended for simple pages)**
+```tsx
+<PageContainer>
+  <Section variant="header">Content</Section>
+  <Section variant="content">Content</Section>
+</PageContainer>
+```
+
+**Option 2: Custom wrapper (For pages needing full-width elements)**
+```tsx
+<div className="max-w-xl mx-auto w-full pb-24">
+  <Section variant="header">Content</Section>
+  <Section variant="full-width">Full-width tabs/dividers</Section>
+  <Section variant="content">Content</Section>
+</div>
+```
+
+**Key Requirements:**
+- **Max width**: Always `max-w-xl` (576px)
+- **Centering**: Always `mx-auto` 
+- **Full width**: Always `w-full` within the constraint
+- **Bottom padding**: Always `pb-24` (96px) for mobile navigation spacing
+- **Consistency**: All pages must follow this pattern for uniform user experience
+
+**Current Implementation Status:**
+- ✅ **Home page**: Uses `max-w-xl mx-auto w-full p-4`
+- ✅ **Badges page**: Uses `max-w-xl mx-auto w-full pb-24`
+- ✅ **Profile pages**: Use `PageContainer` (provides `max-w-xl mx-auto`)
+- ✅ **Settings page**: Uses `PageContainer` (provides `max-w-xl mx-auto`)
+- ✅ **Explore page**: Uses `PageContainer` (provides `max-w-xl mx-auto`)
+- ✅ **Leaderboard page**: Now uses `max-w-xl mx-auto w-full pb-24`
+
 ### Full-Width Edge-to-Edge Pattern
 **Principle**: Use **Pattern 2** (no PageContainer) when you need tabs, dividers, or navigation to span the entire screen width. PageContainer's `max-w-xl` constraint prevents true edge-to-edge display.
 
