@@ -29,13 +29,13 @@ export function BadgeCard({
   onBadgeClick,
   priority = false,
 }: BadgeCardProps) {
-  const isEarned = badge.state === "earned";
+  const isLocked = badge.currentLevel === 0;
   const [imageError, setImageError] = useState(false);
 
   // Reset image error when badge changes
   useEffect(() => {
     setImageError(false);
-  }, [badge.badgeSlug, badge.badgeLevel]);
+  }, [badge.badgeSlug, badge.currentLevel]);
 
   return (
     <div
@@ -48,7 +48,7 @@ export function BadgeCard({
           // Fallback icon when image fails to load
           <div
             className={`w-full h-full flex items-center justify-center rounded-lg border-2 border-dashed ${
-              !isEarned
+              isLocked
                 ? "border-muted-foreground/30 text-muted-foreground/30"
                 : "border-muted-foreground/50 text-muted-foreground/50"
             }`}
@@ -58,39 +58,37 @@ export function BadgeCard({
         ) : (
           <>
             <Image
-              src={
-                isEarned
-                  ? badge.levelArtwork.earnedUrl
-                  : badge.levelArtwork.lockedUrl
-              }
-              alt={badge.title}
+              src={badge.artworkUrl}
+              alt={badge.levelLabel}
               width={128}
               height={128}
               quality={85}
               className={`w-full h-full object-contain ${
-                !isEarned ? "opacity-80 blur-[0.5px]" : ""
+                isLocked ? "opacity-80 blur-[0.5px]" : ""
               }`}
               onError={() => setImageError(true)}
               priority={priority}
             />
-            {/* Lock icon overlay for locked badges */}
-            {/* {!isEarned && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Lock className="w-6 h-6 text-white drop-shadow-sm" />
-              </div>
-            )} */}
           </>
         )}
       </div>
 
-      {/* Badge Title - no progressLabel text */}
-      <div className="text-center">
+      {/* Badge Info */}
+      <div className="text-center w-full">
+        {/* Primary: Level Label */}
         <Typography size="sm" weight="normal">
-          {badge.title}
+          {badge.levelLabel}
         </Typography>
 
-        {/* Progress bar for locked badges */}
-        {!isEarned && (
+        {/* Secondary: Progress to next level */}
+        <Typography size="xs" color="muted" className="mt-0.5">
+          {badge.isMaxLevel
+            ? "Max Level"
+            : `${badge.progressLabel} to Lvl. ${badge.currentLevel + 1}`}
+        </Typography>
+
+        {/* Progress bar (always show except for max level) */}
+        {!badge.isMaxLevel && (
           <div className="w-full bg-muted-foreground/30 rounded-full h-1 mt-1">
             <div
               className="bg-brand-green h-1 rounded-full transition-all"

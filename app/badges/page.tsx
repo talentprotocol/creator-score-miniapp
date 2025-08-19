@@ -52,8 +52,8 @@ export default function BadgesPage() {
   const [selectedSections, setSelectedSections] = useState<string[]>([
     "creator-score",
     "streaks",
-    "metrics",
-    "platforms",
+    "records",
+    "communities",
   ]);
 
   // Redirect unauthenticated users to leaderboard (following Settings page pattern)
@@ -99,8 +99,8 @@ export default function BadgesPage() {
   const availableSections = [
     { id: "creator-score", title: "Creator Score" },
     { id: "streaks", title: "Streaks" },
-    { id: "metrics", title: "Metrics" },
-    { id: "platforms", title: "Platforms" },
+    { id: "records", title: "Records" },
+    { id: "communities", title: "Communities" },
   ];
 
   /** Filter sections based on selection */
@@ -165,20 +165,20 @@ export default function BadgesPage() {
                 <Typography as="h2" size="lg" weight="bold" className="mb-6">
                   {section.title} (
                   {
-                    section.badges.filter((badge) => badge.state === "earned")
+                    section.badges.filter((badge) => badge.currentLevel > 0)
                       .length
                   }
                   /{section.badges.length})
                 </Typography>
 
-                {/* Badge grid */}
-                <div className="grid grid-cols-3 gap-x-4 gap-y-6">
+                {/* Badge grid - 2 columns for better mobile experience */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
                   {section.badges.map((badge, index) => (
                     <BadgeCard
-                      key={`${badge.badgeSlug}-${badge.badgeLevel}`}
+                      key={badge.badgeSlug}
                       badge={badge}
                       onBadgeClick={handleBadgeClick}
-                      priority={index < 6} // Prioritize first 6 badges in each section
+                      priority={index < 4} // Prioritize first 4 badges in each section
                     />
                   ))}
                 </div>

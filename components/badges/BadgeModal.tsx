@@ -63,7 +63,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
 
   if (!badge) return null;
 
-  const isEarned = badge.state === "earned";
+  const isLocked = badge.currentLevel === 0;
 
   const ModalContent = () => (
     <div className="space-y-6 text-center">
@@ -74,7 +74,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
             // Fallback icon when image fails to load
             <div
               className={`w-full h-full flex items-center justify-center rounded-lg border-2 border-dashed ${
-                !isEarned
+                isLocked
                   ? "border-muted-foreground/30 text-muted-foreground/30"
                   : "border-muted-foreground/50 text-muted-foreground/50"
               }`}
@@ -83,17 +83,13 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
             </div>
           ) : (
             <Image
-              src={
-                isEarned
-                  ? badge.levelArtwork.earnedUrl
-                  : badge.levelArtwork.lockedUrl
-              }
-              alt={badge.title}
+              src={badge.artworkUrl}
+              alt={badge.levelLabel}
               width={256}
               height={256}
               quality={85}
               className={`w-full h-full object-contain ${
-                !isEarned ? "grayscale opacity-60" : ""
+                isLocked ? "grayscale opacity-60" : ""
               }`}
               onError={() => setImageError(true)}
               priority={true}
@@ -103,32 +99,52 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
 
         <div className="space-y-1">
           <Typography as="h3" size="lg" weight="bold">
-            {badge.title}
+            {badge.levelLabel}
           </Typography>
           <Typography size="sm" color="muted">
             {badge.description}
           </Typography>
+          {/* Current level indicator */}
+          <Typography size="xs" color="muted">
+            {isLocked
+              ? `${badge.categoryName} • Locked`
+              : `${badge.categoryName} • Level ${badge.currentLevel}${badge.isMaxLevel ? " (Max)" : ""}`}
+          </Typography>
         </div>
       </div>
 
-      {/* Progress bar for locked badges */}
-      {!isEarned && (
-        <div className="space-y-2">
-          <div className="w-full bg-muted rounded-full h-2">
-            <div
-              className="bg-brand-green h-2 rounded-full transition-all"
-              style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
-            />
-          </div>
-          <Typography size="sm" color="muted">
-            {badge.progressLabel}
+      {/* Progress information */}
+      <div className="space-y-3">
+        {/* Current progress */}
+        <div className="text-center">
+          <Typography size="sm" weight="medium">
+            {isLocked
+              ? "Progress to Level 1"
+              : badge.isMaxLevel
+                ? "Maximum Level Achieved!"
+                : `Progress to Level ${badge.currentLevel + 1}`}
           </Typography>
         </div>
-      )}
+
+        {/* Progress bar (always show except for max level) */}
+        {!badge.isMaxLevel && (
+          <div className="space-y-2">
+            <div className="w-full bg-muted rounded-full h-2">
+              <div
+                className="bg-brand-green h-2 rounded-full transition-all"
+                style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
+              />
+            </div>
+            <Typography size="sm" color="muted">
+              {badge.progressLabel}
+            </Typography>
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-center">
         <Button onClick={onClose} className="w-full" variant="brand-purple">
-          {isEarned ? "Share Badge" : "Let's do this!"}
+          {badge.currentLevel > 0 ? "Share Badge" : "Let's do this!"}
         </Button>
       </div>
     </div>

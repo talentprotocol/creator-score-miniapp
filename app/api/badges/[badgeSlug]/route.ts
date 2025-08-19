@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getBadgeDetail } from "@/app/services/badgesService";
 import { resolveTalentUser } from "@/lib/user-resolver";
 import { getUserContext } from "@/lib/user-context";
 
@@ -12,16 +11,15 @@ interface RouteParams {
 /**
  * GET /api/badges/[badgeSlug]
  *
- * Returns detailed information for a specific badge, including its state,
- * progress, progressLabel, description, and artwork URLs for the current user.
+ * Returns detailed information for a specific dynamic badge, including its current state,
+ * progress, levelLabel, description, and artwork URL for the current user.
  *
  * Path Parameters:
- * - badgeSlug: The unique identifier for the badge instance (e.g., "creator-score-level-3")
- *              This will be parsed to extract badgeFamily and badgeLevel
+ * - badgeSlug: The badge family identifier (e.g., "creator-score", "total-earnings")
  *
  * Authentication: Same as /api/badges (Farcaster context with development fallback)
  *
- * Response: Single BadgeDetail object with computed state and progress
+ * Response: Single DynamicBadge object with computed state and progress
  */
 export async function GET(request: Request, { params }: RouteParams) {
   try {
@@ -31,26 +29,6 @@ export async function GET(request: Request, { params }: RouteParams) {
     if (!badgeSlug) {
       return NextResponse.json(
         { error: "Badge slug is required" },
-        { status: 400 },
-      );
-    }
-
-    // Parse badge slug to extract badge family and level
-    // Expected format: "badgeFamily-level-N" (e.g., "creator-score-level-3")
-    const levelMatch = badgeSlug.match(/^(.+)-level-(\d+)$/);
-    if (!levelMatch) {
-      return NextResponse.json(
-        { error: "Invalid badge slug format. Expected: badgeFamily-level-N" },
-        { status: 400 },
-      );
-    }
-
-    const badgeFamily = levelMatch[1];
-    const badgeLevel = parseInt(levelMatch[2], 10);
-
-    if (isNaN(badgeLevel) || badgeLevel < 1) {
-      return NextResponse.json(
-        { error: "Invalid badge level. Must be a positive integer" },
         { status: 400 },
       );
     }
@@ -83,7 +61,17 @@ export async function GET(request: Request, { params }: RouteParams) {
       );
     }
 
-    const badge = await getBadgeDetail(talentUuid, badgeFamily, badgeLevel);
+    // For now, just get the first badge from the main badges response
+    const badgesData = await import("@/app/services/badgesService").then((m) =>
+      m.getBadgesForUser(talentUuid),
+    );
+
+    // Find the badge by slug
+    let badge = null;
+    for (const section of badgesData.sections) {
+      badge = section.badges.find((b) => b.badgeSlug === badgeSlug);
+      if (badge) break;
+    }
 
     if (!badge) {
       return NextResponse.json({ error: "Badge not found" }, { status: 404 });
