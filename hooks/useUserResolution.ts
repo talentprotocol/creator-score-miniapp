@@ -29,19 +29,25 @@ export function useFidToTalentUuid() {
   const user = getUserContext(context);
 
   // Check if user already has a talentId from Privy authentication
-  const { talentId } = usePrivyAuth({});
+  const { talentId, ready: privyReady } = usePrivyAuth({});
 
   // State for the resolved talent UUID, loading state, and any errors
   const [talentUuid, setTalentUuid] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     /**
      * Main resolution logic: Determines the user's Talent Protocol UUID
-     * Priority order: talentId from Privy > cached result > API resolution via fid
+     * Priority order: Wait for Privy readiness → talentId from Privy > cached result > API resolution via fid
      */
     async function resolveUserTalentUuid() {
+      // Always wait for Privy SDK to be ready before deciding auth state
+      if (!privyReady) {
+        setLoading(true);
+        return;
+      }
+
       // Case 1: User already has a talentId from Privy auth (highest priority)
       if (talentId) {
         setTalentUuid(talentId);
@@ -92,9 +98,9 @@ export function useFidToTalentUuid() {
       }
     }
 
-    // Execute resolution whenever fid or talentId changes
+    // Execute resolution whenever fid, privy readiness, or talentId changes
     resolveUserTalentUuid();
-  }, [user?.fid, talentId]);
+  }, [user?.fid, talentId, privyReady]);
 
   return { talentUuid, loading, error };
 }

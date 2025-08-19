@@ -9,6 +9,12 @@
 - [ ] **Test platform badge computation**: Verify $TALENT balance and Base transaction badge logic works correctly
 - [ ] **Update badge sections**: Re-enable platforms section in `badgesService.ts` when artwork is ready
 
+### 🎬 Phase 2.5: Badge Animation & Polish
+- [ ] **Level-up animations**: Implement celebration animations when users open badge detail modal for the first time after leveling up
+  - [ ] Add animation triggers for new badge achievements
+  - [ ] Create smooth transitions between badge states
+  - [ ] Implement celebration effects for milestone achievements
+
 ### 🌐 Phase 3: Public Routes & Sharing
 - [ ] **Public badge pages**: Implement `app/badges/[badgeSlug]/page.tsx` for public badge viewing
   - [ ] Add public route with proper SEO metadata
