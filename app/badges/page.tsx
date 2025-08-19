@@ -182,7 +182,7 @@ export default function BadgesPage() {
           {/* Full-width dividing line after each section (except the last) */}
           {sectionIndex < filteredSections.length - 1 && (
             <Section variant="full-width">
-              <div className="h-px bg-border my-8" />
+              <div className="h-px bg-border mt-8 mb-4" />
             </Section>
           )}
         </div>

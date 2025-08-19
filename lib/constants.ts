@@ -206,7 +206,7 @@ export const ACTIVE_SPONSORS = [
     farcasterUrl: "https://farcaster.xyz/web3bio",
   },
   {
-    id: "firefly",
+    id: "fireflyapp",
     name: "Firefly App",
     avatar:
       "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fmedia.firefly.land%2Ffarcaster%2F8b064ce5-dffa-4260-9f8c-1c8c48e9eac0.png",

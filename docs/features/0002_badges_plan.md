@@ -4,8 +4,8 @@
 - Build a Badges experience for the Creator Score app. MVP is compute-on-read (no DB tables), using config-driven logic and server-side caching. Only private routes for MVP: `app/badges/page.tsx` and `app/badges/[badgeSlug]/page.tsx`. Public profile routes deferred to post-MVP.
 - Badge categories and levels per the brief in `docs/temp/creator_badges_brief.md`:
   - Creator Score Level (6 levels based on `LEVEL_RANGES` in `lib/constants.ts`)
-  - Metrics: Total Earnings (10, 100, 1k, 10k, 25k, 100k); Total Followers (100, 1k, 10k, 25k, 100k, 250k)
-  - Platforms: Talent ($TALENT 100, 1k, 10k via token balance); Base (onchain_out_transactions 10, 100, 1k)
+  - Records: Total Earnings (10, 100, 1k, 10k, 25k, 100k); Total Followers (100, 1k, 10k, 25k, 100k, 250k)
+  - Communities: Talent ($TALENT 100, 1k, 10k via token balance); Base (onchain_out_transactions 10, 100, 1k)
 - Rules: "Total Followers" sums across all connected socials; Earned date is shown simply as "Earned" (no timestamp) until persistence exists; Share images out-of-scope for this phase.
 - UI: Custom artwork for badges (not brand colors); use semantic colors for UI elements; Typography component for all text.
 
@@ -91,7 +91,7 @@
 - **Business Logic**: `badgesService.ts` focuses purely on computation and data transformation
 
 ### Badge Structure & Hierarchy
-- **Sections** (Top level): Trophies, Metrics, Platforms
+- **Sections** (Top level): Creator Score, Streaks, Records, Communities
 - **Badges** (Second level): Creator Score, Total Earnings, Total Followers, Talent Protocol, Base, Streaks
 - **Levels** (Third level): Threshold-based naming (e.g., "100", "500", "1K" for Creator Score; "1 Day", "2 Days" for Streaks)
 

@@ -43,13 +43,13 @@ export const BADGE_SECTIONS: BadgeSectionContent[] = [
     description: "Daily activity and consistency milestones",
   },
   {
-    id: "metrics",
-    title: "Metrics",
+    id: "records",
+    title: "Records",
     description: "Cross-platform totals such as earnings and followers",
   },
   {
-    id: "platforms",
-    title: "Platforms",
+    id: "communities",
+    title: "Communities",
     description: "Activity and impact on specific platforms",
   },
 ];
