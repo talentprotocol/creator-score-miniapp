@@ -83,7 +83,11 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
             </div>
           ) : (
             <Image
-              src={isEarned ? badge.artwork.earnedUrl : badge.artwork.lockedUrl}
+              src={
+                isEarned
+                  ? badge.levelArtwork.earnedUrl
+                  : badge.levelArtwork.lockedUrl
+              }
               alt={badge.title}
               width={256}
               height={256}
@@ -117,7 +121,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
             />
           </div>
           <Typography size="sm" color="muted">
-            {badge.valueLabel}
+            {badge.progressLabel}
           </Typography>
         </div>
       )}

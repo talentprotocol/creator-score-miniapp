@@ -11,16 +11,16 @@
  * - slug: canonical identifier for the badge family (e.g., "creator-score", "total-earnings") used in URLs and asset paths
  * - title: human-readable badge family title shown in UI (e.g., "Creator Score")
  * - description: copy template supporting placeholders like {level} and {amount} to render per-level descriptions
- * - thresholds: ordered numeric thresholds for each level within the badge family (min values or counts)
- * - labels: human-facing names for each level (e.g., "40-79", "1K", "3 Days"); must align by index with thresholds
+ * - levelThresholds: ordered numeric thresholds for each level within the badge family (min values or counts)
+ * - levelLabels: human-facing names for each level (e.g., "40-79", "1K", "3 Days"); must align by index with levelThresholds
  * - uom: optional unit of measure to display with values (e.g., "USD", "followers", "$TALENT", "days")
  */
 export interface BadgeContent {
   slug: string;
   title: string;
   description: string;
-  thresholds: number[];
-  labels: string[];
+  levelThresholds: number[];
+  levelLabels: string[];
   uom?: string;
 }
 
@@ -33,9 +33,14 @@ export interface BadgeSectionContent {
 // Top-level Section definitions (UI groups)
 export const BADGE_SECTIONS: BadgeSectionContent[] = [
   {
-    id: "trophies",
-    title: "Trophies",
-    description: "Milestone achievements like Creator Score levels and streaks",
+    id: "creator-score",
+    title: "Creator Score",
+    description: "Achievement levels based on your Creator Score points",
+  },
+  {
+    id: "streaks",
+    title: "Streaks",
+    description: "Daily activity and consistency milestones",
   },
   {
     id: "metrics",
@@ -55,9 +60,9 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "creator-score",
     title: "Creator Score",
     description: "Reach Creator Score {level}",
-    // thresholds are the minimum score for each range
-    thresholds: [0, 40, 80, 120, 170, 250],
-    labels: [
+    // levelThresholds are the minimum score for each range
+    levelThresholds: [0, 40, 80, 120, 170, 250],
+    levelLabels: [
       "0-39 Points",
       "40-79 Points",
       "80-119 Points",
@@ -72,8 +77,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "streaks",
     title: "Streaks",
     description: "Maintain a {level} day streak",
-    thresholds: [1, 2, 3, 4, 5, 6], // consecutive days
-    labels: [
+    levelThresholds: [1, 2, 3, 4, 5, 6], // consecutive days
+    levelLabels: [
       "1 Day Streak",
       "2 Day Streak",
       "3 Day Streak",
@@ -88,8 +93,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "total-earnings",
     title: "Total Earnings",
     description: "Earn ${amount} from your content",
-    thresholds: [10, 100, 1000, 10000, 25000, 100000],
-    labels: [
+    levelThresholds: [10, 100, 1000, 10000, 25000, 100000],
+    levelLabels: [
       "$10 Earned",
       "$100 Earned",
       "$1K Earned",
@@ -104,8 +109,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "total-followers",
     title: "Total Followers",
     description: "Reach {amount} followers across all platforms",
-    thresholds: [100, 1000, 10000, 25000, 100000, 250000],
-    labels: [
+    levelThresholds: [100, 1000, 10000, 25000, 100000, 250000],
+    levelLabels: [
       "100 Followers",
       "1K Followers",
       "10K Followers",
@@ -120,8 +125,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "talent",
     title: "Talent Protocol",
     description: "Hold {amount} $TALENT tokens",
-    thresholds: [100, 1000, 10000],
-    labels: ["100 $TALENT", "1K $TALENT", "10K $TALENT"],
+    levelThresholds: [100, 1000, 10000],
+    levelLabels: ["100 $TALENT", "1K $TALENT", "10K $TALENT"],
     uom: "$TALENT",
   },
 
@@ -129,8 +134,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "base",
     title: "Base Network",
     description: "Make {amount}+ transactions on Base",
-    thresholds: [10, 100, 1000],
-    labels: ["10 txs", "100 txs", "1K txs"],
+    levelThresholds: [10, 100, 1000],
+    levelLabels: ["10 Base txs", "100 Base txs", "1K Base txs"],
     uom: "transactions",
   },
 
@@ -138,8 +143,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "reown",
     title: "Reown",
     description: "Earn {amount} $WCT from wallet connect airdrop",
-    thresholds: [1, 10, 100],
-    labels: ["1 $WCT", "10 $WCT", "100 $WCT"],
+    levelThresholds: [1, 10, 100],
+    levelLabels: ["1 $WCT", "10 $WCT", "100 $WCT"],
     uom: "$WCT",
   },
 };
@@ -159,12 +164,33 @@ export function getAllBadgeSlugs(): string[] {
   return Object.keys(BADGE_CONTENT);
 }
 
-export function getBadgeThresholds(slug: string): number[] {
-  return BADGE_CONTENT[slug]?.thresholds || [];
+export function getBadgeLevelThresholds(slug: string): number[] {
+  return BADGE_CONTENT[slug]?.levelThresholds || [];
 }
 
-export function getBadgeLabels(slug: string): string[] {
-  return BADGE_CONTENT[slug]?.labels || [];
+export function getBadgeLevelLabels(slug: string): string[] {
+  return BADGE_CONTENT[slug]?.levelLabels || [];
+}
+
+// Helper functions for 1-based level access
+export function getBadgeLevelThreshold(
+  slug: string,
+  level: number,
+): number | undefined {
+  const thresholds = getBadgeLevelThresholds(slug);
+  return thresholds[level - 1]; // Convert 1-based level to 0-based array index
+}
+
+export function getBadgeLevelLabel(
+  slug: string,
+  level: number,
+): string | undefined {
+  const labels = getBadgeLevelLabels(slug);
+  return labels[level - 1]; // Convert 1-based level to 0-based array index
+}
+
+export function getBadgeMaxLevel(slug: string): number {
+  return getBadgeLevelThresholds(slug).length;
 }
 
 export function getBadgeUOM(slug: string): string | undefined {
@@ -187,7 +213,7 @@ export function formatBadgeDescription(
   }
 
   if (description.includes("{amount}")) {
-    const displayAmount = amount || content.labels[level - 1] || "";
+    const displayAmount = amount || content.levelLabels[level - 1] || "";
     description = description.replace("{amount}", displayAmount.toString());
   }
 

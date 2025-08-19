@@ -48,7 +48,8 @@ export default function BadgesPage() {
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [selectedSections, setSelectedSections] = useState<string[]>([
-    "trophies",
+    "creator-score",
+    "streaks",
     "metrics",
     "platforms",
   ]);
@@ -86,7 +87,8 @@ export default function BadgesPage() {
 
   /** Get available sections for filter */
   const availableSections = [
-    { id: "trophies", title: "Trophies" },
+    { id: "creator-score", title: "Creator Score" },
+    { id: "streaks", title: "Streaks" },
     { id: "metrics", title: "Metrics" },
     { id: "platforms", title: "Platforms" },
   ];
@@ -166,7 +168,7 @@ export default function BadgesPage() {
                 <div className="grid grid-cols-3 gap-x-4 gap-y-6">
                   {section.badges.map((badge, index) => (
                     <BadgeCard
-                      key={badge.slug}
+                      key={`${badge.badgeSlug}-${badge.badgeLevel}`}
                       badge={badge}
                       onBadgeClick={handleBadgeClick}
                       priority={index < 6} // Prioritize first 6 badges in each section

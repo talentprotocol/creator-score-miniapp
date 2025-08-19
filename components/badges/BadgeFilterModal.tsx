@@ -104,7 +104,7 @@ function Content({
             />
             <label
               htmlFor={section.id}
-              className="flex-1 cursor-pointer text-right"
+              className="flex-1 cursor-pointer text-left"
             >
               <Typography size="base" weight="medium">
                 {section.title}
@@ -130,7 +130,7 @@ export function BadgeFilterModal({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent>
-          <DrawerHeader className="px-4 pb-0">
+          <DrawerHeader className="px-4 pb-4">
             <DrawerTitle className="sr-only">Filter Badges</DrawerTitle>
             <Content
               sections={sections}

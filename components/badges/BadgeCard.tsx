@@ -34,7 +34,7 @@ export function BadgeCard({
   // Reset image error when badge changes
   useEffect(() => {
     setImageError(false);
-  }, [badge.slug]);
+  }, [badge.badgeSlug, badge.badgeLevel]);
 
   return (
     <div
@@ -56,7 +56,11 @@ export function BadgeCard({
           </div>
         ) : (
           <Image
-            src={isEarned ? badge.artwork.earnedUrl : badge.artwork.lockedUrl}
+            src={
+              isEarned
+                ? badge.levelArtwork.earnedUrl
+                : badge.levelArtwork.lockedUrl
+            }
             alt={badge.title}
             width={128}
             height={128}
@@ -76,7 +80,7 @@ export function BadgeCard({
           {badge.title}
         </Typography>
         <Typography size="xs" weight="light" color="muted">
-          {badge.valueLabel}
+          {badge.progressLabel}
         </Typography>
 
         {/* Progress bar for locked badges */}

@@ -95,6 +95,15 @@
 - **Badges** (Second level): Creator Score, Total Earnings, Total Followers, Talent Protocol, Base, Streaks
 - **Levels** (Third level): Threshold-based naming (e.g., "100", "500", "1K" for Creator Score; "1 Day", "2 Days" for Streaks)
 
+### Canonical Badge Terminology
+- **Badge Slug** (`badgeSlug`): Badge family identifier (e.g., "creator-score", "total-earnings")
+- **Badge Title** (`badgeTitle`): Human-readable family name (e.g., "Creator Score", "Talent Protocol")
+- **Badge Level** (`badgeLevel`): Achievement tier number (1, 2, 3, etc.) - always 1-based
+- **Level Label** (`levelLabel`): Human-readable level description (e.g., "100 $TALENT", "1K Followers")
+- **Level Threshold** (`levelThreshold`): Minimum value required for a specific level
+- **Progress Label** (`progressLabel`): Dynamic progress display (e.g., "$50 left", "Earned")
+- **Level Artwork** (`levelArtwork`): Level-specific images (earned/locked states)
+
 ### UI/Design-system notes
 - Use existing `components/ui/*` and `components/badges/*`. Follow semantic-first color approach; use `components/ui/typography.tsx` for all text. Mobile-first; interactions on click (not hover).
 - Badge grid: 3 columns on mobile per brief; use Tailwind utilities matching existing patterns.
