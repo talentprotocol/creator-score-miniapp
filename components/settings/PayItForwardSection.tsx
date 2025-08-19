@@ -1,11 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { Typography } from "@/components/ui/typography";
-import { HandHeart } from "lucide-react";
+import { HandHeart, Share2 } from "lucide-react";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 import { CheckCircle, AlertCircle } from "lucide-react";
+import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
+import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
+import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { usePostHog } from "posthog-js/react";
+import { detectClient, composeCast } from "@/lib/utils";
 
 /**
  * PayItForwardSection Component
@@ -25,6 +31,9 @@ export function PayItForwardSection() {
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const confettiRef = useRef<ConfettiRef>(null);
   const { talentUuid } = useFidToTalentUuid();
   const {
     entries: top200Entries,
@@ -32,12 +41,21 @@ export function PayItForwardSection() {
     updateUserOptOutStatus,
   } = useLeaderboardData();
 
+  // Get profile data for sharing
+  const { displayName } = useResolvedTalentProfile();
+  const { context } = useMiniKit();
+  const posthog = usePostHog();
+  const [client, setClient] = useState<string | null>(null);
+
   const userTop200Entry = top200Entries.find(
     (entry) => entry.talent_protocol_id === talentUuid,
   );
 
   const isAlreadyOptedOut = Boolean(userTop200Entry?.isOptedOut);
   const hasPaidForward = success || isAlreadyOptedOut;
+
+  // Show share button for already opted out users or after success + delay
+  const shouldShowShare = isAlreadyOptedOut || showShare;
 
   const currentRewards = userTop200Entry
     ? RewardsCalculationService.calculateUserReward(
@@ -51,6 +69,25 @@ export function PayItForwardSection() {
 
   // If already opted out (from previous session), ensure the opt-out callout is hidden
   // This is now handled server-side during opt-out. No client effect needed.
+
+  // Trigger confetti celebration and transition to share after success
+  useEffect(() => {
+    if (success && confettiRef.current) {
+      confettiRef.current.fireSideCannons();
+      // Show share button after brief success message (2 seconds)
+      const timer = setTimeout(() => {
+        setShowShare(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Detect client type for sharing
+  useEffect(() => {
+    detectClient(context).then((client) => {
+      setClient(client);
+    });
+  }, [context]);
 
   const handleOptOut = async () => {
     if (!hasConfirmed || !talentUuid) return;
@@ -104,14 +141,60 @@ export function PayItForwardSection() {
     setError(null);
   };
 
+  // Handle share stats opening
+  const handleShareStats = async () => {
+    // Track pay it forward share click
+    posthog?.capture("pay_it_forward_share_clicked", {
+      talent_uuid: talentUuid,
+      current_rewards: currentRewards,
+    });
+
+    // Always show modal for sharing
+    setIsShareModalOpen(true);
+  };
+
+  // Handle Farcaster sharing from modal
+  const handleShareFarcaster = useCallback(() => {
+    const profileUrl = `https://creatorscore.app/${talentUuid}`;
+    const farcasterText = `I paid forward 100% of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score mini app, built by @talent 👇`;
+    const twitterText = `I paid forward 100% of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score App, built by @TalentProtocol 👇`;
+
+    // Track Farcaster share
+    posthog?.capture("pay_it_forward_share_farcaster_clicked", {
+      talent_uuid: talentUuid,
+      current_rewards: currentRewards,
+    });
+
+    // Use the composeCast function for cross-platform sharing
+    composeCast(farcasterText, twitterText, [profileUrl], context);
+  }, [talentUuid, currentRewards, posthog, context]);
+
+  // Handle Twitter sharing from modal
+  const handleShareTwitter = useCallback(() => {
+    const profileUrl = `https://creatorscore.app/${talentUuid}`;
+    const twitterText = `I paid forward 100% of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score App, built by @TalentProtocol 👇`;
+
+    // Track Twitter share
+    posthog?.capture("pay_it_forward_share_twitter_clicked", {
+      talent_uuid: talentUuid,
+      current_rewards: currentRewards,
+    });
+
+    // Open Twitter web app with pre-filled tweet
+    const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
+    if (client === "browser") {
+      window.open(twitterUrl, "_blank");
+    }
+  }, [talentUuid, currentRewards, posthog, client]);
+
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
       <div className="rounded-lg border bg-white p-4">
         <div className="space-y-4">
           {/* Description: Explains what the feature does and its benefits */}
           <Typography size="base" className="text-foreground">
-            Give your rewards back to other creators, keep your leaderboard
-            position and earn a special badge.
+            Donate your rewards to the remaining creators, keep your leaderboard
+            position and earn a special onchain badge (via EAS).
           </Typography>
 
           {/* Current Rewards Display: Shows user's potential rewards amount */}
@@ -142,44 +225,73 @@ export function PayItForwardSection() {
                 htmlFor="confirm-optout"
                 className="text-sm text-muted-foreground"
               >
-                I understand that I&apos;m opting out of receiving rewards and
-                that this decision is irreversible.
+                I understand that opting out of rewards is irreversible.
               </label>
             </div>
           ) : null}
 
-          {/* Action Button: Main CTA that processes the opt-out request */}
-          <ButtonFullWidth
-            icon={
-              hasPaidForward ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : error ? (
-                <AlertCircle className="h-4 w-4" />
-              ) : (
-                <HandHeart className="h-4 w-4" />
-              )
-            }
-            variant={
-              hasPaidForward
-                ? "brand-green"
-                : error
-                  ? "destructive"
-                  : "brand-green"
-            }
-            onClick={handleOptOut}
-            disabled={!hasConfirmed || isOptingOut || hasPaidForward}
-            align="center"
-          >
-            {isOptingOut
-              ? "Processing..."
-              : hasPaidForward
-                ? "Successfully Paid Forward!"
-                : error
-                  ? "Failed: Please Try Again"
-                  : "Confirm and Pay It Forward"}
-          </ButtonFullWidth>
+          {/* Action Button: Main CTA that processes the opt-out request or shares */}
+          {shouldShowShare ? (
+            <ButtonFullWidth
+              icon={<Share2 className="h-4 w-4" />}
+              variant="brand-green"
+              onClick={handleShareStats}
+              align="center"
+            >
+              Share Your Good Deed
+            </ButtonFullWidth>
+          ) : (
+            <ButtonFullWidth
+              icon={
+                hasPaidForward ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : error ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : (
+                  <HandHeart className="h-4 w-4" />
+                )
+              }
+              variant={
+                hasPaidForward
+                  ? "brand-green"
+                  : error
+                    ? "destructive"
+                    : "brand-green"
+              }
+              onClick={handleOptOut}
+              disabled={!hasConfirmed || isOptingOut || hasPaidForward}
+              align="center"
+            >
+              {isOptingOut
+                ? "Processing..."
+                : hasPaidForward
+                  ? "Successfully Paid Forward!"
+                  : error
+                    ? "Failed: Please Try Again"
+                    : "Confirm and Pay It Forward"}
+            </ButtonFullWidth>
+          )}
         </div>
       </div>
+
+      {/* Confetti Canvas: Positioned to cover full screen for side cannons effect */}
+      <Confetti
+        ref={confettiRef}
+        className="fixed inset-0 pointer-events-none z-40"
+        manualstart={true}
+      />
+
+      {/* Share Stats Modal */}
+      <ShareStatsModal
+        open={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
+        talentUUID={talentUuid || ""}
+        handle={displayName || talentUuid || "creator"}
+        onShareFarcaster={handleShareFarcaster}
+        onShareTwitter={handleShareTwitter}
+        appClient={client}
+        disableTwitter={client !== "browser"}
+      />
     </div>
   );
 }

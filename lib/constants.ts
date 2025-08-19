@@ -131,13 +131,23 @@ if (typeof window === "undefined") {
 // Active sponsors data
 export const ACTIVE_SPONSORS = [
   {
+    id: "purple",
+    name: "Purple",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2FDWjfq34.jpg",
+    amount: 4250,
+    handle: "@purple",
+    rank: 1,
+    farcasterUrl: "https://farcaster.xyz/purple",
+  },
+  {
     id: "base",
     name: "Base",
     avatar:
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/ce5460f6-40a2-4486-47c1-7801e4033e00/anim=false,fit=contain,f=auto,w=576",
     amount: 2500,
     handle: "@base",
-    rank: 1,
+    rank: 2,
     farcasterUrl: "https://farcaster.xyz/base",
   },
   {
@@ -147,7 +157,7 @@ export const ACTIVE_SPONSORS = [
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/002f0efe-2513-41e7-3d89-d38875d76800/anim=false,f=auto,w=288",
     amount: 2500,
     handle: "@talent",
-    rank: 1,
+    rank: 3,
     farcasterUrl: "https://farcaster.xyz/talent",
   },
   {
@@ -157,7 +167,7 @@ export const ACTIVE_SPONSORS = [
       "https://pbs.twimg.com/profile_images/1899112167468638208/H7XicSUE_400x400.png",
     amount: 1350,
     handle: "@efp",
-    rank: 2,
+    rank: 4,
     farcasterUrl: "https://x.com/efp",
   },
   {
@@ -167,7 +177,7 @@ export const ACTIVE_SPONSORS = [
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/9b5ad594-f3e9-4160-9c33-4e0eeaf28500/anim=false,fit=contain,f=auto,w=576",
     amount: 1250,
     handle: "@phi",
-    rank: 3,
+    rank: 5,
     farcasterUrl: "https://farcaster.xyz/phi",
   },
   {
@@ -177,8 +187,28 @@ export const ACTIVE_SPONSORS = [
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/96aabcca-a8ce-47d6-b6f6-d2b6d1272500/anim=false,fit=contain,f=auto,w=576",
     amount: 1250,
     handle: "@noiceapp",
-    rank: 4,
+    rank: 6,
     farcasterUrl: "https://farcaster.xyz/noiceapp",
+  },
+  {
+    id: "web3bio",
+    name: "Web3.bio",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/d984e36e-e040-4118-9122-b2027955de00/anim=false,fit=contain,f=auto,w=576",
+    amount: 1200,
+    handle: "@web3bio",
+    rank: 7,
+    farcasterUrl: "https://farcaster.xyz/web3bio",
+  },
+  {
+    id: "firefly",
+    name: "Firefly App",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fmedia.firefly.land%2Ffarcaster%2F8b064ce5-dffa-4260-9f8c-1c8c48e9eac0.png",
+    amount: 1200,
+    handle: "@fireflyapp",
+    rank: 8,
+    farcasterUrl: "https://farcaster.xyz/fireflyapp",
   },
 ];
 
