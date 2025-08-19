@@ -220,8 +220,8 @@ export function PayItForwardSection() {
         <div className="space-y-4">
           {/* Description: Explains what the feature does and its benefits */}
           <Typography size="base" className="text-foreground">
-            Donate your rewards to the remaining creators, keep your leaderboard
-            position and earn a special onchain badge.
+            Donate your rewards to the remaining top creators, keep your
+            leaderboard position and earn a special onchain badge.
           </Typography>
 
           {/* Current Rewards Display: Shows user's potential rewards amount */}
@@ -248,9 +248,9 @@ export function PayItForwardSection() {
               />
               <label
                 htmlFor="confirm-optout"
-                className="text-sm text-muted-foreground"
+                className="text-xs text-muted-foreground"
               >
-                I understand that opting out of rewards is irreversible.
+                I understand that donating is irreversible.
               </label>
             </div>
           ) : null}
