@@ -15,10 +15,7 @@ export function PageContainer({
     <div className="min-h-screen">
       <main className="flex-1 overflow-y-auto relative">
         <div
-          className={cn(
-            "max-w-xl mx-auto w-full pb-4 md:pb-24",
-            className,
-          )}
+          className={cn("max-w-xl mx-auto w-full pb-24 md:pb-4", className)}
           {...props}
         >
           {children}
