@@ -68,7 +68,7 @@ export function BadgeCard({
               height={128}
               quality={85}
               className={`w-full h-full object-contain ${
-                !isEarned ? "grayscale opacity-60 blur-sm" : ""
+                !isEarned ? "grayscale opacity-60 blur-[0.5px]" : ""
               }`}
               onError={() => setImageError(true)}
               priority={priority}
