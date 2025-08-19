@@ -117,7 +117,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
           <div className="w-full bg-muted rounded-full h-2">
             <div
               className="bg-brand-green h-2 rounded-full transition-all"
-              style={{ width: `${Math.max(badge.progressPct, 0)}%` }}
+              style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
             />
           </div>
           <Typography size="sm" color="muted">

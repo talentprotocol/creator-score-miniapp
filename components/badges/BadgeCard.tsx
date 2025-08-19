@@ -1,6 +1,6 @@
 import type { BadgeState } from "@/app/services/badgesService";
 import { Typography } from "@/components/ui/typography";
-import { Medal, Lock } from "lucide-react";
+import { Medal } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
@@ -74,11 +74,11 @@ export function BadgeCard({
               priority={priority}
             />
             {/* Lock icon overlay for locked badges */}
-            {!isEarned && (
+            {/* {!isEarned && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Lock className="w-6 h-6 text-white drop-shadow-sm" />
               </div>
-            )}
+            )} */}
           </>
         )}
       </div>
@@ -94,7 +94,7 @@ export function BadgeCard({
           <div className="w-full bg-muted-foreground/30 rounded-full h-1 mt-1">
             <div
               className="bg-brand-green h-1 rounded-full transition-all"
-              style={{ width: `${Math.max(badge.progressPct, 0)}%` }}
+              style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
             />
           </div>
         )}
