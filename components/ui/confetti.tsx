@@ -19,7 +19,6 @@ import { Button, ButtonProps } from "@/components/ui/button";
 
 type Api = {
   fire: (options?: ConfettiOptions) => void;
-  fireSideCannons: () => void;
 };
 
 type Props = React.ComponentPropsWithRef<"canvas"> & {
@@ -41,17 +40,21 @@ const Confetti = forwardRef<ConfettiRef, Props>((props, ref) => {
     children,
     ...rest
   } = props;
-  const instanceRef = useRef<ConfettiInstance | null>(null);
+  const instanceRef = useRef<ConfettiInstance | null>(null); // confetti instance
 
   const canvasRef = useCallback(
+    // https://react.dev/reference/react-dom/components/common#ref-callback
+    // https://reactjs.org/docs/refs-and-the-dom.html#callback-refs
     (node: HTMLCanvasElement) => {
       if (node !== null) {
-        if (instanceRef.current) return;
+        // <canvas> is mounted => create the confetti instance
+        if (instanceRef.current) return; // if not already created
         instanceRef.current = confetti.create(node, {
           ...globalOptions,
           resize: true,
         });
       } else {
+        // <canvas> is unmounted => reset and destroy instanceRef
         if (instanceRef.current) {
           instanceRef.current.reset();
           instanceRef.current = null;
@@ -61,88 +64,23 @@ const Confetti = forwardRef<ConfettiRef, Props>((props, ref) => {
     [globalOptions],
   );
 
-  // Check for reduced motion preference
-  const prefersReducedMotion = useRef(false);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-      prefersReducedMotion.current = mediaQuery.matches;
-
-      const handleChange = (e: MediaQueryListEvent) => {
-        prefersReducedMotion.current = e.matches;
-      };
-
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-  }, []);
-
+  // `fire` is a function that calls the instance() with `opts` merged with `options`
   const fire = useCallback(
-    (opts = {}) => {
-      if (prefersReducedMotion.current) return;
-      instanceRef.current?.({ ...options, ...opts });
-    },
+    (opts = {}) => instanceRef.current?.({ ...options, ...opts }),
     [options],
   );
-
-  const fireSideCannons = useCallback(() => {
-    console.log("fireSideCannons called!");
-    console.log("prefersReducedMotion.current:", prefersReducedMotion.current);
-    console.log("instanceRef.current:", instanceRef.current);
-
-    if (prefersReducedMotion.current || !instanceRef.current) {
-      console.log("Exiting early - reduced motion or no instance");
-      return;
-    }
-
-    console.log("Starting side cannons animation...");
-    const duration = 3 * 1000; // 3 seconds
-    const end = Date.now() + duration;
-
-    // Brand green color variations for "pay it forward" theme
-    const colors = ["#84cc16", "#65a30d", "#4ade80", "#86efac"];
-
-    const frame = () => {
-      if (Date.now() > end) return;
-
-      // Left cannon
-      instanceRef.current?.({
-        particleCount: 2,
-        angle: 60,
-        spread: 55,
-        startVelocity: 60,
-        origin: { x: 0, y: 0.5 },
-        colors: colors,
-      });
-
-      // Right cannon
-      instanceRef.current?.({
-        particleCount: 2,
-        angle: 120,
-        spread: 55,
-        startVelocity: 60,
-        origin: { x: 1, y: 0.5 },
-        colors: colors,
-      });
-
-      requestAnimationFrame(frame);
-    };
-
-    frame();
-  }, []);
 
   const api = useMemo(
     () => ({
       fire,
-      fireSideCannons,
     }),
-    [fire, fireSideCannons],
+    [fire],
   );
 
   useImperativeHandle(ref, () => api, [api]);
 
   useEffect(() => {
-    if (!manualstart && !prefersReducedMotion.current) {
+    if (!manualstart) {
       fire();
     }
   }, [manualstart, fire]);
@@ -159,31 +97,83 @@ interface ConfettiButtonProps extends ButtonProps {
   options?: ConfettiOptions &
     ConfettiGlobalOptions & { canvas?: HTMLCanvasElement };
   children?: React.ReactNode;
+  autoFire?: boolean;
+  onConfettiComplete?: () => void;
 }
 
-function ConfettiButton({ options, children, ...props }: ConfettiButtonProps) {
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
+function ConfettiButton({
+  options,
+  children,
+  onClick,
+  autoFire = false,
+  onConfettiComplete,
+  ...props
+}: ConfettiButtonProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const hasAutoFired = useRef(false);
+
+  const fireConfetti = useCallback(() => {
+    if (!buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
 
-    // Check for reduced motion
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (prefersReducedMotion) return;
+    // Create a temporary canvas to use confetti without workers
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "fixed";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100vw";
+    canvas.style.height = "100vh";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "9999";
+    document.body.appendChild(canvas);
 
-    confetti({
+    const myConfetti = confetti.create(canvas, {
+      resize: true,
+      useWorker: false,
+    });
+
+    myConfetti({
+      particleCount: 100,
+      spread: 70,
+      colors: ["#84cc16", "#65a30d", "#4ade80", "#86efac", "#bbf7d0"],
       ...options,
       origin: {
         x: x / window.innerWidth,
         y: y / window.innerHeight,
       },
     });
+
+    // Clean up after animation and call completion callback
+    setTimeout(() => {
+      document.body.removeChild(canvas);
+      onConfettiComplete?.();
+    }, 3000);
+  }, [options, onConfettiComplete]);
+
+  // Auto-fire confetti when component mounts (for success state)
+  useEffect(() => {
+    if (autoFire && !hasAutoFired.current) {
+      hasAutoFired.current = true;
+      // Small delay to ensure button is rendered
+      setTimeout(fireConfetti, 100);
+    }
+  }, [autoFire, fireConfetti]);
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    // Call original onClick first if it exists
+    onClick?.(event);
+
+    // Fire confetti on manual click (for test button)
+    if (!autoFire) {
+      fireConfetti();
+    }
   };
 
   return (
-    <Button onClick={handleClick} {...props}>
+    <Button ref={buttonRef} onClick={handleClick} {...props}>
       {children}
     </Button>
   );

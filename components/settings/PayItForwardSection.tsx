@@ -1,12 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { Typography } from "@/components/ui/typography";
 import { HandHeart, Share2 } from "lucide-react";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
+import { useOptOutStatus } from "@/hooks/useOptOutStatus";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 import { CheckCircle, AlertCircle } from "lucide-react";
-import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
+import { ConfettiButton } from "@/components/ui/confetti";
 import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -33,7 +34,7 @@ export function PayItForwardSection() {
   const [success, setSuccess] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const confettiRef = useRef<ConfettiRef>(null);
+  const [confettiActive, setConfettiActive] = useState(false);
   const { talentUuid } = useFidToTalentUuid();
   const {
     entries: top200Entries,
@@ -51,7 +52,11 @@ export function PayItForwardSection() {
     (entry) => entry.talent_protocol_id === talentUuid,
   );
 
-  const isAlreadyOptedOut = Boolean(userTop200Entry?.isOptedOut);
+  // Use combined opt-out status check for both top-200 and non-top-200 users
+  const { isOptedOut: isAlreadyOptedOut } = useOptOutStatus(
+    talentUuid,
+    userTop200Entry,
+  );
   const hasPaidForward = success || isAlreadyOptedOut;
 
   // Show share button for already opted out users or after success + delay
@@ -70,17 +75,18 @@ export function PayItForwardSection() {
   // If already opted out (from previous session), ensure the opt-out callout is hidden
   // This is now handled server-side during opt-out. No client effect needed.
 
-  // Trigger confetti celebration and transition to share after success
+  // Start confetti when success is achieved
   useEffect(() => {
-    if (success && confettiRef.current) {
-      confettiRef.current.fireSideCannons();
-      // Show share button after brief success message (2 seconds)
-      const timer = setTimeout(() => {
-        setShowShare(true);
-      }, 2000);
-      return () => clearTimeout(timer);
+    if (success && !isAlreadyOptedOut) {
+      setConfettiActive(true);
     }
-  }, [success]);
+  }, [success, isAlreadyOptedOut]);
+
+  // Handle confetti completion - show share button after confetti finishes
+  const handleConfettiComplete = useCallback(() => {
+    setConfettiActive(false);
+    setShowShare(true);
+  }, []);
 
   // Detect client type for sharing
   useEffect(() => {
@@ -113,8 +119,10 @@ export function PayItForwardSection() {
           console.log(
             "[OptOut] Success. Instant UI update + scheduled force-fresh refetch",
           );
-          // Instant UI update of in-memory + local cache
-          updateUserOptOutStatus(talentUuid, true);
+          // Only update cache if user is in top 200 (has leaderboard entry)
+          if (userTop200Entry) {
+            updateUserOptOutStatus(talentUuid, true);
+          }
           // Schedule a force-fresh refetch to clear local cache and repopulate from server
           setTimeout(() => {
             refetch(true);
@@ -210,16 +218,14 @@ export function PayItForwardSection() {
       <div className="rounded-lg border bg-white p-4">
         <div className="space-y-4">
           {/* Description: Explains what the feature does and its benefits */}
-          <Typography size="base" weight="medium" className="text-foreground">
+          <Typography size="base" className="text-foreground">
             Donate your rewards to the remaining creators, keep your leaderboard
             position and earn a special onchain badge.
           </Typography>
 
           {/* Current Rewards Display: Shows user's potential rewards amount */}
           <div className="flex items-center gap-1.5">
-            <Typography size="base" weight="medium">
-              Your Rewards:
-            </Typography>
+            <Typography size="base">Your Rewards:</Typography>
             <Typography
               size="xl"
               weight="medium"
@@ -258,65 +264,54 @@ export function PayItForwardSection() {
             >
               Share Your Good Deed
             </ButtonFullWidth>
+          ) : hasPaidForward ? (
+            <ConfettiButton
+              variant="default"
+              className="w-full h-auto rounded-xl px-6 py-4 bg-brand-green text-white"
+              disabled={confettiActive}
+              autoFire={confettiActive}
+              onConfettiComplete={handleConfettiComplete}
+            >
+              <div className="flex w-full items-center justify-center gap-3">
+                <CheckCircle className="h-4 w-4" />
+                <span>Successfully Paid Forward!</span>
+              </div>
+            </ConfettiButton>
           ) : (
             <ButtonFullWidth
               icon={
-                hasPaidForward ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : error ? (
+                error ? (
                   <AlertCircle className="h-4 w-4" />
                 ) : (
                   <HandHeart className="h-4 w-4" />
                 )
               }
-              variant={
-                hasPaidForward
-                  ? "brand-green"
-                  : error
-                    ? "destructive"
-                    : "brand-green"
-              }
+              variant={error ? "destructive" : "brand-green"}
               onClick={handleOptOut}
-              disabled={!hasConfirmed || isOptingOut || hasPaidForward}
+              disabled={!hasConfirmed || isOptingOut}
               align="center"
             >
               {isOptingOut
                 ? "Processing..."
-                : hasPaidForward
-                  ? "Successfully Paid Forward!"
-                  : error
-                    ? "Failed: Please Try Again"
-                    : "Confirm and Pay It Forward"}
+                : error
+                  ? "Failed: Please Try Again"
+                  : "Confirm and Pay It Forward"}
             </ButtonFullWidth>
           )}
 
-          {/* TEMP: Test button for confetti animation */}
+          {/* TEMP: Test Confetti */}
           {process.env.NODE_ENV === "development" && (
-            <button
-              onClick={() => {
-                console.log("Test button clicked!");
-                console.log("confettiRef.current:", confettiRef.current);
-                if (confettiRef.current) {
-                  console.log("Calling fireSideCannons...");
-                  confettiRef.current.fireSideCannons();
-                } else {
-                  console.log("confettiRef.current is null");
-                }
-              }}
-              className="mt-4 w-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
-            >
-              🎉 Test Confetti Animation (Dev Only)
-            </button>
+            <div className="mt-4">
+              <ConfettiButton
+                variant="ghost"
+                className="w-full border border-dashed border-gray-300"
+              >
+                🎉 Test Confetti (Dev Only)
+              </ConfettiButton>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Confetti Canvas: Positioned to cover full screen for side cannons effect */}
-      <Confetti
-        ref={confettiRef}
-        className="fixed inset-0 pointer-events-none z-40"
-        manualstart={true}
-      />
 
       {/* Share Stats Modal */}
       <ShareStatsModal

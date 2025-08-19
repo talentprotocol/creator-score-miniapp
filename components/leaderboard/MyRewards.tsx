@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { InfoIcon, Rocket, HandHeart } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import { PfpBorder } from "@/components/ui/pfp-border";
 import { cn } from "@/lib/utils";
 import { BOOST_CONFIG } from "@/lib/constants";
 import posthog from "posthog-js";
@@ -211,13 +212,18 @@ export function MyRewards({
             </>
           )}
         </div>
-        <Avatar className="h-[88px] w-[88px] flex-shrink-0">
-          {avatarUrl ? (
-            <AvatarImage src={avatarUrl} />
-          ) : (
-            <AvatarFallback>{name[0]}</AvatarFallback>
-          )}
-        </Avatar>
+        <div className="relative h-[88px] w-[88px] flex-shrink-0">
+          <Avatar className="h-full w-full">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} />
+            ) : (
+              <AvatarFallback>{name[0]}</AvatarFallback>
+            )}
+          </Avatar>
+          <div className="absolute inset-0 pointer-events-none">
+            <PfpBorder />
+          </div>
+        </div>
       </div>
     </div>
   );
