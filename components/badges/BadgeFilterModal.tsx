@@ -111,14 +111,16 @@ export function BadgeFilterModal({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent>
-          <DrawerHeader className="px-4 pb-4">
+          <DrawerHeader className="px-4 pb-0">
             <DrawerTitle>Filter Badges</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4">
             <Content
               sections={sections}
               selectedSections={selectedSections}
               onSectionToggle={onSectionToggle}
             />
-          </DrawerHeader>
+          </div>
         </DrawerContent>
       </Drawer>
     );
@@ -129,12 +131,14 @@ export function BadgeFilterModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Filter Badges</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4">
           <Content
             sections={sections}
             selectedSections={selectedSections}
             onSectionToggle={onSectionToggle}
           />
-        </DialogHeader>
+        </div>
       </DialogContent>
     </Dialog>
   );
