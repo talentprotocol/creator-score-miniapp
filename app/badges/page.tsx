@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import type { BadgeState } from "@/app/services/badgesService";
@@ -35,6 +36,7 @@ import { PageContainer } from "@/components/common/PageContainer";
  * - Always-visible sections with thin gray separators
  */
 export default function BadgesPage() {
+  const router = useRouter();
   // Get current user's talent UUID (works for both Farcaster and Privy)
   const { talentUuid, loading: userLoading } = useFidToTalentUuid();
 
@@ -53,6 +55,14 @@ export default function BadgesPage() {
     "metrics",
     "platforms",
   ]);
+
+  // Redirect unauthenticated users to leaderboard (following Settings page pattern)
+  useEffect(() => {
+    if (!userLoading && !talentUuid) {
+      router.push("/leaderboard");
+      return;
+    }
+  }, [userLoading, talentUuid, router]);
 
   /** Handle badge card clicks to open detailed modal */
   const handleBadgeClick = (badge: BadgeState) => {
@@ -104,11 +114,9 @@ export default function BadgesPage() {
     return <LoadingState />;
   }
 
-  // Show error if no user context after loading is complete
-  if (!userLoading && !talentUuid) {
-    return (
-      <ErrorState error="Please connect your wallet or Farcaster account to view badges" />
-    );
+  // Redirect unauthenticated users (will redirect via useEffect)
+  if (!talentUuid) {
+    return null;
   }
 
   if (badgesLoading) {
@@ -139,11 +147,10 @@ export default function BadgesPage() {
           </div>
           <Button
             variant="ghost"
-            size="sm"
             onClick={() => setFilterModalOpen(true)}
-            className="h-10 w-10 p-0 self-start"
+            className="h-10 w-10 p-0"
           >
-            <Settings2 className="h-5 w-5 text-foreground" />
+            <Settings2 className="h-6 w-6 text-foreground" />
           </Button>
         </div>
       </Section>

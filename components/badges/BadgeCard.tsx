@@ -43,7 +43,7 @@ export function BadgeCard({
       onClick={() => onBadgeClick(badge)}
     >
       {/* Badge Artwork */}
-      <div className="w-32 h-32 relative">
+      <div className="w-28 h-28 relative">
         {imageError ? (
           // Fallback icon when image fails to load
           <div

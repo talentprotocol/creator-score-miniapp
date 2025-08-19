@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -16,9 +15,7 @@ import {
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
-import { X } from "lucide-react";
 
 export interface BadgeFilterModalProps {
   open: boolean;
@@ -32,10 +29,7 @@ function Content({
   sections,
   selectedSections,
   onSectionToggle,
-  onClose,
-}: Omit<BadgeFilterModalProps, "open" | "onOpenChange"> & {
-  onClose: () => void;
-}) {
+}: Omit<BadgeFilterModalProps, "open" | "onOpenChange">) {
   const allSelected = selectedSections.length === sections.length;
   const someSelected =
     selectedSections.length > 0 && selectedSections.length < sections.length;
@@ -55,68 +49,52 @@ function Content({
   };
 
   return (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="h-8 w-8 p-0"
-          aria-label="Close filter modal"
+    <div className="space-y-4">
+      {/* All sections checkbox */}
+      <div className="flex items-center space-x-3">
+        <Checkbox
+          id="all-sections"
+          checked={allSelected}
+          ref={(ref) => {
+            if (ref && ref instanceof HTMLInputElement) {
+              ref.indeterminate = someSelected;
+            }
+          }}
+          onCheckedChange={handleAllToggle}
+          aria-describedby="all-sections-description"
+        />
+        <label
+          id="all-sections-description"
+          htmlFor="all-sections"
+          className="flex-1 cursor-pointer text-left"
         >
-          <X className="h-4 w-4" />
-        </Button>
+          <Typography size="base" weight="medium">
+            All Sections
+          </Typography>
+        </label>
       </div>
 
-      {/* Filter Options */}
-      <div className="space-y-4">
-        {/* All sections checkbox */}
-        <div className="flex items-center space-x-3">
+      {/* Individual section checkboxes */}
+      {sections.map((section) => (
+        <div key={section.id} className="flex items-center space-x-3">
           <Checkbox
-            id="all-sections"
-            checked={allSelected}
-            ref={(ref) => {
-              if (ref && ref instanceof HTMLInputElement) {
-                ref.indeterminate = someSelected;
-              }
-            }}
-            onCheckedChange={handleAllToggle}
-            aria-describedby="all-sections-description"
+            id={section.id}
+            checked={selectedSections.includes(section.id)}
+            onCheckedChange={() => onSectionToggle(section.id)}
+            aria-describedby={`${section.id}-description`}
           />
           <label
-            id="all-sections-description"
-            htmlFor="all-sections"
+            id={`${section.id}-description`}
+            htmlFor={section.id}
             className="flex-1 cursor-pointer text-left"
           >
             <Typography size="base" weight="medium">
-              All Sections
+              {section.title}
             </Typography>
           </label>
         </div>
-
-        {/* Individual section checkboxes */}
-        {sections.map((section) => (
-          <div key={section.id} className="flex items-center space-x-3">
-            <Checkbox
-              id={section.id}
-              checked={selectedSections.includes(section.id)}
-              onCheckedChange={() => onSectionToggle(section.id)}
-              aria-describedby={`${section.id}-description`}
-            />
-            <label
-              id={`${section.id}-description`}
-              htmlFor={section.id}
-              className="flex-1 cursor-pointer text-left"
-            >
-              <Typography size="base" weight="medium">
-                {section.title}
-              </Typography>
-            </label>
-          </div>
-        ))}
-      </div>
-    </>
+      ))}
+    </div>
   );
 }
 
@@ -135,14 +113,10 @@ export function BadgeFilterModal({
         <DrawerContent>
           <DrawerHeader className="px-4 pb-4">
             <DrawerTitle>Filter Badges</DrawerTitle>
-            <Typography size="sm" color="muted" className="mt-1">
-              Select sections to filter the badges.
-            </Typography>
             <Content
               sections={sections}
               selectedSections={selectedSections}
               onSectionToggle={onSectionToggle}
-              onClose={() => onOpenChange(false)}
             />
           </DrawerHeader>
         </DrawerContent>
@@ -155,14 +129,10 @@ export function BadgeFilterModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Filter Badges</DialogTitle>
-          <DialogDescription>
-            Select sections to filter the badges.
-          </DialogDescription>
           <Content
             sections={sections}
             selectedSections={selectedSections}
             onSectionToggle={onSectionToggle}
-            onClose={() => onOpenChange(false)}
           />
         </DialogHeader>
       </DialogContent>

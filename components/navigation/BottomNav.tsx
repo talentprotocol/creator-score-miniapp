@@ -24,8 +24,12 @@ export function BottomNav() {
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
     setClickedIcon(item.href);
 
-    // If user tries to access Profile without user context, show modal
-    if (!talentUuid && !talentId && item.label === "Profile") {
+    // If user tries to access Profile or Badges without user context, show modal
+    if (
+      !talentUuid &&
+      !talentId &&
+      (item.label === "Profile" || item.label === "Badges")
+    ) {
       e.preventDefault();
       setRedirectPath(item.href);
       setShowModal(true);

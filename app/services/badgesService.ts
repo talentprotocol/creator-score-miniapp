@@ -89,13 +89,25 @@ export interface BadgeDetail {
 function formatNumberSmart(value: number): string {
   if (value >= 1000000) {
     const millions = value / 1000000;
-    const rounded = Math.round(millions * 10) / 10;
-    return `${rounded}M`;
+    if (millions < 10) {
+      // 1-digit M: always show 2 decimals
+      return `${millions.toFixed(2)}M`;
+    } else {
+      // 2+ digit M: show max 1 decimal
+      const rounded = Math.round(millions * 10) / 10;
+      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+    }
   }
   if (value >= 1000) {
     const thousands = value / 1000;
-    const rounded = Math.round(thousands * 10) / 10;
-    return `${rounded}K`;
+    if (thousands < 10) {
+      // 1-digit K: always show 2 decimals
+      return `${thousands.toFixed(2)}K`;
+    } else {
+      // 2+ digit K: show max 1 decimal
+      const rounded = Math.round(thousands * 10) / 10;
+      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+    }
   }
   return value.toString();
 }
@@ -104,13 +116,25 @@ function formatNumberSmart(value: number): string {
 function formatCurrency(value: number): string {
   if (value >= 1000000) {
     const millions = value / 1000000;
-    const rounded = Math.round(millions * 10) / 10;
-    return `$${rounded}M`;
+    if (millions < 10) {
+      // 1-digit M: always show 2 decimals
+      return `$${millions.toFixed(2)}M`;
+    } else {
+      // 2+ digit M: show max 1 decimal
+      const rounded = Math.round(millions * 10) / 10;
+      return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+    }
   }
   if (value >= 1000) {
     const thousands = value / 1000;
-    const rounded = Math.round(thousands * 10) / 10;
-    return `$${rounded}K`;
+    if (thousands < 10) {
+      // 1-digit K: always show 2 decimals
+      return `$${thousands.toFixed(2)}K`;
+    } else {
+      // 2+ digit K: show max 1 decimal
+      const rounded = Math.round(thousands * 10) / 10;
+      return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+    }
   }
   return `$${value}`;
 }
@@ -458,54 +482,55 @@ async function computePlatformBaseBadges(
   return badges;
 }
 
-async function computePlatformReownBadges(
-  talentUuid: string,
-): Promise<BadgeState[]> {
-  const content = getBadgeContent("reown");
-  if (!content) return [];
+// TODO: WCT badges temporarily disabled - community not confirmed yet
+// async function computePlatformReownBadges(
+//   talentUuid: string,
+// ): Promise<BadgeState[]> {
+//   const content = getBadgeContent("reown");
+//   if (!content) return [];
 
-  // Get wallet_connect_airdrop_one data point
-  // TODO: Replace with actual data point when available
-  const reownTaskCount = await getDataPointsSum(talentUuid, [
-    "wallet_connect_airdrop_one",
-  ]);
+//   // Get wallet_connect_airdrop_one data point
+//   // TODO: Replace with actual data point when available
+//   const reownTaskCount = await getDataPointsSum(talentUuid, [
+//     "wallet_connect_airdrop_one",
+//   ]);
 
-  const maxLevel = getBadgeMaxLevel("reown");
-  const uom = getBadgeUOM("reown");
-  const badges: BadgeState[] = [];
+//   const maxLevel = getBadgeMaxLevel("reown");
+//   const uom = getBadgeUOM("reown");
+//   const badges: BadgeState[] = [];
 
-  for (let badgeLevel = 1; badgeLevel <= maxLevel; badgeLevel++) {
-    const threshold = getBadgeLevelThreshold("reown", badgeLevel);
-    const levelLabel = getBadgeLevelLabel("reown", badgeLevel);
+//   for (let badgeLevel = 1; badgeLevel <= maxLevel; badgeLevel++) {
+//     const threshold = getBadgeLevelThreshold("reown", badgeLevel);
+//     const levelLabel = getBadgeLevelLabel("reown", badgeLevel);
 
-    if (!threshold || !levelLabel) continue;
+//     if (!threshold || !levelLabel) continue;
 
-    const earned = reownTaskCount >= threshold;
-    const progress = earned
-      ? 100
-      : clampToPct((reownTaskCount / threshold) * 100);
+//     const earned = reownTaskCount >= threshold;
+//     const progress = earned
+//       ? 100
+//       : clampToPct((reownTaskCount / threshold) * 100);
 
-    badges.push({
-      badgeSlug: content.slug,
-      badgeLevel: badgeLevel,
-      title: levelLabel,
-      description: formatBadgeDescription(content.slug, badgeLevel, levelLabel),
-      state: (earned ? "earned" : "locked") as "earned" | "locked",
-      progressLabel: formatProgressLabel(
-        earned ? "earned" : "locked",
-        content.slug,
-        reownTaskCount,
-        threshold,
-        uom,
-      ),
-      progressPct: progress,
-      levelArtwork: getBadgeLevelArtwork("reown", badgeLevel),
-      categoryName: content.title,
-    });
-  }
+//     badges.push({
+//       badgeSlug: content.slug,
+//       badgeLevel: badgeLevel,
+//       title: levelLabel,
+//       description: formatBadgeDescription(content.slug, badgeLevel, levelLabel),
+//       state: (earned ? "earned" : "locked") as "earned" | "locked",
+//       progressLabel: formatProgressLabel(
+//         earned ? "earned" : "locked",
+//         content.slug,
+//         reownTaskCount,
+//         threshold,
+//         uom,
+//       ),
+//       progressPct: progress,
+//       levelArtwork: getBadgeLevelArtwork("reown", badgeLevel),
+//       categoryName: content.title,
+//     });
+//   }
 
-  return badges;
-}
+//   return badges;
+// }
 
 // Main service functions
 async function getBadgesForUserUncached(
@@ -519,7 +544,7 @@ async function getBadgesForUserUncached(
       streaksBadges,
       platformTalentBadges,
       platformBaseBadges,
-      platformReownBadges,
+      // platformReownBadges, // Temporarily disabled
     ] = await Promise.all([
       computeCreatorScoreBadges(talentUuid),
       computeTotalEarningsBadges(talentUuid),
@@ -527,7 +552,7 @@ async function getBadgesForUserUncached(
       computeStreaksBadges(talentUuid),
       computePlatformTalentBadges(talentUuid),
       computePlatformBaseBadges(talentUuid),
-      computePlatformReownBadges(talentUuid),
+      // computePlatformReownBadges(talentUuid), // Temporarily disabled
     ]);
 
     const sections: BadgeSection[] = [
@@ -552,7 +577,7 @@ async function getBadgesForUserUncached(
         badges: [
           ...platformTalentBadges,
           ...platformBaseBadges,
-          ...platformReownBadges,
+          // ...platformReownBadges, // Temporarily disabled
         ],
       },
     ];
