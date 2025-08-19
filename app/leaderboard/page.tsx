@@ -374,7 +374,7 @@ function LeaderboardContent() {
         </div>
 
         {/* Simplified Stat Cards */}
-        <div className="grid grid-cols-2 gap-4 my-4">
+        <div className="grid grid-cols-2 gap-4 mt-4">
           <StatCard
             title="Rewards Pool"
             value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}

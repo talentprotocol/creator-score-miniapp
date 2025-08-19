@@ -121,7 +121,7 @@ export default function BadgesPage() {
   }
 
   return (
-    <>
+    <div className="max-w-xl mx-auto w-full pb-24">
       {/* Header section */}
       <Section variant="header">
         <div className="flex items-center justify-between">
@@ -194,6 +194,6 @@ export default function BadgesPage() {
         selectedSections={selectedSections}
         onSectionToggle={handleSectionToggle}
       />
-    </>
+    </div>
   );
 }
