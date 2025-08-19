@@ -16,6 +16,7 @@ import { Section } from "@/components/common/Section";
 import { Typography } from "@/components/ui/typography";
 import { Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageContainer } from "@/components/common/PageContainer";
 
 /**
  * BADGES PAGE
@@ -121,7 +122,7 @@ export default function BadgesPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto w-full pb-24">
+    <PageContainer>
       {/* Header section */}
       <Section variant="header">
         <div className="flex items-center justify-between">
@@ -194,6 +195,6 @@ export default function BadgesPage() {
         selectedSections={selectedSections}
         onSectionToggle={handleSectionToggle}
       />
-    </div>
+    </PageContainer>
   );
 }
