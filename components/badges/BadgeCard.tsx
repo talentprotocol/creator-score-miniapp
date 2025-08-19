@@ -68,7 +68,7 @@ export function BadgeCard({
               height={128}
               quality={85}
               className={`w-full h-full object-contain ${
-                !isEarned ? "grayscale opacity-60 blur-[0.5px]" : ""
+                !isEarned ? "opacity-80 blur-[0.5px]" : ""
               }`}
               onError={() => setImageError(true)}
               priority={priority}
@@ -90,11 +90,11 @@ export function BadgeCard({
         </Typography>
 
         {/* Progress bar for locked badges */}
-        {!isEarned && badge.progressPct > 0 && (
+        {!isEarned && (
           <div className="w-full bg-muted-foreground/30 rounded-full h-1 mt-1">
             <div
               className="bg-brand-green h-1 rounded-full transition-all"
-              style={{ width: `${Math.min(badge.progressPct, 100)}%` }}
+              style={{ width: `${Math.max(badge.progressPct, 0)}%` }}
             />
           </div>
         )}
