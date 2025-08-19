@@ -212,8 +212,8 @@ function LeaderboardContent() {
 
   return (
     <>
-      {/* Container for all content above tabs */}
-      <div className="p-4">
+      {/* Header section with all elements above tabs */}
+      <Section variant="header">
         {/* My Rewards Hero - Show only when we have authenticated user context */}
         {(user || unifiedName) && (
           <MyRewards
@@ -373,65 +373,6 @@ function LeaderboardContent() {
           />
         </div>
 
-        {/* How to Earn Modal */}
-        <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
-
-        {/* Reward Boosts Modal (triggered only by MyRewards rocket) */}
-        <RewardBoostsModal
-          open={rewardBoostsOpen}
-          onOpenChange={setRewardBoostsOpen}
-          rewardUsd={getUsdcRewards(
-            userTop200Entry?.score ?? creatorScore,
-            userTop200Entry?.rank,
-            false,
-          )}
-          tokenBalance={tokenBalance}
-          boostUsd={
-            getBoostAmountUsd(
-              userTop200Entry?.score ?? creatorScore,
-              userTop200Entry?.rank,
-              true,
-            ) ?? "$0"
-          }
-          totalUsd={getUsdcRewards(
-            userTop200Entry?.score ?? creatorScore,
-            userTop200Entry?.rank,
-            userTop200Entry?.isBoosted,
-          )}
-          rank={userTop200Entry?.rank}
-          score={userTop200Entry?.score ?? creatorScore}
-        />
-
-        {/* Perk Modal - Screen Studio */}
-        <PerkModal
-          open={perkOpen}
-          onOpenChange={(o) => setPerkOpen(o)}
-          title="Creator Perk: Screen Studio"
-          subtitle="Get 1 month of Screen Studio for free."
-          access={`Level 3 (Creator Score ≥ ${LEVEL_RANGES[2].min})`}
-          distribution="Draw"
-          supply="20 monthly subscriptions"
-          url="https://screen.studio/"
-          ctaLabel="Enter"
-          level={level}
-          requiredLevel={3}
-          perkId="screen_studio"
-          talentUUID={userTalentUuid ?? null}
-          deadlineIso={PERK_DRAW_DEADLINE_UTC.toISOString()}
-          iconUrl="/logos/screen-studio.png"
-          iconAlt="Screen Studio"
-          onClaim={() => {
-            // Keep modal open; refresh callout state immediately
-            refreshPerkStatus();
-          }}
-        />
-
-        {/* Login Modal for logged-out users */}
-        <FarcasterAccessModal
-          open={loginModalOpen}
-          onOpenChange={setLoginModalOpen}
-        />
-
         {/* Simplified Stat Cards */}
         <div className="grid grid-cols-2 gap-4 my-4">
           <StatCard
@@ -443,7 +384,66 @@ function LeaderboardContent() {
             value={`${countdown.days}d ${countdown.hours}h`}
           />
         </div>
-      </div>
+      </Section>
+
+      {/* Modals - outside Section wrapper */}
+      <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
+
+      {/* Reward Boosts Modal (triggered only by MyRewards rocket) */}
+      <RewardBoostsModal
+        open={rewardBoostsOpen}
+        onOpenChange={setRewardBoostsOpen}
+        rewardUsd={getUsdcRewards(
+          userTop200Entry?.score ?? creatorScore,
+          userTop200Entry?.rank,
+          false,
+        )}
+        tokenBalance={tokenBalance}
+        boostUsd={
+          getBoostAmountUsd(
+            userTop200Entry?.score ?? creatorScore,
+            userTop200Entry?.rank,
+            true,
+          ) ?? "$0"
+        }
+        totalUsd={getUsdcRewards(
+          userTop200Entry?.score ?? creatorScore,
+          userTop200Entry?.rank,
+          userTop200Entry?.isBoosted,
+        )}
+        rank={userTop200Entry?.rank}
+        score={userTop200Entry?.score ?? creatorScore}
+      />
+
+      {/* Perk Modal - Screen Studio */}
+      <PerkModal
+        open={perkOpen}
+        onOpenChange={(o) => setPerkOpen(o)}
+        title="Creator Perk: Screen Studio"
+        subtitle="Get 1 month of Screen Studio for free."
+        access={`Level 3 (Creator Score ≥ ${LEVEL_RANGES[2].min})`}
+        distribution="Draw"
+        supply="20 monthly subscriptions"
+        url="https://screen.studio/"
+        ctaLabel="Enter"
+        level={level}
+        requiredLevel={3}
+        perkId="screen_studio"
+        talentUUID={userTalentUuid ?? null}
+        deadlineIso={PERK_DRAW_DEADLINE_UTC.toISOString()}
+        iconUrl="/logos/screen-studio.png"
+        iconAlt="Screen Studio"
+        onClaim={() => {
+          // Keep modal open; refresh callout state immediately
+          refreshPerkStatus();
+        }}
+      />
+
+      {/* Login Modal for logged-out users */}
+      <FarcasterAccessModal
+        open={loginModalOpen}
+        onOpenChange={setLoginModalOpen}
+      />
 
       {/* Full width tabs - outside PageContainer constraints */}
       <Section variant="full-width">
