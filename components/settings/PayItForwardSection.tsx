@@ -59,8 +59,8 @@ export function PayItForwardSection() {
   );
   const hasPaidForward = success || isAlreadyOptedOut;
 
-  // Show share button for already opted out users or after success + delay
-  const shouldShowShare = isAlreadyOptedOut || showShare;
+  // Show share button for already opted out users (from previous sessions) or after confetti completes
+  const shouldShowShare = (isAlreadyOptedOut && !success) || showShare;
 
   const currentRewards = userTop200Entry
     ? RewardsCalculationService.calculateUserReward(
@@ -75,12 +75,13 @@ export function PayItForwardSection() {
   // If already opted out (from previous session), ensure the opt-out callout is hidden
   // This is now handled server-side during opt-out. No client effect needed.
 
-  // Start confetti when success is achieved
+  // Start confetti when success is freshly achieved (not for already opted out users)
   useEffect(() => {
-    if (success && !isAlreadyOptedOut) {
+    if (success) {
+      // Only show confetti for fresh opt-outs, not for users who were already opted out
       setConfettiActive(true);
     }
-  }, [success, isAlreadyOptedOut]);
+  }, [success]);
 
   // Handle confetti completion - show share button after confetti finishes
   const handleConfettiComplete = useCallback(() => {
