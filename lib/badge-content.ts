@@ -139,14 +139,15 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     uom: "transactions",
   },
 
-  reown: {
-    slug: "reown",
-    title: "Reown",
-    description: "Earn {amount} $WCT from wallet connect airdrop",
-    levelThresholds: [1, 10, 100],
-    levelLabels: ["1 $WCT", "10 $WCT", "100 $WCT"],
-    uom: "$WCT",
-  },
+  // TODO: WCT badges temporarily disabled - community not confirmed yet
+  // reown: {
+  //   slug: "reown",
+  //   title: "Reown",
+  //   description: "Earn {amount} $WCT from wallet connect airdrop",
+  //   levelThresholds: [1, 10, 100],
+  //   levelLabels: ["1 $WCT", "10 $WCT", "100 $WCT"],
+  //   uom: "$WCT",
+  // },
 };
 
 // Helper functions for content management
