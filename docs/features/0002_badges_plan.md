@@ -125,26 +125,34 @@
 ## Implementation Deltas & Discoveries
 
 ### 🔧 Technical Adjustments Made
-- **Platform badges temporarily disabled**: Commented out `computePlatformTalentBadges` and `computePlatformBaseBadges` functions due to missing artwork. Functions preserved with TODO comments for easy restoration.
-- **Image fallback strategy**: Replaced placeholder PNG files with Lucide Medal icons (`<Medal />`) for graceful fallback when badge artwork fails to load. This prevents infinite API request loops.
-- **Development authentication**: Added development fallback to use default Talent Protocol user UUID when Farcaster context is unavailable, enabling local testing without authentication setup.
-- **API route structure**: Both `/api/badges` and `/api/badges/[badgeSlug]` use the same user resolution pattern for consistency.
+- **Streaks restructured**: Split single "streaks" badge into two separate badges:
+  - `daily-streaks`: 6 levels (1-6 days), UOM: "days"
+  - `weekly-streaks`: 6 levels (1-6 weeks), UOM: "weeks"
+- **Artwork organization**: Each badge has its own folder (`daily-streaks/`, `weekly-streaks/`) with dedicated artwork files
+- **Content centralization**: Eliminated hardcoded content duplication - all badge content now centralized in `lib/badge-content.ts`
+- **Service architecture**: Badge service now uses `getAllBadgeSections()` to derive section structure dynamically
 
 ### 🎨 UI/UX Improvements
-- **Responsive badge grid**: Implemented 2-column grid on mobile (instead of 3) for better touch targets and visual balance.
-- **Progress visualization**: Added thin progress bars for locked badges showing completion percentage.
-- **Error handling**: Implemented comprehensive error states with skeleton loaders and error boundaries.
-- **Typography consistency**: All text now uses the `Typography` component as planned, ensuring consistent styling.
+- **Responsive badge grid**: Implemented 2-column grid on mobile for better touch targets
+- **Progress visualization**: Added thin progress bars for locked badges showing completion percentage
+- **Error handling**: Implemented comprehensive error states with skeleton loaders and error boundaries
+- **Typography consistency**: All text now uses the `Typography` component as planned
 
 ### 📱 Mobile-First Enhancements
-- **Touch interactions**: Badge cards use `active:scale-95` for tactile feedback on mobile.
-- **Modal responsiveness**: BadgeModal automatically switches between Dialog (desktop) and Drawer (mobile) based on screen size.
-- **Loading states**: Skeleton loaders provide immediate visual feedback during data fetching.
+- **Touch interactions**: Badge cards use `active:scale-95` for tactile feedback on mobile
+- **Modal responsiveness**: BadgeModal automatically switches between Dialog (desktop) and Drawer (mobile) based on screen size
+- **Loading states**: Skeleton loaders provide immediate visual feedback during data fetching
 
 ### 🚀 Performance Optimizations
-- **Server-side caching**: 5-minute cache duration with proper cache keys (`USER_BADGES`) for optimal performance.
-- **Image optimization**: Graceful fallback to icons prevents broken image requests and improves perceived performance.
-- **Efficient data fetching**: Single API call loads all badge data, reducing network overhead.
+- **Server-side caching**: 5-minute cache duration with proper cache keys (`USER_BADGES`) for optimal performance
+- **Image optimization**: Graceful fallback to icons prevents broken image requests and improves perceived performance
+- **Efficient data fetching**: Single API call loads all badge data, reducing network overhead
+
+### 🏗️ Architecture Improvements
+- **Single source of truth**: All badge content, titles, and descriptions centralized in `badge-content.ts`
+- **Dynamic section generation**: Service automatically derives section structure from content configuration
+- **No hardcoded duplication**: Section titles, IDs, and descriptions managed in one place
+- **Scalable structure**: Adding new badge sections automatically updates all consumers
 
 ## Follow-Up Plan (Post-MVP)
 

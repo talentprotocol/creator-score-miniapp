@@ -16,6 +16,7 @@ import type { BadgeState } from "@/app/services/badgesService";
 import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";
 import Image from "next/image";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface BadgeModalProps {
   badge: BadgeState | null;
@@ -37,24 +38,8 @@ interface BadgeModalProps {
  * - Graceful image error handling with icon fallback
  */
 export function BadgeModal({ badge, onClose }: BadgeModalProps) {
-  const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [imageError, setImageError] = useState(false);
-
-  // Check if it's desktop on mount and resize
-  useEffect(() => {
-    const checkIsDesktop = () => {
-      setIsDesktop(window.innerWidth >= 640);
-    };
-
-    // Check on mount
-    checkIsDesktop();
-
-    // Add resize listener
-    window.addEventListener("resize", checkIsDesktop);
-
-    // Cleanup
-    return () => window.removeEventListener("resize", checkIsDesktop);
-  }, []);
 
   // Reset image error when badge changes
   useEffect(() => {
@@ -64,6 +49,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
   if (!badge) return null;
 
   const isLocked = badge.currentLevel === 0;
+  const isStreakBadge = badge.badgeSlug.includes("streaks");
 
   const ModalContent = () => (
     <div className="space-y-6 text-center">
@@ -104,43 +90,32 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
           <Typography size="sm" color="muted">
             {badge.description}
           </Typography>
-          {/* Current level indicator */}
-          <Typography size="xs" color="muted">
-            {isLocked
-              ? `${badge.categoryName} • Locked`
-              : `${badge.categoryName} • Level ${badge.currentLevel}${badge.isMaxLevel ? " (Max)" : ""}`}
-          </Typography>
         </div>
       </div>
 
-      {/* Progress information */}
-      <div className="space-y-3">
-        {/* Current progress */}
-        <div className="text-center">
-          <Typography size="sm" weight="medium">
-            {isLocked
-              ? "Progress to Level 1"
-              : badge.isMaxLevel
-                ? "Maximum Level Achieved!"
-                : `Progress to Level ${badge.currentLevel + 1}`}
+      {/* Progress information (only for non-streak badges) */}
+      {!isStreakBadge && (
+        <div className="space-y-3">
+          {/* Progress text */}
+          <Typography size="sm" color="muted">
+            {badge.isMaxLevel
+              ? "Max Level"
+              : `${badge.progressLabel} to Level ${badge.currentLevel + 1}`}
           </Typography>
-        </div>
 
-        {/* Progress bar (always show except for max level) */}
-        {!badge.isMaxLevel && (
-          <div className="space-y-2">
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className="bg-brand-green h-2 rounded-full transition-all"
-                style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
-              />
+          {/* Progress bar (always show except for max level) */}
+          {!badge.isMaxLevel && (
+            <div className="space-y-2">
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className="bg-brand-green h-2 rounded-full transition-all"
+                  style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
+                />
+              </div>
             </div>
-            <Typography size="sm" color="muted">
-              {badge.progressLabel}
-            </Typography>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="flex justify-center">
         <Button onClick={onClose} className="w-full" variant="brand-purple">

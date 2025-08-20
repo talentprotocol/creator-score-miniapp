@@ -7,7 +7,11 @@ import { getCachedUserTokenBalance } from "./tokenBalanceService";
 import { getCredentialsForTalentId } from "./credentialsService";
 import { getDataPointsSum } from "./dataPointsService";
 
-import { getBadgeContent, formatBadgeDescription } from "@/lib/badge-content";
+import {
+  getBadgeContent,
+  getAllBadgeSections,
+  formatBadgeDescription,
+} from "@/lib/badge-content";
 import { calculateTotalRewards, getEthUsdcPrice } from "@/lib/utils";
 
 /**
@@ -127,6 +131,7 @@ function clampToPct(x: number): number {
 
 function getBadgeArtworkUrl(badgeSlug: string, currentLevel: number): string {
   const basePath = `/images/badges/${badgeSlug}`;
+
   if (currentLevel === 0) {
     return `${basePath}/${badgeSlug}-1-locked.webp`;
   } else {
@@ -136,7 +141,11 @@ function getBadgeArtworkUrl(badgeSlug: string, currentLevel: number): string {
 
 // Helper function to create dynamic badge
 function createDynamicBadge(
-  content: { slug: string; title: string; levelLabels: string[] },
+  content: {
+    slug: string;
+    title: string;
+    levelLabels: string[];
+  },
   currentValue: number,
   thresholds: number[],
   formatMissing: (missing: number) => string,
@@ -188,6 +197,53 @@ function createDynamicBadge(
     levelLabel,
     progressLabel,
     progressPct,
+    artworkUrl: getBadgeArtworkUrl(content.slug, currentLevel),
+    description: formatBadgeDescription(
+      content.slug,
+      currentLevel || 1,
+      levelLabel,
+    ),
+    categoryName: content.title,
+  };
+}
+
+// Helper function to create streak badges (no progress bars needed)
+function createStreakBadge(
+  content: {
+    slug: string;
+    title: string;
+    levelLabels: string[];
+  },
+  currentValue: number,
+  thresholds: number[],
+): BadgeState {
+  // Find current level
+  let currentLevel = 0;
+  for (let i = thresholds.length - 1; i >= 0; i--) {
+    if (currentValue >= thresholds[i]) {
+      currentLevel = i + 1;
+      break;
+    }
+  }
+
+  const maxLevel = thresholds.length;
+  const isMaxLevel = currentLevel >= maxLevel;
+
+  // Get level label
+  const levelLabel =
+    currentLevel === 0
+      ? content.levelLabels[0]
+      : content.levelLabels[currentLevel - 1];
+
+  return {
+    badgeSlug: content.slug,
+    title: content.title,
+    currentLevel,
+    maxLevel,
+    isMaxLevel,
+    levelLabel,
+    progressLabel: "", // No progress label for streaks
+    progressPct: currentLevel > 0 ? 100 : 0, // 100% if earned, 0% if locked
     artworkUrl: getBadgeArtworkUrl(content.slug, currentLevel),
     description: formatBadgeDescription(
       content.slug,
@@ -273,21 +329,39 @@ async function computeTotalFollowersBadges(
   return [badge];
 }
 
-async function computeStreaksBadges(
+async function computeDailyStreaksBadges(
   _talentUuid: string, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<BadgeState[]> {
-  // TODO: Implement streaks logic when we have the data source
-  const content = getBadgeContent("streaks");
+  // TODO: Implement daily streaks logic when we have the data source
+  const content = getBadgeContent("daily-streaks");
   if (!content) return [];
 
   // For now, use 0 as current streak days to show correct progress format
-  const currentStreakDays = 0; // TODO: Replace with actual streak calculation
+  const currentStreakDays = 0; // TODO: Replace with actual daily streak calculation
 
-  const badge = createDynamicBadge(
+  const badge = createStreakBadge(
     content,
     currentStreakDays,
     content.levelThresholds,
-    (missing) => `${missing} days left`,
+  );
+
+  return [badge];
+}
+
+async function computeWeeklyStreaksBadges(
+  _talentUuid: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+): Promise<BadgeState[]> {
+  // TODO: Implement weekly streaks logic when we have the data source
+  const content = getBadgeContent("weekly-streaks");
+  if (!content) return [];
+
+  // For now, use 0 as current streak weeks to show correct progress format
+  const currentStreakWeeks = 0; // TODO: Replace with actual weekly streak calculation
+
+  const badge = createStreakBadge(
+    content,
+    currentStreakWeeks,
+    content.levelThresholds,
   );
 
   return [badge];
@@ -397,7 +471,8 @@ async function getBadgesForUserUncached(
       creatorScoreBadges,
       totalEarningsBadges,
       totalFollowersBadges,
-      streaksBadges,
+      dailyStreaksBadges,
+      weeklyStreaksBadges,
       platformTalentBadges,
       platformBaseBadges,
       // platformReownBadges, // Temporarily disabled
@@ -405,53 +480,51 @@ async function getBadgesForUserUncached(
       computeCreatorScoreBadges(talentUuid),
       computeTotalEarningsBadges(talentUuid),
       computeTotalFollowersBadges(talentUuid),
-      computeStreaksBadges(talentUuid),
+      computeDailyStreaksBadges(talentUuid),
+      computeWeeklyStreaksBadges(talentUuid),
       computePlatformTalentBadges(talentUuid),
       computePlatformBaseBadges(talentUuid),
       // computePlatformReownBadges(talentUuid), // Temporarily disabled
     ]);
 
-    const sections: BadgeSection[] = [
-      {
-        id: "creator-score",
-        title: "Creator Score",
-        badges: [...creatorScoreBadges],
-      },
-      {
-        id: "streaks",
-        title: "Streaks",
-        badges: [...streaksBadges],
-      },
-      {
-        id: "records",
-        title: "Records",
-        badges: [...totalEarningsBadges, ...totalFollowersBadges],
-      },
-      {
-        id: "communities",
-        title: "Communities",
-        badges: [
-          ...platformTalentBadges,
-          ...platformBaseBadges,
-          // ...platformReownBadges, // Temporarily disabled
-        ],
-      },
-    ];
+    const sections: BadgeSection[] = getAllBadgeSections().map((section) => ({
+      id: section.id,
+      title: section.title,
+      badges: [
+        ...(section.id === "creator-score" ? creatorScoreBadges : []),
+        ...(section.id === "daily-streaks" ? dailyStreaksBadges : []),
+        ...(section.id === "weekly-streaks" ? weeklyStreaksBadges : []),
+        ...(section.id === "records"
+          ? [...totalEarningsBadges, ...totalFollowersBadges]
+          : []),
+        ...(section.id === "communities"
+          ? [
+              ...platformTalentBadges,
+              ...platformBaseBadges,
+              // ...platformReownBadges, // Temporarily disabled
+            ]
+          : []),
+      ],
+    }));
 
-    // Calculate summary
+    // Calculate summary - completion based on progress toward max level
     const allBadges = sections.flatMap((section) => section.badges);
-    const earnedCount = allBadges.filter(
-      (badge) => badge.currentLevel > 0,
-    ).length;
-    const totalCount = allBadges.length;
+    const totalPossibleProgress = allBadges.reduce((total, badge) => {
+      return total + badge.maxLevel;
+    }, 0);
+    const currentProgress = allBadges.reduce((total, badge) => {
+      return total + badge.currentLevel;
+    }, 0);
     const completionPct =
-      totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
+      totalPossibleProgress > 0
+        ? Math.round((currentProgress / totalPossibleProgress) * 100)
+        : 0;
 
     return {
       sections,
       summary: {
-        earnedCount,
-        totalCount,
+        earnedCount: allBadges.filter((badge) => badge.currentLevel > 0).length,
+        totalCount: allBadges.length,
         completionPct,
       },
     };

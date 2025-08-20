@@ -1,23 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import type { BadgeState } from "@/app/services/badgesService";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
-  BadgeModal,
   BadgeCard,
+  BadgeModal,
   BadgeFilterModal,
-  LoadingState,
   ErrorState,
+  LoadingState,
 } from "@/components/badges";
-
 import { Section } from "@/components/common/Section";
 import { Typography } from "@/components/ui/typography";
-import { Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/common/PageContainer";
+import { Settings2 } from "lucide-react";
+import { getAllBadgeSections } from "@/lib/badge-content";
 
 /**
  * BADGES PAGE
@@ -47,14 +47,14 @@ export default function BadgesPage() {
     error,
   } = useBadges(talentUuid || undefined);
 
+  /** Get available sections for filter */
+  const availableSections = getAllBadgeSections();
+
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [selectedSections, setSelectedSections] = useState<string[]>([
-    "creator-score",
-    "streaks",
-    "records",
-    "communities",
-  ]);
+  const [selectedSections, setSelectedSections] = useState<string[]>(
+    availableSections.map((section) => section.id),
+  );
 
   // Redirect unauthenticated users to leaderboard (following Settings page pattern)
   useEffect(() => {
@@ -95,14 +95,6 @@ export default function BadgesPage() {
     }
   };
 
-  /** Get available sections for filter */
-  const availableSections = [
-    { id: "creator-score", title: "Creator Score" },
-    { id: "streaks", title: "Streaks" },
-    { id: "records", title: "Records" },
-    { id: "communities", title: "Communities" },
-  ];
-
   /** Filter sections based on selection */
   const filteredSections =
     badgesData?.sections.filter((section) =>
@@ -141,7 +133,6 @@ export default function BadgesPage() {
               Badges
             </Typography>
             <Typography color="muted">
-              {badgesData.summary.earnedCount} badges earned,{" "}
               {badgesData.summary.completionPct}% completed
             </Typography>
           </div>
@@ -164,11 +155,16 @@ export default function BadgesPage() {
                 {/* Section title with count */}
                 <Typography as="h2" size="lg" weight="bold" className="mb-6">
                   {section.title} (
-                  {
-                    section.badges.filter((badge) => badge.currentLevel > 0)
-                      .length
-                  }
-                  /{section.badges.length})
+                  {section.badges.reduce(
+                    (total, badge) => total + badge.currentLevel,
+                    0,
+                  )}
+                  /
+                  {section.badges.reduce(
+                    (total, badge) => total + badge.maxLevel,
+                    0,
+                  )}
+                  )
                 </Typography>
 
                 {/* Badge grid - 2 columns for better mobile experience */}

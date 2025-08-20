@@ -30,6 +30,7 @@ export function BadgeCard({
   priority = false,
 }: BadgeCardProps) {
   const isLocked = badge.currentLevel === 0;
+  const isStreakBadge = badge.badgeSlug.includes("streaks");
   const [imageError, setImageError] = useState(false);
 
   // Reset image error when badge changes
@@ -80,15 +81,17 @@ export function BadgeCard({
           {badge.levelLabel}
         </Typography>
 
-        {/* Secondary: Progress to next level */}
-        <Typography size="xs" color="muted" className="mt-0.5">
-          {badge.isMaxLevel
-            ? "Max Level"
-            : `${badge.progressLabel} to Lvl. ${badge.currentLevel + 1}`}
-        </Typography>
+        {/* Secondary: Progress to next level (only for non-streak badges) */}
+        {!isStreakBadge && (
+          <Typography size="xs" color="muted" className="mt-0.5">
+            {badge.isMaxLevel
+              ? "Max Level"
+              : `${badge.progressLabel} to Lvl. ${badge.currentLevel + 1}`}
+          </Typography>
+        )}
 
-        {/* Progress bar (always show except for max level) */}
-        {!badge.isMaxLevel && (
+        {/* Progress bar (only for non-streak badges, always show except for max level) */}
+        {!isStreakBadge && !badge.isMaxLevel && (
           <div className="w-full bg-muted-foreground/30 rounded-full h-1 mt-1">
             <div
               className="bg-brand-green h-1 rounded-full transition-all"

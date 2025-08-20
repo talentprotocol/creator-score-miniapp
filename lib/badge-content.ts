@@ -38,19 +38,25 @@ export const BADGE_SECTIONS: BadgeSectionContent[] = [
     description: "Achievement levels based on your Creator Score points",
   },
   {
-    id: "streaks",
-    title: "Streaks",
+    id: "daily-streaks",
+    title: "Daily Streaks",
     description: "Daily activity and consistency milestones",
+  },
+  {
+    id: "weekly-streaks",
+    title: "Weekly Streaks",
+    description: "Weekly activity and consistency milestones",
   },
   {
     id: "records",
     title: "Records",
-    description: "Cross-platform totals such as earnings and followers",
+    description:
+      "Cross-platform aggregate metrics such as earnings and followers",
   },
   {
     id: "communities",
     title: "Communities",
-    description: "Activity and impact on specific platforms",
+    description: "Activity and impact on specific creator platforms.",
   },
 ];
 
@@ -59,25 +65,26 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
   "creator-score": {
     slug: "creator-score",
     title: "Creator Score",
-    description: "Reach Creator Score {level}",
+    description:
+      "Increase your Creator Score to go from Rookie (0-39 points) to Legendary (250+ points)!",
     // levelThresholds are the minimum score for each range
     levelThresholds: [0, 40, 80, 120, 170, 250],
     levelLabels: [
-      "0-39 Points",
-      "40-79 Points",
-      "80-119 Points",
-      "120-169 Points",
-      "170-249 Points",
-      "250+ Points",
+      "Rookie Creator",
+      "Rising Creator",
+      "Skilled Creator",
+      "Expert Creator",
+      "Master Creator",
+      "Legendary Creator",
     ],
-    uom: "points",
+    uom: "pts",
   },
 
-  streaks: {
-    slug: "streaks",
-    title: "Streaks",
-    description: "Maintain a {level} day streak",
-    levelThresholds: [1, 2, 3, 4, 5, 6], // consecutive days
+  "daily-streaks": {
+    slug: "daily-streaks",
+    title: "Daily Streaks",
+    description: "Visit the app every day to keep your daily streak alive.",
+    levelThresholds: [1, 2, 3, 4, 5, 6],
     levelLabels: [
       "1 Day Streak",
       "2 Day Streak",
@@ -89,10 +96,27 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     uom: "days",
   },
 
+  "weekly-streaks": {
+    slug: "weekly-streaks",
+    title: "Weekly Streaks",
+    description: "Visit the app every week to maintain your weekly streak.",
+    levelThresholds: [1, 2, 3, 4, 5, 6],
+    levelLabels: [
+      "1 Week Streak",
+      "2 Week Streak",
+      "3 Week Streak",
+      "4 Week Streak",
+      "5 Week Streak",
+      "6 Week Streak",
+    ],
+    uom: "weeks",
+  },
+
   "total-earnings": {
     slug: "total-earnings",
     title: "Total Earnings",
-    description: "Earn ${amount} from your content",
+    description:
+      "Unlock 6 Total Earnings badges by earning from $10 (Level 1) to $100K+ (Level 6)!",
     levelThresholds: [10, 100, 1000, 10000, 25000, 100000],
     levelLabels: [
       "$10 Earned",
@@ -108,7 +132,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
   "total-followers": {
     slug: "total-followers",
     title: "Total Followers",
-    description: "Reach {amount} followers across all platforms",
+    description:
+      "Grow your audience from 100 to 250K+ followers to unlock all 6 Total Followers badge levels!",
     levelThresholds: [100, 1000, 10000, 25000, 100000, 250000],
     levelLabels: [
       "100 Followers",
@@ -124,7 +149,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
   talent: {
     slug: "talent",
     title: "Talent Protocol",
-    description: "Hold {amount} $TALENT tokens",
+    description:
+      "Unlock 3 Talent Protocol badges: 100, 1K, and 10K+ $TALENT tokens!",
     levelThresholds: [100, 1000, 10000],
     levelLabels: ["100 $TALENT", "1K $TALENT", "10K $TALENT"],
     uom: "$TALENT",
@@ -133,7 +159,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
   base: {
     slug: "base",
     title: "Base Network",
-    description: "Make {amount}+ transactions on Base",
+    description: "Earn 3 Base badges by making 10, 100, and 1K+ transactions!",
     levelThresholds: [10, 100, 1000],
     levelLabels: ["10 Base txs", "100 Base txs", "1K Base txs"],
     uom: "transactions",
@@ -163,6 +189,10 @@ export function getBadgeSectionContent(
 
 export function getAllBadgeSlugs(): string[] {
   return Object.keys(BADGE_CONTENT);
+}
+
+export function getAllBadgeSections(): BadgeSectionContent[] {
+  return BADGE_SECTIONS;
 }
 
 export function getBadgeLevelThresholds(slug: string): number[] {
