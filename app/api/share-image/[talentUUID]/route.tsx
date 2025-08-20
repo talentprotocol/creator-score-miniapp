@@ -165,7 +165,7 @@ export async function GET(
     // Select background based on talentUUID for consistent but varied backgrounds
     const backgroundIndex = params.talentUUID.charCodeAt(0) % 2; // 0 or 1
     const backgroundImage =
-      backgroundIndex === 0 ? "background.png" : "bg-optout.png";
+      backgroundIndex === 0 ? "background.png" : "background-2.png";
 
     // Load fonts from web URLs (works in both dev and production)
     const [cyRegular, cyBold, cySemiBold, cyExtraBold] = await Promise.all([
