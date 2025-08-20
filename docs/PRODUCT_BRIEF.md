@@ -34,6 +34,28 @@ The app operates as a mobile-first web application built on Next.js, designed to
 - **Multi-Platform Support**: Integration with Ethereum, Base, Farcaster, Lens, Twitter, GitHub, and other social platforms
 - **Notification System**: In-app notifications and webhook support for real-time updates
 
+### Pay It Forward System
+The Pay It Forward feature transforms the leaderboard from purely competitive to community-driven, allowing creators to give back while receiving social recognition for their generosity.
+
+**Core Functionality:**
+- **Rewards Opt-out**: One-time, irreversible decision to donate entire reward allocation
+- **Smart Redistribution**: Opted-out rewards are proportionally distributed among remaining eligible creators
+- **Leaderboard Position Preservation**: Users maintain their ranking while supporting others
+- **Boost Integration**: Opted-out users' boosted scores (1.1x for 100+ TALENT holders) contribute to the redistribution pool
+
+**Enhanced User Experience:**
+- **Confetti Celebration**: Custom green-themed confetti animation using `canvas-confetti` with brand colors
+- **Social Sharing**: Integrated sharing system with custom messaging for Farcaster and Twitter
+- **Real-time Updates**: Immediate UI synchronization across all components with intelligent cache management
+- **Visual Recognition**: Green HandHeart badges and crossed-out rewards throughout the interface
+- **Analytics Integration**: Comprehensive PostHog tracking for user behavior and feature adoption
+
+**Technical Implementation:**
+- **Custom Hooks**: `useOptOutStatus` for cross-context state management
+- **Centralized Services**: `rewardsCalculationService` for clean separation of concerns
+- **API Integration**: RESTful endpoints with comprehensive validation and error handling
+- **Cache Management**: Intelligent cache invalidation and real-time updates
+
 ### User Experience
 - **Mobile-First Design**: Optimized for mobile devices with responsive web interface
 - **Farcaster Mini App Integration**: Seamless embedding within Farcaster social platform

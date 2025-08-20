@@ -26,8 +26,11 @@ import { detectClient, openExternalUrl } from "@/lib/utils";
  * - Provides visual feedback with success/error states
  * - Updates leaderboard data immediately after successful opt-out
  * - Integrates with PostHog analytics for user behavior tracking
+ * - Confetti celebration upon successful opt-out
+ * - Social sharing capabilities for Farcaster and Twitter
  */
 export function PayItForwardSection() {
+  // State management for opt-out flow
   const [isOptingOut, setIsOptingOut] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,8 @@ export function PayItForwardSection() {
   const [showShare, setShowShare] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [confettiActive, setConfettiActive] = useState(false);
+
+  // User context and data hooks
   const { talentUuid } = useFidToTalentUuid();
   const {
     entries: top200Entries,
@@ -48,6 +53,7 @@ export function PayItForwardSection() {
   const posthog = usePostHog();
   const [client, setClient] = useState<string | null>(null);
 
+  // Find current user's leaderboard entry
   const userTop200Entry = top200Entries.find(
     (entry) => entry.talent_protocol_id === talentUuid,
   );
@@ -62,6 +68,7 @@ export function PayItForwardSection() {
   // Show share button for already opted out users (from previous sessions) or after confetti completes
   const shouldShowShare = (isAlreadyOptedOut && !success) || showShare;
 
+  // Calculate current rewards for display
   const currentRewards = userTop200Entry
     ? RewardsCalculationService.calculateUserReward(
         userTop200Entry.score,
@@ -96,6 +103,13 @@ export function PayItForwardSection() {
     });
   }, [context]);
 
+  /**
+   * Handles the opt-out submission process
+   * - Validates user confirmation
+   * - Submits opt-out request to API
+   * - Updates local state and cache
+   * - Triggers confetti celebration
+   */
   const handleOptOut = async () => {
     if (!hasConfirmed || !talentUuid) return;
 
@@ -150,7 +164,11 @@ export function PayItForwardSection() {
     setError(null);
   };
 
-  // Handle share stats opening
+  /**
+   * Handles opening the share stats modal
+   * - Tracks analytics event
+   * - Opens modal for platform selection
+   */
   const handleShareStats = async () => {
     // Track pay it forward share click
     posthog?.capture("pay_it_forward_share_clicked", {
@@ -162,7 +180,12 @@ export function PayItForwardSection() {
     setIsShareModalOpen(true);
   };
 
-  // Handle Farcaster sharing from modal
+  /**
+   * Handles Farcaster sharing from modal
+   * - Uses native SDK in Farcaster/Base clients
+   * - Falls back to web intent URLs for other clients
+   * - Tracks analytics events
+   */
   const handleShareFarcaster = useCallback(async () => {
     const profileUrl = `https://creatorscore.app/${talentUuid}`;
     const farcasterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score mini app, built by @talent 👇`;
@@ -194,7 +217,11 @@ export function PayItForwardSection() {
     }
   }, [talentUuid, currentRewards, posthog, client]);
 
-  // Handle Twitter sharing from modal
+  /**
+   * Handles Twitter sharing from modal
+   * - Always uses web intent URLs for consistency
+   * - Tracks analytics events
+   */
   const handleShareTwitter = useCallback(() => {
     const profileUrl = `https://creatorscore.app/${talentUuid}`;
     const twitterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score App, built by @TalentProtocol 👇`;
@@ -226,7 +253,7 @@ export function PayItForwardSection() {
 
           {/* Current Rewards Display: Shows user's potential rewards amount */}
           <div className="flex items-center gap-1.5">
-            <Typography size="base">Your Creator Rewards:</Typography>
+            <Typography size="base">Expected Reward Amount:</Typography>
             <Typography
               size="xl"
               weight="medium"

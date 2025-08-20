@@ -10,9 +10,34 @@ import { validateTalentUUID } from "@/lib/validation";
  * Allows creators to opt out of receiving rewards (Pay It Forward feature).
  * Their rewards are redistributed proportionally among remaining eligible creators.
  *
- * @param req.body.talent_uuid - User's Talent Protocol UUID
- * @param req.body.confirm_optout - Must be true to confirm the irreversible decision
+ * This endpoint processes the opt-out request and immediately updates the user's
+ * preferences. The decision is irreversible and cannot be undone.
+ *
+ * @param req.body.talent_uuid - User's Talent Protocol UUID (required)
+ * @param req.body.confirm_optout - Must be true to confirm the irreversible decision (required)
  * @returns Success/error response with updated opt-out status
+ *
+ * @example
+ * ```typescript
+ * const response = await fetch("/api/user-preferences/optout", {
+ *   method: "POST",
+ *   headers: { "Content-Type": "application/json" },
+ *   body: JSON.stringify({
+ *     talent_uuid: "user-uuid-here",
+ *     confirm_optout: true
+ *   })
+ * });
+ *
+ * const result = await response.json();
+ * if (result.success) {
+ *   console.log("Successfully opted out");
+ * }
+ * ```
+ *
+ * @throws {400} Missing or invalid talent_uuid
+ * @throws {400} Missing confirm_optout confirmation
+ * @throws {400} Opt-out processing failed
+ * @throws {500} Internal server error
  */
 export async function POST(req: NextRequest): Promise<
   NextResponse<{
@@ -81,8 +106,25 @@ export async function POST(req: NextRequest): Promise<
  *
  * Check if a user has opted out of rewards.
  *
- * @param req.searchParams.talent_uuid - User's Talent Protocol UUID
+ * This endpoint is used to query the current opt-out status of a user,
+ * typically for UI state management and leaderboard display.
+ *
+ * @param req.searchParams.talent_uuid - User's Talent Protocol UUID (required)
  * @returns Current opt-out status
+ *
+ * @example
+ * ```typescript
+ * const response = await fetch("/api/user-preferences/optout?talent_uuid=user-uuid-here");
+ * const result = await response.json();
+ * if (result.success) {
+ *   const isOptedOut = result.data?.rewards_optout;
+ *   console.log("User opted out:", isOptedOut);
+ * }
+ * ```
+ *
+ * @throws {400} Missing talent_uuid parameter
+ * @throws {400} Invalid talent_uuid format
+ * @throws {500} Internal server error
  */
 export async function GET(req: NextRequest): Promise<
   NextResponse<{

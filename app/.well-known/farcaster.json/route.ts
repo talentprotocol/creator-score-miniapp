@@ -56,10 +56,7 @@ export async function GET() {
       ogImageUrl: frameMetadata.ogImageUrl,
     }),
     baseBuilder: {
-      allowedAddresses: [
-        "0xa50f0aAa4B5444911d29ee17493327836aCABBa6",
-        "0x891f0d36223Ecd81e768669dEC678c5Cf45E90ab",
-      ],
+      allowedAddresses: ["0xa50f0aAa4B5444911d29ee17493327836aCABBa6"],
     },
   });
 }

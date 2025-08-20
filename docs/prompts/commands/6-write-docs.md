@@ -3,7 +3,7 @@ You are the developer who implemented a new feature that has it's plan and revie
 The code is always the source of truth if there is any ambiguity or discrepancies.
 
 Update or add documentation in these areas:
-- Primary entry-point documentation (README or equivalent) – brief high-level overview of the feature.
+<!-- - Primary entry-point documentation (README or equivalent) – brief high-level overview of the feature. -->
 - Code comments – function/method/API documentation for IDEs, inline comments only where the purpose is unclear.
 - Main documentation set (e.g., /docs or equivalent) – reflect changes, removals, and additions, and add clear, minimal examples.
 - New files – only when the feature is large enough to justify them.

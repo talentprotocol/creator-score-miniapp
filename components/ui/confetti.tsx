@@ -93,14 +93,49 @@ const Confetti = forwardRef<ConfettiRef, Props>((props, ref) => {
   );
 });
 
+/**
+ * Props for the ConfettiButton component
+ */
 interface ConfettiButtonProps extends ButtonProps {
+  /** Custom confetti options and global settings */
   options?: ConfettiOptions &
     ConfettiGlobalOptions & { canvas?: HTMLCanvasElement };
+  /** Button content */
   children?: React.ReactNode;
+  /** Whether to automatically fire confetti when component mounts */
   autoFire?: boolean;
+  /** Callback function called when confetti animation completes */
   onConfettiComplete?: () => void;
 }
 
+/**
+ * Button component that fires confetti animation
+ *
+ * This component extends the base Button with confetti capabilities:
+ * - Manual confetti firing on click
+ * - Automatic confetti firing on mount (for success states)
+ * - Custom confetti options and positioning
+ * - Completion callback for state transitions
+ *
+ * The confetti uses a temporary canvas overlay to avoid conflicts
+ * and provides smooth animations with customizable colors and effects.
+ *
+ * @example
+ * ```typescript
+ * // Manual confetti on click
+ * <ConfettiButton onClick={handleClick}>
+ *   Click for confetti!
+ * </ConfettiButton>
+ *
+ * // Auto-fire confetti for success state
+ * <ConfettiButton
+ *   autoFire={true}
+ *   onConfettiComplete={handleConfettiComplete}
+ * >
+ *   Success!
+ * </ConfettiButton>
+ * ```
+ */
 function ConfettiButton({
   options,
   children,
@@ -112,6 +147,12 @@ function ConfettiButton({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const hasAutoFired = useRef(false);
 
+  /**
+   * Fires confetti animation from the button's position
+   *
+   * Creates a temporary canvas overlay, positions confetti relative to the button,
+   * and cleans up after animation completes. Uses brand green colors by default.
+   */
   const fireConfetti = useCallback(() => {
     if (!buttonRef.current) return;
 

@@ -11,7 +11,9 @@ Users can opt out of receiving rewards to pay them forward to other creators. Th
 ### New Files to Create:
 - `app/api/user-preferences/optout/route.ts` - API endpoint for opt-out requests
 - `app/services/optoutService.ts` - Service layer for opt-out logic
-- `components/settings/RewardsDistributionSection.tsx` - Settings section for rewards opt-out
+- `components/settings/PayItForwardSection.tsx` - Settings section for rewards opt-out (note: named differently from plan)
+- `hooks/useOptOutStatus.ts` - Custom hook for managing opt-out status across top-200 and non-top-200 users
+- `app/services/rewardsCalculationService.ts` - Centralized rewards calculation service with opt-out support
 
 ### Existing Files to Modify:
 - `lib/constants.ts` - Enable optout callout flag
@@ -21,6 +23,7 @@ Users can opt out of receiving rewards to pay them forward to other creators. Th
 - `app/services/leaderboardService.ts` - Modify rewards calculation to exclude opted-out users
 - `app/services/userPreferencesService.ts` - Add opt-out preference handling
 - `lib/types/user-preferences.ts` - Add opt-out preference type
+- `hooks/useLeaderboardData.ts` - Enhanced with opt-out status management
 
 ### Database Changes:
 - `user_preferences` table: Add `rewards_optout` boolean field with default `false`
@@ -43,17 +46,38 @@ Users can opt out of receiving rewards to pay them forward to other creators. Th
 - If user is both boosted and opted-out, show only OptOut badge
 - Use green brand variant with HandHeart icon
 
+## Enhanced User Experience Features (Beyond Basic Plan)
+
+### Confetti Celebration System:
+- **Custom ConfettiButton Component**: Built using `canvas-confetti` with brand green color scheme
+- **Auto-fire on Success**: Automatically triggers confetti when opt-out is successful
+- **Success State Transition**: Shows "Successfully Paid Forward!" message with confetti animation
+- **Completion Callback**: After confetti finishes, transitions to share button
+
+### Social Sharing Capabilities:
+- **ShareStatsModal Integration**: Uses existing modal component with custom Pay It Forward messaging
+- **Multi-Platform Support**: 
+  - Farcaster: Native SDK integration + web fallback
+  - Twitter: Web intent URLs with custom messaging
+- **Custom Share Text**: "I paid forward 100 percent of my Creator Score rewards to support onchain creators"
+- **Analytics Tracking**: PostHog events for share interactions
+
+### Enhanced State Management:
+- **Real-time Updates**: Immediate UI updates with scheduled cache refresh
+- **Cross-Component Sync**: Leaderboard data updates instantly across all components
+- **Persistent State**: Remembers opt-out status across sessions
+
 ## Architecture Compliance
 
 ### Hook → API Route → Service Pattern:
-- **Hook**: `useUserCalloutPrefs` (existing) - handles callout dismissal
+- **Hook**: `useOptOutStatus` + `useLeaderboardData` - handles state management and cache updates
 - **API Route**: `POST /api/user-preferences/optout` - handles opt-out requests
 - **Service**: `optoutService.ts` - manages opt-out business logic
 - **External API**: None required, uses existing Supabase user_preferences table
 - **Direct Access**: Users can access opt-out directly via settings page without callout interaction
 
 ### Client-Server Separation:
-- Client: Settings UI, callout navigation, badge display
+- Client: Settings UI, callout navigation, badge display, confetti, sharing
 - Server: Opt-out processing, rewards calculation modification
 - No external API calls from client side
 
@@ -65,10 +89,13 @@ Users can opt out of receiving rewards to pay them forward to other creators. Th
 - **Badges**: Extend existing badge system, use green brand variant
 - **Typography**: Use `Typography` component for all text elements
 - **Mobile-First**: Ensure responsive design for mobile devices
+- **Confetti**: Custom green theme matching brand colors
+- **Share Modal**: Consistent with existing modal patterns
 
 ### Color Usage:
-- OptOut badge: Green brand variant (`bg-brand/10 text-foreground`)
+- OptOut badge: Green brand variant (`bg-brand-green-light`, `text-brand-green`)
 - Crossed-out rewards: Use green color to match "pay it forward" theme
+- Confetti: Brand green color palette (`#84cc16`, `#65a30d`, `#4ade80`, `#86efac`, `#bbf7d0`)
 - No custom brand colors unless necessary
 
 ## Code Reuse
@@ -78,11 +105,14 @@ Users can opt out of receiving rewards to pay them forward to other creators. Th
 - Extend existing badge system for OptOut badge
 - Use existing `Callout` component (already implemented)
 - Leverage existing user preferences service structure
+- Integrate with existing `ShareStatsModal` component
+- Use existing `ButtonFullWidth` and `Typography` components
 
 ### Existing Services:
 - Extend `userPreferencesService.ts` for opt-out preferences
 - Modify `leaderboardService.ts` for rewards calculation
 - Use existing Supabase client and error handling patterns
+- Leverage existing PostHog analytics setup
 
 ## Phase Breakdown
 
@@ -95,17 +125,22 @@ Users can opt out of receiving rewards to pay them forward to other creators. Th
 1. Create opt-out API endpoint
 2. Modify rewards calculation logic
 3. Update leaderboard service
+4. Create centralized rewards calculation service
 
 ### Phase 3: UI Implementation
-1. Create rewards distribution settings section
+1. Create Pay It Forward settings section
 2. Update leaderboard badges and rewards display
 3. Enable callout and configure navigation to settings
-4. Refactor existing inline rewards calculations to use the new centralized service
+4. Implement confetti celebration system
+5. Add social sharing capabilities
+6. Refactor existing inline rewards calculations to use the new centralized service
 
 ### Phase 4: Integration & Testing
 1. Connect all components
 2. Test rewards calculation with opt-outs
 3. Verify badge display and priority logic
+4. Test confetti and sharing flows
+5. Validate analytics tracking
 
 ## Commit Strategy
 
@@ -123,14 +158,14 @@ git commit -m "feat: implement opt-out service and API endpoint"
 
 ### Milestone 3: Rewards Calculation
 ```bash
-git add app/services/leaderboardService.ts
+git add app/services/leaderboardService.ts app/services/rewardsCalculationService.ts
 git commit -m "feat: modify rewards calculation to handle opted-out users"
 ```
 
-### Milestone 4: Settings UI
+### Milestone 4: Settings UI & Enhanced UX
 ```bash
-git add components/settings/RewardsDistributionSection.tsx
-git commit -m "feat: add rewards distribution settings section"
+git add components/settings/PayItForwardSection.tsx hooks/useOptOutStatus.ts
+git commit -m "feat: add Pay It Forward settings section with confetti and sharing"
 ```
 
 ### Milestone 5: Leaderboard Updates
@@ -141,6 +176,25 @@ git commit -m "feat: add OptOut badges and crossed-out rewards to leaderboard"
 
 ### Milestone 6: Callout & Integration
 ```bash
-git add lib/constants.ts app/leaderboard/page.tsx
+git add lib/constants.ts app/leaderboard/page.tsx hooks/useLeaderboardData.ts
 git commit -m "feat: enable opt-out callout and configure navigation to settings"
 ```
+
+## Implementation Notes
+
+### Naming Differences from Plan:
+- **Plan**: `RewardsDistributionSection.tsx`
+- **Actual**: `PayItForwardSection.tsx`
+- **Rationale**: Better reflects the user-facing feature name and purpose
+
+### Enhanced Features Beyond Plan:
+- **Confetti System**: Provides immediate positive feedback for generous acts
+- **Social Sharing**: Amplifies the "Pay It Forward" message across platforms
+- **Real-time Updates**: Immediate UI synchronization across components
+- **Analytics Integration**: Comprehensive tracking of user interactions
+
+### Technical Enhancements:
+- **Custom Hook**: `useOptOutStatus` handles complex state management
+- **Centralized Service**: `rewardsCalculationService` provides clean separation of concerns
+- **Cache Management**: Intelligent cache invalidation and real-time updates
+- **Error Handling**: Comprehensive error states and user feedback
