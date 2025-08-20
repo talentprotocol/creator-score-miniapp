@@ -31,6 +31,7 @@ interface ShareStatsModalProps {
   onShareFarcaster: () => void;
   onShareTwitter: () => void;
   disableTwitter?: boolean; // New prop to control Twitter button
+  imageUrl?: string; // New prop for custom image URL
   title?: string; // Optional custom title
   description?: string; // Optional custom description
 }
@@ -44,8 +45,9 @@ export function ShareStatsModal({
   onShareFarcaster,
   onShareTwitter,
   disableTwitter = false, // Default to false
-  title = "Share Creator Score", // Default title
-  description = "Share your creator stats with the community", // Default description
+  imageUrl, // New prop for custom image URL
+  title = "Share Your Creator Score", // Default title
+  description = "Share your creator stats with your audience.", // Default description
 }: ShareStatsModalProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [copied, setCopied] = React.useState(false);
@@ -82,7 +84,9 @@ export function ShareStatsModal({
     try {
       setDownloading(true);
       const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
-      const imageURL = `${baseUrl}/api/share-image/${talentUUID}`;
+      const imageURL = imageUrl
+        ? `${baseUrl}${imageUrl}`
+        : `${baseUrl}/api/share-image/${talentUUID}`;
       // Track download success
       posthog?.capture("profile_share_image_downloaded", {
         talent_uuid: talentUUID,
@@ -132,7 +136,7 @@ export function ShareStatsModal({
       {/* Share Image Preview */}
       <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-muted">
         <Image
-          src={`/api/share-image/${talentUUID}`}
+          src={imageUrl || `/api/share-image/${talentUUID}`}
           alt="Share preview"
           fill
           className="object-cover"

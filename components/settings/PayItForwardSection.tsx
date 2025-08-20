@@ -353,6 +353,7 @@ export function PayItForwardSection() {
         disableTwitter={client !== "browser"}
         title="Share Your Good Deed"
         description="Let the world know you support creators"
+        imageUrl={`/api/share-image-optout/${talentUuid}`}
       />
     </div>
   );
