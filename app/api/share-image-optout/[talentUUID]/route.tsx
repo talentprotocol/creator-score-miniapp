@@ -206,14 +206,26 @@ export async function GET(
             width: "100%",
             height: "100%",
             position: "relative",
-            backgroundImage: `url(${baseUrl}/images/share/${backgroundImage})`,
-            backgroundSize: "1600px 900px",
-            backgroundRepeat: "no-repeat",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
+          {/* Background image as img tag (more reliable with @vercel/og) */}
+          <img
+            src={`${baseUrl}/images/share/${backgroundImage}`}
+            alt="Background"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              zIndex: 0,
+            }}
+          />
+
           {/* Avatar - using exact Figma coordinates */}
           {avatar && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -228,6 +240,7 @@ export async function GET(
                 height: 239,
                 borderRadius: "50%",
                 objectFit: "cover",
+                zIndex: 1,
               }}
             />
           )}
@@ -244,6 +257,7 @@ export async function GET(
               color: "#000000",
               lineHeight: 1,
               display: "flex",
+              zIndex: 1,
             }}
           >
             {cleanName}
@@ -261,6 +275,7 @@ export async function GET(
               color: "#6C7587",
               lineHeight: 1,
               display: "flex",
+              zIndex: 1,
             }}
           >
             {formatK(totalFollowers)} total followers
@@ -282,6 +297,7 @@ export async function GET(
               display: "flex",
               justifyContent: "center",
               whiteSpace: "nowrap",
+              zIndex: 1,
             }}
           >
             Creator Score
@@ -302,6 +318,7 @@ export async function GET(
               width: 300,
               display: "flex",
               justifyContent: "center",
+              zIndex: 1,
             }}
           >
             {creatorScore.toLocaleString()}
@@ -323,6 +340,7 @@ export async function GET(
               display: "flex",
               justifyContent: "center",
               whiteSpace: "nowrap",
+              zIndex: 1,
             }}
           >
             Total Earnings
@@ -343,6 +361,7 @@ export async function GET(
               width: 300,
               display: "flex",
               justifyContent: "center",
+              zIndex: 1,
             }}
           >
             {formatNumberWithSuffix(totalEarnings)}
