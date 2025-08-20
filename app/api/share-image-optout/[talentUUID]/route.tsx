@@ -15,12 +15,14 @@ import {
   getEthUsdcPrice,
   getPolUsdPrice,
   formatK,
-  formatNumberWithSuffix,
 } from "@/lib/utils";
 import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
+import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
+import { getTop200LeaderboardEntries } from "@/app/services/leaderboardService";
+import type { LeaderboardEntry } from "@/app/services/types";
 
 export async function GET(
   req: NextRequest,
@@ -58,40 +60,52 @@ export async function GET(
     const profileData = profileResponse.data;
 
     // Fetch additional data (PRESERVED EXACTLY)
-    const [socialAccounts, credentials, creatorScoreData] = await Promise.all([
-      unstable_cache(
-        async () => getSocialAccountsForTalentId(params.talentUUID),
-        [`social-accounts-${params.talentUUID}`],
-        {
-          tags: [
-            `social-accounts-${params.talentUUID}`,
-            CACHE_KEYS.SOCIAL_ACCOUNTS,
-          ],
-          revalidate: CACHE_DURATION_1_HOUR,
-        },
-      )().catch(() => []),
-      unstable_cache(
-        async () => getCredentialsForTalentId(params.talentUUID),
-        [`credentials-${params.talentUUID}`],
-        {
-          tags: [`credentials-${params.talentUUID}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_10_MINUTES,
-        },
-      )().catch(() => []),
-      unstable_cache(
-        async () => getCreatorScoreForTalentId(params.talentUUID),
-        [`creator-score-${params.talentUUID}`],
-        {
-          tags: [
-            `creator-score-${params.talentUUID}`,
-            CACHE_KEYS.CREATOR_SCORES,
-          ],
-          revalidate: CACHE_DURATION_10_MINUTES,
-        },
-      )().catch(() => ({
-        score: 0,
-      })),
-    ]);
+    const [socialAccounts, credentials, creatorScoreData, leaderboardResponse] =
+      await Promise.all([
+        unstable_cache(
+          async () => getSocialAccountsForTalentId(params.talentUUID),
+          [`social-accounts-${params.talentUUID}`],
+          {
+            tags: [
+              `social-accounts-${params.talentUUID}`,
+              CACHE_KEYS.SOCIAL_ACCOUNTS,
+            ],
+            revalidate: CACHE_DURATION_1_HOUR,
+          },
+        )().catch(() => []),
+        unstable_cache(
+          async () => getCredentialsForTalentId(params.talentUUID),
+          [`credentials-${params.talentUUID}`],
+          {
+            tags: [`credentials-${params.talentUUID}`, CACHE_KEYS.CREDENTIALS],
+            revalidate: CACHE_DURATION_10_MINUTES,
+          },
+        )().catch(() => []),
+        unstable_cache(
+          async () => getCreatorScoreForTalentId(params.talentUUID),
+          [`creator-score-${params.talentUUID}`],
+          {
+            tags: [
+              `creator-score-${params.talentUUID}`,
+              CACHE_KEYS.CREATOR_SCORES,
+            ],
+            revalidate: CACHE_DURATION_10_MINUTES,
+          },
+        )().catch(() => ({
+          score: 0,
+        })),
+        unstable_cache(
+          async () => getTop200LeaderboardEntries(),
+          ["leaderboard"],
+          {
+            tags: ["leaderboard"],
+            revalidate: CACHE_DURATION_10_MINUTES,
+          },
+        )().catch(() => ({ entries: [] })),
+      ]);
+
+    // Extract leaderboard entries from response
+    const leaderboardData = leaderboardResponse.entries || [];
 
     // Calculate stats (PRESERVED EXACTLY)
     const totalFollowers = calculateTotalFollowers(socialAccounts);
@@ -159,10 +173,27 @@ export async function GET(
       }
     });
 
-    const totalEarnings = Array.from(issuerTotals.values()).reduce(
-      (sum, value) => sum + value,
-      0,
+    // Total earnings calculation preserved for potential future use
+    // const totalEarnings = Array.from(issuerTotals.values()).reduce(
+    //   (sum, value) => sum + value,
+    //   0,
+    // );
+
+    // Calculate current rewards (same logic as PayItForwardSection.tsx)
+    const userLeaderboardEntry = leaderboardData.find(
+      (entry: LeaderboardEntry) =>
+        entry.talent_protocol_id === params.talentUUID,
     );
+
+    const currentRewards = userLeaderboardEntry
+      ? RewardsCalculationService.calculateUserReward(
+          userLeaderboardEntry.score,
+          userLeaderboardEntry.rank,
+          userLeaderboardEntry.isBoosted || false,
+          false, // not opted out yet for display
+          leaderboardData,
+        )
+      : "N/A";
 
     // Prepare data for image generation
     const displayName =
@@ -170,7 +201,7 @@ export async function GET(
     const avatar = profileData.image_url;
 
     // Always use canonical URL for sharing, but allow localhost for font loading in dev
-    const canonicalUrl = "https://creatorscore.app";
+    const canonicalUrl = "https://www.creatorscore.app";
     const baseUrl =
       process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
@@ -307,7 +338,7 @@ export async function GET(
             {creatorScore.toLocaleString()}
           </div>
 
-          {/* Total Earnings label - using exact Figma coordinates */}
+          {/* Total Rewards label - using exact Figma coordinates */}
           <div
             style={{
               position: "absolute",
@@ -325,10 +356,10 @@ export async function GET(
               whiteSpace: "nowrap",
             }}
           >
-            Total Earnings
+            Total Rewards
           </div>
 
-          {/* Total Earnings number - using exact Canvas coordinates converted */}
+          {/* Total Rewards number - using exact Canvas coordinates converted */}
           <div
             style={{
               position: "absolute",
@@ -337,15 +368,16 @@ export async function GET(
               fontSize: 100,
               fontFamily: "Cy",
               fontWeight: 800,
-              color: "#000000",
+              color: "#86B966", // text-brand-green equivalent
               lineHeight: 1,
               textAlign: "center",
               width: 300,
               display: "flex",
               justifyContent: "center",
+              textDecoration: "line-through",
             }}
           >
-            {formatNumberWithSuffix(totalEarnings)}
+            {currentRewards}
           </div>
         </div>
       ),
