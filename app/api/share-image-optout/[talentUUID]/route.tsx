@@ -206,7 +206,7 @@ export async function GET(
             width: "100%",
             height: "100%",
             position: "relative",
-            backgroundImage: `url(${canonicalUrl}/images/share/${backgroundImage})`,
+            backgroundImage: `url(${baseUrl}/images/share/${backgroundImage})`,
             backgroundSize: "1600px 900px",
             backgroundRepeat: "no-repeat",
             flexDirection: "column",
