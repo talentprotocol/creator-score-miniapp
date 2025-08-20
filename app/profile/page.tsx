@@ -30,7 +30,10 @@ export default function ProfilePage() {
   return (
     <main className="flex-1 overflow-y-auto relative">
       <div className="max-w-xl mx-auto px-4 py-6">
-        <div className="text-center text-muted-foreground">Loading...</div>
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+          <span className="text-sm text-muted-foreground">Redirecting...</span>
+        </div>
       </div>
     </main>
   );

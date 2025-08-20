@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { WalletMinimal, Loader2 } from "lucide-react";
+import { WalletMinimal } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { truncateAddress, openExternalUrl } from "@/lib/utils";
@@ -27,7 +27,6 @@ export function ConnectedWalletsSection({
     null,
   );
   const [modalOpen, setModalOpen] = React.useState(false);
-  const [isConnecting, setIsConnecting] = React.useState(false);
 
   const handleSetPrimary = async (account: ConnectedAccount) => {
     // For Farcaster-verified wallets, always open Farcaster settings
@@ -51,13 +50,8 @@ export function ConnectedWalletsSection({
     }
   };
 
-  const handleConnectWallet = async () => {
-    setIsConnecting(true);
-    try {
-      // Implement the logic to connect a wallet
-    } finally {
-      setIsConnecting(false);
-    }
+  const handleConnectWallet = () => {
+    setModalOpen(true);
   };
 
   if (accounts.length === 0) {
@@ -71,20 +65,10 @@ export function ConnectedWalletsSection({
         <Button
           onClick={() => setModalOpen(true)}
           className="w-full"
-          variant="brand"
-          disabled={isConnecting}
+          variant="brand-purple"
         >
-          {isConnecting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Connecting...
-            </>
-          ) : (
-            <>
-              <WalletMinimal className="w-4 h-4 mr-2" />
-              Connect New Wallet
-            </>
-          )}
+          <WalletMinimal className="w-4 h-4 mr-2" />
+          Connect New Wallet
         </Button>
 
         <AccountManagementModal
@@ -102,20 +86,10 @@ export function ConnectedWalletsSection({
       <Button
         onClick={handleConnectWallet}
         className="w-full"
-        variant="brand"
-        disabled={isConnecting}
+        variant="brand-purple"
       >
-        {isConnecting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Connecting...
-          </>
-        ) : (
-          <>
-            <WalletMinimal className="w-4 h-4 mr-2" />
-            Connect New Wallet
-          </>
-        )}
+        <WalletMinimal className="w-4 h-4 mr-2" />
+        Connect New Wallet
       </Button>
 
       {/* Wallet List */}

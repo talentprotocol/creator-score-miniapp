@@ -43,14 +43,20 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         typekit: ["var(--font-typekit)", "system-ui", "sans-serif"],
+        heading: [
+          "var(--font-cy)",
+          "var(--font-geist-sans)",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         brand: {
-          DEFAULT: "hsl(var(--brand-accent))",
+          DEFAULT: "hsl(var(--creator-purple))",
         },
         card: {
           DEFAULT: "hsl(var(--card))",
@@ -92,19 +98,10 @@ const config: Config = {
         },
       },
       animation: {
-        "fade-out": "1s fadeOut 3s ease-out forwards",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       keyframes: {
-        fadeOut: {
-          "0%": {
-            opacity: "1",
-          },
-          "100%": {
-            opacity: "0",
-          },
-        },
         "accordion-down": {
           from: {
             height: "0",

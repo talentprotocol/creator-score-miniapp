@@ -22,6 +22,7 @@ interface SectionAccordionProps {
   variant?: "gray" | "white";
   sections: AccordionSection[];
   className?: string;
+  defaultExpanded?: string[]; // New prop for auto-expanding sections
 }
 
 export function SectionAccordion({
@@ -29,14 +30,24 @@ export function SectionAccordion({
   variant = "gray",
   sections,
   className,
+  defaultExpanded = [],
 }: SectionAccordionProps) {
   const variantStyles = {
     gray: "bg-muted rounded-xl border-0 shadow-none",
     white: "bg-card rounded-xl border shadow-none",
   };
 
+  // Handle defaultValue based on type
+  const accordionProps =
+    type === "multiple"
+      ? { type, defaultValue: defaultExpanded }
+      : { type, defaultValue: defaultExpanded[0] || undefined };
+
   return (
-    <Accordion type={type} className={cn("w-full space-y-2", className)}>
+    <Accordion
+      {...accordionProps}
+      className={cn("w-full space-y-2", className)}
+    >
       {sections.map((section) => (
         <AccordionItem
           key={section.id}

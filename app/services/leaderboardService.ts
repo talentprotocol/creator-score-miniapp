@@ -7,6 +7,7 @@ import {
   CACHE_DURATION_10_MINUTES,
 } from "@/lib/cache-keys";
 import { talentApiClient } from "@/lib/talent-api-client";
+import { OptoutService } from "./optoutService";
 
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
@@ -92,7 +93,10 @@ export async function fetchTop200Entries(): Promise<Profile[]> {
       return allProfiles.slice(0, totalNeeded);
     },
     [CACHE_KEYS.LEADERBOARD_TOP_200],
-    { revalidate: CACHE_DURATION_1_HOUR },
+    {
+      revalidate: CACHE_DURATION_1_HOUR,
+      tags: [CACHE_KEYS.LEADERBOARD_TOP_200],
+    },
   )();
 
   return profiles;
@@ -123,7 +127,15 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     boostedProfileIds = [];
   }
 
-  // Map to basic entries (no rewards) with boosted status
+  // Fetch opt-out status for all users
+  let optedOutUserIds: string[] = [];
+  try {
+    optedOutUserIds = await OptoutService.getAllOptedOutUsers();
+  } catch {
+    optedOutUserIds = [];
+  }
+
+  // Map to basic entries (no rewards) with boosted and opt-out status
   const mapped = filteredProfiles.map((profile: Profile) => {
     const creatorScores = Array.isArray(profile.scores)
       ? profile.scores
@@ -132,6 +144,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
     const isBoosted = boostedProfileIds.includes(profile.id);
+    const isOptedOut = optedOutUserIds.includes(profile.id);
 
     return {
       name: profile.display_name || profile.name || "Unknown",
@@ -140,6 +153,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       id: profile.id,
       talent_protocol_id: profile.id,
       isBoosted,
+      isOptedOut,
     };
   });
 
@@ -312,7 +326,7 @@ export async function getBoostedProfilesData(): Promise<string[]> {
       return await getBoostedProfilesViaSearch();
     },
     [CACHE_KEYS.BOOSTED_PROFILES],
-    { revalidate: CACHE_DURATION_1_HOUR },
+    { revalidate: CACHE_DURATION_1_HOUR, tags: [CACHE_KEYS.LEADERBOARD_BASIC] },
   )();
 
   return boostedProfiles;

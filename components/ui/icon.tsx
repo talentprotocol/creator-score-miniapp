@@ -5,8 +5,15 @@ import type { LucideIcon } from "lucide-react";
 export interface IconProps extends React.ComponentPropsWithoutRef<"svg"> {
   icon: LucideIcon;
   size?: "sm" | "md" | "lg";
-  color?: "primary" | "muted" | "brand" | "error";
-  brandColor?: "purple" | "green" | "blue" | "pink"; // applies when color="brand"
+  color?:
+    | "primary"
+    | "muted"
+    | "brand"
+    | "brand-purple"
+    | "brand-green"
+    | "brand-blue"
+    | "brand-pink"
+    | "error";
   disabled?: boolean;
   isActive?: boolean;
 }
@@ -20,7 +27,11 @@ const iconSizes = {
 const iconColors = {
   primary: "text-foreground",
   muted: "text-muted-foreground",
-  brand: "text-brand",
+  brand: "text-brand-purple",
+  "brand-purple": "text-brand-purple",
+  "brand-green": "text-brand-green",
+  "brand-blue": "text-brand-blue",
+  "brand-pink": "text-brand-pink",
   error: "text-destructive",
 } as const;
 
@@ -28,7 +39,6 @@ export function Icon({
   icon: IconComponent,
   size = "md",
   color = "muted",
-  brandColor,
   disabled = false,
   isActive = false,
   className,
@@ -56,9 +66,6 @@ export function Icon({
 
         className,
       )}
-      {...(color === "brand" && brandColor
-        ? { "data-accent": brandColor }
-        : {})}
       {...props}
     />
   );

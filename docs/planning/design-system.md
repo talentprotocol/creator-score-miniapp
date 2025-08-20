@@ -4,7 +4,6 @@
 
 ### 1. Semantic-First Approach
 - **Default to semantic classes** (`text-foreground`, `bg-muted`, `border-border`) for theme consistency
-- **Reserve brand colors** for intentional moments (rewards, CTAs, brand identity)
 - **Avoid hardcoded colors** unless for specific brand moments
 
 ### 2. Mobile-First Design
@@ -24,9 +23,13 @@
 - **Text**: `text-foreground` / `text-muted-foreground`
 - **Borders**: `border-border`
 
-### Brand Colors (Reserved for Special Moments)
-- **Primary**: Purple `#8E7BE5` - rewards, key features
-- **Secondary**: Green `#EBF4B4`, Blue `#82DEED`, Pink `#E879C7` - data visualization
+### Brand Colors
+- **Primary**: Tailwind purple-700  #7e22ce 
+- **Secondary**: 
+  - Tailwind lime-600 #84cc16
+  - Tailwind cyan-600 #0e7490 
+  - Tailwind pink-600 #be185d
+
 
 ### Usage Rules
 1. **Start with semantic classes** for all standard UI
@@ -37,9 +40,9 @@
    - Brand identity moments
 
 ### Brand Accent System (core)
-- **Token**: Tailwind `brand` color maps to `hsl(var(--brand-accent))`.
-- **Defaults**: `--brand-accent` defaults to purple-700. Secondary accents map to Tailwind shades: lime-700, cyan-700, pink-700.
-- **Override (per scope)**: Set `data-accent="purple|green|blue|pink"` on any wrapper to swap the accent.
+- **Token**: Tailwind `brand-purple` color maps to `hsl(var(--creator-purple))`.
+- **Defaults**: Brand colors are now explicit variants: `brand-purple`, `brand-green`, `brand-blue`, `brand-pink`.
+- **Override**: Use explicit variant props instead of dynamic accent system.
 - **Utilities**: Use `text-brand`, `bg-brand/10`, `bg-brand/20`, `hover:bg-brand/30` for washes and states.
 - **Components**: Brand variants accept `color?: 'purple'|'green'|'blue'|'pink'` to set the accent per instance.
 
@@ -65,7 +68,7 @@
 
 ### Callouts & Carousel
 - **Callout variants**: `brand` and `muted`. Brand reads `text-brand`/`bg-brand/20`.
-- **Accent control**: Set per-instance via `color` prop (`purple|green|blue|pink`) or wrapper `data-accent`.
+- **Accent control**: Set per-instance via explicit variant props (`brand-purple|brand-green|brand-blue|brand-pink`).
 - **Typography**: Title = `size="base"` + `weight="medium"` (brand color for `brand`, default otherwise). Description = `size="sm"`, `color="muted"`. Left-aligned.
 - **Icons**: Left icon uses brand accent for `brand`, `text-foreground` for `muted`. Right arrow/close `X` are `text-muted-foreground`.
 - **Interactivity**: Entire callout clickable when `href` is set. If `onClose` is present, close takes priority but the rest remains clickable.

@@ -14,7 +14,6 @@ interface ButtonFullWidthProps extends Omit<ButtonProps, "variant"> {
   href?: string;
   external?: boolean;
   variant?: ButtonBaseVariant | "muted";
-  color?: "purple" | "green" | "blue" | "pink"; // applies when variant="brand"
   showRightIcon?: boolean;
   align?: "left" | "center"; // layout alignment (default: center)
 }
@@ -32,7 +31,6 @@ const ButtonFullWidth = React.forwardRef<
       external,
       onClick,
       variant,
-      color,
       showRightIcon,
       align,
       ...props
@@ -55,13 +53,20 @@ const ButtonFullWidth = React.forwardRef<
           <span
             className={cn(
               "h-4 w-4",
-              variant === "brand"
-                ? "text-brand"
+              variant?.startsWith("brand-")
+                ? variant === "brand-purple"
+                  ? "text-brand-purple"
+                  : variant === "brand-green"
+                    ? "text-brand-green"
+                    : variant === "brand-blue"
+                      ? "text-brand-blue"
+                      : variant === "brand-pink"
+                        ? "text-brand-pink"
+                        : "text-muted-foreground"
                 : variant === "destructive"
                   ? "text-red-700"
                   : "text-muted-foreground",
             )}
-            {...(variant === "brand" && color ? { "data-accent": color } : {})}
           >
             {icon}
           </span>
@@ -69,8 +74,12 @@ const ButtonFullWidth = React.forwardRef<
             as="span"
             size="base"
             color={
-              variant === "brand"
-                ? "brand"
+              variant?.startsWith("brand-")
+                ? (variant as
+                    | "brand-purple"
+                    | "brand-green"
+                    | "brand-blue"
+                    | "brand-pink")
                 : variant === "destructive"
                   ? "destructive"
                   : "default"
@@ -79,7 +88,6 @@ const ButtonFullWidth = React.forwardRef<
               "truncate",
               computedAlign === "center" ? "text-center" : "text-left",
             )}
-            {...(variant === "brand" && color ? { "data-accent": color } : {})}
           >
             {children}
           </Typography>
@@ -88,13 +96,20 @@ const ButtonFullWidth = React.forwardRef<
           <ArrowRight
             className={cn(
               "h-4 w-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5",
-              variant === "brand"
-                ? "text-brand"
+              variant?.startsWith("brand-")
+                ? variant === "brand-purple"
+                  ? "text-brand-purple"
+                  : variant === "brand-green"
+                    ? "text-brand-green"
+                    : variant === "brand-blue"
+                      ? "text-brand-blue"
+                      : variant === "brand-pink"
+                        ? "text-brand-pink"
+                        : "text-muted-foreground"
                 : variant === "destructive"
                   ? "text-red-700"
                   : "text-muted-foreground",
             )}
-            {...(variant === "brand" && color ? { "data-accent": color } : {})}
           />
         )}
       </div>
@@ -119,7 +134,6 @@ const ButtonFullWidth = React.forwardRef<
               isMutedVariant ? "bg-muted text-foreground border-0" : undefined,
               className,
             )}
-            {...(variant === "brand" && color ? { "data-accent": color } : {})}
             {...props}
           >
             {content}
@@ -142,7 +156,6 @@ const ButtonFullWidth = React.forwardRef<
             isMutedVariant ? "bg-muted text-foreground border-0" : undefined,
             className,
           )}
-          {...(variant === "brand" && color ? { "data-accent": color } : {})}
           {...props}
         >
           <Link href={href}>{content}</Link>
@@ -164,7 +177,6 @@ const ButtonFullWidth = React.forwardRef<
           isMutedVariant ? "bg-muted text-foreground border-0" : undefined,
           className,
         )}
-        {...(variant === "brand" && color ? { "data-accent": color } : {})}
         {...props}
       >
         {content}

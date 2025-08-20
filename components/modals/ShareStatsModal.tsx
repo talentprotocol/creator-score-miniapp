@@ -31,6 +31,8 @@ interface ShareStatsModalProps {
   onShareFarcaster: () => void;
   onShareTwitter: () => void;
   disableTwitter?: boolean; // New prop to control Twitter button
+  title?: string; // Optional custom title
+  description?: string; // Optional custom description
 }
 
 export function ShareStatsModal({
@@ -42,6 +44,8 @@ export function ShareStatsModal({
   onShareFarcaster,
   onShareTwitter,
   disableTwitter = false, // Default to false
+  title = "Share Creator Score", // Default title
+  description = "Share your creator stats with the community", // Default description
 }: ShareStatsModalProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [copied, setCopied] = React.useState(false);
@@ -193,10 +197,8 @@ export function ShareStatsModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Share Creator Score</DialogTitle>
-            <DialogDescription>
-              Share your creator stats with the community
-            </DialogDescription>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
           {content}
         </DialogContent>
@@ -208,10 +210,8 @@ export function ShareStatsModal({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="px-2 pb-8 mx-2 rounded-t-2xl">
         <DrawerHeader>
-          <DrawerTitle>Share Creator Score</DrawerTitle>
-          <DrawerDescription>
-            Share your creator stats with the community
-          </DrawerDescription>
+          <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
         <div className="px-2">{content}</div>
       </DrawerContent>

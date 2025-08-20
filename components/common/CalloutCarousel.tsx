@@ -11,8 +11,12 @@ export interface CalloutCarouselItem {
   title: React.ReactNode;
   description?: React.ReactNode;
   icon?: React.ReactNode;
-  variant?: "brand" | "muted";
-  color?: "purple" | "green" | "blue" | "pink";
+  variant?:
+    | "brand-purple"
+    | "brand-green"
+    | "brand-blue"
+    | "brand-pink"
+    | "muted";
   href?: string;
   external?: boolean;
   onClick?: () => void;
@@ -327,8 +331,7 @@ export function CalloutCarousel({
           )}
         >
           <Callout
-            variant={item.variant ?? "brand"}
-            color={item.color}
+            variant={item.variant ?? "brand-purple"}
             icon={item.icon}
             title={item.title}
             description={item.description}
@@ -365,8 +368,7 @@ export function CalloutCarousel({
             )}
           >
             <Callout
-              variant={item.variant ?? "brand"}
-              color={item.color}
+              variant={item.variant ?? "brand-purple"}
               icon={item.icon}
               title={item.title}
               description={item.description}

@@ -109,7 +109,7 @@ export function FarcasterAccessModal({
             <Button
               onClick={handleFarcasterClick}
               className="w-full"
-              variant="brand"
+              variant="brand-purple"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster
@@ -147,7 +147,7 @@ export function FarcasterAccessModal({
             <Button
               onClick={handleFarcasterClick}
               className="w-full"
-              variant="brand"
+              variant="brand-purple"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in Farcaster

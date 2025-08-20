@@ -12,8 +12,12 @@ interface CalloutProps {
   mode?: "informative" | "interactive"; // deprecated: interactivity inferred from href and onClose
   href?: string;
   external?: boolean;
-  variant?: "brand" | "muted";
-  color?: "purple" | "green" | "blue" | "pink"; // applies when variant="brand"
+  variant?:
+    | "brand-purple"
+    | "brand-green"
+    | "brand-blue"
+    | "brand-pink"
+    | "muted";
   icon?: React.ReactNode;
   className?: string;
   onClose?: () => void;
@@ -27,8 +31,7 @@ export function Callout({
   // mode deprecated / ignored
   href,
   external,
-  variant = "brand",
-  color,
+  variant = "brand-purple",
   icon,
   className,
   onClose,
@@ -49,11 +52,18 @@ export function Callout({
           <div
             className={cn(
               "h-5 w-5 shrink-0 mt-0.5",
-              variant === "brand"
-                ? "text-[hsl(var(--brand-accent))]"
+              variant.startsWith("brand-")
+                ? variant === "brand-purple"
+                  ? "text-brand-purple"
+                  : variant === "brand-green"
+                    ? "text-brand-green"
+                    : variant === "brand-blue"
+                      ? "text-brand-blue"
+                      : variant === "brand-pink"
+                        ? "text-brand-pink"
+                        : "text-foreground"
                 : "text-foreground",
             )}
-            {...(variant === "brand" && color ? { "data-accent": color } : {})}
           >
             {icon}
           </div>
@@ -65,7 +75,15 @@ export function Callout({
                 <Typography
                   size="base"
                   weight="medium"
-                  color={variant === "brand" ? "brand" : "default"}
+                  color={
+                    variant.startsWith("brand-")
+                      ? (variant as
+                          | "brand-purple"
+                          | "brand-green"
+                          | "brand-blue"
+                          | "brand-pink")
+                      : "default"
+                  }
                 >
                   {title}
                 </Typography>
@@ -108,7 +126,10 @@ export function Callout({
     "w-full flex items-start justify-between px-4 py-4 h-auto rounded-xl transition-colors duration-150";
 
   const variantStyles = {
-    brand: "bg-brand/10 text-foreground",
+    "brand-purple": "bg-brand-purple-light text-foreground",
+    "brand-green": "bg-brand-green-light text-foreground",
+    "brand-blue": "bg-brand-blue-light text-foreground",
+    "brand-pink": "bg-brand-pink-light text-foreground",
     muted: "bg-muted text-foreground",
   };
 
@@ -119,8 +140,7 @@ export function Callout({
     className,
   );
 
-  const dataBrand =
-    variant === "brand" && color ? { "data-accent": color } : {};
+  // No more data-accent logic needed
 
   const handleRootClick = async (e: React.MouseEvent) => {
     if (onClick) {
@@ -140,7 +160,6 @@ export function Callout({
   return (
     <div
       className={styles}
-      {...dataBrand}
       role={hasHref || onClick ? "button" : undefined}
       tabIndex={hasHref || onClick ? 0 : undefined}
       onClick={handleRootClick}

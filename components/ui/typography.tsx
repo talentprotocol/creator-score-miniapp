@@ -32,7 +32,11 @@ const typographyVariants = cva("", {
     color: {
       default: "text-foreground",
       muted: "text-muted-foreground",
-      brand: "text-brand",
+      brand: "text-brand-purple",
+      "brand-purple": "text-brand-purple",
+      "brand-green": "text-brand-green",
+      "brand-blue": "text-brand-blue",
+      "brand-pink": "text-brand-pink",
       destructive: "text-red-700",
     },
   },

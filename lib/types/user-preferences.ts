@@ -11,6 +11,7 @@ export interface UserPreferences {
     dismissedIds?: string[];
     permanentlyHiddenIds?: string[];
   };
+  rewards_optout?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -21,6 +22,7 @@ export interface UserPreferencesResponse {
     dismissedIds: string[];
     permanentlyHiddenIds: string[];
   };
+  rewards_optout: boolean;
 }
 
 export interface UserPreferencesUpdateRequest {
@@ -31,6 +33,8 @@ export interface UserPreferencesUpdateRequest {
   add_permanently_hidden_id?: string;
   remove_dismissed_id?: string;
   remove_permanently_hidden_id?: string;
+  // Rewards opt-out preference
+  rewards_optout?: boolean;
 }
 
 export interface UserPreferencesError {

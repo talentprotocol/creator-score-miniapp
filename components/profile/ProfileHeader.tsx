@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { PfpBorder } from "@/components/ui/pfp-border";
 import { ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
@@ -185,10 +186,15 @@ export function ProfileHeader({
           </div>
           {/* Right: Profile picture with badge overlay */}
           <div className="relative flex-shrink-0">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={image} alt={name} />
-              <AvatarFallback></AvatarFallback>
-            </Avatar>
+            <div className="relative h-16 w-16">
+              <Avatar className="h-full w-full">
+                <AvatarImage src={image} alt={name} />
+                <AvatarFallback></AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 pointer-events-none">
+                <PfpBorder />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -211,7 +217,7 @@ export function ProfileHeader({
                     <ChevronDown className="h-3 w-3 ml-0.5" />
                   )}
                 </button>
-                <div className="flex items-center gap-1 hidden">
+                <div className="hidden">
                   <Sparkles className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">AI</span>
                 </div>

@@ -9,7 +9,7 @@ import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
-import { TOTAL_SPONSORS_POOL } from "@/lib/constants";
+import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 interface PotentialRewardsCardProps {
   score: number | null;
@@ -76,25 +76,14 @@ export function PotentialRewardsCard({
 
   // Helper to calculate USDC rewards using top 200 scores
   function getUsdcRewards(score: number, rank?: number): string {
-    // Only top 200 creators earn rewards
-    if (!rank || rank > 200 || top200Entries.length === 0) return "$0";
-
-    // Calculate total scores from top 200 entries
-    const totalTop200Scores = top200Entries.reduce(
-      (sum, entry) => sum + entry.score,
-      0,
+    // Use the centralized rewards calculation service
+    return RewardsCalculationService.calculateUserReward(
+      score,
+      rank || 0,
+      false, // isBoosted - this component doesn't have boost info
+      false, // isOptedOut - will be updated when we integrate opt-out status
+      top200Entries,
     );
-
-    // Calculate multiplier based on total top 200 scores
-    const multiplier = TOTAL_SPONSORS_POOL / totalTop200Scores;
-    const reward = score * multiplier;
-
-    // Format as currency
-    if (reward >= 1) {
-      return `$${reward.toFixed(0)}`;
-    } else {
-      return `$${reward.toFixed(2)}`;
-    }
   }
 
   const rewards = score ? currentRewards : potentialRewards;

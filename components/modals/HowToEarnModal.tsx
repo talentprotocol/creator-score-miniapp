@@ -28,21 +28,21 @@ function HowToEarnContent() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div className="p-2 bg-purple-50 rounded-lg">
+        <div className="p-2 bg-brand-purple-light rounded-lg">
           <Link2 className="h-5 w-5 text-primary" />
         </div>
         <p className="text-sm">Connect your Creator Accounts</p>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="p-2 bg-purple-50 rounded-lg">
+        <div className="p-2 bg-brand-purple-light rounded-lg">
           <Trophy className="h-5 w-5 text-primary" />
         </div>
         <p className="text-sm">Reach the Top 200 Leaderboard</p>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="p-2 bg-purple-50 rounded-lg">
+        <div className="p-2 bg-brand-purple-light rounded-lg">
           <Rocket className="h-5 w-5 text-primary" />
         </div>
         <p className="text-sm">
@@ -51,7 +51,7 @@ function HowToEarnContent() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="p-2 bg-purple-50 rounded-lg">
+        <div className="p-2 bg-brand-purple-light rounded-lg">
           <Coins className="h-5 w-5 text-primary" />
         </div>
         <p className="text-sm">Get Paid USDC on Sep 1st</p>

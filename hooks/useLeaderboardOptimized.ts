@@ -14,7 +14,8 @@ export interface UseLeaderboardOptimizedReturn {
   lastUpdated?: string | null;
   nextUpdate?: string | null;
   activeCreatorsTotal?: number | null;
-  refetch: () => void;
+  refetch: (forceFresh?: boolean) => void;
+  updateUserOptOutStatus: (talentUuid: string, isOptedOut: boolean) => void;
 }
 
 export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
@@ -90,9 +91,57 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     }
   }, []);
 
-  const refetch = useCallback(() => {
-    loadBasicData();
-  }, [loadBasicData]);
+  const refetch = useCallback(
+    (forceFresh?: boolean) => {
+      try {
+        if (forceFresh && typeof window !== "undefined") {
+          console.log("[Leaderboard] Force fresh refetch: clearing localStorage cache key", CACHE_KEYS.LEADERBOARD_BASIC);
+          localStorage.removeItem(CACHE_KEYS.LEADERBOARD_BASIC);
+        }
+      } catch {}
+      loadBasicData();
+    },
+    [loadBasicData],
+  );
+
+  const updateUserOptOutStatus = useCallback(
+    (talentUuid: string, isOptedOut: boolean) => {
+      if (!talentUuid) return;
+      // Update in-memory state
+      setEntries((prev) => {
+        const updated = prev.map((e) =>
+          String(e.talent_protocol_id) === String(talentUuid)
+            ? { ...e, isOptedOut }
+            : e,
+        );
+        return updated;
+      });
+
+      // Update localStorage cache if present
+      try {
+        const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
+        const cached = getCachedData<{
+          entries: LeaderboardEntry[];
+          boostedCreatorsCount: number;
+          lastUpdated: string | null;
+          nextUpdate: string | null;
+        }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
+        if (cached) {
+          const updatedCached = {
+            ...cached,
+            entries: cached.entries.map((e) =>
+              String(e.talent_protocol_id) === String(talentUuid)
+                ? { ...e, isOptedOut }
+                : e,
+            ),
+          };
+          console.log("[Leaderboard] Updated local cache entry opt-out status for", talentUuid, "=", isOptedOut);
+          setCachedData(cacheKey, updatedCached);
+        }
+      } catch {}
+    },
+    [],
+  );
 
   // Load basic data on mount
   useEffect(() => {
@@ -127,5 +176,6 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     nextUpdate,
     activeCreatorsTotal,
     refetch,
+    updateUserOptOutStatus,
   };
 }

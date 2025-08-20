@@ -14,7 +14,7 @@ export async function getUserPreferencesByTalentUuid(
 ): Promise<UserPreferencesResponse> {
   const { data, error } = await supabase
     .from("user_preferences")
-    .select("creator_category, callout_prefs")
+    .select("creator_category, callout_prefs, rewards_optout")
     .eq("talent_uuid", talentUUID)
     .single();
 
@@ -33,6 +33,7 @@ export async function getUserPreferencesByTalentUuid(
       dismissedIds: callout_prefs.dismissedIds ?? [],
       permanentlyHiddenIds: callout_prefs.permanentlyHiddenIds ?? [],
     },
+    rewards_optout: (data?.rewards_optout as boolean) ?? false,
   };
 }
 
@@ -49,12 +50,14 @@ export async function updateUserPreferencesAtomic(
       dismissedIds: new Set(current.callout_prefs.dismissedIds),
       permanentlyHiddenIds: new Set(current.callout_prefs.permanentlyHiddenIds),
     },
+    rewards_optout: req.rewards_optout ?? current.rewards_optout ?? false,
   } as {
     creator_category: UserPreferences["creator_category"];
     callout_prefs: {
       dismissedIds: Set<string>;
       permanentlyHiddenIds: Set<string>;
     };
+    rewards_optout: boolean;
   };
 
   if (req.add_dismissed_id)
@@ -75,13 +78,14 @@ export async function updateUserPreferencesAtomic(
       dismissedIds: Array.from(next.callout_prefs.dismissedIds),
       permanentlyHiddenIds: Array.from(next.callout_prefs.permanentlyHiddenIds),
     },
+    rewards_optout: next.rewards_optout,
     updated_at: new Date().toISOString(),
   } satisfies Partial<UserPreferences> & { talent_uuid: string };
 
   const { data, error } = await supabase
     .from("user_preferences")
     .upsert(payload, { onConflict: "talent_uuid" })
-    .select("creator_category, callout_prefs")
+    .select("creator_category, callout_prefs, rewards_optout")
     .single();
 
   if (error) throw error;

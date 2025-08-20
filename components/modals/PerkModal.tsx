@@ -29,7 +29,6 @@ import { PERK_DRAW_DATE_UTC } from "@/lib/constants";
 export interface PerkModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  color?: "purple" | "green" | "blue" | "pink";
   title: string;
   subtitle?: string;
   access?: string;
@@ -48,7 +47,6 @@ export interface PerkModalProps {
 }
 
 function Content({
-  color,
   access,
   distribution,
   supply,
@@ -70,7 +68,7 @@ function Content({
   const isEntered = status === "entered";
   const isClosed = status === "closed";
   const computedVariant =
-    isNotEligible || isClosed ? "muted" : ("brand" as const);
+    isNotEligible || isClosed ? "muted" : ("brand-blue" as const);
   const computedIcon = loading ? (
     <Loader2 className="h-4 w-4 animate-spin" />
   ) : isNotEligible ? (
@@ -112,7 +110,7 @@ function Content({
   }
 
   return (
-    <div className="space-y-6" {...(color ? { "data-accent": color } : {})}>
+    <div className="space-y-6">
       <div className="space-y-3">
         <div className="h-px bg-border" />
         <div className="space-y-2 text-sm">
@@ -218,7 +216,7 @@ export function PerkModal(props: PerkModalProps) {
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent {...(props.color ? { "data-accent": props.color } : {})}>
+        <DialogContent>
           <DialogHeader className="text-left">
             <div className="flex items-center gap-2">
               <DialogTitle>{props.title}</DialogTitle>
@@ -229,14 +227,14 @@ export function PerkModal(props: PerkModalProps) {
                     alt={props.iconAlt || "perk icon"}
                   />
                   <AvatarFallback className="p-0">
-                    <div className="h-5 w-5 rounded-full bg-brand/20 flex items-center justify-center">
-                      <Gift className="h-3 w-3 text-brand" />
+                    <div className="h-5 w-5 rounded-full bg-brand-blue-light flex items-center justify-center">
+                      <Gift className="h-3 w-3 text-brand-blue" />
                     </div>
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <div className="h-5 w-5 rounded-full bg-brand/20 flex items-center justify-center">
-                  <Gift className="h-3 w-3 text-brand" />
+                <div className="h-5 w-5 rounded-full bg-brand-blue-light flex items-center justify-center">
+                  <Gift className="h-3 w-3 text-brand-blue" />
                 </div>
               )}
             </div>
@@ -252,7 +250,7 @@ export function PerkModal(props: PerkModalProps) {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent {...(props.color ? { "data-accent": props.color } : {})}>
+      <DrawerContent>
         <DrawerHeader className="text-left">
           <div className="flex items-center gap-2">
             <DrawerTitle>{props.title}</DrawerTitle>

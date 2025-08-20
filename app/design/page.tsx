@@ -276,7 +276,7 @@ export default function DesignPage() {
                   </h3>
                   <div className="flex flex-wrap gap-4">
                     <Button variant="default">Default</Button>
-                    <Button variant="brand">Brand</Button>
+                    <Button variant="brand-purple">Brand Purple</Button>
                     <Button variant="destructive">Destructive</Button>
                     <Button variant="ghost">Ghost</Button>
                     <Button disabled>Disabled</Button>
@@ -286,7 +286,8 @@ export default function DesignPage() {
                       default: border border-input hover:border-gray-400
                     </div>
                     <div>
-                      brand: bg-purple-100 hover:bg-purple-200 text-purple-700
+                      brand: bg-brand-purple-light hover:bg-brand-purple-dark
+                      text-brand-purple
                     </div>
                     <div>
                       destructive: bg-red-100 hover:bg-red-200 text-red-700
@@ -308,7 +309,7 @@ export default function DesignPage() {
                     <Button variant="default" size="icon">
                       <Settings className="h-4 w-4" />
                     </Button>
-                    <Button variant="brand" size="icon">
+                    <Button variant="brand-purple" size="icon">
                       <Heart className="h-4 w-4" />
                     </Button>
                     <Button variant="destructive" size="icon">
@@ -348,11 +349,11 @@ export default function DesignPage() {
                     </ButtonFullWidth>
 
                     <ButtonFullWidth
-                      variant="brand"
+                      variant="brand-purple"
                       icon={<Heart className="h-4 w-4" />}
                       align="left"
                     >
-                      Follow (Variant: Brand)
+                      Follow (Variant: Brand Purple)
                     </ButtonFullWidth>
 
                     <ButtonFullWidth
@@ -441,7 +442,7 @@ export default function DesignPage() {
                   </h3>
                   <div className="space-y-3">
                     <Callout
-                      variant="brand"
+                      variant="brand-purple"
                       icon={<Info className="h-4 w-4" />}
                       onClose={() => {}}
                       title="Get an extra boost for sharing videos"
@@ -465,7 +466,7 @@ export default function DesignPage() {
                   <div className="space-y-3">
                     <Callout
                       mode="interactive"
-                      variant="brand"
+                      variant="brand-purple"
                       icon={<Info className="h-4 w-4" />}
                       href="/leaderboard"
                       title="Explore Leaderboard"
@@ -484,7 +485,7 @@ export default function DesignPage() {
                 </div>
 
                 <div className="text-xs text-muted-foreground font-mono space-y-1">
-                  <div>Brand: bg-purple-100</div>
+                  <div>Brand: bg-brand-purple-light</div>
                   <div>Muted: bg-muted</div>
                   <div>Structure: left icon + title + description</div>
                   <div>

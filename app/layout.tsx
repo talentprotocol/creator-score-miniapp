@@ -84,7 +84,7 @@ const cyFont = localFont({
   display: "swap",
 });
 
-// Geist brand font via package (CSS variable for Tailwind/theming usage)
+// Geist font configuration with proper CSS variable
 const geistSans = GeistSans;
 
 export default function RootLayout({

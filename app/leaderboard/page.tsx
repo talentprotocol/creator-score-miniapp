@@ -19,6 +19,7 @@ import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
 import { RewardBoostsModal } from "@/components/modals/RewardBoostsModal";
+import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import {
   ACTIVE_SPONSORS,
   TOTAL_SPONSORS_POOL,
@@ -44,6 +45,7 @@ import { Typography } from "@/components/ui/typography";
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
+import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
@@ -82,6 +84,7 @@ function LeaderboardContent() {
   const { talentUuid: userTalentUuid } = useFidToTalentUuid();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
   const [rewardBoostsOpen, setRewardBoostsOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   // const posthog = usePostHog();
 
   // Use optimized leaderboard hook for all data
@@ -158,36 +161,28 @@ function LeaderboardContent() {
       : 0;
 
   // Helper to calculate the reward multiplier based on total boosted scores
-  function calculateRewardMultiplier(): number {
-    const totalBoostedScores = top200Entries.reduce((sum, entry) => {
-      return sum + (entry.isBoosted ? entry.score * 1.1 : entry.score);
-    }, 0);
+  // function calculateRewardMultiplier(): number {
+  //   const totalBoostedScores = top200Entries.reduce((sum, entry) => {
+  //     return sum + (entry.isBoosted ? entry.score * 1.1 : entry.score);
+  //   }, 0);
 
-    if (totalBoostedScores === 0) return 0;
-    return TOTAL_SPONSORS_POOL / totalBoostedScores;
-  }
+  //   if (totalBoostedScores === 0) return 0;
+  //   return TOTAL_SPONSORS_POOL / totalBoostedScores;
+  // }
 
   function getUsdcRewards(
     score: number,
     rank?: number,
     isBoosted?: boolean,
   ): string {
-    // Only top 200 creators earn rewards
-    if (!rank || rank > 200) return "$0";
-
-    const multiplier = calculateRewardMultiplier();
-    if (multiplier === 0) return "$0";
-
-    // Calculate reward based on boosted score if applicable
-    const boostedScore = isBoosted ? score * 1.1 : score;
-    const reward = boostedScore * multiplier;
-
-    // Format as currency
-    if (reward >= 1) {
-      return `$${reward.toFixed(0)}`;
-    } else {
-      return `$${reward.toFixed(2)}`;
-    }
+    // Use the centralized rewards calculation service
+    return RewardsCalculationService.calculateUserReward(
+      score,
+      rank || 0,
+      isBoosted || false,
+      false, // isOptedOut - will be updated when we integrate opt-out status
+      top200Entries,
+    );
   }
 
   function getBoostAmountUsd(
@@ -196,11 +191,15 @@ function LeaderboardContent() {
     isBoosted?: boolean,
   ): string | null {
     if (!rank || rank > 200 || !isBoosted) return null;
-    const multiplier = calculateRewardMultiplier();
-    if (multiplier === 0) return null;
-    const base = score * multiplier;
-    const boosted = score * 1.1 * multiplier;
+
+    // Use the centralized service to get the multiplier
+    const summary = RewardsCalculationService.getRewardsSummary(top200Entries);
+    if (summary.multiplier === 0) return null;
+
+    const base = score * summary.multiplier;
+    const boosted = score * 1.1 * summary.multiplier;
     const boost = boosted - base;
+
     if (boost <= 0) return null;
     return boost >= 1 ? `$${boost.toFixed(0)}` : `$${boost.toFixed(2)}`;
   }
@@ -217,6 +216,8 @@ function LeaderboardContent() {
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const isLoggedIn = !!(user || unifiedName);
 
   return (
     <>
@@ -249,109 +250,120 @@ function LeaderboardContent() {
             userTop200Entry?.isBoosted,
           )}
           activeCreatorsTotal={activeCreatorsTotal}
+          isOptedOut={userTop200Entry?.isOptedOut}
+          onOptOutBadgeClick={() =>
+            router.push("/settings?section=pay-it-forward")
+          }
         />
       )}
 
-      {/* Callout Carousel (below MyRewards) - gated on user context */}
-      {(user || unifiedName) && (
-        <div className="mt-4 mb-2">
-          <CalloutCarousel
-            roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
-            dismissedIds={dismissedCalloutIds}
-            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-            onPersistDismiss={(id) => addDismissedId(id)}
-            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-            items={(() => {
-              const items = [] as Array<{
-                id: string;
-                variant: "brand" | "muted";
-                color?: "purple" | "green" | "blue" | "pink";
-                icon?: React.ReactNode;
-                title: React.ReactNode;
-                description?: React.ReactNode;
-                href?: string;
-                external?: boolean;
-                onClick?: () => void;
-                dismissKey?: string;
-                permanentHideKey?: string;
-                onClose?: () => void;
-              }>;
+      {/* Callout Carousel (below MyRewards) - visible to all users */}
+      <div className="mt-4 mb-2">
+        <CalloutCarousel
+          roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
+          dismissedIds={dismissedCalloutIds}
+          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+          onPersistDismiss={(id) => addDismissedId(id)}
+          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+          items={(() => {
+            const items = [] as Array<{
+              id: string;
+              variant:
+                | "brand-purple"
+                | "brand-green"
+                | "brand-blue"
+                | "brand-pink"
+                | "muted";
+              icon?: React.ReactNode;
+              title: React.ReactNode;
+              description?: React.ReactNode;
+              href?: string;
+              external?: boolean;
+              onClick?: () => void;
+              dismissKey?: string;
+              permanentHideKey?: string;
+              onClose?: () => void;
+            }>;
 
-              // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
-              const base = {
-                id: "boost",
-                variant: "brand" as const,
-                color: "purple" as const,
-                icon: <Rocket className="h-4 w-4" />,
-                title: "10% Rewards Boost",
-                description: <>Hold 100+ $TALENT to earn a boost.</>,
-                href: "https://app.uniswap.org/swap?chain=base&inputCurrency=NATIVE&outputCurrency=0x9a33406165f562e16c3abd82fd1185482e01b49a",
-                external: true,
-              };
-              if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
-                items.push({
-                  ...base,
-                  dismissKey: "boost_callout_dismissed",
-                  onClose: () => {
-                    try {
-                      localStorage.setItem(boostDismissKey, "true");
-                    } catch {}
-                    setShowBoostCallout(false);
-                  },
-                });
-              } else {
-                items.push(base);
-              }
-              // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
+            // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
+            const base = {
+              id: "boost",
+              variant: "brand-purple" as const,
+              icon: <Rocket className="h-4 w-4" />,
+              title: "10% Rewards Boost",
+              description: <>Hold 100+ $TALENT to earn a boost.</>,
+            };
+            if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
               items.push({
-                id: "optout",
-                variant: "brand",
-                color: "green",
-                icon: <HandHeart className="h-4 w-4" />,
-                title: "Pay It Forward",
-                description: "Give your rewards, keep your rank.",
-                dismissKey: "optout_callout_dismissed",
+                ...base,
+                dismissKey: "boost_callout_dismissed",
+                onClick: () => setRewardBoostsOpen(true),
                 onClose: () => {
                   try {
-                    localStorage.setItem(
-                      `optout_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
-                      "true",
-                    );
+                    localStorage.setItem(boostDismissKey, "true");
                   } catch {}
+                  setShowBoostCallout(false);
                 },
               });
-
-              // CREATOR PERK (blue) – interactive, non-dismissible; reflects entered state
+            } else {
               items.push({
-                id: "perk_screen_studio",
-                variant: "brand",
-                color: "blue",
-                icon: <Gift className="h-4 w-4" />,
-                title: "Creator Perk",
-                description:
-                  perkStatus?.status === "closed"
-                    ? `Entries closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                    : perkStatus?.status === "entered"
-                      ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                      : "Get a free Screen Studio subscription.",
-                href: undefined,
-                external: undefined,
-                onClick: () => {
-                  try {
-                    posthog.capture("perk_draw_open", {
-                      perk: "screen_studio",
-                    });
-                  } catch {}
-                  setPerkOpen(true);
-                },
-                // Non-dismissible for this interactive callout
+                ...base,
+                onClick: !isLoggedIn
+                  ? () => setLoginModalOpen(true)
+                  : () => setRewardBoostsOpen(true),
               });
+            }
+            // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
+            items.push({
+              id: "optout",
+              variant: "brand-green",
+              icon: <HandHeart className="h-4 w-4" />,
+              title: "Pay It Forward",
+              description: "Give your rewards, keep your rank.",
+              href: isLoggedIn ? "/settings?section=pay-it-forward" : undefined,
+              onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
+              dismissKey: "optout_callout_dismissed",
+              onClose: () => {
+                try {
+                  localStorage.setItem(
+                    `optout_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
+                    "true",
+                  );
+                } catch {}
+              },
+            });
 
-              return items;
-            })()}
-          />
-        </div>
-      )}
+            // CREATOR PERK (blue) – interactive, non-dismissible; reflects entered state
+            items.push({
+              id: "perk_screen_studio",
+              variant: "brand-blue",
+              icon: <Gift className="h-4 w-4" />,
+              title: "Creator Perk",
+              description:
+                perkStatus?.status === "closed"
+                  ? `Entries closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                  : perkStatus?.status === "entered"
+                    ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                    : "Get a free Screen Studio subscription.",
+              href: undefined,
+              external: undefined,
+              onClick: !isLoggedIn
+                ? () => setLoginModalOpen(true)
+                : () => {
+                    try {
+                      posthog.capture("perk_draw_open", {
+                        perk: "screen_studio",
+                      });
+                    } catch {}
+                    setPerkOpen(true);
+                  },
+              // Non-dismissible for this interactive callout
+            });
+
+            return items;
+          })()}
+        />
+      </div>
 
       {/* How to Earn Modal */}
       <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
@@ -386,7 +398,6 @@ function LeaderboardContent() {
       <PerkModal
         open={perkOpen}
         onOpenChange={(o) => setPerkOpen(o)}
-        color="blue"
         title="Creator Perk: Screen Studio"
         subtitle="Get 1 month of Screen Studio for free."
         access={`Level 3 (Creator Score ≥ ${LEVEL_RANGES[2].min})`}
@@ -405,6 +416,12 @@ function LeaderboardContent() {
           // Keep modal open; refresh callout state immediately
           refreshPerkStatus();
         }}
+      />
+
+      {/* Login Modal for logged-out users */}
+      <FarcasterAccessModal
+        open={loginModalOpen}
+        onOpenChange={setLoginModalOpen}
       />
 
       {/* Simplified Stat Cards */}
@@ -483,6 +500,7 @@ function LeaderboardContent() {
               items={top200Entries.map((user) => {
                 // Check if user is boosted
                 const isBoosted = user.isBoosted;
+                const isOptedOut = user.isOptedOut;
 
                 return {
                   id: user.id,
@@ -495,11 +513,42 @@ function LeaderboardContent() {
                     isBoosted,
                   ),
                   secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
-                  primaryMetricVariant: isBoosted ? "brand" : "default",
-                  badge: isBoosted ? (
+                  primaryMetricVariant: isOptedOut
+                    ? "muted"
+                    : isBoosted
+                      ? "brand-purple"
+                      : "default",
+                  isOptedOut: isOptedOut,
+                  // Note: Crossed-out styling is handled by CreatorList component via isOptedOut prop
+                  badge: isOptedOut ? (
+                    // OptOut badge (green HandHeart) - takes precedence over boost
+                    isLoggedIn ? (
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-brand-green"
+                        aria-label="View Pay It Forward settings"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Optional: analytics
+                          try {
+                            posthog.capture("optout_badge_clicked", {
+                              location: "leaderboard_row",
+                            });
+                          } catch {}
+                          router.push("/settings?section=pay-it-forward");
+                        }}
+                      >
+                        <HandHeart className="h-3 w-3 text-brand-green" />
+                      </button>
+                    ) : (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light">
+                        <HandHeart className="h-3 w-3 text-brand-green" />
+                      </div>
+                    )
+                  ) : isBoosted ? (
                     <button
                       type="button"
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                      className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-light hover:bg-brand-purple-dark focus:outline-none focus:ring-2 focus:ring-brand-purple"
                       aria-label="How to earn rewards boost"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -512,7 +561,7 @@ function LeaderboardContent() {
                         setHowToEarnOpen(true);
                       }}
                     >
-                      <Rocket className="h-3 w-3 text-purple-600" />
+                      <Rocket className="h-3 w-3 text-brand-purple" />
                     </button>
                   ) : undefined,
                 };
@@ -564,8 +613,12 @@ function LeaderboardContent() {
         {/* Sponsor Callout */}
         {activeTab === "sponsors" && (
           <div className="mt-4">
-            <Callout variant="brand">
-              <Typography size="xs" color="brand">
+            <Callout variant="brand-purple">
+              <Typography
+                size="xs"
+                color="default"
+                className="text-brand-purple"
+              >
                 Want to join as a sponsor? Reach out to {""}
                 <button
                   className="underline hover:no-underline"

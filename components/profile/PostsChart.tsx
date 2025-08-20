@@ -32,14 +32,14 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
   // Solid colors for different years using brand colors
   const getSolidColor = (year: number) => {
     const colors = {
-      0: "bg-purple-500", // Primary brand color
+      0: "bg-brand-purple", // Primary brand color
       1: "bg-green-500", // Secondary brand color
       2: "bg-blue-500", // Secondary brand color
-      3: "bg-pink-500", // Secondary brand color
+      3: "bg-brand-pink", // Secondary brand color
     };
     const index = yearlyData.findIndex((d) => d.year === year);
     const colorIndex = index % 4; // Now 4 colors instead of 5
-    return colors[colorIndex as keyof typeof colors] || "bg-purple-500";
+    return colors[colorIndex as keyof typeof colors] || "bg-brand-purple";
   };
 
   if (loading) {
@@ -95,7 +95,9 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
               key={yearData.year}
               onClick={() => setSelectedYear(yearData.year)}
               className="flex-1"
-              variant={selectedYear === yearData.year ? "brand" : "default"}
+              variant={
+                selectedYear === yearData.year ? "brand-purple" : "default"
+              }
             >
               {yearData.year}
             </Button>
