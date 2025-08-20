@@ -174,8 +174,7 @@ export async function GET(
     const baseUrl =
       process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
-        : process.env.NEXT_PUBLIC_URL || (process.env.VERCEL_URL ? 
-            `https://${process.env.VERCEL_URL}` : canonicalUrl);
+        : process.env.NEXT_PUBLIC_URL || canonicalUrl;
 
     // Strip emojis (PRESERVED EXACTLY from Canvas version)
     const cleanName = displayName.replace(
