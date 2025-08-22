@@ -192,11 +192,16 @@ export function MyRewards({
               <p className="text-xs text-muted-foreground">
                 {isTop200 ? (
                   <>
-                    You’re a{" "}
-                    <span className="font-semibold">
-                      top {topPercentDisplay}%
-                    </span>{" "}
-                    onchain creator.
+                    {rank && (
+                      <>
+                        Rank <span className="font-semibold">#{rank}</span> •
+                        Top{" "}
+                        <span className="font-semibold">
+                          {topPercentDisplay}%
+                        </span>{" "}
+                        Creator
+                      </>
+                    )}
                   </>
                 ) : pointsToTop200 !== undefined && pointsToTop200 !== null ? (
                   <>

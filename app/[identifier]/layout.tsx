@@ -67,7 +67,10 @@ export async function generateMetadata({
           tags: [`social-accounts-${user.id!}`, CACHE_KEYS.SOCIAL_ACCOUNTS],
           revalidate: CACHE_DURATION_1_HOUR,
         },
-      )().catch(() => []),
+      )().catch((error) => {
+        console.error("[Profile Layout] Data fetch failed:", error);
+        throw error; // Don't cache failures - allow retries
+      }),
       unstable_cache(
         async () => getCredentialsForTalentId(user.id!),
         [`credentials-${user.id!}`],
@@ -75,7 +78,10 @@ export async function generateMetadata({
           tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
           revalidate: CACHE_DURATION_10_MINUTES,
         },
-      )().catch(() => []),
+      )().catch((error) => {
+        console.error("[Profile Layout] Data fetch failed:", error);
+        throw error; // Don't cache failures - allow retries
+      }),
     ]);
 
     // Calculate total followers
@@ -267,9 +273,12 @@ export default async function ProfileLayout({
         [`social-accounts-${user.id!}`],
         {
           tags: [`social-accounts-${user.id!}`, CACHE_KEYS.SOCIAL_ACCOUNTS],
-          revalidate: CACHE_DURATION_1_HOUR,
+          revalidate: CACHE_DURATION_10_MINUTES,
         },
-      )().catch(() => []),
+      )().catch((error) => {
+        console.error("[Profile Layout] Social accounts fetch failed:", error);
+        throw error; // Don't cache failures - allow retries
+      }),
       unstable_cache(
         async () => getCredentialsForTalentId(user.id!),
         [`credentials-${user.id!}`],
@@ -277,7 +286,10 @@ export default async function ProfileLayout({
           tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
           revalidate: CACHE_DURATION_10_MINUTES,
         },
-      )().catch(() => []),
+      )().catch((error) => {
+        console.error("[Profile Layout] Data fetch failed:", error);
+        throw error; // Don't cache failures - allow retries
+      }),
       unstable_cache(
         async () => getAllPostsForTalentId(user.id!),
         [`posts-${user.id!}`],
@@ -285,7 +297,10 @@ export default async function ProfileLayout({
           tags: [`posts-${user.id!}`, CACHE_KEYS.POSTS],
           revalidate: CACHE_DURATION_1_HOUR,
         },
-      )().catch(() => []),
+      )().catch((error) => {
+        console.error("[Profile Layout] Data fetch failed:", error);
+        throw error; // Don't cache failures - allow retries
+      }),
     ]);
 
   // Process posts into yearly data (same logic as hooks)

@@ -83,9 +83,7 @@ export function CreatorList({
               <div
                 className={cn(
                   "flex items-center gap-3 p-3 transition-colors cursor-pointer hover:bg-muted active:bg-muted/80",
-                  pinnedIndex === index
-                    ? "rounded-lg bg-muted hover:bg-muted/80 mb-2"
-                    : "",
+                  pinnedIndex === index ? "bg-secondary" : "",
                   onItemClick && "cursor-pointer",
                 )}
                 onClick={() => onItemClick?.(item)}

@@ -47,6 +47,9 @@ import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
+// Feature flag to enable/disable pinned leaderboard entry
+const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
+
 function getCountdownParts(target: Date) {
   const nowUTC = Date.now();
   const targetUTC = target.getTime();
@@ -495,33 +498,132 @@ function LeaderboardContent() {
                 </span>
               </div>
             )}
-            {/* Leaderboard list - show all 200 entries */}
+            {/* Leaderboard list - include pinned current user as first item when logged in */}
             <CreatorList
-              items={top200Entries.map((user) => {
-                // Check if user is boosted
-                const isBoosted = user.isBoosted;
-                const isOptedOut = user.isOptedOut;
+              items={(() => {
+                const baseItems: Array<{
+                  id: string;
+                  name: string;
+                  avatarUrl?: string;
+                  rank?: number;
+                  primaryMetric?: string;
+                  primaryMetricLoading?: boolean;
+                  secondaryMetric?: string;
+                  badge?: React.ReactNode;
+                  primaryMetricVariant?: "default" | "brand-purple" | "muted";
+                  isOptedOut?: boolean;
+                }> = top200Entries.map((user) => {
+                  const isBoosted = user.isBoosted;
+                  const isOptedOut = user.isOptedOut;
 
-                return {
-                  id: user.id,
-                  name: user.name,
-                  avatarUrl: user.pfp,
-                  rank: user.rank,
-                  primaryMetric: getUsdcRewards(
-                    user.score,
-                    user.rank,
-                    isBoosted,
-                  ),
-                  secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
-                  primaryMetricVariant: isOptedOut
+                  return {
+                    id: user.id,
+                    name: user.name,
+                    avatarUrl: user.pfp,
+                    rank: user.rank,
+                    primaryMetric: getUsdcRewards(
+                      user.score,
+                      user.rank,
+                      isBoosted,
+                    ),
+                    secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
+                    primaryMetricVariant: isOptedOut
+                      ? "muted"
+                      : isBoosted
+                        ? "brand-purple"
+                        : "default",
+                    isOptedOut: isOptedOut,
+                    badge: isOptedOut ? (
+                      isLoggedIn ? (
+                        <button
+                          type="button"
+                          className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-brand-green"
+                          aria-label="View Pay It Forward settings"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            try {
+                              posthog.capture("optout_badge_clicked", {
+                                location: "leaderboard_row",
+                              });
+                            } catch {}
+                            router.push("/settings?section=pay-it-forward");
+                          }}
+                        >
+                          <HandHeart className="h-3 w-3 text-brand-green" />
+                        </button>
+                      ) : (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light">
+                          <HandHeart className="h-3 w-3 text-brand-green" />
+                        </div>
+                      )
+                    ) : isBoosted ? (
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-light hover:bg-brand-purple-dark focus:outline-none focus:ring-2 focus:ring-brand-purple"
+                        aria-label="How to earn rewards boost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          try {
+                            posthog.capture("boost_badge_clicked", {
+                              location: "leaderboard_row",
+                            });
+                          } catch {}
+                          setHowToEarnOpen(true);
+                        }}
+                      >
+                        <Rocket className="h-3 w-3 text-brand-purple" />
+                      </button>
+                    ) : undefined,
+                  };
+                });
+
+                // Build pinned item for current user when authenticated
+                const shouldShowPinned =
+                  isLoggedIn && ENABLE_PINNED_LEADERBOARD_ENTRY;
+                if (!shouldShowPinned) return baseItems;
+
+                const pinnedIsBoosted = userTop200Entry?.isBoosted ?? false;
+                const pinnedIsOptedOut = userTop200Entry?.isOptedOut ?? false;
+                const pinnedId = userTop200Entry?.id || (userTalentUuid ?? "");
+                if (!pinnedId) return baseItems;
+
+                const pinnedItem: {
+                  id: string;
+                  name: string;
+                  avatarUrl?: string;
+                  rank?: number;
+                  primaryMetric?: string;
+                  primaryMetricLoading?: boolean;
+                  secondaryMetric?: string;
+                  badge?: React.ReactNode;
+                  primaryMetricVariant?: "default" | "brand-purple" | "muted";
+                  isOptedOut?: boolean;
+                } = {
+                  id: pinnedId,
+                  name: name || "",
+                  avatarUrl: avatarUrl,
+                  rank: userTop200Entry?.rank,
+                  primaryMetric: creatorScore
+                    ? getUsdcRewards(
+                        userTop200Entry?.score ?? creatorScore,
+                        userTop200Entry?.rank,
+                        pinnedIsBoosted,
+                      )
+                    : undefined,
+                  primaryMetricLoading:
+                    loadingStats ||
+                    (top200Loading && !userTop200Entry) ||
+                    false,
+                  secondaryMetric: `Creator Score: ${(
+                    userTop200Entry?.score ?? creatorScore
+                  ).toLocaleString()}`,
+                  primaryMetricVariant: pinnedIsOptedOut
                     ? "muted"
-                    : isBoosted
+                    : pinnedIsBoosted
                       ? "brand-purple"
                       : "default",
-                  isOptedOut: isOptedOut,
-                  // Note: Crossed-out styling is handled by CreatorList component via isOptedOut prop
-                  badge: isOptedOut ? (
-                    // OptOut badge (green HandHeart) - takes precedence over boost
+                  isOptedOut: pinnedIsOptedOut,
+                  badge: pinnedIsOptedOut ? (
                     isLoggedIn ? (
                       <button
                         type="button"
@@ -529,7 +631,6 @@ function LeaderboardContent() {
                         aria-label="View Pay It Forward settings"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Optional: analytics
                           try {
                             posthog.capture("optout_badge_clicked", {
                               location: "leaderboard_row",
@@ -545,14 +646,13 @@ function LeaderboardContent() {
                         <HandHeart className="h-3 w-3 text-brand-green" />
                       </div>
                     )
-                  ) : isBoosted ? (
+                  ) : pinnedIsBoosted ? (
                     <button
                       type="button"
                       className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-light hover:bg-brand-purple-dark focus:outline-none focus:ring-2 focus:ring-brand-purple"
                       aria-label="How to earn rewards boost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Optional: analytics
                         try {
                           posthog.capture("boost_badge_clicked", {
                             location: "leaderboard_row",
@@ -565,13 +665,19 @@ function LeaderboardContent() {
                     </button>
                   ) : undefined,
                 };
-              })}
+
+                const deduped = baseItems.filter((u) => u.id !== pinnedId);
+                return [pinnedItem, ...deduped];
+              })()}
               onItemClick={(item) => {
                 // Navigate to profile page
                 router.push(`/${item.id}`);
               }}
               loading={top200Loading}
               primaryMetricLoading={rewardsLoading}
+              pinnedIndex={
+                isLoggedIn && ENABLE_PINNED_LEADERBOARD_ENTRY ? 0 : undefined
+              }
             />
           </>
         )}
