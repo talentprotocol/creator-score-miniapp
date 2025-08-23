@@ -46,6 +46,7 @@ import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
+import { useOptOutStatus } from "@/hooks/useOptOutStatus";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -122,6 +123,18 @@ function LeaderboardContent() {
   const { balance: tokenBalance, loading: tokenLoading } =
     useUserTokenBalance(userTalentUuid);
 
+  // Find user entry in top 200 data for accurate rewards
+  const userTop200Entry =
+    userTalentUuid && top200Entries.length > 0
+      ? top200Entries.find((e) => e.talent_protocol_id === userTalentUuid)
+      : null;
+
+  // Get opt-out status for all users (top 200 and non-top 200)
+  const { isOptedOut } = useOptOutStatus(
+    userTalentUuid,
+    userTop200Entry || undefined,
+  );
+
   // Server-persisted callout preferences
   const {
     dismissedIds: dismissedCalloutIds,
@@ -147,12 +160,6 @@ function LeaderboardContent() {
     }, 60000); // update every minute
     return () => clearInterval(interval);
   }, []);
-
-  // Find user entry in top 200 data for accurate rewards
-  const userTop200Entry =
-    userTalentUuid && top200Entries.length > 0
-      ? top200Entries.find((e) => e.talent_protocol_id === userTalentUuid)
-      : null;
 
   // Get the 200th position score
   const lastTop200Score = top200Entries[199]?.score ?? 0;
@@ -253,7 +260,7 @@ function LeaderboardContent() {
             userTop200Entry?.isBoosted,
           )}
           activeCreatorsTotal={activeCreatorsTotal}
-          isOptedOut={userTop200Entry?.isOptedOut}
+          isOptedOut={isOptedOut}
           onOptOutBadgeClick={() =>
             router.push("/settings?section=pay-it-forward")
           }
