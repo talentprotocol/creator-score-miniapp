@@ -225,7 +225,7 @@ export const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // Aug
 export const PERK_DRAW_DEADLINE_UTC = new Date(
   Date.UTC(2025, 7, 22, 14, 59, 59),
 );
-export const PERK_DRAW_DATE_UTC = new Date(Date.UTC(2025, 7, 23, 15, 0, 0));
+export const PERK_DRAW_DATE_UTC = new Date(Date.UTC(2025, 7, 26, 15, 0, 0));
 
 // Boost configuration
 export const BOOST_CONFIG = {
