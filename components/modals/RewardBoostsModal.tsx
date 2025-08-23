@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
-import { Coins } from "lucide-react";
+import { Coins, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { formatTokenAmount, detectClient, openExternalUrl } from "@/lib/utils";
 import { BOOST_CONFIG } from "@/lib/constants";
 
@@ -25,75 +25,70 @@ import { BOOST_CONFIG } from "@/lib/constants";
 const TALENT_TOKEN_CAIP19 =
   "eip155:8453/erc20:0x9a33406165f562e16c3abd82fd1185482e01b49a";
 
+// Swap states for user feedback
+type SwapState = 'idle' | 'loading' | 'success' | 'error' | 'rejected';
+
+interface SwapResult {
+  state: SwapState;
+  message?: string;
+  transactions?: string[];
+}
+
 /**
  * Handle token swap with Farcaster native swap or fallback to Aerodrome
  */
-async function handleGetTalent(fallbackUrl: string): Promise<void> {
-  console.log("🚀 handleGetTalent called");
-
+async function handleGetTalent(
+  fallbackUrl: string,
+  onStateChange: (result: SwapResult) => void
+): Promise<void> {
   const client = await detectClient();
-  console.log("🔍 Detected client:", client);
 
-  // Try Farcaster native swap first (but fallback quickly if issues)
+  // Try Farcaster native swap first
   if (client === "farcaster" || client === "base") {
     try {
-      console.log(
-        "📱 Attempting native swap with TALENT token:",
-        TALENT_TOKEN_CAIP19,
-      );
-
+      onStateChange({ state: 'loading' });
+      
       const { sdk } = await import("@farcaster/miniapp-sdk");
-      console.log("✅ SDK imported successfully");
 
-      // Ensure SDK is ready
-      await sdk.actions.ready();
-      console.log("✅ SDK ready");
-
-      // Add timeout to prevent hanging
-      const swapPromise = sdk.actions.swapToken({
+      const result = await sdk.actions.swapToken({
         buyToken: TALENT_TOKEN_CAIP19,
         // sellToken and sellAmount are optional - user can choose what to sell
       });
-      
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Swap timeout after 30 seconds")), 30000)
-      );
-      
-      const result = await Promise.race([swapPromise, timeoutPromise]) as any;
 
-      console.log("✅ Native swap result:", result);
-
-      // Check if the swap was successful
-      if (result?.success) {
-        console.log("🎉 Swap completed successfully:", result.swap);
+      if (result.success) {
+        onStateChange({
+          state: 'success',
+          message: `Swap completed successfully! ${result.swap.transactions.length} transaction(s) executed.`,
+          transactions: result.swap.transactions
+        });
       } else {
-        console.warn(
-          "⚠️ Swap was not successful:",
-          result?.reason,
-          result?.error,
-        );
-        // Don't throw error here, let user know what happened
-        if (result?.reason === "rejected_by_user") {
-          console.log("👤 User rejected the swap");
-          return; // User cancelled, don't fall back to external URL
-        }
-        // For other failures, fall through to external URL
-        throw new Error(`Swap failed: ${result?.reason || 'Unknown error'}`);
+        const errorMessage = result.reason === 'rejected_by_user' 
+          ? 'Swap was cancelled by user'
+          : `Swap failed: ${result.error?.message || 'Unknown error'}`;
+        
+        onStateChange({
+          state: result.reason === 'rejected_by_user' ? 'rejected' : 'error',
+          message: errorMessage
+        });
       }
-      return; // Success - no need for fallback
+
+      return; // Don't fall through to external URL
     } catch (error) {
-      console.error("❌ Native swap failed:", error);
-      console.error("Error details:", {
-        name: (error as Error)?.name,
-        message: (error as Error)?.message,
-        stack: (error as Error)?.stack,
+      console.warn("Native swap failed, falling back to Aerodrome:", error);
+      onStateChange({
+        state: 'error',
+        message: 'Native swap unavailable, redirecting to Aerodrome...'
       });
-      // Fall through to external URL fallback
+      
+      // Small delay to show the message before redirect
+      setTimeout(async () => {
+        await openExternalUrl(fallbackUrl, null, client);
+      }, 1500);
+      return;
     }
   }
 
-  console.log("🔄 Falling back to Aerodrome URL:", fallbackUrl);
-  // Fallback to external Aerodrome URL
+  // Fallback to external Aerodrome URL for non-Farcaster environments
   await openExternalUrl(fallbackUrl, null, client);
 }
 
@@ -118,6 +113,8 @@ function Content({
   score,
   getTalentUrl = "https://aerodrome.finance/swap?from=eth&to=0x9a33406165f562e16c3abd82fd1185482e01b49a&chain0=8453&chain1=8453",
 }: Omit<RewardBoostsModalProps, "open" | "onOpenChange">) {
+  const [swapResult, setSwapResult] = React.useState<SwapResult>({ state: 'idle' });
+  
   const tokenNumber =
     tokenBalance !== null && tokenBalance !== undefined ? tokenBalance : 0;
   const tokenDisplay = `${formatTokenAmount(tokenNumber)}`;
@@ -128,6 +125,14 @@ function Content({
     if (!isTop200) return "$0";
     return boostUsd || "$0";
   })();
+
+  const handleSwapClick = async () => {
+    await handleGetTalent(getTalentUrl, setSwapResult);
+  };
+
+  const resetSwapState = () => {
+    setSwapResult({ state: 'idle' });
+  };
 
   return (
     <div className="space-y-6">
@@ -173,22 +178,50 @@ function Content({
         </div>
       </div>
 
+      {/* Swap feedback message */}
+      {swapResult.state !== 'idle' && (
+        <div className={`p-4 rounded-lg border ${
+          swapResult.state === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800' 
+            : swapResult.state === 'loading'
+            ? 'bg-blue-50 border-blue-200 text-blue-800'
+            : swapResult.state === 'rejected'
+            ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            {swapResult.state === 'loading' && <Loader2 className="h-4 w-4 animate-spin" />}
+            {swapResult.state === 'success' && <CheckCircle className="h-4 w-4" />}
+            {(swapResult.state === 'error' || swapResult.state === 'rejected') && <XCircle className="h-4 w-4" />}
+            <span className="text-sm font-medium">
+              {swapResult.state === 'loading' && 'Processing swap...'}
+              {swapResult.state === 'success' && 'Swap Successful!'}
+              {swapResult.state === 'error' && 'Swap Failed'}
+              {swapResult.state === 'rejected' && 'Swap Cancelled'}
+            </span>
+          </div>
+          {swapResult.message && (
+            <p className="text-xs mt-1 opacity-80">{swapResult.message}</p>
+          )}
+          {swapResult.state !== 'loading' && (
+            <button
+              onClick={resetSwapState}
+              className="text-xs underline mt-2 opacity-70 hover:opacity-100"
+            >
+              Dismiss
+            </button>
+          )}
+        </div>
+      )}
+
       <ButtonFullWidth
         variant="brand-purple"
-        icon={<Coins className="h-4 w-4" />}
+        icon={swapResult.state === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
         align="left"
-        onClick={async (e) => {
-          try {
-            e.preventDefault();
-            console.log("🎯 Get $TALENT button clicked");
-            await handleGetTalent(getTalentUrl);
-          } catch (error) {
-            console.error("❌ Button click handler failed:", error);
-            // Don't let the error bubble up and close the modal
-          }
-        }}
+        onClick={handleSwapClick}
+        disabled={swapResult.state === 'loading'}
       >
-        Get $TALENT
+        {swapResult.state === 'loading' ? 'Processing...' : 'Get $TALENT'}
       </ButtonFullWidth>
     </div>
   );
