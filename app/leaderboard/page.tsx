@@ -343,7 +343,7 @@ function LeaderboardContent() {
               },
             });
 
-            // CREATOR PERK (blue) – interactive, non-dismissible; reflects entered state
+            // CREATOR PERK (blue) – interactive, dismissible; reflects entered state
             items.push({
               id: "perk_screen_studio",
               variant: "brand-blue",
@@ -367,7 +367,8 @@ function LeaderboardContent() {
                     } catch {}
                     setPerkOpen(true);
                   },
-              // Non-dismissible for this interactive callout
+              dismissKey: "perk_callout_dismissed",
+              // No onClose needed - CalloutCarousel handles server-side persistence automatically
             });
 
             return items;
