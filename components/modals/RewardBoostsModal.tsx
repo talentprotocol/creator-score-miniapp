@@ -29,25 +29,56 @@ const TALENT_TOKEN_CAIP19 =
  * Handle token swap with Farcaster native swap or fallback to Aerodrome
  */
 async function handleGetTalent(fallbackUrl: string): Promise<void> {
+  console.log("🚀 handleGetTalent called");
+  
   const client = await detectClient();
-
+  console.log("🔍 Detected client:", client);
+  
   // Try Farcaster native swap first
   if (client === "farcaster" || client === "base") {
     try {
+      console.log("📱 Attempting native swap with TALENT token:", TALENT_TOKEN_CAIP19);
+      
       const { sdk } = await import("@farcaster/miniapp-sdk");
-
-      await sdk.actions.swapToken({
+      console.log("✅ SDK imported successfully");
+      
+      // Ensure SDK is ready
+      await sdk.actions.ready();
+      console.log("✅ SDK ready");
+      
+      const result = await sdk.actions.swapToken({
         buyToken: TALENT_TOKEN_CAIP19,
         // sellToken and sellAmount are optional - user can choose what to sell
       });
-
+      
+      console.log("✅ Native swap result:", result);
+      
+      // Check if the swap was successful
+      if (result.success) {
+        console.log("🎉 Swap completed successfully:", result.swap);
+      } else {
+        console.warn("⚠️ Swap was not successful:", result.reason, result.error);
+        // Don't throw error here, let user know what happened
+        if (result.reason === "rejected_by_user") {
+          console.log("👤 User rejected the swap");
+          return; // User cancelled, don't fall back to external URL
+        }
+        // For other failures, fall through to external URL
+        throw new Error(`Swap failed: ${result.reason}`);
+      }
       return; // Success - no need for fallback
     } catch (error) {
-      console.warn("Native swap failed, falling back to Aerodrome:", error);
+      console.error("❌ Native swap failed:", error);
+      console.error("Error details:", {
+        name: (error as Error)?.name,
+        message: (error as Error)?.message,
+        stack: (error as Error)?.stack,
+      });
       // Fall through to external URL fallback
     }
   }
-
+  
+  console.log("🔄 Falling back to Aerodrome URL:", fallbackUrl);
   // Fallback to external Aerodrome URL
   await openExternalUrl(fallbackUrl, null, client);
 }
@@ -132,8 +163,15 @@ function Content({
         variant="brand-purple"
         icon={<Coins className="h-4 w-4" />}
         align="left"
-        onClick={async () => {
-          await handleGetTalent(getTalentUrl);
+        onClick={async (e) => {
+          try {
+            e.preventDefault();
+            console.log("🎯 Get $TALENT button clicked");
+            await handleGetTalent(getTalentUrl);
+          } catch (error) {
+            console.error("❌ Button click handler failed:", error);
+            // Don't let the error bubble up and close the modal
+          }
         }}
       >
         Get $TALENT
