@@ -85,7 +85,8 @@ export function MyRewards({
                 <p
                   className={cn(
                     "text-3xl font-bold",
-                    isOptedOut && "text-brand-green line-through",
+                    // Only apply opt-out styling when showing rewards (top 200 users)
+                    isTop200 && isOptedOut && "text-brand-green line-through",
                     !isOptedOut && isBoosted && "text-primary",
                   )}
                 >
