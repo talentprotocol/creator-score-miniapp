@@ -8,7 +8,7 @@ import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { Button } from "@/components/ui/button";
 import {
   formatNumberWithSuffix,
-  formatK,
+  formatCompactNumber,
   calculateTotalFollowers,
   detectClient,
   openExternalUrl,
@@ -148,7 +148,7 @@ function ProfileLayoutContentInner({
   // Handle Farcaster sharing from modal (browser only)
   const handleShareFarcaster = React.useCallback(() => {
     const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
-    const followersText = formatK(totalFollowers || 0);
+    const followersText = formatCompactNumber(totalFollowers || 0);
     const earningsText = totalEarnings
       ? formatNumberWithSuffix(totalEarnings)
       : "—";
@@ -202,7 +202,7 @@ function ProfileLayoutContentInner({
   // Handle Twitter sharing from modal (browser only)
   const handleShareTwitter = React.useCallback(() => {
     const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
-    const followersText = formatK(totalFollowers || 0);
+    const followersText = formatCompactNumber(totalFollowers || 0);
     const earningsText = totalEarnings
       ? formatNumberWithSuffix(totalEarnings)
       : "—";
@@ -271,7 +271,7 @@ function ProfileLayoutContentInner({
       {/* Header section */}
       <Section variant="header">
         <ProfileHeader
-          followers={formatK(totalFollowers)}
+          followers={formatCompactNumber(totalFollowers)}
           displayName={profile.display_name || undefined}
           profileImage={profile.image_url || undefined}
           bio={profile.bio || undefined}

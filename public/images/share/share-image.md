@@ -5,7 +5,7 @@ Create `app/api/share-image/[talentUUID]/route.ts`:
 ```typescript
 import { NextRequest, NextResponse } from "next/server";
 import { talentApiClient } from "@/lib/talent-api-client";
-import { calculateTotalFollowers, formatK, formatNumberWithSuffix } from "@/lib/utils";
+import { calculateTotalFollowers, formatCompactNumber, formatNumberWithSuffix } from "@/lib/utils";
 import { generateShareImage } from "@/lib/share-image-generator";
 
 export async function GET(

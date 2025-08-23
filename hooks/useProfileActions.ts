@@ -2,7 +2,11 @@ import { useCallback, useState, useEffect } from "react";
 import { useScoreRefresh } from "./useScoreRefresh";
 import { useFidToTalentUuid } from "./useUserResolution";
 import type { ProfileData } from "@/contexts/ProfileContext";
-import { composeCast, formatK, formatNumberWithSuffix } from "@/lib/utils";
+import {
+  composeCast,
+  formatCompactNumber,
+  formatNumberWithSuffix,
+} from "@/lib/utils";
 
 interface UseProfileActionsProps {
   talentUUID: string;
@@ -108,7 +112,7 @@ export function useProfileActions({
     // Get creator category from data, fallback to bio, then "Creator"
     const creatorType = profile?.bio || "Creator"; // Simplified - no category data needed
     const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
-    const followersText = formatK(totalFollowers || 0);
+    const followersText = formatCompactNumber(totalFollowers || 0);
     const earningsText = totalEarnings
       ? formatNumberWithSuffix(totalEarnings)
       : "—";

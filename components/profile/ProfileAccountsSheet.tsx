@@ -12,7 +12,11 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { ChevronDown, ExternalLink, Copy } from "lucide-react";
 import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
-import { truncateAddress, formatK, openExternalUrl } from "@/lib/utils";
+import {
+  truncateAddress,
+  formatCompactNumber,
+  openExternalUrl,
+} from "@/lib/utils";
 import type { SocialAccount } from "@/app/services/types";
 import {
   Twitter,
@@ -151,7 +155,7 @@ function SocialAccountsList({
           account.followerCount !== null &&
           account.followerCount !== undefined &&
           account.followerCount > 0
-            ? formatK(account.followerCount)
+            ? formatCompactNumber(account.followerCount)
             : "—";
 
         return (

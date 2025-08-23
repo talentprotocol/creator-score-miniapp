@@ -4,7 +4,7 @@ import { useProfileTotalEarnings } from "./useProfileTotalEarnings";
 import {
   calculateTotalFollowers,
   formatNumberWithSuffix,
-  formatK,
+  formatCompactNumber,
 } from "@/lib/utils";
 import { useResolvedTalentProfile } from "./useResolvedTalentProfile";
 
@@ -42,7 +42,7 @@ export function useShareData() {
     avatarUrl: avatarUrl || null,
     displayName: displayName || "Creator",
     handle: talentUuid || "",
-    formattedFollowers: formatK(totalFollowers),
+    formattedFollowers: formatCompactNumber(totalFollowers),
     formattedEarnings: formatNumberWithSuffix(totalEarnings || 0),
   };
 }
