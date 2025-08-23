@@ -153,15 +153,15 @@ export function ProfileHeader({
             />
             <div className="mt-1 flex flex-col gap-0.5">
               <span className="text-muted-foreground text-sm">
-                {followers ?? "—"} total followers
                 {rank && (
                   <>
-                    {" • "}
                     <span className="text-muted-foreground text-sm">
-                      Rank #{rank}
+                      Creator #{rank}
                     </span>
+                    {" • "}
                   </>
                 )}
+                {followers ?? "—"} followers
                 {shouldShowCategory && (
                   <>
                     {" • "}
