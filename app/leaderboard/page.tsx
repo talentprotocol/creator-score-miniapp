@@ -368,7 +368,10 @@ function LeaderboardContent() {
                     setPerkOpen(true);
                   },
               dismissKey: "perk_callout_dismissed",
-              // No onClose needed - CalloutCarousel handles server-side persistence automatically
+              onClose: () => {
+                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                // The actual dismissal logic is handled by CalloutCarousel, not here
+              },
             });
 
             return items;
