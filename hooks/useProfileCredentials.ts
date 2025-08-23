@@ -23,7 +23,7 @@ export function useProfileCredentials(talentUUID: string) {
       const cacheKey = `${CACHE_KEYS.PROFILE_CREDENTIALS}_${talentUUID}`;
       const cached = getCachedData<IssuerCredentialGroup[]>(
         cacheKey,
-        CACHE_DURATIONS.PROFILE_DATA,
+        CACHE_DURATIONS.CREDENTIALS_DATA,
       );
 
       if (cached) {

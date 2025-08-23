@@ -260,19 +260,6 @@ export function formatRewardValue(num: number): string {
   return formatNumberWithSuffix(num);
 }
 
-// Profile-specific utility functions
-export function formatK(num: number | string): string {
-  const n = typeof num === "string" ? parseFloat(num.replace(/,/g, "")) : num;
-  if (isNaN(n)) return "0";
-  // For three-digit thousands (>= 100,000), show no decimals and floor
-  if (n >= 100_000 && n < 1_000_000) {
-    return `${Math.floor(n / 1000)}K`;
-  }
-  // Default compact format for thousands
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toString();
-}
-
 export function truncateAddress(addr: string): string {
   if (!addr) return "";
   return addr.slice(0, 6) + "..." + addr.slice(-4);
@@ -294,6 +281,7 @@ export function formatReadableValue(
   uom: string | null = null,
 ): string {
   if (!value) return "";
+
   // If it's already a non-numeric descriptive value, return as is
   if (/[a-zA-Z]/.test(value) && !/^[0-9.]+$/.test(value)) {
     // For account age credentials we want to keep human text like "2 years"
@@ -303,8 +291,38 @@ export function formatReadableValue(
     return value;
   }
 
-  const num = parseFloat(value);
+  // Extract numeric value from strings like "2.23K", "1.5M", etc.
+  let num: number;
+  let hasSuffix = false;
+
+  if (value.includes("K")) {
+    num = parseFloat(value.replace("K", "")) * 1000;
+    hasSuffix = true;
+  } else if (value.includes("M")) {
+    num = parseFloat(value.replace("M", "")) * 1000000;
+    hasSuffix = true;
+  } else if (value.includes("B")) {
+    num = parseFloat(value.replace("B", "")) * 1000000000;
+    hasSuffix = true;
+  } else {
+    num = parseFloat(value);
+  }
+
   if (isNaN(num)) return value;
+
+  // Special handling for ETH values - always show Ξ symbol
+  if (uom === "ETH") {
+    if (hasSuffix) {
+      // If the original value had a suffix, preserve the compact format
+      if (num >= 1000000000) return `Ξ${(num / 1000000000).toFixed(1)}B`;
+      if (num >= 1000000) return `Ξ${(num / 1000000).toFixed(1)}M`;
+      if (num >= 1000) return `Ξ${(num / 1000).toFixed(1)}K`;
+      return `Ξ${num.toFixed(3)}`;
+    } else {
+      // Original value was just a number, use standard ETH formatting
+      return `Ξ${num.toFixed(3)}`;
+    }
+  }
 
   // Currency: USDC/USD
   if (uom === "USDC" || uom === "USD") {
@@ -313,11 +331,6 @@ export function formatReadableValue(
     if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
     if (num >= 10_000) return `$${(num / 1_000).toFixed(1)}K`;
     return Number.isInteger(num) ? `$${num.toFixed(0)}` : `$${num.toFixed(1)}`;
-  }
-
-  // Special handling for ETH values
-  if (uom === "ETH") {
-    return `Ξ${num.toFixed(3)}`;
   }
 
   // Count-like units: display as integer with compact K when large
@@ -428,6 +441,9 @@ export function msToSeconds(ms: number): number {
 // Cache duration constants
 export const CACHE_DURATIONS = {
   PROFILE_DATA: 5 * 60 * 1000, // 5 minutes
+  SOCIAL_ACCOUNTS: 60 * 60 * 1000, // 1 hour
+  POSTS_DATA: 30 * 60 * 1000, // 30 minutes
+  CREDENTIALS_DATA: 30 * 60 * 1000, // 30 minutes
   SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
   EXPENSIVE_COMPUTATION: 30 * 60 * 1000, // 30 minutes for expensive computations
   ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours

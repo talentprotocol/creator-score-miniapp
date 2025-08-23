@@ -6,7 +6,7 @@ import { talentApiClient } from "@/lib/talent-api-client";
 import {
   CACHE_KEYS,
   CACHE_DURATION_10_MINUTES,
-  CACHE_DURATION_1_HOUR,
+  CACHE_DURATION_30_MINUTES,
 } from "@/lib/cache-keys";
 import {
   calculateTotalFollowers,
@@ -14,7 +14,7 @@ import {
   convertPolToUsdc,
   getEthUsdcPrice,
   getPolUsdPrice,
-  formatK,
+  formatCompactNumber,
   formatNumberWithSuffix,
 } from "@/lib/utils";
 import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
@@ -59,36 +59,16 @@ export async function GET(
 
     // Fetch additional data (PRESERVED EXACTLY)
     const [socialAccounts, credentials, creatorScoreData] = await Promise.all([
-      unstable_cache(
-        async () => getSocialAccountsForTalentId(params.talentUUID),
-        [`social-accounts-${params.talentUUID}`],
-        {
-          tags: [
-            `social-accounts-${params.talentUUID}`,
-            CACHE_KEYS.SOCIAL_ACCOUNTS,
-          ],
-          revalidate: CACHE_DURATION_1_HOUR,
-        },
-      )().catch(() => []),
+      getSocialAccountsForTalentId(params.talentUUID)().catch(() => []),
       unstable_cache(
         async () => getCredentialsForTalentId(params.talentUUID),
         [`credentials-${params.talentUUID}`],
         {
           tags: [`credentials-${params.talentUUID}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_10_MINUTES,
+          revalidate: CACHE_DURATION_30_MINUTES,
         },
       )().catch(() => []),
-      unstable_cache(
-        async () => getCreatorScoreForTalentId(params.talentUUID),
-        [`creator-score-${params.talentUUID}`],
-        {
-          tags: [
-            `creator-score-${params.talentUUID}`,
-            CACHE_KEYS.CREATOR_SCORES,
-          ],
-          revalidate: CACHE_DURATION_10_MINUTES,
-        },
-      )().catch(() => ({
+      getCreatorScoreForTalentId(params.talentUUID)().catch(() => ({
         score: 0,
       })),
     ]);
@@ -265,7 +245,7 @@ export async function GET(
               display: "flex",
             }}
           >
-            {formatK(totalFollowers)} total followers
+            {formatCompactNumber(totalFollowers)} total followers
           </div>
 
           {/* Creator Score label - using exact Figma coordinates */}

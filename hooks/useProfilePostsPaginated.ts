@@ -1,10 +1,44 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Post } from "@/app/services/types";
+import type { Post, PostsResponse } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { getPostsForTalentId } from "@/app/services/postsService";
 import { CACHE_KEYS } from "@/lib/cache-keys";
+
+/**
+ * CLIENT-SIDE ONLY: Fetches posts via API route (follows coding principles)
+ */
+async function getPostsForTalentId(
+  talentId: string | number,
+  options: { page?: number; perPage?: number } = {},
+): Promise<Post[]> {
+  try {
+    const { page = 1, perPage = 10 } = options;
+    const params = new URLSearchParams({
+      talent_protocol_id: String(talentId),
+      page: String(page),
+      per_page: String(perPage),
+    });
+    const response = await fetch(`/api/talent-posts?${params.toString()}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data: PostsResponse = await response.json();
+
+    if (!Array.isArray(data.posts)) return [];
+
+    // Sort posts by date, newest first
+    return data.posts.sort(
+      (a, b) =>
+        new Date(b.onchain_created_at).getTime() -
+        new Date(a.onchain_created_at).getTime(),
+    );
+  } catch (error) {
+    console.error(
+      "[useProfilePostsPaginated] Client-side fetch failed:",
+      error,
+    );
+    return [];
+  }
+}
 
 export function useProfilePostsPaginated(
   talentUUID: string,
@@ -24,7 +58,7 @@ export function useProfilePostsPaginated(
     // Check cache first
     const cachedData = getCachedData<Post[]>(
       cacheKey,
-      CACHE_DURATIONS.PROFILE_DATA, // 5 minute cache for posts
+      CACHE_DURATIONS.POSTS_DATA, // Use correct cache duration (30 minutes)
     );
 
     if (cachedData && cachedData.length > 0) {

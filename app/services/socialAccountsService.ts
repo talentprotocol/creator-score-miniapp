@@ -1,4 +1,6 @@
 import { SocialAccount, TalentSocialAccount } from "./types";
+import { unstable_cache } from "next/cache";
+import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 
 function getAccountAge(ownedSince: string | null): string | null {
   if (!ownedSince) return null;
@@ -26,32 +28,21 @@ function getDisplayName(source: string): string {
 }
 
 /**
- * Fetches social accounts for a Talent Protocol ID from the API
+ * SERVER-SIDE ONLY: Internal function to fetch social accounts for a Talent Protocol ID
+ * This function should only be called from server-side code (layouts, API routes)
  */
-export async function getSocialAccountsForTalentId(
+async function getSocialAccountsForTalentIdInternal(
   talentId: string | number,
 ): Promise<SocialAccount[]> {
   try {
-    let data;
+    const { talentApiClient } = await import("@/lib/talent-api-client");
+    const params = {
+      talent_protocol_id: String(talentId),
+    };
+    const response = await talentApiClient.getSocials(params);
+    if (!response.ok) throw new Error(`Talent API error: ${response.status}`);
+    const data = await response.json();
 
-    if (typeof window !== "undefined") {
-      // Client-side: use API route
-      const params = new URLSearchParams({
-        talent_protocol_id: String(talentId),
-      });
-      const response = await fetch(`/api/talent-socials?${params.toString()}`);
-      if (!response.ok) throw new Error(`Talent API error: ${response.status}`);
-      data = await response.json();
-    } else {
-      // Server-side: call Talent API directly
-      const { talentApiClient } = await import("@/lib/talent-api-client");
-      const params = {
-        talent_protocol_id: String(talentId),
-      };
-      const response = await talentApiClient.getSocials(params);
-      if (!response.ok) throw new Error(`Talent API error: ${response.status}`);
-      data = await response.json();
-    }
     if (!Array.isArray(data.socials)) return [];
 
     // Process social accounts without merging EFP and ENS
@@ -100,7 +91,7 @@ export async function getSocialAccountsForTalentId(
         // Special handling for EFP fallback URL
         let profileUrl = s.profile_url ?? null;
         if (src === "efp" && !profileUrl && handle) {
-          profileUrl = `https://efp.app/${handle}`;
+          profileUrl = `https://ethfollow.xyz/${handle}`;
         }
 
         return {
@@ -115,7 +106,27 @@ export async function getSocialAccountsForTalentId(
       });
 
     return socials;
-  } catch {
-    return [];
+  } catch (error) {
+    console.error("Error fetching social accounts:", error);
+    throw error; // Don't return empty array silently - let the error bubble up
   }
+}
+
+/**
+ * SERVER-SIDE ONLY: Cached version of getSocialAccountsForTalentId
+ * This function should only be called from server-side code (layouts, API routes)
+ * Uses proper caching as required by coding principles
+ */
+export function getSocialAccountsForTalentId(talentId: string | number) {
+  return unstable_cache(
+    async () => getSocialAccountsForTalentIdInternal(talentId),
+    [`${CACHE_KEYS.SOCIAL_ACCOUNTS}-${talentId}`],
+    {
+      tags: [
+        `${CACHE_KEYS.SOCIAL_ACCOUNTS}-${talentId}`,
+        CACHE_KEYS.SOCIAL_ACCOUNTS,
+      ],
+      revalidate: CACHE_DURATION_1_HOUR, // Align with client-side cache duration
+    },
+  );
 }

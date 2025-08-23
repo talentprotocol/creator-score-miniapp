@@ -41,7 +41,7 @@ export async function getPerkEntryStatus(params: {
   }
 
   // Not entered, check eligibility (level >= 3)
-  const score = await getCreatorScoreForTalentId(talentUUID);
+  const score = await getCreatorScoreForTalentId(talentUUID)();
   const level = getLevelFromScore(score.score ?? 0);
   if (level < 3) {
     return {
@@ -74,7 +74,7 @@ export async function enterPerkDraw(params: {
   }
 
   // Eligibility
-  const score = await getCreatorScoreForTalentId(talentUUID);
+  const score = await getCreatorScoreForTalentId(talentUUID)();
   const level = getLevelFromScore(score.score ?? 0);
   if (level < 3) {
     return {

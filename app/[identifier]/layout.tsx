@@ -13,16 +13,12 @@ import {
   getPolUsdPrice,
   convertEthToUsdc,
   convertPolToUsdc,
-  formatK,
+  formatCompactNumber,
   formatNumberWithSuffix,
 } from "@/lib/utils";
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_10_MINUTES,
-  CACHE_DURATION_1_HOUR,
-} from "@/lib/cache-keys";
+import { CACHE_KEYS, CACHE_DURATION_30_MINUTES } from "@/lib/cache-keys";
 
 export async function generateMetadata({
   params,
@@ -52,22 +48,8 @@ export async function generateMetadata({
 
     // Fetch basic data for metadata
     const [creatorScoreData, socialAccounts, credentials] = await Promise.all([
-      unstable_cache(
-        async () => getCreatorScoreForTalentId(user.id!),
-        [`creator-score-${user.id!}`],
-        {
-          tags: [`creator-score-${user.id!}`, CACHE_KEYS.CREATOR_SCORES],
-          revalidate: CACHE_DURATION_10_MINUTES,
-        },
-      )().catch(() => ({ score: 0 })),
-      unstable_cache(
-        async () => getSocialAccountsForTalentId(user.id!),
-        [`social-accounts-${user.id!}`],
-        {
-          tags: [`social-accounts-${user.id!}`, CACHE_KEYS.SOCIAL_ACCOUNTS],
-          revalidate: CACHE_DURATION_1_HOUR,
-        },
-      )().catch((error) => {
+      getCreatorScoreForTalentId(user.id!)().catch(() => ({ score: 0 })),
+      getSocialAccountsForTalentId(user.id!)().catch((error) => {
         console.error("[Profile Layout] Data fetch failed:", error);
         throw error; // Don't cache failures - allow retries
       }),
@@ -76,7 +58,7 @@ export async function generateMetadata({
         [`credentials-${user.id!}`],
         {
           tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_10_MINUTES,
+          revalidate: CACHE_DURATION_30_MINUTES,
         },
       )().catch((error) => {
         console.error("[Profile Layout] Data fetch failed:", error);
@@ -165,10 +147,10 @@ export async function generateMetadata({
 
     return {
       title: `${displayName} - Creator Score`,
-      description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
+      description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`,
       openGraph: {
         title: `${displayName} - Creator Score`,
-        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
+        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`,
         images: [
           {
             url: dynamicImageUrl,
@@ -183,7 +165,7 @@ export async function generateMetadata({
       twitter: {
         card: "summary_large_image",
         title: `${displayName} - Creator Score`,
-        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatK(totalFollowers)} total followers`,
+        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`,
         images: [dynamicImageUrl],
       },
       // Add Farcaster frame metadata for profile pages
@@ -254,28 +236,14 @@ export default async function ProfileLayout({
   // 🚀 FETCH ALL PROFILE DATA HERE (server-side, once)
   const [creatorScoreData, socialAccounts, credentials, posts] =
     await Promise.all([
-      unstable_cache(
-        async () => getCreatorScoreForTalentId(user.id!),
-        [`creator-score-${user.id!}`],
-        {
-          tags: [`creator-score-${user.id!}`, CACHE_KEYS.CREATOR_SCORES],
-          revalidate: CACHE_DURATION_10_MINUTES,
-        },
-      )().catch(() => ({
+      getCreatorScoreForTalentId(user.id!)().catch(() => ({
         score: 0,
         level: 1,
         levelName: "Level 1",
         lastCalculatedAt: null,
         calculating: false,
       })),
-      unstable_cache(
-        async () => getSocialAccountsForTalentId(user.id!),
-        [`social-accounts-${user.id!}`],
-        {
-          tags: [`social-accounts-${user.id!}`, CACHE_KEYS.SOCIAL_ACCOUNTS],
-          revalidate: CACHE_DURATION_10_MINUTES,
-        },
-      )().catch((error) => {
+      getSocialAccountsForTalentId(user.id!)().catch((error) => {
         console.error("[Profile Layout] Social accounts fetch failed:", error);
         throw error; // Don't cache failures - allow retries
       }),
@@ -284,20 +252,13 @@ export default async function ProfileLayout({
         [`credentials-${user.id!}`],
         {
           tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_10_MINUTES,
+          revalidate: CACHE_DURATION_30_MINUTES,
         },
       )().catch((error) => {
         console.error("[Profile Layout] Data fetch failed:", error);
         throw error; // Don't cache failures - allow retries
       }),
-      unstable_cache(
-        async () => getAllPostsForTalentId(user.id!),
-        [`posts-${user.id!}`],
-        {
-          tags: [`posts-${user.id!}`, CACHE_KEYS.POSTS],
-          revalidate: CACHE_DURATION_1_HOUR,
-        },
-      )().catch((error) => {
+      getAllPostsForTalentId(user.id!)().catch((error) => {
         console.error("[Profile Layout] Data fetch failed:", error);
         throw error; // Don't cache failures - allow retries
       }),
