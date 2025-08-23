@@ -18,8 +18,39 @@ import {
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { Coins } from "lucide-react";
-import { formatTokenAmount } from "@/lib/utils";
+import { formatTokenAmount, detectClient, openExternalUrl } from "@/lib/utils";
 import { BOOST_CONFIG } from "@/lib/constants";
+
+// TALENT token CAIP-19 asset ID on Base chain
+const TALENT_TOKEN_CAIP19 =
+  "eip155:8453/erc20:0x9a33406165f562e16c3abd82fd1185482e01b49a";
+
+/**
+ * Handle token swap with Farcaster native swap or fallback to Aerodrome
+ */
+async function handleGetTalent(fallbackUrl: string): Promise<void> {
+  const client = await detectClient();
+
+  // Try Farcaster native swap first
+  if (client === "farcaster" || client === "base") {
+    try {
+      const { sdk } = await import("@farcaster/miniapp-sdk");
+
+      await sdk.actions.swapToken({
+        buyToken: TALENT_TOKEN_CAIP19,
+        // sellToken and sellAmount are optional - user can choose what to sell
+      });
+
+      return; // Success - no need for fallback
+    } catch (error) {
+      console.warn("Native swap failed, falling back to Aerodrome:", error);
+      // Fall through to external URL fallback
+    }
+  }
+
+  // Fallback to external Aerodrome URL
+  await openExternalUrl(fallbackUrl, null, client);
+}
 
 interface RewardBoostsModalProps {
   open: boolean;
@@ -40,7 +71,7 @@ function Content({
   totalUsd,
   rank,
   score,
-  getTalentUrl = "https://app.uniswap.org/swap?chain=base&inputCurrency=NATIVE&outputCurrency=0x9a33406165f562e16c3abd82fd1185482e01b49a",
+  getTalentUrl = "https://aerodrome.finance/swap?from=eth&to=0x9a33406165f562e16c3abd82fd1185482e01b49a&chain0=8453&chain1=8453",
 }: Omit<RewardBoostsModalProps, "open" | "onOpenChange">) {
   const tokenNumber =
     tokenBalance !== null && tokenBalance !== undefined ? tokenBalance : 0;
@@ -101,7 +132,9 @@ function Content({
         variant="brand-purple"
         icon={<Coins className="h-4 w-4" />}
         align="left"
-        href={getTalentUrl}
+        onClick={async () => {
+          await handleGetTalent(getTalentUrl);
+        }}
       >
         Get $TALENT
       </ButtonFullWidth>
