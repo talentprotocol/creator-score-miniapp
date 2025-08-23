@@ -30,41 +30,55 @@ const TALENT_TOKEN_CAIP19 =
  */
 async function handleGetTalent(fallbackUrl: string): Promise<void> {
   console.log("🚀 handleGetTalent called");
-  
+
   const client = await detectClient();
   console.log("🔍 Detected client:", client);
-  
-  // Try Farcaster native swap first
+
+  // Try Farcaster native swap first (but fallback quickly if issues)
   if (client === "farcaster" || client === "base") {
     try {
-      console.log("📱 Attempting native swap with TALENT token:", TALENT_TOKEN_CAIP19);
-      
+      console.log(
+        "📱 Attempting native swap with TALENT token:",
+        TALENT_TOKEN_CAIP19,
+      );
+
       const { sdk } = await import("@farcaster/miniapp-sdk");
       console.log("✅ SDK imported successfully");
-      
+
       // Ensure SDK is ready
       await sdk.actions.ready();
       console.log("✅ SDK ready");
-      
-      const result = await sdk.actions.swapToken({
+
+      // Add timeout to prevent hanging
+      const swapPromise = sdk.actions.swapToken({
         buyToken: TALENT_TOKEN_CAIP19,
         // sellToken and sellAmount are optional - user can choose what to sell
       });
       
-      console.log("✅ Native swap result:", result);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Swap timeout after 30 seconds")), 30000)
+      );
       
+      const result = await Promise.race([swapPromise, timeoutPromise]) as any;
+
+      console.log("✅ Native swap result:", result);
+
       // Check if the swap was successful
-      if (result.success) {
+      if (result?.success) {
         console.log("🎉 Swap completed successfully:", result.swap);
       } else {
-        console.warn("⚠️ Swap was not successful:", result.reason, result.error);
+        console.warn(
+          "⚠️ Swap was not successful:",
+          result?.reason,
+          result?.error,
+        );
         // Don't throw error here, let user know what happened
-        if (result.reason === "rejected_by_user") {
+        if (result?.reason === "rejected_by_user") {
           console.log("👤 User rejected the swap");
           return; // User cancelled, don't fall back to external URL
         }
         // For other failures, fall through to external URL
-        throw new Error(`Swap failed: ${result.reason}`);
+        throw new Error(`Swap failed: ${result?.reason || 'Unknown error'}`);
       }
       return; // Success - no need for fallback
     } catch (error) {
@@ -77,7 +91,7 @@ async function handleGetTalent(fallbackUrl: string): Promise<void> {
       // Fall through to external URL fallback
     }
   }
-  
+
   console.log("🔄 Falling back to Aerodrome URL:", fallbackUrl);
   // Fallback to external Aerodrome URL
   await openExternalUrl(fallbackUrl, null, client);
