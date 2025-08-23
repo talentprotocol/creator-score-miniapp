@@ -4,9 +4,7 @@ import type { UnifiedUserProfile } from "./types";
 
 const TALENT_API_BASE = "https://api.talentprotocol.com";
 
-async function fetchCreatorScore(
-  talentUuid: string,
-): Promise<{
+async function fetchCreatorScore(talentUuid: string): Promise<{
   points: number;
   lastCalculatedAt: string | null;
   calculating: boolean;

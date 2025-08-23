@@ -7,57 +7,35 @@ import type {
   HumanityCredentialsResponse,
   ProfileResponse,
 } from "./types";
-import { getLocalBaseUrl } from "@/lib/constants";
+import { unstable_cache } from "next/cache";
+import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 
 /**
- * Fetches connected accounts for a given Talent Protocol ID and groups them for settings management
+ * SERVER-SIDE ONLY: Internal function to fetch connected accounts for a given Talent Protocol ID
+ * This function should only be called from server-side code (layouts, API routes)
  */
-export async function getConnectedAccountsForTalentId(
+async function getConnectedAccountsForTalentIdInternal(
   talentId: string | number,
 ): Promise<GroupedConnectedAccounts> {
   try {
-    let accountsData: ConnectedAccountsResponse;
+    const { talentApiClient } = await import("@/lib/talent-api-client");
+
+    const [accountsResponse, profileResponse] = await Promise.all([
+      talentApiClient.getAccounts({ id: String(talentId) }),
+      talentApiClient.getProfile({ talent_protocol_id: String(talentId) }),
+    ]);
+
+    if (!accountsResponse.ok) {
+      throw new Error(`Talent API error: ${accountsResponse.status}`);
+    }
+
+    const accountsData: ConnectedAccountsResponse =
+      await accountsResponse.json();
     let profileData: ProfileResponse | null = null;
 
-    if (typeof window !== "undefined") {
-      // Client-side: use API routes
-      const baseUrl = "";
-      const [accountsResponse, profileResponse] = await Promise.all([
-        fetch(`${baseUrl}/api/talent-accounts?id=${talentId}`),
-        fetch(`${baseUrl}/api/talent-user?id=${talentId}`),
-      ]);
-
-      if (!accountsResponse.ok) {
-        throw new Error(
-          `HTTP ${accountsResponse.status}: ${accountsResponse.statusText}`,
-        );
-      }
-
-      accountsData = await accountsResponse.json();
-
-      // Get profile data for primary wallet information
-      if (profileResponse.ok) {
-        profileData = await profileResponse.json();
-      }
-    } else {
-      // Server-side: call Talent API directly
-      const { talentApiClient } = await import("@/lib/talent-api-client");
-
-      const [accountsResponse, profileResponse] = await Promise.all([
-        talentApiClient.getAccounts({ id: String(talentId) }),
-        talentApiClient.getProfile({ talent_protocol_id: String(talentId) }),
-      ]);
-
-      if (!accountsResponse.ok) {
-        throw new Error(`Talent API error: ${accountsResponse.status}`);
-      }
-
-      accountsData = await accountsResponse.json();
-
-      // Get profile data for primary wallet information
-      if (profileResponse.ok) {
-        profileData = await profileResponse.json();
-      }
+    // Get profile data for primary wallet information
+    if (profileResponse.ok) {
+      profileData = await profileResponse.json();
     }
 
     // Determine the primary wallet address (Farcaster first, then Talent)
@@ -92,19 +70,31 @@ export async function getConnectedAccountsForTalentId(
     };
   } catch (error) {
     console.error("Error fetching connected accounts:", error);
-    return {
-      social: [],
-      wallet: [],
-      primaryWalletInfo: {
-        main_wallet_address: null,
-        farcaster_primary_wallet_address: null,
-      },
-    };
+    throw error; // Don't return empty data silently - let the error bubble up
   }
 }
 
 /**
- * Get user settings (notifications, preferences, etc.)
+ * SERVER-SIDE ONLY: Cached version of getConnectedAccountsForTalentId
+ * This function should only be called from server-side code (layouts, API routes)
+ * Uses proper caching as required by coding principles
+ */
+export function getConnectedAccountsForTalentId(talentId: string | number) {
+  return unstable_cache(
+    async () => getConnectedAccountsForTalentIdInternal(talentId),
+    [`${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentId}`],
+    {
+      tags: [
+        `${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentId}`,
+        CACHE_KEYS.CONNECTED_ACCOUNTS,
+      ],
+      revalidate: CACHE_DURATION_5_MINUTES, // Align with client-side cache duration
+    },
+  );
+}
+
+/**
+ * SERVER-SIDE ONLY: Get user settings (notifications, preferences, etc.)
  */
 export async function getUserSettings(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -133,7 +123,7 @@ export async function getUserSettings(
 }
 
 /**
- * Performs account management action - Placeholder for now
+ * SERVER-SIDE ONLY: Performs account management action - Placeholder for now
  */
 export async function performAccountAction(
   talentId: string | number,
@@ -188,7 +178,7 @@ export async function performAccountAction(
 }
 
 /**
- * Updates notification settings - Placeholder integrating with webhook system
+ * SERVER-SIDE ONLY: Updates notification settings - Placeholder integrating with webhook system
  */
 export async function updateNotificationSettings(
   talentId: string | number,
@@ -214,26 +204,22 @@ export async function updateNotificationSettings(
   }
 }
 
-export async function fetchHumanityCredentials(
+/**
+ * SERVER-SIDE ONLY: Internal function to fetch humanity credentials
+ */
+async function fetchHumanityCredentialsInternal(
   talentUuid: string,
 ): Promise<HumanityCredentialsResponse> {
   try {
-    let baseUrl = "";
-    if (typeof window === "undefined") {
-      baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
-    }
+    const { talentApiClient } = await import("@/lib/talent-api-client");
 
-    const response = await fetch(
-      `${baseUrl}/api/talent-humanity?id=${talentUuid}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    // Use the talent API client directly for server-side calls
+    const response = await talentApiClient.getHumanityCredentials({
+      id: talentUuid,
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Talent API error: ${response.status}`);
     }
 
     const data: HumanityCredentialsResponse = await response.json();
@@ -242,4 +228,22 @@ export async function fetchHumanityCredentials(
     console.error("Error fetching humanity credentials:", error);
     throw error;
   }
+}
+
+/**
+ * SERVER-SIDE ONLY: Cached version of fetchHumanityCredentials
+ * This function should only be called from server-side code (layouts, API routes)
+ */
+export function fetchHumanityCredentials(talentUuid: string) {
+  return unstable_cache(
+    async () => fetchHumanityCredentialsInternal(talentUuid),
+    [`${CACHE_KEYS.HUMANITY_CREDENTIALS}-${talentUuid}`],
+    {
+      tags: [
+        `${CACHE_KEYS.HUMANITY_CREDENTIALS}-${talentUuid}`,
+        CACHE_KEYS.HUMANITY_CREDENTIALS,
+      ],
+      revalidate: CACHE_DURATION_5_MINUTES,
+    },
+  );
 }

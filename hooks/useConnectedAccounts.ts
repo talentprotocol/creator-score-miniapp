@@ -4,16 +4,227 @@ import type {
   UserSettings,
   AccountManagementAction,
   HumanityCredential,
+  ConnectedAccountsResponse,
+  ProfileResponse,
+  HumanityCredentialsResponse,
+  ConnectedAccount,
 } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import {
-  getConnectedAccountsForTalentId,
-  getUserSettings,
-  performAccountAction,
-  updateNotificationSettings,
-  fetchHumanityCredentials,
-} from "@/app/services/connectedAccountsService";
 import { CACHE_KEYS } from "@/lib/cache-keys";
+
+/**
+ * CLIENT-SIDE ONLY: Fetches connected accounts via API routes (follows coding principles)
+ */
+async function getConnectedAccountsForTalentId(
+  talentId: string | number,
+): Promise<GroupedConnectedAccounts> {
+  try {
+    const [accountsResponse, profileResponse] = await Promise.all([
+      fetch(`/api/talent-accounts?id=${talentId}`),
+      fetch(`/api/talent-user?id=${talentId}`),
+    ]);
+
+    if (!accountsResponse.ok) {
+      throw new Error(
+        `HTTP ${accountsResponse.status}: ${accountsResponse.statusText}`,
+      );
+    }
+
+    const accountsData: ConnectedAccountsResponse =
+      await accountsResponse.json();
+    let profileData: ProfileResponse | null = null;
+
+    // Get profile data for primary wallet information
+    if (profileResponse.ok) {
+      profileData = await profileResponse.json();
+    }
+
+    // Determine the primary wallet address (Farcaster first, then Talent)
+    const primaryWalletAddress =
+      profileData?.farcaster_primary_wallet_address ||
+      profileData?.main_wallet_address ||
+      null;
+
+    // Group accounts by type for settings management
+    const socialAccounts = accountsData.accounts.filter(
+      (account: ConnectedAccount) =>
+        account.source === "github" ||
+        account.source === "twitter" ||
+        account.source === "x_twitter",
+    );
+
+    const walletAccounts = accountsData.accounts
+      .filter((account: ConnectedAccount) => account.source === "wallet")
+      .map((account: ConnectedAccount) => ({
+        ...account,
+        is_primary: account.identifier === primaryWalletAddress,
+      }));
+
+    return {
+      social: socialAccounts,
+      wallet: walletAccounts,
+      primaryWalletInfo: {
+        main_wallet_address: profileData?.main_wallet_address || null,
+        farcaster_primary_wallet_address:
+          profileData?.farcaster_primary_wallet_address || null,
+      },
+    };
+  } catch (error) {
+    console.error(
+      "[useConnectedAccounts] Error fetching connected accounts:",
+      error,
+    );
+    throw error;
+  }
+}
+
+/**
+ * CLIENT-SIDE ONLY: Get user settings via API routes
+ */
+async function getUserSettings(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _talentId: string | number,
+): Promise<UserSettings> {
+  try {
+    // TODO: Implement actual API call to get user settings
+    // For now, return placeholder data
+    return {
+      email: null, // Will be fetched from Talent Protocol database
+      notifications: {
+        farcaster: true, // Default enabled
+        email: false, // Default disabled until email functionality is ready
+      },
+    };
+  } catch (error) {
+    console.error(
+      "[useConnectedAccounts] Error fetching user settings:",
+      error,
+    );
+    return {
+      email: null,
+      notifications: {
+        farcaster: false,
+        email: false,
+      },
+    };
+  }
+}
+
+/**
+ * CLIENT-SIDE ONLY: Performs account management action via API routes
+ */
+async function performAccountAction(
+  talentId: string | number,
+  action: AccountManagementAction,
+): Promise<{ success: boolean; message: string }> {
+  try {
+    // TODO: Implement actual API calls for account management
+    console.log("Performing account action:", action);
+
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    switch (action.action) {
+      case "connect":
+        return {
+          success: true,
+          message: `${action.account_type} account connection initiated`,
+        };
+      case "disconnect":
+        return {
+          success: true,
+          message: `${action.account_type} account disconnected`,
+        };
+      case "set_primary":
+        return {
+          success: true,
+          message: "Primary wallet updated",
+        };
+      case "update_email":
+        return {
+          success: true,
+          message: "Email updated successfully",
+        };
+      case "delete_account":
+        return {
+          success: true,
+          message: "Account deletion initiated",
+        };
+      default:
+        return {
+          success: false,
+          message: "Unknown action",
+        };
+    }
+  } catch (error) {
+    console.error(
+      "[useConnectedAccounts] Error performing account action:",
+      error,
+    );
+    return {
+      success: false,
+      message: "Action failed. Please try again.",
+    };
+  }
+}
+
+/**
+ * CLIENT-SIDE ONLY: Updates notification settings via API routes
+ */
+async function updateNotificationSettings(
+  talentId: string | number,
+  notifications: { farcaster: boolean; email: boolean },
+): Promise<{ success: boolean; message: string }> {
+  try {
+    // TODO: Integrate with existing webhook system in /api/webhook/route.ts
+    console.log("Updating notification settings:", notifications);
+
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    return {
+      success: true,
+      message: "Notification settings updated",
+    };
+  } catch (error) {
+    console.error(
+      "[useConnectedAccounts] Error updating notification settings:",
+      error,
+    );
+    return {
+      success: false,
+      message: "Failed to update notification settings",
+    };
+  }
+}
+
+/**
+ * CLIENT-SIDE ONLY: Fetches humanity credentials via API routes
+ */
+async function fetchHumanityCredentials(
+  talentUuid: string,
+): Promise<HumanityCredentialsResponse> {
+  try {
+    const response = await fetch(`/api/talent-humanity?id=${talentUuid}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: HumanityCredentialsResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error(
+      "[useConnectedAccounts] Error fetching humanity credentials:",
+      error,
+    );
+    throw error;
+  }
+}
 
 export function useConnectedAccounts(talentUUID: string | undefined) {
   const [accounts, setAccounts] = useState<GroupedConnectedAccounts | null>(
