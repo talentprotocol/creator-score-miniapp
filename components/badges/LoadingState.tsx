@@ -15,7 +15,7 @@ export function LoadingState() {
               <Skeleton className="h-6 w-20" />
               <Skeleton className="h-5 w-8" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-4 md:gap-x-4 md:gap-y-6">
               {[...Array(6)].map((_, j) => (
                 <div key={j} className="flex flex-col items-center gap-1">
                   <Skeleton className="w-12 h-12 rounded-full" />

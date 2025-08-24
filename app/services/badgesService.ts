@@ -6,13 +6,16 @@ import { getSocialAccountsForTalentId } from "./socialAccountsService";
 import { getCachedUserTokenBalance } from "./tokenBalanceService";
 import { getCredentialsForTalentId } from "./credentialsService";
 import { getDataPointsSum } from "./dataPointsService";
+import { OptoutService } from "./optoutService";
 
 import {
   getBadgeContent,
   getAllBadgeSections,
   formatBadgeDescription,
+  BADGE_SECTION_THRESHOLD,
 } from "@/lib/badge-content";
 import { calculateTotalRewards, getEthUsdcPrice } from "@/lib/utils";
+import { getCollectorCountCredentials } from "@/lib/total-earnings-config";
 
 /**
  * BADGES SERVICE
@@ -55,7 +58,8 @@ export interface BadgeSection {
 }
 
 export interface BadgesResponse {
-  sections: BadgeSection[];
+  sections?: BadgeSection[];
+  badges?: BadgeState[];
   summary: {
     earnedCount: number;
     totalCount: number;
@@ -367,6 +371,57 @@ async function computeWeeklyStreaksBadges(
   return [badge];
 }
 
+async function computePayItForwardBadges(
+  talentUuid: string,
+): Promise<BadgeState[]> {
+  const content = getBadgeContent("pay-it-forward");
+  if (!content) return [];
+
+  // Check if user has opted out of rewards (Pay It Forward action)
+  const hasOptedOut = await OptoutService.isOptedOut(talentUuid);
+  const currentValue = hasOptedOut ? 1 : 0;
+
+  const badge = createStreakBadge(
+    content,
+    currentValue,
+    content.levelThresholds,
+  );
+
+  return [badge];
+}
+
+async function computeTotalCollectorsBadges(
+  talentUuid: string,
+): Promise<BadgeState[]> {
+  const credentials = await getCredentialsForTalentId(talentUuid);
+  const content = getBadgeContent("total-collectors");
+
+  if (!content) return [];
+
+  // Get collector credential slugs from configuration
+  const collectorCredentialSlugs = getCollectorCountCredentials();
+
+  // Sum collectors from all specified credentials
+  let totalCollectors = 0;
+  for (const group of credentials) {
+    for (const point of group.points) {
+      if (point.slug && collectorCredentialSlugs.includes(point.slug)) {
+        const value = parseFloat(point.readable_value?.toString() ?? "0") || 0;
+        totalCollectors += value;
+      }
+    }
+  }
+
+  const badge = createDynamicBadge(
+    content,
+    totalCollectors,
+    content.levelThresholds,
+    (missing) => `${formatNumberSmart(missing)} left`,
+  );
+
+  return [badge];
+}
+
 async function computePlatformTalentBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
@@ -412,55 +467,23 @@ async function computePlatformBaseBadges(
   return [badge];
 }
 
-// TODO: WCT badges temporarily disabled - community not confirmed yet
-// async function computePlatformReownBadges(
-//   talentUuid: string,
-// ): Promise<BadgeState[]> {
-//   const content = getBadgeContent("reown");
-//   if (!content) return [];
+// Helper function to determine if sections should be used
+function shouldUseSections(badgeCount: number): boolean {
+  return badgeCount >= BADGE_SECTION_THRESHOLD;
+}
 
-//   // Get wallet_connect_airdrop_one data point
-//   // TODO: Replace with actual data point when available
-//   const reownTaskCount = await getDataPointsSum(talentUuid, [
-//     "wallet_connect_airdrop_one",
-//   ]);
-
-//   const maxLevel = getBadgeMaxLevel("reown");
-//   const uom = getBadgeUOM("reown");
-//   const badges: BadgeState[] = [];
-
-//   for (let badgeLevel = 1; badgeLevel <= maxLevel; badgeLevel++) {
-//     const threshold = getBadgeLevelThreshold("reown", badgeLevel);
-//     const levelLabel = getBadgeLevelLabel("reown", badgeLevel);
-
-//     if (!threshold || !levelLabel) continue;
-
-//     const earned = reownTaskCount >= threshold;
-//     const progress = earned
-//       ? 100
-//       : clampToPct((reownTaskCount / threshold) * 100);
-
-//     badges.push({
-//       badgeSlug: content.slug,
-//       badgeLevel: badgeLevel,
-//       title: levelLabel,
-//       description: formatBadgeDescription(content.slug, badgeLevel, levelLabel),
-//       state: (earned ? "earned" : "locked") as "earned" | "locked",
-//       progressLabel: formatProgressLabel(
-//         earned ? "earned" : "locked",
-//         content.slug,
-//         reownTaskCount,
-//         threshold,
-//         uom,
-//       ),
-//       progressPct: progress,
-//       levelArtwork: getBadgeLevelArtwork("reown", badgeLevel),
-//       categoryName: content.title,
-//     });
-//   }
-
-//   return badges;
-// }
+// Helper function to calculate section completion percentage
+export function calculateSectionCompletion(badges: BadgeState[]): number {
+  const totalLevels = badges.reduce(
+    (total, badge) => total + badge.maxLevel,
+    0,
+  );
+  const currentLevels = badges.reduce(
+    (total, badge) => total + badge.currentLevel,
+    0,
+  );
+  return totalLevels > 0 ? Math.round((currentLevels / totalLevels) * 100) : 0;
+}
 
 // Main service functions
 async function getBadgesForUserUncached(
@@ -471,44 +494,38 @@ async function getBadgesForUserUncached(
       creatorScoreBadges,
       totalEarningsBadges,
       totalFollowersBadges,
+      totalCollectorsBadges,
       dailyStreaksBadges,
       weeklyStreaksBadges,
+      payItForwardBadges,
       platformTalentBadges,
       platformBaseBadges,
-      // platformReownBadges, // Temporarily disabled
     ] = await Promise.all([
       computeCreatorScoreBadges(talentUuid),
       computeTotalEarningsBadges(talentUuid),
       computeTotalFollowersBadges(talentUuid),
+      computeTotalCollectorsBadges(talentUuid),
       computeDailyStreaksBadges(talentUuid),
       computeWeeklyStreaksBadges(talentUuid),
+      computePayItForwardBadges(talentUuid),
       computePlatformTalentBadges(talentUuid),
       computePlatformBaseBadges(talentUuid),
-      // computePlatformReownBadges(talentUuid), // Temporarily disabled
     ]);
 
-    const sections: BadgeSection[] = getAllBadgeSections().map((section) => ({
-      id: section.id,
-      title: section.title,
-      badges: [
-        ...(section.id === "creator-score" ? creatorScoreBadges : []),
-        ...(section.id === "daily-streaks" ? dailyStreaksBadges : []),
-        ...(section.id === "weekly-streaks" ? weeklyStreaksBadges : []),
-        ...(section.id === "records"
-          ? [...totalEarningsBadges, ...totalFollowersBadges]
-          : []),
-        ...(section.id === "communities"
-          ? [
-              ...platformTalentBadges,
-              ...platformBaseBadges,
-              // ...platformReownBadges, // Temporarily disabled
-            ]
-          : []),
-      ],
-    }));
+    // Collect all badges in section order
+    const allBadges = [
+      ...creatorScoreBadges,
+      ...dailyStreaksBadges,
+      ...weeklyStreaksBadges,
+      ...payItForwardBadges,
+      ...totalEarningsBadges,
+      ...totalFollowersBadges,
+      ...totalCollectorsBadges,
+      ...platformTalentBadges,
+      ...platformBaseBadges,
+    ];
 
     // Calculate summary - completion based on progress toward max level
-    const allBadges = sections.flatMap((section) => section.badges);
     const totalPossibleProgress = allBadges.reduce((total, badge) => {
       return total + badge.maxLevel;
     }, 0);
@@ -520,20 +537,59 @@ async function getBadgesForUserUncached(
         ? Math.round((currentProgress / totalPossibleProgress) * 100)
         : 0;
 
-    return {
-      sections,
-      summary: {
-        earnedCount: allBadges.filter((badge) => badge.currentLevel > 0).length,
-        totalCount: allBadges.length,
-        completionPct,
-      },
+    const summary = {
+      earnedCount: allBadges.filter((badge) => badge.currentLevel > 0).length,
+      totalCount: allBadges.length,
+      completionPct,
     };
+
+    // Decide whether to use sections based on badge count
+    if (shouldUseSections(allBadges.length)) {
+      const sections: BadgeSection[] = getAllBadgeSections()
+        .map((section) => ({
+          id: section.id,
+          title: section.title,
+          badges: [
+            ...(section.id === "trophies"
+              ? [
+                  ...creatorScoreBadges,
+                  ...dailyStreaksBadges,
+                  ...weeklyStreaksBadges,
+                  ...payItForwardBadges,
+                ]
+              : []),
+            ...(section.id === "records"
+              ? [
+                  ...totalEarningsBadges,
+                  ...totalFollowersBadges,
+                  ...totalCollectorsBadges,
+                ]
+              : []),
+            ...(section.id === "special"
+              ? [...platformTalentBadges, ...platformBaseBadges]
+              : []),
+            // accounts and content sections are empty for now
+          ],
+        }))
+        .filter((section) => section.badges.length > 0); // Hide empty sections
+
+      return {
+        sections,
+        summary,
+      };
+    } else {
+      // Return flat badge array when below threshold
+      return {
+        badges: allBadges,
+        summary,
+      };
+    }
   } catch (error) {
     console.error("[getBadgesForUser] Error:", error);
 
     // Return empty state on error
     return {
-      sections: [],
+      badges: [],
       summary: {
         earnedCount: 0,
         totalCount: 0,
@@ -571,11 +627,15 @@ export async function getBadgeDetail(
   try {
     const badgesData = await getBadgesForUser(talentUuid);
 
-    // Find the badge across all sections
+    // Find the badge across all sections or in flat array
     let badge: BadgeState | undefined;
-    for (const section of badgesData.sections) {
-      badge = section.badges.find((b) => b.badgeSlug === badgeSlug);
-      if (badge) break;
+    if (badgesData.sections) {
+      for (const section of badgesData.sections) {
+        badge = section.badges.find((b) => b.badgeSlug === badgeSlug);
+        if (badge) break;
+      }
+    } else if (badgesData.badges) {
+      badge = badgesData.badges.find((b) => b.badgeSlug === badgeSlug);
     }
 
     return badge || null;

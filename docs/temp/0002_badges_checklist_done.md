@@ -1,17 +1,21 @@
 ## Creator Score Badges — Implementation Checklist (0002)
 
-### Setup & scaffolding
-- [x] Create `app/services/badgesService.ts` with `getBadgesForUser(talentUuid)` and `getBadgeDetail(talentUuid, badgeSlug)` (use `unstable_cache`).
-- [x] Add local helpers in service: `parseNumber`, `formatNumber`, `nextThresholdProgress`, `formatValueLabel`.
-- [x] Ensure architecture follows Hook → API Route → Service → External API pattern.
-- [x] Wire user resolution via `lib/user-resolver.ts` and `lib/user-context.ts` patterns.
-- [x] Use 5min cache duration and proper keys from `lib/cache-keys.ts`.
+### Setup & scaffolding  
+- [x] Create `app/services/badgesService.ts` with dynamic badge system using single `BadgeState` per category
+- [x] Implement conditional sections with `BADGE_SECTION_THRESHOLD = 18` for automatic layout switching  
+- [x] Add `createDynamicBadge()` helper for unified badge computation across all categories
+- [x] Ensure architecture follows Hook → API Route → Service → External API pattern
+- [x] Wire user resolution via `lib/user-resolver.ts` and `lib/user-context.ts` patterns
+- [x] Use 5min cache duration and proper keys from `lib/cache-keys.ts`
 
 ### Data integrations
 - [x] Wire `getCreatorScoreForTalentId` for Creator Score levels using `LEVEL_RANGES` from `lib/constants.ts`.
 - [x] Wire `getSocialAccountsForTalentId` and sum `followerCount` across socials.
 - [x] Wire `getCachedUserTokenBalance` for `$TALENT` balance thresholds.
-- [x] Wire `getCredentialsForTalentId` for Total Earnings (creator-only slugs from `lib/total-earnings-config.ts`) and Base onchain txs (`onchain_out_transactions`).
+- [x] Wire `getCredentialsForTalentId` for Total Earnings and Base onchain txs.
+- [x] Implement Pay It Forward badge using `OptoutService.isOptedOut()`.
+- [x] Implement Total Collectors badge using 5 collector credential sources.
+- [x] Abstract collector credentials in `total-earnings-config.ts` for centralized management.
 - [x] Respect project rule: ignore `points_calculation_logic` everywhere; use top-level credential fields only.
 
 ### API routes
@@ -25,14 +29,20 @@
 - [x] Add skeleton loaders and error boundaries per coding principles.****
 
 ### UI components
-- [x] Update `components/badges/BadgeCard.tsx` to accept `state (earned|locked)`, `artworkUrl`, and optional `progressPct`.
-- [x] Update `components/badges/BadgeModal.tsx` to show detail: `valueLabel`, `progressPct`, `artwork { earnedUrl, lockedUrl }`, and CTA if applicable.
-- [x] Use `components/ui/typography.tsx` for all badge text (titles, descriptions, values).
-- [x] Implement semantic colors for UI elements (custom artwork handles badge colors).
+- [x] Update `components/badges/BadgeCard.tsx` for dynamic badge display with `currentLevel` and `progressPct`
+- [x] Update `components/badges/BadgeModal.tsx` with simplified dynamic badge details and current level indicators
+- [x] Implement 3-column grid layout (`grid-cols-3`) on all screens with responsive gap spacing
+- [x] Add conditional section rendering: flat grid below 18 badges, sections above threshold
+- [x] Replace badge counts with completion percentages in all UI text
+- [x] Use `components/ui/typography.tsx` for all badge text (titles, descriptions, values)
+- [x] Implement semantic colors for UI elements (custom artwork handles badge colors)
 
 ### Config & assets
-- [x] Replace mocks in `lib/badge-data.ts` with config map (badge slugs, categories, thresholds, artwork paths).
-- [x] Add placeholder artwork under `public/images/badges/<badge-slug>/...` (earned/locked variants) with graceful fallback.
+- [x] Restructure sections: Trophies, Records, Special, Accounts (hidden), Content (hidden).
+- [x] Add Pay It Forward and Total Collectors badge content in `lib/badge-content.ts`.
+- [x] Create placeholder artwork for new badges (Pay It Forward, Total Collectors).
+- [x] Remove old WalletConnect/Reown implementation and artwork.
+- [x] Improve badge descriptions for better user understanding.
 
 ### Design-system & analytics
 - [x] Verify semantic colors, Typography, and mobile-first layout; no brand colors on icons; interactions on click.

@@ -1,13 +1,20 @@
 ## Creator Score Badges — Post-MVP Implementation Checklist (0002)
 
-### 🎯 Phase 2: Platform Badges & Artwork
-- [ ] **Restore platform badges**: Uncomment and test `computePlatformTalentBadges` and `computePlatformBaseBadges` functions in `app/services/badgesService.ts`
-- [ ] **Complete artwork set**: Design and implement all missing badge artwork files following the established naming convention
-  - [ ] Platform Talent badges: `platform-talent-100-earned.png`, `platform-talent-1k-earned.png`, `platform-talent-10k-earned.png` (and locked variants)
-  - [ ] Platform Base badges: `platform-base-l1-earned.png`, `platform-base-l2-earned.png`, `platform-base-l3-earned.png` (and locked variants)
-- [ ] **Artwork validation**: Add automated checks to ensure all badge artwork files exist before enabling platform badges
-- [ ] **Test platform badge computation**: Verify $TALENT balance and Base transaction badge logic works correctly
-- [ ] **Update badge sections**: Re-enable platforms section in `badgesService.ts` when artwork is ready
+**✅ COMPLETED: New Badge Categorization System**
+- Single badge per category with 6 dynamic states (replaced 36+ individual badges)
+- Conditional sections with 18-badge threshold for automatic layout switching  
+- 3-column grid layout on all screens with percentage-only UI
+- Unified badge computation via `createDynamicBadge()` helper
+- User-centric sections: Trophies, Records, Special (Accounts/Content hidden when empty)
+- New badges: Pay It Forward (opt-out based), Total Collectors (5 credential sources)
+- Clean architecture: removed old WalletConnect code, abstracted collector credentials
+- Placeholder artwork in place for new badges (Pay It Forward, Total Collectors)
+
+### 🎯 Phase 2: WalletConnect & Custom Artwork
+- [ ] **WalletConnect badge**: Implement new version using Neynar API data (old implementation removed)
+- [ ] **Custom artwork**: Design and replace placeholder artwork for Pay It Forward and Total Collectors badges
+- [ ] **Artwork validation**: Add automated checks to ensure all badge artwork files exist
+- [ ] **Test new badges**: Verify Pay It Forward (opt-out) and Total Collectors (5 credentials) logic
 
 ### 🎬 Phase 2.5: Badge Animation & Polish
 - [ ] **Level-up animations**: Implement celebration animations when users open badge detail modal for the first time after leveling up
@@ -154,8 +161,8 @@
 ---
 
 ## 📝 Notes
-- **Priority order**: Phase 2 (Platform Badges) should be completed first as it unblocks the full badge experience
-- **Dependencies**: Public routes (Phase 3) depend on platform badges being complete
+- **Priority order**: Phase 2 (WalletConnect & Custom Artwork) should be completed first to finalize the badge experience
+- **Dependencies**: Public routes (Phase 3) depend on all badges having proper artwork and implementations
 - **Testing**: Each phase should include comprehensive testing before moving to the next
 - **User feedback**: Collect user feedback throughout implementation to guide feature priorities
 - **Performance**: Monitor performance impact of each new feature and optimize as needed

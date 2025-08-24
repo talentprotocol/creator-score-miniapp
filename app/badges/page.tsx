@@ -3,6 +3,7 @@
 import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import type { BadgeState } from "@/app/services/badgesService";
+import { calculateSectionCompletion } from "@/app/services/badgesService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -95,11 +96,16 @@ export default function BadgesPage() {
     }
   };
 
-  /** Filter sections based on selection */
-  const filteredSections =
-    badgesData?.sections.filter((section) =>
-      selectedSections.includes(section.id),
-    ) || [];
+  /** Filter sections based on selection (only when using sections) */
+  const filteredSections = badgesData?.sections
+    ? badgesData.sections.filter((section) =>
+        selectedSections.includes(section.id),
+      )
+    : [];
+
+  /** Determine if we're using sections or flat layout */
+  const usingSections = badgesData?.sections && badgesData.sections.length > 0;
+  const allBadges = badgesData?.badges || [];
 
   // Show loading while resolving user
   if (userLoading) {
@@ -119,7 +125,10 @@ export default function BadgesPage() {
     return <ErrorState error={error} />;
   }
 
-  if (!badgesData || !badgesData.sections?.length) {
+  if (
+    !badgesData ||
+    (!badgesData.sections?.length && !badgesData.badges?.length)
+  ) {
     return <ErrorState error="No badge data available" />;
   }
 
@@ -136,70 +145,92 @@ export default function BadgesPage() {
               {badgesData.summary.completionPct}% completed
             </Typography>
           </div>
-          <Button
-            variant="ghost"
-            onClick={() => setFilterModalOpen(true)}
-            className="h-10 w-10 p-0"
-          >
-            <Settings2 className="h-6 w-6 text-foreground" />
-          </Button>
+          {usingSections && (
+            <Button
+              variant="ghost"
+              onClick={() => setFilterModalOpen(true)}
+              className="h-10 w-10 p-0"
+            >
+              <Settings2 className="h-6 w-6 text-foreground" />
+            </Button>
+          )}
         </div>
       </Section>
 
-      {/* Content sections with interleaved dividers */}
-      {filteredSections.map((section, sectionIndex) => (
-        <div key={section.id}>
-          <Section variant="content">
-            <div className="space-y-8">
-              <div className="badge-section">
-                {/* Section title with count */}
-                <Typography as="h2" size="lg" weight="bold" className="mb-6">
-                  {section.title} (
-                  {section.badges.reduce(
-                    (total, badge) => total + badge.currentLevel,
-                    0,
-                  )}
-                  /
-                  {section.badges.reduce(
-                    (total, badge) => total + badge.maxLevel,
-                    0,
-                  )}
-                  )
-                </Typography>
+      {/* Conditional rendering: sections vs flat grid */}
+      {usingSections ? (
+        /* Content sections with interleaved dividers */
+        filteredSections.map((section, sectionIndex) => {
+          const sectionCompletion = calculateSectionCompletion(section.badges);
+          return (
+            <div key={section.id}>
+              <Section variant="content">
+                <div className="space-y-8">
+                  <div className="badge-section">
+                    {/* Section title with percentage */}
+                    <Typography
+                      as="h2"
+                      size="lg"
+                      weight="bold"
+                      className="mb-2"
+                    >
+                      {section.title}
+                    </Typography>
+                    <Typography size="sm" color="muted" className="mb-6">
+                      {sectionCompletion}% complete
+                    </Typography>
 
-                {/* Badge grid - 2 columns for better mobile experience */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                  {section.badges.map((badge, index) => (
-                    <BadgeCard
-                      key={badge.badgeSlug}
-                      badge={badge}
-                      onBadgeClick={handleBadgeClick}
-                      priority={index < 4} // Prioritize first 4 badges in each section
-                    />
-                  ))}
+                    {/* Badge grid - 3 columns on all screens */}
+                    <div className="grid grid-cols-3 gap-x-3 gap-y-4 md:gap-x-4 md:gap-y-6">
+                      {section.badges.map((badge, index) => (
+                        <BadgeCard
+                          key={badge.badgeSlug}
+                          badge={badge}
+                          onBadgeClick={handleBadgeClick}
+                          priority={index < 6} // Prioritize first 6 badges in each section
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Section>
+              </Section>
 
-          {/* Full-width dividing line after each section (except the last) */}
-          {sectionIndex < filteredSections.length - 1 && (
-            <Section variant="full-width">
-              <div className="h-px bg-border mt-8 mb-4" />
-            </Section>
-          )}
-        </div>
-      ))}
+              {/* Full-width dividing line after each section (except the last) */}
+              {sectionIndex < filteredSections.length - 1 && (
+                <Section variant="full-width">
+                  <div className="h-px bg-border mt-8 mb-4" />
+                </Section>
+              )}
+            </div>
+          );
+        })
+      ) : (
+        /* Single grid layout for badges below threshold */
+        <Section variant="content">
+          <div className="grid grid-cols-3 gap-x-3 gap-y-4 md:gap-x-4 md:gap-y-6">
+            {allBadges.map((badge, index) => (
+              <BadgeCard
+                key={badge.badgeSlug}
+                badge={badge}
+                onBadgeClick={handleBadgeClick}
+                priority={index < 9} // Prioritize first 9 badges (3x3 grid)
+              />
+            ))}
+          </div>
+        </Section>
+      )}
 
       <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
 
-      <BadgeFilterModal
-        open={filterModalOpen}
-        onOpenChange={setFilterModalOpen}
-        sections={availableSections}
-        selectedSections={selectedSections}
-        onSectionToggle={handleSectionToggle}
-      />
+      {usingSections && (
+        <BadgeFilterModal
+          open={filterModalOpen}
+          onOpenChange={setFilterModalOpen}
+          sections={availableSections}
+          selectedSections={selectedSections}
+          onSectionToggle={handleSectionToggle}
+        />
+      )}
     </PageContainer>
   );
 }

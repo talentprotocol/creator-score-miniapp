@@ -91,8 +91,8 @@
 - **Business Logic**: `badgesService.ts` focuses purely on computation and data transformation
 
 ### Badge Structure & Hierarchy
-- **Sections** (Top level): Creator Score, Streaks, Records, Communities
-- **Badges** (Second level): Creator Score, Total Earnings, Total Followers, Talent Protocol, Base, Streaks
+- **Sections** (Top level): Trophies, Records, Special, Accounts (hidden), Content (hidden)
+- **Badges** (Second level): Creator Score, Daily/Weekly Streaks, Pay It Forward, Total Earnings/Followers/Collectors, Talent Protocol, Base
 - **Levels** (Third level): Threshold-based naming (e.g., "100", "500", "1K" for Creator Score; "1 Day", "2 Days" for Streaks)
 
 ### Canonical Badge Terminology
@@ -125,15 +125,20 @@
 ## Implementation Deltas & Discoveries
 
 ### 🔧 Technical Adjustments Made
-- **Streaks restructured**: Split single "streaks" badge into two separate badges:
-  - `daily-streaks`: 6 levels (1-6 days), UOM: "days"
-  - `weekly-streaks`: 6 levels (1-6 weeks), UOM: "weeks"
-- **Artwork organization**: Each badge has its own folder (`daily-streaks/`, `weekly-streaks/`) with dedicated artwork files
-- **Content centralization**: Eliminated hardcoded content duplication - all badge content now centralized in `lib/badge-content.ts`
-- **Service architecture**: Badge service now uses `getAllBadgeSections()` to derive section structure dynamically
+- **Section restructuring**: Renamed sections to user-centric categories:
+  - `trophies`: Creator Score, Daily/Weekly Streaks, Pay It Forward
+  - `records`: Total Earnings, Total Followers, Total Collectors
+  - `special`: Talent Protocol, Base Network (sponsored badges)
+- **New badges added**: Pay It Forward (opt-out based), Total Collectors (aggregated from 5 credential sources)
+- **WalletConnect cleanup**: Removed all old commented implementation code
+- **Credential abstraction**: Moved collector credentials to `total-earnings-config.ts` for centralized management
+- **Content centralization**: All badge content now centralized in `lib/badge-content.ts` with improved descriptions
 
-### 🎨 UI/UX Improvements
-- **Responsive badge grid**: Implemented 2-column grid on mobile for better touch targets
+### 🎨 UI/UX Improvements  
+- **Dynamic badge system**: Single badge per category with 6 dynamic states (replaced 36+ individual badges)
+- **Conditional sections**: 18-badge threshold for section activation (flat grid below threshold)
+- **3-column grid**: Consistent 3-column layout on all screens with responsive gap spacing
+- **Percentage-only UI**: Removed badge counts, show only completion percentages in headers
 - **Progress visualization**: Added thin progress bars for locked badges showing completion percentage
 - **Error handling**: Implemented comprehensive error states with skeleton loaders and error boundaries
 - **Typography consistency**: All text now uses the `Typography` component as planned
@@ -149,17 +154,18 @@
 - **Efficient data fetching**: Single API call loads all badge data, reducing network overhead
 
 ### 🏗️ Architecture Improvements
+- **Dynamic badge approach**: Single `BadgeState` per category with computed levels and artwork URLs
+- **Conditional sections**: `BADGE_SECTION_THRESHOLD = 18` controls section vs. flat layout
+- **Dual response format**: `BadgesResponse` supports both `sections?` and `badges?` properties
 - **Single source of truth**: All badge content, titles, and descriptions centralized in `badge-content.ts`
-- **Dynamic section generation**: Service automatically derives section structure from content configuration
-- **No hardcoded duplication**: Section titles, IDs, and descriptions managed in one place
 - **Scalable structure**: Adding new badge sections automatically updates all consumers
 
 ## Follow-Up Plan (Post-MVP)
 
-### 🎯 Phase 2: Platform Badges & Artwork
-- **Restore platform badges**: Uncomment and test `computePlatformTalentBadges` and `computePlatformBaseBadges` functions.
-- **Complete artwork set**: Design and implement all missing badge artwork files following the established naming convention.
-- **Artwork validation**: Add automated checks to ensure all badge artwork files exist before enabling platform badges.
+### 🎯 Phase 2: New Badge Implementations & Artwork
+- **WalletConnect badge**: Implement new version using Neynar API data (old implementation removed)
+- **Custom artwork**: Design artwork for Pay It Forward and Total Collectors badges (currently using placeholders)
+- **Artwork validation**: Add automated checks to ensure all badge artwork files exist
 
 ### 🌐 Phase 3: Public Routes & Sharing
 - **Public badge pages**: Implement `app/badges/[badgeSlug]/page.tsx` for public badge viewing.

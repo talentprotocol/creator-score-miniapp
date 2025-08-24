@@ -33,30 +33,34 @@ export interface BadgeSectionContent {
 // Top-level Section definitions (UI groups)
 export const BADGE_SECTIONS: BadgeSectionContent[] = [
   {
-    id: "creator-score",
-    title: "Creator Score",
-    description: "Achievement levels based on your Creator Score points",
-  },
-  {
-    id: "daily-streaks",
-    title: "Daily Streaks",
-    description: "Daily activity and consistency milestones",
-  },
-  {
-    id: "weekly-streaks",
-    title: "Weekly Streaks",
-    description: "Weekly activity and consistency milestones",
+    id: "trophies",
+    title: "Trophies",
+    description:
+      "Celebrate your dedication with badges for consistent app engagement",
   },
   {
     id: "records",
     title: "Records",
     description:
-      "Cross-platform aggregate metrics such as earnings and followers",
+      "Unlock badges based on your quantitative creator metrics and milestones",
   },
   {
-    id: "communities",
-    title: "Communities",
-    description: "Activity and impact on specific creator platforms.",
+    id: "special",
+    title: "Special",
+    description:
+      "Exclusive badges with rewards from brand partnerships and special events",
+  },
+  {
+    id: "accounts",
+    title: "Accounts",
+    description:
+      "Badges for building a presence across popular creator platforms",
+  },
+  {
+    id: "content",
+    title: "Content",
+    description:
+      "Badges for creator earnings coming from different types of creative work",
   },
 ];
 
@@ -116,15 +120,15 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "total-earnings",
     title: "Total Earnings",
     description:
-      "Unlock 6 Total Earnings badges by earning from $10 (Level 1) to $100K+ (Level 6)!",
+      "Track your Total Earnings with badges from $10 (Level 1) to $100K+ (Level 6).",
     levelThresholds: [10, 100, 1000, 10000, 25000, 100000],
     levelLabels: [
-      "$10 Earned",
-      "$100 Earned",
-      "$1K Earned",
-      "$10K Earned",
-      "$25K Earned",
-      "$100K Earned",
+      "$10+ Earned",
+      "$100+ Earned",
+      "$1K+ Earned",
+      "$10K+ Earned",
+      "$25K+ Earned",
+      "$100K+ Earned",
     ],
     uom: "USD",
   },
@@ -133,17 +137,44 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "total-followers",
     title: "Total Followers",
     description:
-      "Grow your audience from 100 to 250K+ followers to unlock all 6 Total Followers badge levels!",
+      "Grow your audience from 100 to 250K+ Total Followers to unlock all 6 badge levels!",
     levelThresholds: [100, 1000, 10000, 25000, 100000, 250000],
     levelLabels: [
-      "100 Followers",
-      "1K Followers",
-      "10K Followers",
-      "25K Followers",
-      "100K Followers",
-      "250K Followers",
+      "100+ Followers",
+      "1K+ Followers",
+      "10K+ Followers",
+      "25K+ Followers",
+      "100K+ Followers",
+      "250K+ Followers",
     ],
     uom: "followers",
+  },
+
+  "total-collectors": {
+    slug: "total-collectors",
+    title: "Total Collectors",
+    description:
+      "Build your collector base from 10 to 10K+ Total Collectors across all platforms!",
+    levelThresholds: [10, 50, 100, 500, 1000, 10000],
+    levelLabels: [
+      "10+ Collectors",
+      "50+ Collectors",
+      "100+ Collectors",
+      "500+ Collectors",
+      "1K+ Collectors",
+      "10K+ Collectors",
+    ],
+    uom: "collectors",
+  },
+
+  "pay-it-forward": {
+    slug: "pay-it-forward",
+    title: "Pay It Forward",
+    description:
+      "Help grow the creator economy by opting out of rewards and letting them flow to emerging creators!",
+    levelThresholds: [1],
+    levelLabels: ["Community Champion"],
+    uom: "actions",
   },
 
   talent: {
@@ -152,7 +183,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     description:
       "Unlock 3 Talent Protocol badges: 100, 1K, and 10K+ $TALENT tokens!",
     levelThresholds: [100, 1000, 10000],
-    levelLabels: ["100 $TALENT", "1K $TALENT", "10K $TALENT"],
+    levelLabels: ["100+ $TALENT", "1K+ $TALENT", "10K+ $TALENT"],
     uom: "$TALENT",
   },
 
@@ -161,20 +192,13 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     title: "Base Network",
     description: "Earn 3 Base badges by making 10, 100, and 1K+ transactions!",
     levelThresholds: [10, 100, 1000],
-    levelLabels: ["10 Base txs", "100 Base txs", "1K Base txs"],
+    levelLabels: ["10+ Base txs", "100+ Base txs", "1K+ Base txs"],
     uom: "transactions",
   },
-
-  // TODO: WCT badges temporarily disabled - community not confirmed yet
-  // reown: {
-  //   slug: "reown",
-  //   title: "Reown",
-  //   description: "Earn {amount} $WCT from wallet connect airdrop",
-  //   levelThresholds: [1, 10, 100],
-  //   levelLabels: ["1 $WCT", "10 $WCT", "100 $WCT"],
-  //   uom: "$WCT",
-  // },
 };
+
+// Badge section threshold configuration
+export const BADGE_SECTION_THRESHOLD = 18;
 
 // Helper functions for content management
 export function getBadgeContent(slug: string): BadgeContent | undefined {

@@ -68,9 +68,15 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     // Find the badge by slug
     let badge = null;
-    for (const section of badgesData.sections) {
-      badge = section.badges.find((b) => b.badgeSlug === badgeSlug);
-      if (badge) break;
+    if (badgesData.sections) {
+      // Search in sections
+      for (const section of badgesData.sections) {
+        badge = section.badges.find((b) => b.badgeSlug === badgeSlug);
+        if (badge) break;
+      }
+    } else if (badgesData.badges) {
+      // Search in flat badge array
+      badge = badgesData.badges.find((b) => b.badgeSlug === badgeSlug);
     }
 
     if (!badge) {
