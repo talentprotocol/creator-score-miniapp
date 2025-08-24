@@ -351,7 +351,7 @@ function LeaderboardContent() {
               title: "Creator Perk",
               description:
                 perkStatus?.status === "closed"
-                  ? `Entries closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                  ? `Draw closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
                   : perkStatus?.status === "entered"
                     ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
                     : "Get a free Screen Studio subscription.",

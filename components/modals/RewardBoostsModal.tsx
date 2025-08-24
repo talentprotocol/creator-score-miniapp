@@ -26,7 +26,7 @@ const TALENT_TOKEN_CAIP19 =
   "eip155:8453/erc20:0x9a33406165f562e16c3abd82fd1185482e01b49a";
 
 // Swap states for user feedback
-type SwapState = 'idle' | 'loading' | 'success' | 'error' | 'rejected';
+type SwapState = "idle" | "loading" | "success" | "error" | "rejected";
 
 interface SwapResult {
   state: SwapState;
@@ -39,15 +39,15 @@ interface SwapResult {
  */
 async function handleGetTalent(
   fallbackUrl: string,
-  onStateChange: (result: SwapResult) => void
+  onStateChange: (result: SwapResult) => void,
 ): Promise<void> {
   const client = await detectClient();
 
   // Try Farcaster native swap first
   if (client === "farcaster" || client === "base") {
     try {
-      onStateChange({ state: 'loading' });
-      
+      onStateChange({ state: "loading" });
+
       const { sdk } = await import("@farcaster/miniapp-sdk");
 
       const result = await sdk.actions.swapToken({
@@ -57,18 +57,19 @@ async function handleGetTalent(
 
       if (result.success) {
         onStateChange({
-          state: 'success',
-          message: `Swap completed successfully! ${result.swap.transactions.length} transaction(s) executed.`,
-          transactions: result.swap.transactions
+          state: "success",
+          message: `${result.swap.transactions.length} transaction(s) executed.`,
+          transactions: result.swap.transactions,
         });
       } else {
-        const errorMessage = result.reason === 'rejected_by_user' 
-          ? 'Swap was cancelled by user'
-          : `Swap failed: ${result.error?.message || 'Unknown error'}`;
-        
+        const errorMessage =
+          result.reason === "rejected_by_user"
+            ? "Swap was cancelled by user"
+            : `Swap failed: ${result.error?.message || "Unknown error"}`;
+
         onStateChange({
-          state: result.reason === 'rejected_by_user' ? 'rejected' : 'error',
-          message: errorMessage
+          state: result.reason === "rejected_by_user" ? "rejected" : "error",
+          message: errorMessage,
         });
       }
 
@@ -76,10 +77,10 @@ async function handleGetTalent(
     } catch (error) {
       console.warn("Native swap failed, falling back to Aerodrome:", error);
       onStateChange({
-        state: 'error',
-        message: 'Native swap unavailable, redirecting to Aerodrome...'
+        state: "error",
+        message: "Native swap unavailable, redirecting to Aerodrome...",
       });
-      
+
       // Small delay to show the message before redirect
       setTimeout(async () => {
         await openExternalUrl(fallbackUrl, null, client);
@@ -113,8 +114,10 @@ function Content({
   score,
   getTalentUrl = "https://aerodrome.finance/swap?from=eth&to=0x9a33406165f562e16c3abd82fd1185482e01b49a&chain0=8453&chain1=8453",
 }: Omit<RewardBoostsModalProps, "open" | "onOpenChange">) {
-  const [swapResult, setSwapResult] = React.useState<SwapResult>({ state: 'idle' });
-  
+  const [swapResult, setSwapResult] = React.useState<SwapResult>({
+    state: "idle",
+  });
+
   const tokenNumber =
     tokenBalance !== null && tokenBalance !== undefined ? tokenBalance : 0;
   const tokenDisplay = `${formatTokenAmount(tokenNumber)}`;
@@ -131,7 +134,7 @@ function Content({
   };
 
   const resetSwapState = () => {
-    setSwapResult({ state: 'idle' });
+    setSwapResult({ state: "idle" });
   };
 
   return (
@@ -179,31 +182,40 @@ function Content({
       </div>
 
       {/* Swap feedback message */}
-      {swapResult.state !== 'idle' && (
-        <div className={`p-4 rounded-lg border ${
-          swapResult.state === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : swapResult.state === 'loading'
-            ? 'bg-blue-50 border-blue-200 text-blue-800'
-            : swapResult.state === 'rejected'
-            ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
+      {swapResult.state !== "idle" && (
+        <div
+          className={`p-4 rounded-lg border ${
+            swapResult.state === "success"
+              ? "bg-green-50 border-green-200 text-green-800"
+              : swapResult.state === "loading"
+                ? "bg-blue-50 border-blue-200 text-blue-800"
+                : swapResult.state === "rejected"
+                  ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+          }`}
+        >
           <div className="flex items-center gap-2">
-            {swapResult.state === 'loading' && <Loader2 className="h-4 w-4 animate-spin" />}
-            {swapResult.state === 'success' && <CheckCircle className="h-4 w-4" />}
-            {(swapResult.state === 'error' || swapResult.state === 'rejected') && <XCircle className="h-4 w-4" />}
+            {swapResult.state === "loading" && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
+            {swapResult.state === "success" && (
+              <CheckCircle className="h-4 w-4" />
+            )}
+            {(swapResult.state === "error" ||
+              swapResult.state === "rejected") && (
+              <XCircle className="h-4 w-4" />
+            )}
             <span className="text-sm font-medium">
-              {swapResult.state === 'loading' && 'Processing swap...'}
-              {swapResult.state === 'success' && 'Swap Successful!'}
-              {swapResult.state === 'error' && 'Swap Failed'}
-              {swapResult.state === 'rejected' && 'Swap Cancelled'}
+              {swapResult.state === "loading" && "Processing swap..."}
+              {swapResult.state === "success" && "Swap Successful!"}
+              {swapResult.state === "error" && "Swap Failed"}
+              {swapResult.state === "rejected" && "Swap Cancelled"}
             </span>
           </div>
           {swapResult.message && (
             <p className="text-xs mt-1 opacity-80">{swapResult.message}</p>
           )}
-          {swapResult.state !== 'loading' && (
+          {swapResult.state !== "loading" && (
             <button
               onClick={resetSwapState}
               className="text-xs underline mt-2 opacity-70 hover:opacity-100"
@@ -216,12 +228,18 @@ function Content({
 
       <ButtonFullWidth
         variant="brand-purple"
-        icon={swapResult.state === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
+        icon={
+          swapResult.state === "loading" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Coins className="h-4 w-4" />
+          )
+        }
         align="left"
         onClick={handleSwapClick}
-        disabled={swapResult.state === 'loading'}
+        disabled={swapResult.state === "loading"}
       >
-        {swapResult.state === 'loading' ? 'Processing...' : 'Get $TALENT'}
+        {swapResult.state === "loading" ? "Processing..." : "Get $TALENT"}
       </ButtonFullWidth>
     </div>
   );
