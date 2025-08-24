@@ -3,7 +3,6 @@
 import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import type { BadgeState } from "@/app/services/badgesService";
-import { calculateSectionCompletion } from "@/app/services/badgesService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -19,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Settings2 } from "lucide-react";
 import { getAllBadgeSections } from "@/lib/badge-content";
+import { calculateSectionCompletion } from "@/lib/utils";
 
 /**
  * BADGES PAGE

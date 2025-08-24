@@ -1,4 +1,4 @@
-# Creator Score Mini App – Architecture & Core Principles
+# Creator Score App – Architecture & Core Principles
 
 ## PRODUCT PRINCIPLES
 

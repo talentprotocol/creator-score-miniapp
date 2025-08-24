@@ -188,7 +188,7 @@ export function PayItForwardSection() {
    */
   const handleShareFarcaster = useCallback(async () => {
     const profileUrl = `https://creatorscore.app/${talentUuid}`;
-    const farcasterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score mini app, built by @talent 👇`;
+    const farcasterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score app, built by @talent 👇`;
 
     // Track Farcaster share
     posthog?.capture("pay_it_forward_share_farcaster_clicked", {

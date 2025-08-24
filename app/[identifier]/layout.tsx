@@ -203,7 +203,7 @@ export async function generateMetadata({
             title: "Check Your Score",
             action: {
               type: "launch_frame",
-              name: "Creator Score Mini App",
+              name: "Creator Score App",
               url: canonicalUrl,
               splashImageUrl: `${canonicalUrl}/splash.png`,
               splashBackgroundColor: "#C79AF6",

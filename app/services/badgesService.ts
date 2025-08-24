@@ -472,18 +472,7 @@ function shouldUseSections(badgeCount: number): boolean {
   return badgeCount >= BADGE_SECTION_THRESHOLD;
 }
 
-// Helper function to calculate section completion percentage
-export function calculateSectionCompletion(badges: BadgeState[]): number {
-  const totalLevels = badges.reduce(
-    (total, badge) => total + badge.maxLevel,
-    0,
-  );
-  const currentLevels = badges.reduce(
-    (total, badge) => total + badge.currentLevel,
-    0,
-  );
-  return totalLevels > 0 ? Math.round((currentLevels / totalLevels) * 100) : 0;
-}
+
 
 // Main service functions
 async function getBadgesForUserUncached(

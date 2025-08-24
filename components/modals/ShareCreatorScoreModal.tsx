@@ -218,7 +218,7 @@ export function ShareCreatorScoreModal({
               const client = await detectClient(context);
               const identifier = handle;
               const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
-              const farcasterText = `Check @${identifier}'s reputation as an onchain creator:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+              const farcasterText = `Check @${identifier}'s reputation as an onchain creator:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nSee the full profile in the Creator Score app, built by @talent 👇`;
 
               if (client === "farcaster") {
                 try {

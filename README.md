@@ -1,4 +1,4 @@
-# Creator Score MiniApp
+# Creator Score App
 
 A Farcaster MiniApp that shows creator scores, leaderboards, and rewards.
 

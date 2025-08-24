@@ -1,4 +1,4 @@
-# Creator Score Mini App - Design System
+# Creator Score App - Design System
 
 ## Core Principles
 

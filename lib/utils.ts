@@ -808,3 +808,19 @@ export function parseFormattedNumber(value: string): number {
   const num = parseFloat(trimmed);
   return isNaN(num) ? 0 : num;
 }
+
+/**
+ * Calculate section completion percentage for badges
+ * Pure utility function safe for client-side use
+ */
+export function calculateSectionCompletion(badges: Array<{ currentLevel: number; maxLevel: number }>): number {
+  const totalLevels = badges.reduce(
+    (total, badge) => total + badge.maxLevel,
+    0,
+  );
+  const currentLevels = badges.reduce(
+    (total, badge) => total + badge.currentLevel,
+    0,
+  );
+  return totalLevels > 0 ? Math.round((currentLevels / totalLevels) * 100) : 0;
+}
