@@ -179,28 +179,28 @@ export default function BadgesPage() {
                     )
                   </Typography>
 
-                    {/* Badge grid - 3 columns on all screens */}
-                    <div className="grid grid-cols-3 gap-x-3 gap-y-4 md:gap-x-4 md:gap-y-6">
-                      {section.badges.map((badge, index) => (
-                        <BadgeCard
-                          key={badge.badgeSlug}
-                          badge={badge}
-                          onBadgeClick={handleBadgeClick}
-                          priority={index < 6} // Prioritize first 6 badges in each section
-                        />
-                      ))}
-                    </div>
+                  {/* Badge grid - 3 columns on all screens */}
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-3 md:gap-x-4 md:gap-y-6">
+                    {section.badges.map((badge, index) => (
+                      <BadgeCard
+                        key={badge.badgeSlug}
+                        badge={badge}
+                        onBadgeClick={handleBadgeClick}
+                        priority={index < 6} // Prioritize first 6 badges in each section
+                      />
+                    ))}
                   </div>
                 </div>
-              </Section>
+              </div>
+            </Section>
 
-              {/* Full-width dividing line after each section (except the last) */}
-              {sectionIndex < filteredSections.length - 1 && (
-                <Section variant="full-width">
-                  <div className="h-px bg-border mt-8 mb-4" />
-                </Section>
-              )}
-            </div>
+            {/* Full-width dividing line after each section (except the last) */}
+            {sectionIndex < filteredSections.length - 1 && (
+              <Section variant="full-width">
+                <div className="h-px bg-border mt-8 mb-4" />
+              </Section>
+            )}
+          </div>
         ))
       ) : (
         /* Single grid layout for badges below threshold */

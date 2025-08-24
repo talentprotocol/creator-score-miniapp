@@ -49,6 +49,7 @@ export interface BadgeState {
   artworkUrl: string; // Current artwork URL
   description: string;
   categoryName: string; // Badge category name
+  timesEarned?: number; // For streak badges: how many times this badge has been earned
 }
 
 export interface BadgeSection {
@@ -72,66 +73,10 @@ export interface BadgesResponse {
  * Helper functions for parsing user data and formatting display values
  */
 
-/** Format numbers with smart rounding: round up if .5 or above, round down otherwise */
-function formatNumberSmart(value: number): string {
-  if (value >= 1000000) {
-    const millions = value / 1000000;
-    if (millions < 10) {
-      // 1-digit M: always show 2 decimals
-      return `${millions.toFixed(2)}M`;
-    } else {
-      // 2+ digit M: show max 1 decimal
-      const rounded = Math.round(millions * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
-    }
-  }
-  if (value >= 1000) {
-    const thousands = value / 1000;
-    if (thousands < 10) {
-      // 1-digit K: always show 2 decimals
-      return `${thousands.toFixed(2)}K`;
-    } else {
-      // 2+ digit K: show max 1 decimal
-      const rounded = Math.round(thousands * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
-    }
-  }
-  return value.toString();
-}
-
-/** Format currency values with smart rounding and $ prefix */
-function formatCurrency(value: number): string {
-  if (value >= 1000000) {
-    const millions = value / 1000000;
-    if (millions < 10) {
-      // 1-digit M: always show 2 decimals
-      return `$${millions.toFixed(2)}M`;
-    } else {
-      // 2+ digit M: show max 1 decimal
-      const rounded = Math.round(millions * 10) / 10;
-      return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
-    }
-  }
-  if (value >= 1000) {
-    const thousands = value / 1000;
-    if (thousands < 10) {
-      // 1-digit K: always show 2 decimals
-      return `$${thousands.toFixed(2)}K`;
-    } else {
-      // 2+ digit K: show max 1 decimal
-      const rounded = Math.round(thousands * 10) / 10;
-      return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
-    }
-  }
-  return `$${value}`;
-}
-
 /** Clamp a percentage value to the valid range 0-100 */
 function clampToPct(x: number): number {
   return Math.max(0, Math.min(100, x));
 }
-
-/** Format progress label based on badge type and state */
 
 function getBadgeArtworkUrl(badgeSlug: string, currentLevel: number): string {
   const basePath = `/images/badges/${badgeSlug}`;
@@ -152,7 +97,6 @@ function createDynamicBadge(
   },
   currentValue: number,
   thresholds: number[],
-  formatMissing: (missing: number) => string,
 ): BadgeState {
   // Find current level
   let currentLevel = 0;
@@ -166,12 +110,10 @@ function createDynamicBadge(
   const maxLevel = thresholds.length;
   const isMaxLevel = currentLevel >= maxLevel;
 
-  // Calculate progress and label
+  // Calculate progress percentage
   let progressPct = 0;
-  let progressLabel = "";
   if (isMaxLevel) {
     progressPct = 100;
-    progressLabel = "Max Level";
   } else {
     const nextThreshold = thresholds[currentLevel];
     if (currentLevel === 0) {
@@ -182,8 +124,6 @@ function createDynamicBadge(
       const progress = currentValue - prevThreshold;
       progressPct = clampToPct((progress / range) * 100);
     }
-    const missing = nextThreshold - currentValue;
-    progressLabel = formatMissing(missing);
   }
 
   // Get level label
@@ -199,7 +139,7 @@ function createDynamicBadge(
     maxLevel,
     isMaxLevel,
     levelLabel,
-    progressLabel,
+    progressLabel: "", // Will be handled by UI component
     progressPct,
     artworkUrl: getBadgeArtworkUrl(content.slug, currentLevel),
     description: formatBadgeDescription(
@@ -211,7 +151,7 @@ function createDynamicBadge(
   };
 }
 
-// Helper function to create streak badges (no progress bars needed)
+// Helper function to create streak badges
 function createStreakBadge(
   content: {
     slug: string;
@@ -220,6 +160,7 @@ function createStreakBadge(
   },
   currentValue: number,
   thresholds: number[],
+  timesEarned: number = 0,
 ): BadgeState {
   // Find current level
   let currentLevel = 0;
@@ -246,7 +187,7 @@ function createStreakBadge(
     maxLevel,
     isMaxLevel,
     levelLabel,
-    progressLabel: "", // No progress label for streaks
+    progressLabel: "", // Will be handled by UI component
     progressPct: currentLevel > 0 ? 100 : 0, // 100% if earned, 0% if locked
     artworkUrl: getBadgeArtworkUrl(content.slug, currentLevel),
     description: formatBadgeDescription(
@@ -255,6 +196,7 @@ function createStreakBadge(
       levelLabel,
     ),
     categoryName: content.title,
+    timesEarned, // Add timesEarned for streak badges
   };
 }
 
@@ -269,12 +211,7 @@ async function computeCreatorScoreBadges(
   if (!content) return [];
 
   const thresholds = LEVEL_RANGES.map((range) => range.min);
-  const badge = createDynamicBadge(
-    content,
-    score,
-    thresholds,
-    (missing) => `${missing} points left`,
-  );
+  const badge = createDynamicBadge(content, score, thresholds);
 
   return [badge];
 }
@@ -306,7 +243,6 @@ async function computeTotalEarningsBadges(
     content,
     totalEarnings,
     content.levelThresholds,
-    (missing) => `${formatCurrency(missing)} left`,
   );
 
   return [badge];
@@ -327,7 +263,6 @@ async function computeTotalFollowersBadges(
     content,
     totalFollowers,
     content.levelThresholds,
-    (missing) => `${formatNumberSmart(missing)} left`,
   );
 
   return [badge];
@@ -347,6 +282,7 @@ async function computeDailyStreaksBadges(
     content,
     currentStreakDays,
     content.levelThresholds,
+    0, // TODO: Replace with actual times earned count
   );
 
   return [badge];
@@ -366,6 +302,7 @@ async function computeWeeklyStreaksBadges(
     content,
     currentStreakWeeks,
     content.levelThresholds,
+    0, // TODO: Replace with actual times earned count
   );
 
   return [badge];
@@ -385,6 +322,7 @@ async function computePayItForwardBadges(
     content,
     currentValue,
     content.levelThresholds,
+    currentValue, // For Pay It Forward, timesEarned equals currentValue (0 or 1)
   );
 
   return [badge];
@@ -416,7 +354,6 @@ async function computeTotalCollectorsBadges(
     content,
     totalCollectors,
     content.levelThresholds,
-    (missing) => `${formatNumberSmart(missing)} left`,
   );
 
   return [badge];
@@ -440,7 +377,6 @@ async function computePlatformTalentBadges(
     content,
     talentBalance,
     content.levelThresholds,
-    (missing) => `${formatNumberSmart(missing)} tokens left`,
   );
 
   return [badge];
@@ -461,7 +397,6 @@ async function computePlatformBaseBadges(
     content,
     baseTxCount,
     content.levelThresholds,
-    (missing) => `${formatNumberSmart(missing)} left`,
   );
 
   return [badge];
@@ -501,9 +436,9 @@ async function getBadgesForUserUncached(
 
     // Collect all badges in section order
     const allBadges = [
-      ...creatorScoreBadges,
       ...dailyStreaksBadges,
       ...weeklyStreaksBadges,
+      ...creatorScoreBadges,
       ...payItForwardBadges,
       ...totalEarningsBadges,
       ...totalFollowersBadges,
@@ -539,9 +474,9 @@ async function getBadgesForUserUncached(
           badges: [
             ...(section.id === "trophies"
               ? [
-                  ...creatorScoreBadges,
                   ...dailyStreaksBadges,
                   ...weeklyStreaksBadges,
+                  ...creatorScoreBadges,
                   ...payItForwardBadges,
                 ]
               : []),

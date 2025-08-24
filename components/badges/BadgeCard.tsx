@@ -1,4 +1,5 @@
 import type { BadgeState } from "@/app/services/badgesService";
+import { getBadgeContent } from "@/lib/badge-content";
 import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -30,7 +31,8 @@ export function BadgeCard({
   priority = false,
 }: BadgeCardProps) {
   const isLocked = badge.currentLevel === 0;
-  const isStreakBadge = badge.badgeSlug.includes("streaks");
+  const badgeContent = getBadgeContent(badge.badgeSlug);
+  const isStreakBadge = badgeContent?.isStreakBadge || false;
   const [imageError, setImageError] = useState(false);
 
   // Reset image error when badge changes
@@ -40,7 +42,7 @@ export function BadgeCard({
 
   return (
     <div
-      className="flex flex-col items-center gap-2 cursor-pointer transition-all active:scale-95"
+      className="flex flex-col items-center cursor-pointer transition-all active:scale-95"
       onClick={() => onBadgeClick(badge)}
     >
       {/* Badge Artwork */}
@@ -81,24 +83,36 @@ export function BadgeCard({
           {badge.levelLabel}
         </Typography>
 
-        {/* Secondary: Progress to next level (only for non-streak badges) */}
+        {/* Progress bar: Only show for non-streak badges, w-28 width */}
         {!isStreakBadge && (
-          <Typography size="xs" color="muted" className="mt-0.5">
-            {badge.isMaxLevel
-              ? "Max Level"
-              : `${badge.progressLabel} to Lvl. ${badge.currentLevel + 1}`}
-          </Typography>
-        )}
-
-        {/* Progress bar (only for non-streak badges, always show except for max level) */}
-        {!isStreakBadge && !badge.isMaxLevel && (
-          <div className="w-full bg-muted-foreground/30 rounded-full h-1 mt-1">
+          <div className="w-28 mx-auto bg-muted-foreground/30 rounded-full h-1 mt-1">
             <div
               className="bg-brand-green h-1 rounded-full transition-all"
-              style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
+              style={{
+                width: isLocked
+                  ? "0%"
+                  : badge.isMaxLevel
+                    ? "100%"
+                    : `${Math.max(badge.progressPct, 1)}%`,
+              }}
             />
           </div>
         )}
+
+        {/* Secondary: Subtitle - Different logic for streak vs regular badges */}
+        <Typography size="xs" color="muted" className="mt-0.5">
+          {isStreakBadge
+            ? // Streak badges: Show "Earned X times" or "Locked"
+              isLocked
+              ? "Locked"
+              : `Earned ${badge.timesEarned || 0} times`
+            : // Regular badges: Show "Level X", "Max Level", or "Locked"
+              isLocked
+              ? "Locked"
+              : badge.isMaxLevel
+                ? "Max Level"
+                : `Level ${badge.currentLevel}`}
+        </Typography>
       </div>
     </div>
   );

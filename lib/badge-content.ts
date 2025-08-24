@@ -22,6 +22,7 @@ export interface BadgeContent {
   levelThresholds: number[];
   levelLabels: string[];
   uom?: string;
+  isStreakBadge?: boolean;
 }
 
 export interface BadgeSectionContent {
@@ -98,6 +99,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "6 Day Streak",
     ],
     uom: "days",
+    isStreakBadge: true,
   },
 
   "weekly-streaks": {
@@ -114,6 +116,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "6 Week Streak",
     ],
     uom: "weeks",
+    isStreakBadge: true,
   },
 
   "total-earnings": {
@@ -173,7 +176,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     description:
       "Help grow the creator economy by opting out of rewards and letting them flow to emerging creators!",
     levelThresholds: [1],
-    levelLabels: ["Community Champion"],
+    levelLabels: ["Paid Forward"],
     uom: "actions",
   },
 

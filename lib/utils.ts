@@ -808,4 +808,3 @@ export function parseFormattedNumber(value: string): number {
   const num = parseFloat(trimmed);
   return isNaN(num) ? 0 : num;
 }
-
