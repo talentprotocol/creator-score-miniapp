@@ -1,20 +1,15 @@
 import React from "react";
 import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { talentApiClient } from "@/lib/talent-api-client";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_10_MINUTES,
-  CACHE_DURATION_1_HOUR,
-} from "@/lib/cache-keys";
+
+import { getTalentUserService } from "@/app/services/userService";
 import {
   calculateTotalFollowers,
   convertEthToUsdc,
   convertPolToUsdc,
   getEthUsdcPrice,
   getPolUsdPrice,
-  formatK,
+  formatCompactNumber,
 } from "@/lib/utils";
 import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
@@ -29,79 +24,23 @@ export async function GET(
   { params }: { params: { talentUUID: string } },
 ) {
   try {
-    // Fetch user data (PRESERVED EXACTLY)
-    const profileResponse = await unstable_cache(
-      async () => {
-        const response = await talentApiClient.getProfile({
-          talent_protocol_id: params.talentUUID,
-        });
+    // Fetch user data using existing service with caching
+    const profileData = await getTalentUserService(params.talentUUID);
 
-        // Check if profile exists and parse immediately
-        if (!response.ok) {
-          throw new Error(`Profile not found: ${response.status}`);
-        }
-
-        const profileData = await response.json();
-        return { ok: true, data: profileData };
-      },
-      [`profile-${params.talentUUID}`],
-      {
-        tags: [`profile-${params.talentUUID}`, CACHE_KEYS.TALENT_PROFILES],
-        revalidate: CACHE_DURATION_10_MINUTES,
-      },
-    )();
-
-    // Check if profile exists (PRESERVED EXACTLY)
-    if (!profileResponse.ok) {
+    // Check if profile exists
+    if (!profileData) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-
-    // Parse the profile data from the response (PRESERVED EXACTLY)
-    const profileData = profileResponse.data;
 
     // Fetch additional data (PRESERVED EXACTLY)
     const [socialAccounts, credentials, creatorScoreData, leaderboardResponse] =
       await Promise.all([
-        unstable_cache(
-          async () => getSocialAccountsForTalentId(params.talentUUID),
-          [`social-accounts-${params.talentUUID}`],
-          {
-            tags: [
-              `social-accounts-${params.talentUUID}`,
-              CACHE_KEYS.SOCIAL_ACCOUNTS,
-            ],
-            revalidate: CACHE_DURATION_1_HOUR,
-          },
-        )().catch(() => []),
-        unstable_cache(
-          async () => getCredentialsForTalentId(params.talentUUID),
-          [`credentials-${params.talentUUID}`],
-          {
-            tags: [`credentials-${params.talentUUID}`, CACHE_KEYS.CREDENTIALS],
-            revalidate: CACHE_DURATION_10_MINUTES,
-          },
-        )().catch(() => []),
-        unstable_cache(
-          async () => getCreatorScoreForTalentId(params.talentUUID),
-          [`creator-score-${params.talentUUID}`],
-          {
-            tags: [
-              `creator-score-${params.talentUUID}`,
-              CACHE_KEYS.CREATOR_SCORES,
-            ],
-            revalidate: CACHE_DURATION_10_MINUTES,
-          },
-        )().catch(() => ({
+        getSocialAccountsForTalentId(params.talentUUID)().catch(() => []),
+        getCredentialsForTalentId(params.talentUUID).catch(() => []),
+        getCreatorScoreForTalentId(params.talentUUID)().catch(() => ({
           score: 0,
         })),
-        unstable_cache(
-          async () => getTop200LeaderboardEntries(),
-          ["leaderboard"],
-          {
-            tags: ["leaderboard"],
-            revalidate: CACHE_DURATION_10_MINUTES,
-          },
-        )().catch(() => ({ entries: [] })),
+        getTop200LeaderboardEntries().catch(() => ({ entries: [] })),
       ]);
 
     // Extract leaderboard entries from response
@@ -197,8 +136,10 @@ export async function GET(
 
     // Prepare data for image generation
     const displayName =
-      profileData.display_name || profileData.name || "Creator";
-    const avatar = profileData.image_url;
+      (profileData as { display_name?: string; name?: string }).display_name ||
+      (profileData as { display_name?: string; name?: string }).name ||
+      "Creator";
+    const avatar = (profileData as { image_url?: string }).image_url;
 
     // Always use canonical URL for sharing, but allow localhost for font loading in dev
     const canonicalUrl = "https://www.creatorscore.app";
@@ -294,7 +235,7 @@ export async function GET(
               display: "flex",
             }}
           >
-            {formatK(totalFollowers)} total followers
+            {formatCompactNumber(totalFollowers)} total followers
           </div>
 
           {/* Creator Score label - using exact Figma coordinates */}

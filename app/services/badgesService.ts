@@ -258,7 +258,7 @@ function createStreakBadge(
 async function computeCreatorScoreBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const scoreData = await getCreatorScoreForTalentId(talentUuid);
+  const scoreData = await getCreatorScoreForTalentId(talentUuid)();
   const score = scoreData.score || 0;
   const content = getBadgeContent("creator-score");
 
@@ -311,7 +311,7 @@ async function computeTotalEarningsBadges(
 async function computeTotalFollowersBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const socials = await getSocialAccountsForTalentId(talentUuid);
+  const socials = await getSocialAccountsForTalentId(talentUuid)();
   const totalFollowers = socials.reduce((sum, social) => {
     return sum + (social.followerCount || 0);
   }, 0);

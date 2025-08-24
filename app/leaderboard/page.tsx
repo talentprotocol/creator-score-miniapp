@@ -9,7 +9,7 @@ import { sdk } from "@farcaster/frame-sdk";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 import {
-  formatWithK,
+  formatCompactNumber,
   formatCurrency,
   openExternalUrl,
   getLevelFromScore,
@@ -378,7 +378,7 @@ function LeaderboardContent() {
         <div className="grid grid-cols-2 gap-4 mt-4">
           <StatCard
             title="Rewards Pool"
-            value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
+            value={`$${formatCompactNumber(TOTAL_SPONSORS_POOL)}`}
           />
           <StatCard
             title="Rewards Distribution"
