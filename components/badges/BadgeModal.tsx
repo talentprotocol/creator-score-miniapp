@@ -79,7 +79,12 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
     const uom = badgeContent.uom;
     const uomText = uom ? ` ${uom}` : "";
 
-    return `${formattedMissing}${uomText} left to Level ${badge.currentLevel + 1}`;
+    // Check if next level is the final level
+    const nextLevel = badge.currentLevel + 1;
+    const isReachingMaxLevel = nextLevel === badge.maxLevel;
+    const levelText = isReachingMaxLevel ? "Max Level" : `Level ${nextLevel}`;
+
+    return `${formattedMissing}${uomText} left to reach ${levelText}`;
   };
 
   const ModalContent = () => (
@@ -127,22 +132,24 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
       {/* Progress information (only for non-streak badges) */}
       {!isStreakBadge && (
         <div className="space-y-3">
+          {/* Progress bar (always show, 100% for max level) */}
+          <div className="space-y-2">
+            <div className="w-full bg-muted rounded-full h-2">
+              <div
+                className="bg-brand-green h-2 rounded-full transition-all"
+                style={{
+                  width: badge.isMaxLevel
+                    ? "100%"
+                    : `${Math.max(badge.progressPct, 1)}%`,
+                }}
+              />
+            </div>
+          </div>
+
           {/* Progress text */}
           <Typography size="sm" color="muted">
             {getProgressText()}
           </Typography>
-
-          {/* Progress bar (always show except for max level) */}
-          {!badge.isMaxLevel && (
-            <div className="space-y-2">
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-brand-green h-2 rounded-full transition-all"
-                  style={{ width: `${Math.max(badge.progressPct, 1)}%` }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       )}
 

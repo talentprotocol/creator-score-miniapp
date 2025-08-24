@@ -157,7 +157,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "total-collectors",
     title: "Total Collectors",
     description:
-      "Build your collector base from 10 to 10K+ Total Collectors across all platforms!",
+      "Grow your collector base from 10 to 10K+ Total Collectors across all platforms!",
     levelThresholds: [10, 50, 100, 500, 1000, 10000],
     levelLabels: [
       "10+ Collectors",
@@ -192,11 +192,11 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
 
   base: {
     slug: "base",
-    title: "Base Network",
+    title: "Base",
     description: "Earn 3 Base badges by making 10, 100, and 1K+ transactions!",
     levelThresholds: [10, 100, 1000],
     levelLabels: ["10+ Base txs", "100+ Base txs", "1K+ Base txs"],
-    uom: "transactions",
+    uom: "txs",
   },
 };
 
