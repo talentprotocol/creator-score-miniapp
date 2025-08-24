@@ -54,6 +54,25 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
   const badgeContent = getBadgeContent(badge.badgeSlug);
   const isStreakBadge = badgeContent?.isStreakBadge || false;
 
+  // Get progress bar color based on current level
+  const getBadgeProgressColor = (currentLevel: number, maxLevel: number) => {
+    if (currentLevel === 0) return "bg-muted-foreground/30"; // Locked
+
+    if (maxLevel === 6) {
+      // 6-level badges: use full progression
+      const level = Math.min(currentLevel, 6);
+      return `bg-badge-level-${level}`;
+    } else if (maxLevel === 3) {
+      // 3-level badges: use levels 2, 3, 6
+      const levelMap = [2, 3, 6];
+      const mappedLevel = levelMap[currentLevel - 1];
+      return `bg-badge-level-${mappedLevel}`;
+    }
+
+    // Fallback for other badge types
+    return "bg-brand-green";
+  };
+
   // Calculate progress text for non-max level badges
   const getProgressText = () => {
     if (badge.isMaxLevel || !badgeContent) {
@@ -136,7 +155,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
           <div className="space-y-2">
             <div className="w-full bg-muted rounded-full h-2">
               <div
-                className="bg-brand-green h-2 rounded-full transition-all"
+                className={`h-2 rounded-full transition-all ${getBadgeProgressColor(badge.currentLevel, badge.maxLevel)}`}
                 style={{
                   width: badge.isMaxLevel
                     ? "100%"

@@ -35,6 +35,25 @@ export function BadgeCard({
   const isStreakBadge = badgeContent?.isStreakBadge || false;
   const [imageError, setImageError] = useState(false);
 
+  // Get progress bar color based on current level
+  const getBadgeProgressColor = (currentLevel: number, maxLevel: number) => {
+    if (currentLevel === 0) return "bg-muted-foreground/30"; // Locked
+
+    if (maxLevel === 6) {
+      // 6-level badges: use full progression
+      const level = Math.min(currentLevel, 6);
+      return `bg-badge-level-${level}`;
+    } else if (maxLevel === 3) {
+      // 3-level badges: use levels 2, 3, 6
+      const levelMap = [2, 3, 6];
+      const mappedLevel = levelMap[currentLevel - 1];
+      return `bg-badge-level-${mappedLevel}`;
+    }
+
+    // Fallback for other badge types
+    return "bg-brand-green";
+  };
+
   // Reset image error when badge changes
   useEffect(() => {
     setImageError(false);
@@ -87,7 +106,7 @@ export function BadgeCard({
         {!isStreakBadge && (
           <div className="w-28 mx-auto bg-muted-foreground/30 rounded-full h-1 mt-1">
             <div
-              className="bg-brand-green h-1 rounded-full transition-all"
+              className={`h-1 rounded-full transition-all ${getBadgeProgressColor(badge.currentLevel, badge.maxLevel)}`}
               style={{
                 width: isLocked
                   ? "0%"
