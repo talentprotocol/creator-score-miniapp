@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Settings2 } from "lucide-react";
 import { getAllBadgeSections } from "@/lib/badge-content";
-import { calculateSectionCompletion } from "@/lib/utils";
 
 /**
  * BADGES PAGE
@@ -160,25 +159,25 @@ export default function BadgesPage() {
       {/* Conditional rendering: sections vs flat grid */}
       {usingSections ? (
         /* Content sections with interleaved dividers */
-        filteredSections.map((section, sectionIndex) => {
-          const sectionCompletion = calculateSectionCompletion(section.badges);
-          return (
-            <div key={section.id}>
-              <Section variant="content">
-                <div className="space-y-8">
-                  <div className="badge-section">
-                    {/* Section title with percentage */}
-                    <Typography
-                      as="h2"
-                      size="lg"
-                      weight="bold"
-                      className="mb-2"
-                    >
-                      {section.title}
-                    </Typography>
-                    <Typography size="sm" color="muted" className="mb-6">
-                      {sectionCompletion}% complete
-                    </Typography>
+        filteredSections.map((section, sectionIndex) => (
+          <div key={section.id}>
+            <Section variant="content">
+              <div className="space-y-8">
+                <div className="badge-section">
+                  {/* Section title with count */}
+                  <Typography as="h2" size="lg" weight="bold" className="mb-6">
+                    {section.title} (
+                    {section.badges.reduce(
+                      (total, badge) => total + badge.currentLevel,
+                      0,
+                    )}
+                    /
+                    {section.badges.reduce(
+                      (total, badge) => total + badge.maxLevel,
+                      0,
+                    )}
+                    )
+                  </Typography>
 
                     {/* Badge grid - 3 columns on all screens */}
                     <div className="grid grid-cols-3 gap-x-3 gap-y-4 md:gap-x-4 md:gap-y-6">
@@ -202,8 +201,7 @@ export default function BadgesPage() {
                 </Section>
               )}
             </div>
-          );
-        })
+        ))
       ) : (
         /* Single grid layout for badges below threshold */
         <Section variant="content">

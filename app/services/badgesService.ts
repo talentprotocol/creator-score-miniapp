@@ -472,8 +472,6 @@ function shouldUseSections(badgeCount: number): boolean {
   return badgeCount >= BADGE_SECTION_THRESHOLD;
 }
 
-
-
 // Main service functions
 async function getBadgesForUserUncached(
   talentUuid: string,
