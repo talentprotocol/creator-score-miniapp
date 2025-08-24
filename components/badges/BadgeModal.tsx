@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import type { BadgeState } from "@/app/services/badgesService";
+import { getBadgeContent } from "@/lib/badge-content";
+import { formatCompactNumber } from "@/lib/utils";
 import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";
 import Image from "next/image";
@@ -49,7 +51,36 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
   if (!badge) return null;
 
   const isLocked = badge.currentLevel === 0;
-  const isStreakBadge = badge.badgeSlug.includes("streaks");
+  const badgeContent = getBadgeContent(badge.badgeSlug);
+  const isStreakBadge = badgeContent?.isStreakBadge || false;
+
+  // Calculate progress text for non-max level badges
+  const getProgressText = () => {
+    if (badge.isMaxLevel || !badgeContent) {
+      return "Max Level";
+    }
+
+    // Get the next level threshold
+    const nextThreshold = badgeContent.levelThresholds[badge.currentLevel];
+    if (!nextThreshold) return "Max Level";
+
+    // Calculate how much is missing
+    const currentProgress = badge.progressPct / 100;
+    const currentThreshold =
+      badge.currentLevel === 0
+        ? 0
+        : badgeContent.levelThresholds[badge.currentLevel - 1];
+    const range = nextThreshold - currentThreshold;
+    const currentValue = currentThreshold + currentProgress * range;
+    const missing = nextThreshold - currentValue;
+
+    // Format the missing amount and add UOM if available
+    const formattedMissing = formatCompactNumber(missing);
+    const uom = badgeContent.uom;
+    const uomText = uom ? ` ${uom}` : "";
+
+    return `${formattedMissing}${uomText} left to Level ${badge.currentLevel + 1}`;
+  };
 
   const ModalContent = () => (
     <div className="space-y-6 text-center">
@@ -98,9 +129,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <div className="space-y-3">
           {/* Progress text */}
           <Typography size="sm" color="muted">
-            {badge.isMaxLevel
-              ? "Max Level"
-              : `${badge.progressLabel} to Level ${badge.currentLevel + 1}`}
+            {getProgressText()}
           </Typography>
 
           {/* Progress bar (always show except for max level) */}

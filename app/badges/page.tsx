@@ -205,13 +205,13 @@ export default function BadgesPage() {
       ) : (
         /* Single grid layout for badges below threshold */
         <Section variant="content">
-          <div className="grid grid-cols-3 gap-x-3 gap-y-4 md:gap-x-4 md:gap-y-6">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-3 md:gap-x-4 md:gap-y-6">
             {allBadges.map((badge, index) => (
               <BadgeCard
                 key={badge.badgeSlug}
                 badge={badge}
                 onBadgeClick={handleBadgeClick}
-                priority={index < 9} // Prioritize first 9 badges (3x3 grid)
+                priority={index < 6} // Prioritize first 6 badges (2x3 grid)
               />
             ))}
           </div>

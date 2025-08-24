@@ -71,7 +71,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "creator-score",
     title: "Creator Score",
     description:
-      "Increase your Creator Score to go from Rookie (0-39 points) to Legendary (250+ points)!",
+      "Increase your Creator Score to go from Rookie Creator (0-39 points) to Legendary Creator (250+ points)!",
     // levelThresholds are the minimum score for each range
     levelThresholds: [0, 40, 80, 120, 170, 250],
     levelLabels: [
