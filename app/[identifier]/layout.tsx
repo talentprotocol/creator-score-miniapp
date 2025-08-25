@@ -19,6 +19,7 @@ import {
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_30_MINUTES } from "@/lib/cache-keys";
+import { dlog, dtimer } from "@/lib/debug";
 
 export async function generateMetadata({
   params,
@@ -202,20 +203,60 @@ export default async function ProfileLayout({
   children: React.ReactNode;
   params: { identifier: string };
 }) {
+  const layoutTimer = dtimer("ProfileLayout", "total");
+
+  dlog("ProfileLayout", "start", {
+    identifier: params.identifier,
+    isReserved: RESERVED_WORDS.includes(params.identifier),
+  });
+
   if (RESERVED_WORDS.includes(params.identifier)) {
+    dlog("ProfileLayout", "reserved_word_redirect", {
+      identifier: params.identifier,
+    });
+    layoutTimer.end();
     return <CreatorNotFoundCard />;
   }
 
   // Resolve user using direct service call
+  const userResolutionTimer = dtimer("ProfileLayout", "user_resolution");
+  dlog("ProfileLayout", "calling_getTalentUserService", {
+    identifier: params.identifier,
+  });
+
   const user = await getTalentUserService(params.identifier);
 
+  dlog("ProfileLayout", "getTalentUserService_result", {
+    identifier: params.identifier,
+    user_found: !!user,
+    user_id: user?.id || null,
+    user_fname: user?.fname || null,
+    user_wallet: user?.wallet || null,
+  });
+
+  userResolutionTimer.end();
+
   if (!user || !user.id) {
+    dlog("ProfileLayout", "user_not_found_rendering_creator_not_found", {
+      identifier: params.identifier,
+      user_null: user === null,
+      user_no_id: user && !user.id,
+    });
+    layoutTimer.end();
     return <CreatorNotFoundCard />;
   }
 
   // Determine canonical human-readable identifier: Farcaster, Wallet, else UUID
   const canonical = user.fname || user.wallet || user.id;
   const rank = user.rank as number | null;
+
+  dlog("ProfileLayout", "user_resolved", {
+    identifier: params.identifier,
+    canonical,
+    user_id: user.id,
+    rank,
+    will_redirect: canonical !== params.identifier,
+  });
 
   if (
     canonical &&
@@ -227,24 +268,47 @@ export default async function ProfileLayout({
     if (currentPath.includes("/")) {
       const pathParts = currentPath.split("/");
       const tabPart = pathParts[pathParts.length - 1];
-      redirect(`/${canonical}/${tabPart}`);
+      const redirectUrl = `/${canonical}/${tabPart}`;
+      dlog("ProfileLayout", "redirecting_to_canonical_with_tab", {
+        from: currentPath,
+        to: redirectUrl,
+        tab: tabPart,
+      });
+      redirect(redirectUrl);
     } else {
-      redirect(`/${canonical}/stats`);
+      const redirectUrl = `/${canonical}/stats`;
+      dlog("ProfileLayout", "redirecting_to_canonical_default_tab", {
+        from: currentPath,
+        to: redirectUrl,
+      });
+      redirect(redirectUrl);
     }
   }
 
   // 🚀 FETCH ALL PROFILE DATA HERE (server-side, once)
+  const dataFetchTimer = dtimer("ProfileLayout", "data_fetch_bundle");
+  dlog("ProfileLayout", "fetch_bundle_start", { user_id: user.id });
+
   const [creatorScoreData, socialAccounts, credentials, posts] =
     await Promise.all([
-      getCreatorScoreForTalentId(user.id!)().catch(() => ({
-        score: 0,
-        level: 1,
-        levelName: "Level 1",
-        lastCalculatedAt: null,
-        calculating: false,
-      })),
+      getCreatorScoreForTalentId(user.id!)().catch((error) => {
+        dlog("ProfileLayout", "creator_score_fetch_failed", {
+          user_id: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return {
+          score: 0,
+          level: 1,
+          levelName: "Level 1",
+          lastCalculatedAt: null,
+          calculating: false,
+        };
+      }),
       getSocialAccountsForTalentId(user.id!)().catch((error) => {
-        console.error("[Profile Layout] Social accounts fetch failed:", error);
+        dlog("ProfileLayout", "social_accounts_fetch_failed", {
+          user_id: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
         throw error; // Don't cache failures - allow retries
       }),
       unstable_cache(
@@ -255,11 +319,17 @@ export default async function ProfileLayout({
           revalidate: CACHE_DURATION_30_MINUTES,
         },
       )().catch((error) => {
-        console.error("[Profile Layout] Data fetch failed:", error);
+        dlog("ProfileLayout", "credentials_fetch_failed", {
+          user_id: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
         throw error; // Don't cache failures - allow retries
       }),
       getAllPostsForTalentId(user.id!)().catch((error) => {
-        console.error("[Profile Layout] Data fetch failed:", error);
+        dlog("ProfileLayout", "posts_fetch_failed", {
+          user_id: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
         throw error; // Don't cache failures - allow retries
       }),
     ]);
@@ -314,7 +384,7 @@ export default async function ProfileLayout({
       }
       if (!point.readable_value) return;
 
-      // Parse credential-level readable_value only
+      // Parse credential-level readable_value using the utility function
       const cleanValue = point.readable_value;
       let value: number;
       const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
@@ -368,7 +438,51 @@ export default async function ProfileLayout({
     })),
   };
 
-  return (
+  // Calculate total followers
+  const totalFollowers = socialAccounts.reduce((sum, account) => {
+    return sum + (account.followerCount || 0);
+  }, 0);
+
+  dataFetchTimer.end();
+
+  dlog("ProfileLayout", "fetch_bundle_complete", {
+    user_id: user.id,
+    creator_score: creatorScoreData.score,
+    calculating: creatorScoreData.calculating || false,
+    social_accounts_count: socialAccounts.length,
+    credentials_groups_count: credentials.length,
+    posts_count: posts.length,
+    total_followers: totalFollowers,
+    total_earnings: totalEarnings,
+    earnings_segments_count: earningsBreakdown.segments.length,
+  });
+
+  // Data sanity warnings
+  if (creatorScoreData.score > 0 && earningsBreakdown.segments.length === 0) {
+    dlog("ProfileLayout", "data_inconsistency_warning", {
+      user_id: user.id,
+      warning: "creator_score_positive_but_no_earnings_segments",
+      creator_score: creatorScoreData.score,
+      credentials_groups_count: credentials.length,
+    });
+  }
+
+  if (
+    totalFollowers === 0 &&
+    socialAccounts.some((acc) =>
+      ["farcaster", "twitter", "lens"].includes(acc.source),
+    )
+  ) {
+    dlog("ProfileLayout", "data_inconsistency_warning", {
+      user_id: user.id,
+      warning: "social_accounts_exist_but_zero_followers",
+      social_accounts_count: socialAccounts.length,
+      social_sources: socialAccounts.map((acc) => acc.source),
+    });
+  }
+
+  const renderTimer = dtimer("ProfileLayout", "render");
+  const result = (
     <ProfileLayoutContent
       talentUUID={user.id}
       identifier={canonical}
@@ -390,4 +504,15 @@ export default async function ProfileLayout({
       {children}
     </ProfileLayoutContent>
   );
+
+  renderTimer.end();
+  layoutTimer.end();
+
+  dlog("ProfileLayout", "successfully_rendered", {
+    user_id: user.id,
+    identifier: params.identifier,
+    canonical,
+  });
+
+  return result;
 }

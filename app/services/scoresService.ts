@@ -2,6 +2,7 @@
 import { CreatorScore, SCORER_SLUGS } from "./types";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
+import { dlog, dtimer } from "@/lib/debug";
 
 /**
  * SERVER-SIDE ONLY: Internal function to get Creator Score for a Talent Protocol ID
@@ -10,6 +11,13 @@ import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 async function getCreatorScoreForTalentIdInternal(
   talentId: string | number,
 ): Promise<CreatorScore> {
+  const internalTimer = dtimer("ScoresService", "getCreatorScoreInternal");
+
+  dlog("ScoresService", "getCreatorScoreInternal_start", {
+    talentId,
+    talentId_type: typeof talentId,
+  });
+
   try {
     const { talentApiClient } = await import("@/lib/talent-api-client");
 
@@ -18,11 +26,37 @@ async function getCreatorScoreForTalentIdInternal(
       scorer_slug: SCORER_SLUGS.CREATOR,
     };
 
+    dlog("ScoresService", "getCreatorScoreInternal_params", {
+      talentId,
+      params,
+    });
+
     const response = await talentApiClient.getScore(params);
+
+    dlog("ScoresService", "getCreatorScoreInternal_response", {
+      talentId,
+      response_ok: response.ok,
+      response_status: response.status,
+    });
+
     const data = await response.json();
 
+    dlog("ScoresService", "getCreatorScoreInternal_data", {
+      talentId,
+      has_error: !!data.error,
+      error_message: data.error || null,
+      has_score: !!data.score,
+      has_scores: !!data.scores,
+      scores_count: data.scores?.length || 0,
+    });
+
     if (data.error) {
-      return {
+      dlog("ScoresService", "getCreatorScoreInternal_api_error", {
+        talentId,
+        error: data.error,
+      });
+
+      const result = {
         score: 0,
         level: 1,
         levelName: "Level 1",
@@ -31,6 +65,9 @@ async function getCreatorScoreForTalentIdInternal(
         calculating: false,
         error: data.error,
       };
+
+      internalTimer.end();
+      return result;
     }
 
     // Extract points and last_calculated_at from the nested score object
@@ -42,7 +79,7 @@ async function getCreatorScoreForTalentIdInternal(
     const level = Math.floor(points / 1000) + 1;
     const levelName = `Level ${level}`;
 
-    return {
+    const result = {
       score: points,
       level,
       levelName,
@@ -50,8 +87,26 @@ async function getCreatorScoreForTalentIdInternal(
       walletAddress: null,
       calculating,
     };
+
+    dlog("ScoresService", "getCreatorScoreInternal_success", {
+      talentId,
+      score: points,
+      level,
+      lastCalculatedAt,
+      calculating,
+    });
+
+    internalTimer.end();
+    return result;
   } catch (error) {
-    return {
+    dlog("ScoresService", "getCreatorScoreInternal_exception", {
+      talentId,
+      error: error instanceof Error ? error.message : String(error),
+      error_type:
+        error instanceof Error ? error.constructor.name : typeof error,
+    });
+
+    const result = {
       score: 0,
       level: 1,
       levelName: "Level 1",
@@ -63,6 +118,9 @@ async function getCreatorScoreForTalentIdInternal(
           ? error.message
           : "Failed to fetch creator score",
     };
+
+    internalTimer.end();
+    return result;
   }
 }
 

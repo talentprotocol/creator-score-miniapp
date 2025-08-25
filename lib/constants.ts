@@ -135,7 +135,7 @@ export const ACTIVE_SPONSORS = [
     name: "Purple",
     avatar:
       "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fi.imgur.com%2FDWjfq34.jpg",
-    amount: 4250,
+    amount: 4538,
     handle: "@purple",
     rank: 1,
     farcasterUrl: "https://farcaster.xyz/purple",

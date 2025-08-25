@@ -13,6 +13,7 @@ import {
 import { NextResponse } from "next/server";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "./cache-keys";
+import { dlog, dtimer } from "./debug";
 
 // API endpoints
 const TALENT_API_BASE = "https://api.talentprotocol.com";
@@ -69,40 +70,111 @@ export class TalentApiClient {
     params: URLSearchParams,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
+    const requestTimer = dtimer("TalentAPI", `makeRequest_${endpoint}`);
     const url = buildApiUrl(`${TALENT_API_BASE}${endpoint}`, params);
     const headers = createTalentApiHeaders(this.apiKey);
 
-    const response = await fetch(url, {
-      headers,
-      next: {
-        revalidate: 60,
-        tags: [url],
-      },
+    dlog("TalentAPI", "makeRequest_start", {
+      endpoint,
+      url: url.replace(process.env.TALENT_API_KEY || "", "[REDACTED]"),
+      params_count: params.size,
+      param_keys: Array.from(params.keys()),
     });
 
-    if (!validateJsonResponse(response)) {
-      throw new Error("Invalid response format from Talent API");
+    try {
+      const response = await fetch(url, {
+        headers,
+        next: {
+          revalidate: 60,
+          tags: [url],
+        },
+      });
+
+      const responseTimer = dtimer("TalentAPI", `response_${endpoint}`);
+
+      dlog("TalentAPI", "makeRequest_response", {
+        endpoint,
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers_content_type: response.headers.get("content-type"),
+      });
+
+      if (!validateJsonResponse(response)) {
+        dlog("TalentAPI", "makeRequest_invalid_response_format", {
+          endpoint,
+          status: response.status,
+          content_type: response.headers.get("content-type"),
+        });
+        throw new Error("Invalid response format from Talent API");
+      }
+
+      const data = await response.json();
+      responseTimer.end();
+
+      if (!response.ok) {
+        dlog("TalentAPI", "makeRequest_error_response", {
+          endpoint,
+          status: response.status,
+          statusText: response.statusText,
+          error_message: data.error || "No error message",
+          data_keys: data ? Object.keys(data) : [],
+        });
+        throw new Error(
+          data.error || `HTTP ${response.status}: ${response.statusText}`,
+        );
+      }
+
+      dlog("TalentAPI", "makeRequest_success", {
+        endpoint,
+        status: response.status,
+        data_keys: data ? Object.keys(data) : [],
+        has_profile: !!data.profile,
+        has_scores: !!data.scores,
+        has_socials: !!data.socials,
+        has_credentials: !!data.credentials,
+        has_posts: !!data.posts,
+      });
+
+      requestTimer.end();
+      return data;
+    } catch (error) {
+      dlog("TalentAPI", "makeRequest_exception", {
+        endpoint,
+        error: error instanceof Error ? error.message : String(error),
+        error_type:
+          error instanceof Error ? error.constructor.name : typeof error,
+      });
+      requestTimer.end();
+      throw error;
     }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || `HTTP ${response.status}: ${response.statusText}`,
-      );
-    }
-
-    return data;
   }
 
   async getScore(params: TalentProtocolParams): Promise<NextResponse> {
+    const methodTimer = dtimer("TalentAPI", "getScore");
+
+    dlog("TalentAPI", "getScore_start", {
+      params: {
+        id: params.id,
+        talent_protocol_id: params.talent_protocol_id,
+        account_source: params.account_source,
+        scorer_slug: params.scorer_slug,
+      },
+    });
+
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {
+      dlog("TalentAPI", "getScore_api_key_error", { error: apiKeyError });
+      methodTimer.end();
       return createServerErrorResponse(apiKeyError);
     }
 
     const validationError = validateTalentProtocolParams(params);
     if (validationError) {
+      dlog("TalentAPI", "getScore_validation_error", {
+        error: validationError,
+      });
+      methodTimer.end();
       return createBadRequestResponse(validationError);
     }
 
@@ -110,17 +182,41 @@ export class TalentApiClient {
       const urlParams = this.buildRequestParams(params);
       const url = buildApiUrl(`${TALENT_API_BASE}/score`, urlParams);
       const headers = createTalentApiHeaders(this.apiKey);
+
+      dlog("TalentAPI", "getScore_request", {
+        url: url.replace(process.env.TALENT_API_KEY || "", "[REDACTED]"),
+        url_params: Object.fromEntries(urlParams.entries()),
+      });
+
       const response = await fetch(url, { headers });
 
+      dlog("TalentAPI", "getScore_response", {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      });
+
       if (!validateJsonResponse(response)) {
+        dlog("TalentAPI", "getScore_invalid_response_format", {
+          status: response.status,
+          content_type: response.headers.get("content-type"),
+        });
         throw new Error("Invalid response format from Talent API");
       }
+
       const data = await response.json();
+
       if (!response.ok) {
+        dlog("TalentAPI", "getScore_error_response", {
+          status: response.status,
+          statusText: response.statusText,
+          error_message: data.error || "No error message",
+        });
         throw new Error(
           data.error || `HTTP ${response.status}: ${response.statusText}`,
         );
       }
+
       // Transform Farcaster response to match wallet response format
       if (params.account_source === "farcaster" && data.scores?.[0]) {
         const transformed = {
@@ -129,8 +225,24 @@ export class TalentApiClient {
             last_calculated_at: data.scores[0].last_calculated_at,
           },
         };
+
+        dlog("TalentAPI", "getScore_farcaster_transformed", {
+          original_scores_count: data.scores?.length || 0,
+          transformed_score: transformed.score.points,
+        });
+
+        methodTimer.end();
         return NextResponse.json(transformed);
       }
+
+      dlog("TalentAPI", "getScore_success", {
+        has_score: !!data.score,
+        score_points: data.score?.points || 0,
+        has_scores: !!data.scores,
+        scores_count: data.scores?.length || 0,
+      });
+
+      methodTimer.end();
       return NextResponse.json(data);
     } catch (error) {
       const identifier =
@@ -140,6 +252,8 @@ export class TalentApiClient {
         identifier || "unknown",
         error instanceof Error ? error.message : String(error),
       );
+
+      methodTimer.end();
       return createServerErrorResponse("Failed to fetch talent score");
     }
   }
@@ -267,12 +381,26 @@ export class TalentApiClient {
   }
 
   async getProfile(params: TalentProtocolParams): Promise<NextResponse> {
+    const methodTimer = dtimer("TalentAPI", "getProfile");
+
+    dlog("TalentAPI", "getProfile_start", {
+      params: {
+        id: params.id,
+        talent_protocol_id: params.talent_protocol_id,
+        account_source: params.account_source,
+      },
+    });
+
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {
+      dlog("TalentAPI", "getProfile_api_key_error", { error: apiKeyError });
+      methodTimer.end();
       return createServerErrorResponse(apiKeyError);
     }
 
     if (!params.id && !params.talent_protocol_id) {
+      dlog("TalentAPI", "getProfile_no_identifier", { params });
+      methodTimer.end();
       return createBadRequestResponse("No identifier provided");
     }
 
@@ -282,17 +410,35 @@ export class TalentApiClient {
       // Handle talent_protocol_id (UUID) vs id (account lookup)
       if (params.talent_protocol_id) {
         urlParams.append("id", params.talent_protocol_id.toLowerCase());
+        dlog("TalentAPI", "getProfile_uuid_lookup", {
+          talent_protocol_id: params.talent_protocol_id,
+          normalized_id: params.talent_protocol_id.toLowerCase(),
+        });
       } else {
         urlParams.append("id", params.id!.toLowerCase());
         if (params.account_source) {
           urlParams.append("account_source", params.account_source);
         }
+        dlog("TalentAPI", "getProfile_account_lookup", {
+          id: params.id,
+          account_source: params.account_source,
+          normalized_id: params.id!.toLowerCase(),
+        });
       }
       urlParams.append("scorer_slug", "creator_score");
+
+      dlog("TalentAPI", "getProfile_final_params", {
+        url_params: Object.fromEntries(urlParams.entries()),
+      });
 
       const data = await this.makeRequest("/profile", urlParams);
 
       if (!data.profile) {
+        dlog("TalentAPI", "getProfile_no_profile_in_response", {
+          data_keys: data ? Object.keys(data) : [],
+          has_profile: !!data.profile,
+        });
+        methodTimer.end();
         return createNotFoundResponse("User not found");
       }
 
@@ -326,7 +472,7 @@ export class TalentApiClient {
       const talentUuid: string | null = profile.id || null;
       const rank = profile.rank_position || null;
 
-      return NextResponse.json({
+      const result = {
         id: talentUuid,
         fid,
         wallet,
@@ -339,7 +485,21 @@ export class TalentApiClient {
         farcaster_primary_wallet_address:
           profile.farcaster_primary_wallet_address || null,
         ...profile,
+      };
+
+      dlog("TalentAPI", "getProfile_success", {
+        profile_id: talentUuid,
+        fid,
+        fname,
+        wallet,
+        github,
+        rank,
+        accounts_count: accounts.length,
+        account_sources: accounts.map((acc: { source: string }) => acc.source),
       });
+
+      methodTimer.end();
+      return NextResponse.json(result);
     } catch (error) {
       logApiError(
         "getProfile",
@@ -352,8 +512,15 @@ export class TalentApiClient {
         error instanceof Error &&
         error.message.includes("Resource not found")
       ) {
+        dlog("TalentAPI", "getProfile_resource_not_found", {
+          identifier: params.id || params.talent_protocol_id,
+          account_source: params.account_source,
+        });
+        methodTimer.end();
         return createNotFoundResponse("User not found");
       }
+
+      methodTimer.end();
       return createServerErrorResponse("Failed to fetch user data");
     }
   }
