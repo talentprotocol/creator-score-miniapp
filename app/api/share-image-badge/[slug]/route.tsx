@@ -14,8 +14,17 @@ export async function GET(
     const level = searchParams.get("level");
     const title = searchParams.get("title");
 
+    // Debug logging
+    console.log("[Badge Share Image] Request params:", {
+      slug: params.slug,
+      talentUUID,
+      level,
+      title,
+    });
+
     // Validate required parameters
     if (!talentUUID || !level || !title) {
+      console.error("[Badge Share Image] Missing parameters:", { talentUUID, level, title });
       return NextResponse.json(
         { error: "Missing required parameters: talentUUID, level, title" },
         { status: 400 },
@@ -45,9 +54,19 @@ export async function GET(
     const earnedSuffix = badgeLevel > 0 ? "earned" : "locked";
     const badgeArtwork = `${baseUrl}/images/badges/${badgeSlug}/${badgeSlug}-${badgeLevel || 1}-${earnedSuffix}.webp`;
 
+    // Debug logging
+    console.log("[Badge Share Image] Asset URLs:", {
+      baseUrl,
+      badgeSlug,
+      badgeLevel,
+      earnedSuffix,
+      badgeArtwork,
+    });
+
     // Generate cached image
     const imageResponse = await unstable_cache(
       async () => {
+        console.log("[Badge Share Image] Starting ImageResponse generation");
         return new ImageResponse(
           (
             <div
