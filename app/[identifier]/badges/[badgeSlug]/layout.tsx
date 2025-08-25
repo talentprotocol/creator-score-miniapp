@@ -1,10 +1,7 @@
+import { Metadata } from "next";
 import { getTalentUserService } from "@/app/services/userService";
 import { getBadgeDetail } from "@/app/services/badgesService";
-import { getAllBadgeSlugs, getBadgeContent } from "@/lib/badge-content";
-import { RESERVED_WORDS } from "@/lib/constants";
-import { unstable_cache } from "next/cache";
-import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
-import type { Metadata } from "next";
+import { getBadgeContent } from "@/lib/badge-content";
 
 interface BadgeLayoutProps {
   children: React.ReactNode;
@@ -14,104 +11,76 @@ interface BadgeLayoutProps {
   };
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { identifier: string; badgeSlug: string };
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: BadgeLayoutProps): Promise<Metadata> {
   try {
-    // Return generic metadata for invalid requests
-    const allBadgeSlugs = getAllBadgeSlugs();
-    if (
-      !allBadgeSlugs.includes(params.badgeSlug) ||
-      RESERVED_WORDS.includes(params.identifier)
-    ) {
-      return {
-        title: "Badge Not Found - Creator Score",
-        description: "This badge page could not be found.",
-      };
-    }
-
-    // Get user and badge data
-    const getCachedUserService = unstable_cache(
-      async (identifier: string) => getTalentUserService(identifier),
-      [CACHE_KEYS.USER_PROFILE],
-      { revalidate: CACHE_DURATION_5_MINUTES },
-    );
-
-    const user = await getCachedUserService(params.identifier);
+    // Get user data for metadata
+    const user = await getTalentUserService(params.identifier);
     if (!user?.id) {
       return {
-        title: "User Not Found - Creator Score",
-        description: "This user profile could not be found.",
+        title: "Creator Not Found",
+        description: "The requested creator could not be found.",
       };
     }
 
-    const badge = await getBadgeDetail(user.id, params.badgeSlug)();
-    if (!badge || badge.currentLevel <= 0) {
+    // Get badge data for metadata
+    const getBadgeDetailCached = await getBadgeDetail(user.id, params.badgeSlug);
+    const badge = await getBadgeDetailCached();
+    
+    if (!badge || badge.currentLevel === 0) {
       return {
-        title: "Badge Not Found - Creator Score",
-        description: "This badge has not been earned yet.",
+        title: "Badge Not Found",
+        description: "The requested badge could not be found.",
       };
     }
 
+    // Get badge content for metadata
     const badgeContent = getBadgeContent(params.badgeSlug);
     if (!badgeContent) {
       return {
-        title: "Badge Not Found - Creator Score",
-        description: "This badge configuration could not be found.",
+        title: "Badge Not Found",
+        description: "The requested badge could not be found.",
       };
     }
 
-    // Build metadata for earned badge
-    const displayName = (user.display_name || user.name || "Creator") as string;
+    const displayName = user.display_name || user.fname || user.wallet || user.id || "Creator";
     const badgeTitle = `${displayName}'s ${badgeContent.title} - Level ${badge.currentLevel}`;
-    const description = `${displayName} earned the ${badgeContent.title} badge at level ${badge.currentLevel}. ${badgeContent.description}`;
-    const badgeUrl = `https://creatorscore.app/${params.identifier}/badges/${params.badgeSlug}`;
-
-    // Generate badge share image URL
-    const shareImageParams = new URLSearchParams({
-      talentUUID: user.id,
-      badgeSlug: params.badgeSlug,
-      level: badge.currentLevel.toString(),
-    });
-    const shareImageUrl = `https://creatorscore.app/api/share-image-badge/${params.badgeSlug}?${shareImageParams}`;
+    const badgeDescription = `${displayName} earned the ${badgeContent.title} badge at level ${badge.currentLevel}. Check out their achievement and see what badges you can earn too!`;
 
     return {
       title: badgeTitle,
-      description,
+      description: badgeDescription,
       openGraph: {
         title: badgeTitle,
-        description,
-        type: "profile",
-        url: badgeUrl,
-        images: [shareImageUrl],
+        description: badgeDescription,
+        type: "website",
+        url: `https://creatorscore.app/${params.identifier}/badges/${params.badgeSlug}`,
+        images: [
+          {
+            url: badge.artworkUrl,
+            width: 1200,
+            height: 630,
+            alt: `${badgeContent.title} - Level ${badge.currentLevel}`,
+          },
+        ],
+        siteName: "Creator Score",
+        locale: "en_US",
       },
       twitter: {
         card: "summary_large_image",
         title: badgeTitle,
-        description,
-        images: [shareImageUrl],
-      },
-      alternates: {
-        canonical: badgeUrl,
-      },
-      // Add structured data for rich snippets
-      other: {
-        "article:author": displayName as string,
-        "article:section": "Gaming", // Badges are like gaming achievements
-        "og:type": "article",
+        description: badgeDescription,
+        images: [badge.artworkUrl],
       },
     };
   } catch (error) {
-    console.error("Error generating badge metadata:", error);
+    console.error("[BadgeLayout] Error generating metadata:", error);
     return {
-      title: "Badge Not Found - Creator Score",
-      description: "This badge page could not be found.",
+      title: "Badge",
+      description: "View badge details and achievements.",
     };
   }
 }
 
 export default function BadgeLayout({ children }: BadgeLayoutProps) {
-  return <>{children}</>;
+  return children;
 }

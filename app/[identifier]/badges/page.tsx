@@ -1,11 +1,10 @@
-import { getBadgesForUser } from "@/app/services/badgesService";
 import { getTalentUserService } from "@/app/services/userService";
-import { RESERVED_WORDS } from "@/lib/constants";
-import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
-import { ErrorState } from "@/components/badges";
+import { getBadgesForUser } from "@/app/services/badgesService";
+import { ProfileBadgesClient } from "./ProfileBadgesClient";
+import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
-import { ProfileBadgesClient } from "@/app/[identifier]/badges/ProfileBadgesClient";
+import type { BadgeState } from "@/app/services/badgesService";
 
 interface ProfileBadgesPageProps {
   params: {
@@ -13,67 +12,41 @@ interface ProfileBadgesPageProps {
   };
 }
 
-/**
- * PROFILE BADGES TAB PAGE
- *
- * Displays all badges for a user in their profile tab.
- * Uses the same layout as the private /badges page but with responsive grid.
- * Server-side rendered for optimal performance.
- */
-export default async function ProfileBadgesPage({
-  params,
-}: ProfileBadgesPageProps) {
-  // 1. Input validation
-  if (RESERVED_WORDS.includes(params.identifier)) {
-    return <CreatorNotFoundCard />;
-  }
+const getCachedUserService = unstable_cache(
+  async (identifier: string) => {
+    return getTalentUserService(identifier);
+  },
+  [CACHE_KEYS.USER_PROFILE],
+  { revalidate: CACHE_DURATION_5_MINUTES },
+);
 
-  // 2. Resolve user (server-side)
-  const user = await getTalentUserService(params.identifier);
-  if (!user || !user.id) {
-    return <CreatorNotFoundCard />;
-  }
-
-  // 3. Fetch badge data (server-side with caching)
-  let badgesData;
+export default async function ProfileBadgesPage({ params }: ProfileBadgesPageProps) {
   try {
-    badgesData = await unstable_cache(
-      async () => getBadgesForUser(user.id!)(),
-      [`profile-badges-${user.id}`],
-      {
-        revalidate: CACHE_DURATION_5_MINUTES,
-        tags: [
-          `${CACHE_KEYS.USER_BADGES}-${user.id}`,
-          `profile-badges-${user.id}`,
-        ],
-      },
-    )();
+    // Resolve user
+    const user = await getCachedUserService(params.identifier);
+    if (!user?.id) {
+      notFound();
+    }
+
+    // Get user badges
+    const getBadges = await getBadgesForUser(user.id);
+    const badgesData = await getBadges();
+
+    if (!badgesData?.badges) {
+      notFound();
+    }
+
+    // Filter out locked badges (level 0) for public display
+    const publicBadges = badgesData.badges.filter((badge: BadgeState) => badge.currentLevel > 0);
+
+    return (
+      <ProfileBadgesClient
+        badges={publicBadges}
+        identifier={user.id}
+      />
+    );
   } catch (error) {
-    console.error("[ProfileBadgesPage] Error fetching badges:", error);
-    return <ErrorState error="Failed to load badges" />;
+    console.error("[ProfileBadgesPage] Error:", error);
+    notFound();
   }
-
-  if (
-    !badgesData ||
-    (!badgesData.sections?.length && !badgesData.badges?.length)
-  ) {
-    return <ErrorState error="No badge data available" />;
-  }
-
-  // 4. Prepare display data
-  const canonical = (user.fname ||
-    user.wallet ||
-    user.id ||
-    "unknown") as string;
-
-  return (
-    <ProfileBadgesClient
-      badgesData={badgesData}
-      talentUUID={user.id!}
-      handle={canonical}
-    />
-  );
 }
-
-// Caching configuration
-export const revalidate = 300; // 5 minutes
