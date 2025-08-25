@@ -1,5 +1,6 @@
 import { getTalentUserService } from "@/app/services/userService";
 import { getBadgeDetail } from "@/app/services/badgesService";
+import { redirect } from "next/navigation";
 
 interface PublicBadgePageProps {
   params: {
@@ -21,13 +22,13 @@ export default async function PublicBadgePage({
     // Validate params early to prevent unnecessary API calls
     if (!params.identifier || !params.badgeSlug) {
       console.log("[PublicBadgePage] Invalid params, redirecting to home");
-      return Response.redirect("/", 307);
+      redirect("/");
     }
 
     const user = await getTalentUserService(params.identifier);
     if (!user?.id) {
       console.log("[PublicBadgePage] User not found, redirecting to profile");
-      return Response.redirect(`/${params.identifier}/badges`, 307);
+      redirect(`/${params.identifier}/badges`);
     }
     console.log("[PublicBadgePage] User found:", user.id);
 
@@ -41,14 +42,14 @@ export default async function PublicBadgePage({
       console.log(
         "[PublicBadgePage] Badge not found or locked, redirecting to profile",
       );
-      return Response.redirect(`/${params.identifier}/badges`, 307);
+      redirect(`/${params.identifier}/badges`);
     }
     console.log("[PublicBadgePage] Badge found, redirecting to profile badges");
 
-    return Response.redirect(`/${params.identifier}/badges`, 307);
+    redirect(`/${params.identifier}/badges`);
   } catch (error) {
     console.error("[PublicBadgePage] Error:", error);
     // On any error, redirect to profile badges tab to maintain user experience
-    return Response.redirect(`/${params.identifier}/badges`, 307);
+    redirect(`/${params.identifier}/badges`);
   }
 }

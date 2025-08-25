@@ -16,15 +16,16 @@ interface ProfileBadgesClientProps {
 
 export function ProfileBadgesClient({
   badges,
-  talentUUID,
-  handle,
+  talentUUID, // Profile owner's talent UUID
+  handle, // Profile owner's handle
 }: ProfileBadgesClientProps) {
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Use the general user context hook that works for both Farcaster and Privy
-  const { talentUuid: currentUserTalentId, loading: userLoading } =
-    useFidToTalentUuid();
+  // Use the general user context hook - must be called unconditionally
+  const { talentUuid: currentUserTalentId } = useFidToTalentUuid();
+  
+  // Determine if current user is viewing their own profile
   const isOwnProfile = currentUserTalentId === talentUUID;
 
   // Prevent state updates on unmounted component
