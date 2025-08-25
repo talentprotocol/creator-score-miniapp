@@ -12,7 +12,7 @@ interface PublicBadgeTrackerProps {
 
 /**
  * PUBLIC BADGE TRACKER
- * 
+ *
  * Simple client component for tracking public badge page views.
  * Co-located with the page for better organization.
  */

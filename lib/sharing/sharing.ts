@@ -208,8 +208,8 @@ export class ShareContentGenerators {
     const levelLabel = badge.levelLabel;
     const isEarned = badge.currentLevel > 0;
 
-        // Generate URLs and content (link to dedicated badge page for earned badges)
-    const url = isEarned 
+    // Generate URLs and content (link to dedicated badge page for earned badges)
+    const url = isEarned
       ? `${generateShareUrl(handle)}/badges/${badge.badgeSlug}`
       : generateShareUrl(handle); // Link to profile for locked badges
     const filename = sanitizeFilename(`${handle}-${badge.badgeSlug}-badge.png`);

@@ -67,11 +67,11 @@ export default async function ProfileBadgesPage({
     "unknown") as string;
 
   return (
-          <ProfileBadgesClient
-        badgesData={badgesData}
-        talentUUID={user.id!}
-        handle={canonical}
-      />
+    <ProfileBadgesClient
+      badgesData={badgesData}
+      talentUUID={user.id!}
+      handle={canonical}
+    />
   );
 }
 

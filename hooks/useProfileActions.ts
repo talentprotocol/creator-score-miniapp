@@ -1,7 +1,6 @@
 import { useCallback, useState, useEffect } from "react";
 import { useScoreRefresh } from "./useScoreRefresh";
 import { useFidToTalentUuid } from "./useUserResolution";
-import { useCooldownTracker, recordRefresh, isInCooldown as checkCooldown } from "@/lib/cooldown-manager";
 import type { ProfileData } from "@/contexts/ProfileContext";
 import {
   composeCast,
@@ -31,9 +30,38 @@ export function useProfileActions({
   totalEarnings,
 }: UseProfileActionsProps) {
   const { talentUuid: currentUserTalentUuid } = useFidToTalentUuid();
-  
-  // Use localStorage-based cooldown (more reliable than API)
-  const cooldownMinutes = useCooldownTracker(talentUUID);
+  const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
+
+  // Cooldown detection and countdown logic
+  useEffect(() => {
+    const calculateCooldownTime = () => {
+      if (!lastCalculatedAt) {
+        setCooldownMinutes(null);
+        return;
+      }
+
+      const lastRefreshTime = new Date(lastCalculatedAt).getTime();
+      const currentTime = new Date().getTime();
+      const oneHourInMs = 60 * 60 * 1000; // 1 hour in milliseconds
+      const cooldownEndTime = lastRefreshTime + oneHourInMs;
+
+      if (currentTime < cooldownEndTime) {
+        const remainingMs = cooldownEndTime - currentTime;
+        const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
+        setCooldownMinutes(remainingMinutes);
+      } else {
+        setCooldownMinutes(null);
+      }
+    };
+
+    // Calculate immediately
+    calculateCooldownTime();
+
+    // Update every minute
+    const interval = setInterval(calculateCooldownTime, 60000);
+
+    return () => clearInterval(interval);
+  }, [lastCalculatedAt]);
 
   // Category data no longer needed in useProfileActions
   // (It was only used for share stats, which can work without it)
@@ -55,7 +83,7 @@ export function useProfileActions({
     isRefreshing,
     successMessage,
     error: refreshError,
-    refreshScore: originalRefreshScore,
+    refreshScore,
     clearError,
   } = useScoreRefresh(talentUUID, refetchScore, {
     creatorScore,
@@ -66,23 +94,6 @@ export function useProfileActions({
     isInCooldown,
     isCalculating: calculating,
   });
-
-  // Enhanced refresh with localStorage cooldown
-  const refreshScore = useCallback(async () => {
-    if (!talentUUID) return;
-    
-    // Check localStorage cooldown before attempting refresh
-    if (checkCooldown(talentUUID)) {
-      console.log("Refresh blocked by localStorage cooldown");
-      return;
-    }
-    
-    // Record refresh immediately to prevent double-clicks
-    recordRefresh(talentUUID);
-    
-    // Call original refresh
-    await originalRefreshScore();
-  }, [talentUUID, originalRefreshScore]);
 
   // Don't auto-reset error state - let user see the error until page refresh
 

@@ -20,7 +20,11 @@ import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Settings2, RotateCcw, Loader2 } from "lucide-react";
 import { getAllBadgeSections } from "@/lib/badge-content";
-import { useCooldownTracker, recordRefresh, isInCooldown } from "@/lib/cooldown-manager";
+import {
+  useCooldownTracker,
+  recordRefresh,
+  isInCooldown,
+} from "@/lib/cooldown-manager";
 
 /**
  * BADGES PAGE
@@ -51,7 +55,7 @@ export default function BadgesPage() {
     refetch,
   } = useBadges(talentUuid || undefined);
 
-    // localStorage-based cooldown tracking (more reliable than API)
+  // localStorage-based cooldown tracking (more reliable than API)
   const cooldownMinutes = useCooldownTracker(talentUuid || "");
   const isInLocalCooldown = cooldownMinutes !== null && cooldownMinutes > 0;
 
@@ -62,22 +66,22 @@ export default function BadgesPage() {
     refreshScore: originalRefreshScore,
   } = useScoreRefresh(talentUuid || "", undefined); // No auto-refetch callback
 
-    // Enhanced refresh that also clears badge caches
+  // Enhanced refresh that also clears badge caches
   const refreshBadges = async () => {
     if (!talentUuid) return;
-    
+
     // Check localStorage cooldown before attempting refresh
     if (isInCooldown(talentUuid)) {
       console.log("Refresh blocked by localStorage cooldown");
       return;
     }
-    
+
     // Record refresh immediately to prevent double-clicks
     recordRefresh(talentUuid);
-    
+
     // Call original refresh score to trigger Talent API calculation
     await originalRefreshScore();
-    
+
     // Also clear badge caches for future manual refreshes
     try {
       await fetch("/api/badges/refresh", {

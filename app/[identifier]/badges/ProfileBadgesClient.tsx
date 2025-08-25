@@ -53,7 +53,6 @@ export function ProfileBadgesClient({
 
   return (
     <>
-
       {/* Conditional rendering: sections vs flat grid */}
       {usingSections ? (
         /* Content sections with interleaved dividers */

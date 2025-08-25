@@ -22,7 +22,10 @@ export async function generateMetadata({
   try {
     // Return generic metadata for invalid requests
     const allBadgeSlugs = getAllBadgeSlugs();
-    if (!allBadgeSlugs.includes(params.badgeSlug) || RESERVED_WORDS.includes(params.identifier)) {
+    if (
+      !allBadgeSlugs.includes(params.badgeSlug) ||
+      RESERVED_WORDS.includes(params.identifier)
+    ) {
       return {
         title: "Badge Not Found - Creator Score",
         description: "This badge page could not be found.",
@@ -33,7 +36,7 @@ export async function generateMetadata({
     const getCachedUserService = unstable_cache(
       async (identifier: string) => getTalentUserService(identifier),
       [CACHE_KEYS.USER_PROFILE],
-      { revalidate: CACHE_DURATION_5_MINUTES }
+      { revalidate: CACHE_DURATION_5_MINUTES },
     );
 
     const user = await getCachedUserService(params.identifier);
@@ -47,7 +50,7 @@ export async function generateMetadata({
     const badge = await getBadgeDetail(user.id, params.badgeSlug)();
     if (!badge || badge.currentLevel <= 0) {
       return {
-        title: "Badge Not Found - Creator Score", 
+        title: "Badge Not Found - Creator Score",
         description: "This badge has not been earned yet.",
       };
     }
