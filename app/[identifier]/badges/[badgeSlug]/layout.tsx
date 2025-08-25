@@ -11,7 +11,9 @@ interface BadgeLayoutProps {
   };
 }
 
-export async function generateMetadata({ params }: BadgeLayoutProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: BadgeLayoutProps): Promise<Metadata> {
   try {
     // Get user data for metadata
     const user = await getTalentUserService(params.identifier);
@@ -23,9 +25,12 @@ export async function generateMetadata({ params }: BadgeLayoutProps): Promise<Me
     }
 
     // Get badge data for metadata
-    const getBadgeDetailCached = await getBadgeDetail(user.id, params.badgeSlug);
+    const getBadgeDetailCached = await getBadgeDetail(
+      user.id,
+      params.badgeSlug,
+    );
     const badge = await getBadgeDetailCached();
-    
+
     if (!badge || badge.currentLevel === 0) {
       return {
         title: "Badge Not Found",
@@ -42,7 +47,8 @@ export async function generateMetadata({ params }: BadgeLayoutProps): Promise<Me
       };
     }
 
-    const displayName = user.display_name || user.fname || user.wallet || user.id || "Creator";
+    const displayName =
+      user.display_name || user.fname || user.wallet || user.id || "Creator";
     const badgeTitle = `${displayName}'s ${badgeContent.title} - Level ${badge.currentLevel}`;
     const badgeDescription = `${displayName} earned the ${badgeContent.title} badge at level ${badge.currentLevel}. Check out their achievement and see what badges you can earn too!`;
 

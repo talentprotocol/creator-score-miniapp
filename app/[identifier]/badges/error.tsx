@@ -21,7 +21,7 @@ export default function ProfileBadgesError({ error, reset }: ErrorProps) {
       <Typography as="h2" size="lg" weight="bold" color="destructive">
         Something went wrong
       </Typography>
-      
+
       <Typography size="sm" color="muted" className="max-w-md">
         We couldn&apos;t load the badges. This might be a temporary issue.
       </Typography>
@@ -31,7 +31,7 @@ export default function ProfileBadgesError({ error, reset }: ErrorProps) {
           <RefreshCw className="h-4 w-4 mr-2" />
           Try again
         </Button>
-        
+
         <Button onClick={() => window.location.reload()} variant="ghost">
           Reload page
         </Button>

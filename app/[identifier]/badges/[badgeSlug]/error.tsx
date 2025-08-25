@@ -22,9 +22,10 @@ export default function PublicBadgeError({ error, reset }: ErrorProps) {
       <Typography as="h2" size="lg" weight="bold" color="destructive">
         Badge not found
       </Typography>
-      
+
       <Typography size="sm" color="muted" className="max-w-md">
-        We couldn&apos;t load this badge. It might have been removed or the link might be incorrect.
+        We couldn&apos;t load this badge. It might have been removed or the link
+        might be incorrect.
       </Typography>
 
       <div className="flex gap-3">
@@ -32,7 +33,7 @@ export default function PublicBadgeError({ error, reset }: ErrorProps) {
           <RefreshCw className="h-4 w-4 mr-2" />
           Try again
         </Button>
-        
+
         <Link href="/">
           <Button variant="ghost">
             <Home className="h-4 w-4 mr-2" />

@@ -20,33 +20,43 @@ const getCachedUserService = unstable_cache(
   { revalidate: CACHE_DURATION_5_MINUTES },
 );
 
-export default async function ProfileBadgesPage({ params }: ProfileBadgesPageProps) {
+export default async function ProfileBadgesPage({
+  params,
+}: ProfileBadgesPageProps) {
   try {
+    console.log("[ProfileBadgesPage] Loading badges for:", params.identifier);
+
     // Resolve user
     const user = await getCachedUserService(params.identifier);
     if (!user?.id) {
+      console.log("[ProfileBadgesPage] User not found");
       notFound();
     }
+
+    console.log("[ProfileBadgesPage] User found:", user.id);
 
     // Get user badges
     const getBadges = await getBadgesForUser(user.id);
     const badgesData = await getBadges();
 
     if (!badgesData?.badges) {
+      console.log("[ProfileBadgesPage] No badges found");
       notFound();
     }
 
-    // Filter out locked badges (level 0) for public display
-    const publicBadges = badgesData.badges.filter((badge: BadgeState) => badge.currentLevel > 0);
+    console.log("[ProfileBadgesPage] Badges found:", badgesData.badges.length);
 
-    return (
-      <ProfileBadgesClient
-        badges={publicBadges}
-        identifier={user.id}
-      />
+    // Filter out locked badges (level 0) for public display
+    const publicBadges = badgesData.badges.filter(
+      (badge: BadgeState) => badge.currentLevel > 0,
     );
+
+    console.log("[ProfileBadgesPage] Public badges:", publicBadges.length);
+
+    return <ProfileBadgesClient badges={publicBadges} identifier={user.id} />;
   } catch (error) {
     console.error("[ProfileBadgesPage] Error:", error);
-    notFound();
+    // Don't use notFound() on error - let the error boundary handle it
+    throw error;
   }
 }

@@ -9,10 +9,10 @@ export default function ProfileBadgesLoading() {
           <div key={index} className="flex flex-col items-center space-y-3">
             {/* Badge image skeleton */}
             <Skeleton className="w-28 h-28 rounded-lg" />
-            
+
             {/* Badge title skeleton */}
             <Skeleton className="w-20 h-4" />
-            
+
             {/* Badge subtitle skeleton */}
             <Skeleton className="w-16 h-3" />
           </div>
