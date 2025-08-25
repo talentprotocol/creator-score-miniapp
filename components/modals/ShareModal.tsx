@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Link, Download } from "lucide-react";
 import { useShare } from "@/hooks/useShare";
-import { generateAltText } from "@/lib/sharing";
+import { generateAltText, resolveImageUrl } from "@/lib/sharing";
 import type {
   ShareContent,
   ShareContext,
@@ -99,6 +99,9 @@ export function ShareModal({
     badge_level: analytics.metadata.badge_level,
   });
 
+  // Resolve relative image URLs to absolute URLs for Next.js Image component
+  const resolvedImageUrl = resolveImageUrl(content.imageUrl);
+
   // Handle platform sharing actions
   const handleFarcasterShare = () => shareToFarcaster(content);
   const handleTwitterShare = () => shareToTwitter(content);
@@ -110,7 +113,7 @@ export function ShareModal({
       {/* Share Image Preview */}
       <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-muted">
         <Image
-          src={content.imageUrl}
+          src={resolvedImageUrl}
           alt={altText}
           fill
           className="object-cover"

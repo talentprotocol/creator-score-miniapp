@@ -141,8 +141,6 @@ export async function GET(
               Level {badgeLevel}
             </div>
           )}
-
-
         </div>
       ),
       {
