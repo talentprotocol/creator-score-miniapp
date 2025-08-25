@@ -20,10 +20,11 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCountingAnimation } from "@/hooks/useCountingAnimation";
 import { useShareData } from "@/hooks/useShareData";
 import { X, Download } from "lucide-react";
-import { cn, formatNumberWithSuffix, openExternalUrl } from "@/lib/utils";
+import { cn, formatNumberWithSuffix } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { detectClient } from "@/lib/utils";
 import posthog from "posthog-js";
+import { ShareContentGenerators, PlatformSharing } from "@/lib/sharing";
 
 interface ShareCreatorScoreModalProps {
   open: boolean;
@@ -45,9 +46,37 @@ export function ShareCreatorScoreModal({
     displayName,
     handle,
     formattedFollowers,
-    formattedEarnings,
   } = useShareData();
   const [downloading, setDownloading] = React.useState(false);
+  const [client, setClient] = React.useState<string | null>(null);
+
+  // Detect client on component mount
+  React.useEffect(() => {
+    const initClient = async () => {
+      const detectedClient = await detectClient(context);
+      setClient(detectedClient);
+    };
+    initClient();
+  }, [context]);
+
+  // Prepare sharing data using the new sharing system
+  const shareContext = React.useMemo(
+    () => ({
+      talentUUID: talentUuid || "",
+      handle: handle || talentUuid || "creator",
+      appClient: client,
+    }),
+    [talentUuid, handle, client],
+  );
+
+  const shareContent = React.useMemo(() => {
+    return ShareContentGenerators.profile(shareContext, {
+      creatorScore: realScore,
+      totalFollowers: parseFloat(formattedFollowers.replace(/[K,M]/g, "")),
+      totalEarnings: realEarnings,
+      displayName,
+    });
+  }, [shareContext, realScore, formattedFollowers, realEarnings, displayName]);
 
   // Track modal open
   React.useEffect(() => {
@@ -206,7 +235,7 @@ export function ShareCreatorScoreModal({
           {/* Button #1 - Farcaster */}
           <button
             onClick={async () => {
-              // Track click before sharing
+              // Track click before sharing - preserve legacy event
               posthog.capture("share_button_clicked", {
                 platform: "farcaster",
                 source: "welcome",
@@ -215,25 +244,13 @@ export function ShareCreatorScoreModal({
                 total_followers: formattedFollowers,
               });
 
-              const client = await detectClient(context);
-              const identifier = handle;
-              const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
-              const farcasterText = `Check @${identifier}'s reputation as an onchain creator:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nSee the full profile in the Creator Score app, built by @talent 👇`;
-
-              if (client === "farcaster") {
-                try {
-                  const { sdk } = await import("@farcaster/frame-sdk");
-                  await sdk.actions.composeCast({
-                    text: farcasterText,
-                    embeds: [profileUrl],
-                  });
-                } catch (error) {
-                  console.error("Failed to compose cast:", error);
-                }
-              } else {
-                // Open Farcaster web app with pre-filled cast
-                const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
-                window.open(farcasterUrl, "_blank");
+              try {
+                await PlatformSharing.shareToFarcaster(
+                  shareContent,
+                  shareContext,
+                );
+              } catch (error) {
+                console.error("Failed to share to Farcaster:", error);
               }
             }}
             className="bg-white/80 hover:bg-white/90 active:bg-white/70 transition-all duration-200 flex items-center justify-center"
@@ -259,7 +276,7 @@ export function ShareCreatorScoreModal({
           {/* Button #2 - X/Twitter */}
           <button
             onClick={async () => {
-              // Track click before sharing
+              // Track click before sharing - preserve legacy event
               posthog.capture("share_button_clicked", {
                 platform: "twitter",
                 source: "welcome",
@@ -268,16 +285,13 @@ export function ShareCreatorScoreModal({
                 total_followers: formattedFollowers,
               });
 
-              const identifier = handle;
-              const profileUrl = `https://creatorscore.app/${encodeURIComponent(identifier)}`;
-              const displayName = identifier;
-              const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${realScore.toLocaleString()}\n🫂 Total Followers: ${formattedFollowers}\n💰 Total Earnings: ${formattedEarnings}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
-              const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
-              const client = await detectClient(context);
-              if (client === "browser") {
-                window.open(twitterUrl, "_blank");
-              } else {
-                openExternalUrl(twitterUrl, null, client);
+              try {
+                await PlatformSharing.shareToTwitter(
+                  shareContent,
+                  shareContext,
+                );
+              } catch (error) {
+                console.error("Failed to share to Twitter:", error);
               }
             }}
             className="bg-white/80 hover:bg-white/90 active:bg-white/70 transition-all duration-200 flex items-center justify-center"
@@ -303,7 +317,7 @@ export function ShareCreatorScoreModal({
           {/* Button #3 - Download */}
           <button
             onClick={async () => {
-              // Track click before downloading
+              // Track click before downloading - preserve legacy event
               posthog.capture("share_button_clicked", {
                 platform: "download",
                 source: "welcome",
@@ -314,25 +328,7 @@ export function ShareCreatorScoreModal({
 
               try {
                 setDownloading(true);
-                const baseUrl =
-                  process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
-                const imageURL = `${baseUrl}/api/share-image/${talentUuid}`;
-                const client = await detectClient(context);
-                if (client === "browser") {
-                  const response = await fetch(imageURL);
-                  const blob = await response.blob();
-                  const url = window.URL.createObjectURL(blob);
-
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `${handle}-creator-score.png`;
-                  document.body.appendChild(a);
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                  document.body.removeChild(a);
-                } else {
-                  openExternalUrl(imageURL, null, client);
-                }
+                await PlatformSharing.downloadImage(shareContent, shareContext);
               } catch (error) {
                 console.error("Failed to download image:", error);
               } finally {
