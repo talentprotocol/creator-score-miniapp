@@ -188,17 +188,6 @@ export function BadgeModal({
     !!profileOwnerTalentUUID &&
     talentUUID === profileOwnerTalentUUID;
 
-  // Debug logging to understand the values
-  console.log("[BadgeModal] Debug values:", {
-    talentUUID,
-    profileOwnerTalentUUID,
-    handle,
-    isOwnProfile,
-    currentUserTalentId: talentUUID,
-    profileOwnerTalentId: profileOwnerTalentUUID,
-    comparison: talentUUID === profileOwnerTalentUUID
-  });
-
   // Generate motivational message based on progress
   const getMotivationalMessage = () => {
     if (!badgeContent || badge.isMaxLevel) return null;

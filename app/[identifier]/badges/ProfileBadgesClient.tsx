@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { BadgeCard } from "@/components/badges/BadgeCard";
 import { BadgeModal } from "@/components/badges/BadgeModal";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
-import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import type { BadgeState } from "@/app/services/badgesService";
 import { Award } from "lucide-react";
 
@@ -22,19 +22,10 @@ export function ProfileBadgesClient({
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Safely use the auth hook with error handling
-  let currentUserTalentId: string | null = null;
-  let isOwnProfile = false;
-
-  try {
-    const auth = usePrivyAuth({});
-    currentUserTalentId = auth.talentId;
-    isOwnProfile = currentUserTalentId === talentUUID;
-  } catch (error) {
-    console.error("[ProfileBadgesClient] Auth error:", error);
-    // Don't throw - just treat as not own profile
-    isOwnProfile = false;
-  }
+  // Use the general user context hook that works for both Farcaster and Privy
+  const { talentUuid: currentUserTalentId, loading: userLoading } =
+    useFidToTalentUuid();
+  const isOwnProfile = currentUserTalentId === talentUUID;
 
   // Prevent state updates on unmounted component
   useEffect(() => {
@@ -100,15 +91,6 @@ export function ProfileBadgesClient({
         handle={handle} // Pass the handle (like "jessepollak") instead of UUID
         profileOwnerTalentUUID={talentUUID} // Add profile owner's talentUUID for comparison
       />
-
-      {/* Debug logging */}
-      {console.log("[ProfileBadgesClient] Debug values:", {
-        currentUserTalentId,
-        talentUUID,
-        handle,
-        isOwnProfile,
-        comparison: currentUserTalentId === talentUUID
-      })}
     </>
   );
 }
