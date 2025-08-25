@@ -256,21 +256,22 @@ export function BadgeModal({
 
     const isInCooldown = cooldownMinutes !== null && cooldownMinutes > 0;
 
+    // Handle verification states (mimic ProfileHeader refresh pattern)
+    if (isVerifying) {
+      return {
+        showVerify: true,
+        verifyText: "Refresh Pending",
+        verifyVariant: "default",
+        verifyDisabled: true,
+      };
+    }
+
     if (verifyError) {
       return {
         showVerify: true,
         verifyText: "Verification Failed",
         verifyVariant: "destructive",
-        verifyDisabled: false,
-      };
-    }
-
-    if (isVerifying) {
-      return {
-        showVerify: true,
-        verifyText: "Verifying...",
-        verifyVariant: "brand-green",
-        verifyDisabled: true,
+        verifyDisabled: true, // Keep disabled after error
       };
     }
 
@@ -465,24 +466,6 @@ export function BadgeModal({
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        {/* Progress or Error Message */}
-        {(progressMessage || verifyError) && (
-          <div className="text-center">
-            <Typography size="sm" color={verifyError ? "destructive" : "muted"}>
-              {verifyError || progressMessage}
-            </Typography>
-          </div>
-        )}
-
-        {/* Motivational Message for No Progress */}
-        {verifyError && !progressMessage && (
-          <div className="text-center">
-            <Typography size="sm" color="muted">
-              {getMotivationalMessage()}
-            </Typography>
-          </div>
-        )}
-
         {/* Button Layout */}
         {!isOwnProfile ? (
           // No buttons for viewing other profiles
@@ -542,6 +525,15 @@ export function BadgeModal({
                 {verifyButtonState.verifyText}
               </Button>
             )}
+          </div>
+        )}
+
+        {/* Motivational Message for No Progress (Below Buttons) */}
+        {verifyError && (
+          <div className="text-center">
+            <Typography size="sm" color="muted">
+              {getMotivationalMessage()}
+            </Typography>
           </div>
         )}
       </div>
