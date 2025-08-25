@@ -1,8 +1,6 @@
 import React from "react";
 import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { CACHE_KEYS, CACHE_DURATION_30_MINUTES } from "@/lib/cache-keys";
 
 export async function GET(
   req: NextRequest,
@@ -63,11 +61,9 @@ export async function GET(
       badgeArtwork,
     });
 
-    // Generate cached image
-    const imageResponse = await unstable_cache(
-      async () => {
-        console.log("[Badge Share Image] Starting ImageResponse generation");
-        return new ImageResponse(
+    // Generate image (temporarily remove caching for debugging)
+    console.log("[Badge Share Image] Starting ImageResponse generation");
+    const imageResponse = new ImageResponse(
           (
             <div
               style={{
@@ -175,13 +171,6 @@ export async function GET(
             ],
           },
         );
-      },
-      [`badge-share-${badgeSlug}-${talentUUID}-${level}`],
-      {
-        tags: [`badge-share-${badgeSlug}`, CACHE_KEYS.SHARE_IMAGE_DATA],
-        revalidate: CACHE_DURATION_30_MINUTES,
-      },
-    )();
 
     // Set appropriate headers
     const response = new Response(imageResponse.body, {
