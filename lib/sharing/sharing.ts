@@ -252,8 +252,8 @@ export class ShareContentGenerators {
   static optout(context: ShareContext): ShareContent {
     const { handle, talentUUID } = context;
 
-    // Generate URLs and content
-    const url = generateShareUrl(handle);
+    // Generate URLs and content (use query parameter for Pay It Forward context)
+    const url = `${generateShareUrl(handle)}?share=optout`;
     const filename = sanitizeFilename(`${handle}-paid-forward.png`);
 
     const farcasterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score app, built by @talent 👇`;
