@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BadgeCard } from "@/components/badges/BadgeCard";
 import { BadgeModal } from "@/components/badges/BadgeModal";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
@@ -20,6 +20,7 @@ export function ProfileBadgesClient({
   handle,
 }: ProfileBadgesClientProps) {
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Safely use the auth hook with error handling
   let currentUserTalentId: string | null = null;
@@ -35,14 +36,28 @@ export function ProfileBadgesClient({
     isOwnProfile = false;
   }
 
-  const handleBadgeClick = (badge: BadgeState) => {
-    // Open badge modal
-    setSelectedBadge(badge);
-  };
+  // Prevent state updates on unmounted component
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
-  const handleCloseModal = () => {
-    setSelectedBadge(null);
-  };
+  const handleBadgeClick = useCallback((badge: BadgeState) => {
+    if (isMounted) {
+      setSelectedBadge(badge);
+    }
+  }, [isMounted]);
+
+  const handleCloseModal = useCallback(() => {
+    if (isMounted) {
+      setSelectedBadge(null);
+    }
+  }, [isMounted]);
+
+  // Don't render if component is unmounting
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <>
