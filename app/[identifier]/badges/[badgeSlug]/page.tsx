@@ -49,7 +49,8 @@ export default async function PublicBadgePage({
     redirect(`/${params.identifier}/badges`);
   } catch (error) {
     console.error("[PublicBadgePage] Error:", error);
-    // Don't redirect on error - let the error boundary handle it
-    throw error;
+    // On any error, redirect to home instead of throwing
+    // This prevents the error boundary from showing briefly
+    redirect("/");
   }
 }

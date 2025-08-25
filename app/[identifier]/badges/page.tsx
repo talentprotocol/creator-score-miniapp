@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 import type { BadgeState } from "@/app/services/badgesService";
+import { redirect } from "next/navigation";
 
 interface ProfileBadgesPageProps {
   params: {
@@ -56,7 +57,8 @@ export default async function ProfileBadgesPage({
     return <ProfileBadgesClient badges={publicBadges} identifier={user.id} />;
   } catch (error) {
     console.error("[ProfileBadgesPage] Error:", error);
-    // Don't use notFound() on error - let the error boundary handle it
-    throw error;
+    // On any error, redirect to home instead of throwing
+    // This prevents the error boundary from showing briefly
+    redirect("/");
   }
 }

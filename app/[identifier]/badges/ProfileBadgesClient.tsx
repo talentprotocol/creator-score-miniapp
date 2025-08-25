@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { BadgeCard } from "@/components/badges/BadgeCard";
 import { BadgeModal } from "@/components/badges/BadgeModal";
-import { Callout } from "@/components/common/Callout";
+import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import type { BadgeState } from "@/app/services/badgesService";
+import { Medal } from "lucide-react";
 
 interface ProfileBadgesClientProps {
   badges: BadgeState[];
@@ -58,12 +59,16 @@ export function ProfileBadgesClient({
 
         {/* Call to action for visitors (only show if not own profile) */}
         {!isOwnProfile && (
-          <Callout
-            variant="brand-purple"
-            title="Check Your Own Badges"
-            description="See what badges you've earned and track your progress."
-            href="/badges"
-          />
+          <div className="mt-4">
+            <ButtonFullWidth
+              variant="brand-purple"
+              icon={<Medal className="h-4 w-4" />}
+              align="left"
+              href="/badges"
+            >
+              Check Your Own Badges
+            </ButtonFullWidth>
+          </div>
         )}
       </div>
 

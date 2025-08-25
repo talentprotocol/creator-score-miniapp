@@ -256,7 +256,8 @@ export function BadgeModal({
       };
     }
 
-    const isInCooldown = cooldownMinutes != null && (cooldownMinutes as number) > 0;
+    const isInCooldown =
+      cooldownMinutes != null && (cooldownMinutes as number) > 0;
 
     // Handle verification states (mimic ProfileHeader refresh pattern)
     if (isVerifying) {
