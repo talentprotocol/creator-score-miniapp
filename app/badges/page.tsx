@@ -25,6 +25,7 @@ import {
   recordRefresh,
   isInCooldown,
 } from "@/lib/cooldown-manager";
+import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 /**
  * BADGES PAGE
@@ -107,14 +108,14 @@ export default function BadgesPage() {
     availableSections.map((section) => section.id),
   );
 
-  // Redirect unauthenticated users to leaderboard (following Settings page pattern)
+  // Show FarcasterAccessModal for unauthenticated users
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   useEffect(() => {
     if (!userLoading && !talentUuid) {
-      // Don't redirect immediately - let the component render the loading state
-      // This prevents the global error boundary from triggering
-      return;
+      setShowAuthModal(true);
     }
-  }, [userLoading, talentUuid, router]);
+  }, [userLoading, talentUuid]);
 
   /** Handle badge card clicks to open detailed modal */
   const handleBadgeClick = (badge: BadgeState) => {
@@ -163,9 +164,20 @@ export default function BadgesPage() {
     return <LoadingState />;
   }
 
-  // Show loading state for unauthenticated users instead of redirecting
+  // Show FarcasterAccessModal for unauthenticated users
   if (!talentUuid) {
-    return <LoadingState />;
+    return (
+      <>
+        <PageContainer>
+          <LoadingState />
+        </PageContainer>
+        <FarcasterAccessModal
+          open={showAuthModal}
+          onOpenChange={setShowAuthModal}
+          redirectPath="/badges"
+        />
+      </>
+    );
   }
 
   if (badgesLoading) {

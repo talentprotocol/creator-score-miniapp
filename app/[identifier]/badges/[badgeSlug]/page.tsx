@@ -9,47 +9,29 @@ interface PublicBadgePageProps {
   };
 }
 
-export default async function PublicBadgePage({
-  params,
-}: PublicBadgePageProps) {
+export default async function PublicBadgePage({ params }: PublicBadgePageProps) {
   try {
-    console.log(
-      "[PublicBadgePage] Starting redirect for:",
-      params.identifier,
-      params.badgeSlug,
-    );
-
-    // Get user data for metadata generation
+    console.log("[PublicBadgePage] Starting redirect for:", params.identifier, params.badgeSlug);
     const user = await getTalentUserService(params.identifier);
     if (!user?.id) {
       console.log("[PublicBadgePage] User not found, redirecting to profile");
-      redirect(`/${params.identifier}/badges`);
+      // Return a response that will trigger redirect instead of calling redirect() directly
+      return Response.redirect(`/${params.identifier}/badges`, 307);
     }
-
     console.log("[PublicBadgePage] User found:", user.id);
 
-    // Get badge data for metadata generation
-    const getBadgeDetailCached = await getBadgeDetail(
-      user.id,
-      params.badgeSlug,
-    );
+    const getBadgeDetailCached = await getBadgeDetail(user.id, params.badgeSlug);
     const badge = await getBadgeDetailCached();
 
     if (!badge || badge.currentLevel === 0) {
-      console.log(
-        "[PublicBadgePage] Badge not found or locked, redirecting to profile",
-      );
-      redirect(`/${params.identifier}/badges`);
+      console.log("[PublicBadgePage] Badge not found or locked, redirecting to profile");
+      return Response.redirect(`/${params.identifier}/badges`, 307);
     }
-
     console.log("[PublicBadgePage] Badge found, redirecting to profile badges");
 
-    // Generate metadata for social crawlers, then redirect humans
-    // Social platforms will crawl this page and get the metadata before redirect
-    redirect(`/${params.identifier}/badges`);
+    return Response.redirect(`/${params.identifier}/badges`, 307);
   } catch (error) {
     console.error("[PublicBadgePage] Error:", error);
-    // On any error, redirect to profile badges tab to maintain user experience
-    redirect(`/${params.identifier}/badges`);
+    return Response.redirect(`/${params.identifier}/badges`, 307);
   }
 }

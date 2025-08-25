@@ -180,10 +180,13 @@ export function BadgeModal({
   const isLocked = badge.currentLevel === 0;
   const badgeContent = getBadgeContent(badge.badgeSlug);
   const isStreakBadge = badgeContent?.isStreakBadge || false;
-  
+
   // Determine if current user is viewing their own profile
   // Compare the current user's talentUUID with the profile owner's talentUUID
-  const isOwnProfile = !!talentUUID && !!profileOwnerTalentUUID && talentUUID === profileOwnerTalentUUID;
+  const isOwnProfile =
+    !!talentUUID &&
+    !!profileOwnerTalentUUID &&
+    talentUUID === profileOwnerTalentUUID;
 
   // Generate motivational message based on progress
   const getMotivationalMessage = () => {
