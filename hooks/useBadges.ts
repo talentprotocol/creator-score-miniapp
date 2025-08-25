@@ -1,8 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import type { BadgesResponse } from "@/app/services/badgesService";
 
+// Extended response type for profile badges that includes user information
+interface ExtendedBadgesResponse extends BadgesResponse {
+  user?: {
+    id: string;
+    identifier: string | null;
+  };
+}
+
 interface UseBadgesReturn {
-  data: BadgesResponse | null;
+  data: ExtendedBadgesResponse | null;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -12,20 +20,22 @@ interface UseBadgesReturn {
  * BADGES HOOK
  *
  * React hook for fetching badge data from the API with standard loading/error states.
+ * Supports both current user badges and profile badges (other users).
  * Follows the project's {data, loading, error} pattern for consistency.
  *
  * @param userId - Optional user ID for development/testing (bypasses Farcaster auth)
+ * @param identifier - Optional profile identifier (e.g., "jessepollak") for viewing other users' badges
  * @returns Object with badge data, loading state, and error state
  */
-export function useBadges(userId?: string): UseBadgesReturn {
-  const [data, setData] = useState<BadgesResponse | null>(null);
+export function useBadges(userId?: string, identifier?: string): UseBadgesReturn {
+  const [data, setData] = useState<ExtendedBadgesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   /** Fetch badge data from API with proper error handling */
   const fetchBadges = useCallback(async () => {
-    // Don't fetch if no userId is provided
-    if (!userId) {
+    // Don't fetch if no userId or identifier is provided
+    if (!userId && !identifier) {
       setLoading(false);
       setData(null);
       setError(null);
@@ -36,9 +46,10 @@ export function useBadges(userId?: string): UseBadgesReturn {
       setLoading(true);
       setError(null);
 
-      // Build query params for development/testing
+      // Build query params
       const params = new URLSearchParams();
-      params.append("userId", userId);
+      if (userId) params.append("userId", userId);
+      if (identifier) params.append("identifier", identifier);
 
       const queryString = params.toString();
       const url = `/api/badges?${queryString}`;
@@ -55,7 +66,7 @@ export function useBadges(userId?: string): UseBadgesReturn {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, identifier]);
 
   /** Manual refetch function for badge verification */
   const refetch = useCallback(async () => {

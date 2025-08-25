@@ -1,65 +1,63 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { BadgeCard } from "@/components/badges/BadgeCard";
 import { BadgeModal } from "@/components/badges/BadgeModal";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
+import { useBadges } from "@/hooks/useBadges";
+import { LoadingState, ErrorState } from "@/components/badges";
 import type { BadgeState } from "@/app/services/badgesService";
 import { Award } from "lucide-react";
 
 interface ProfileBadgesClientProps {
-  badges: BadgeState[];
-  talentUUID: string;
-  handle: string; // Add handle prop for BadgeModal
+  identifier: string;
 }
 
-export function ProfileBadgesClient({
-  badges,
-  talentUUID, // Profile owner's talent UUID
-  handle, // Profile owner's handle
-}: ProfileBadgesClientProps) {
+export function ProfileBadgesClient({ identifier }: ProfileBadgesClientProps) {
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
 
-  // Use the general user context hook - must be called unconditionally
+  // Get current user's talent UUID for comparison
   const { talentUuid: currentUserTalentId } = useFidToTalentUuid();
   
-  // Determine if current user is viewing their own profile
-  const isOwnProfile = currentUserTalentId === talentUUID;
+  // Fetch badge data for the profile owner
+  const { data, loading, error } = useBadges(undefined, identifier);
 
-  // Prevent state updates on unmounted component
-  useEffect(() => {
-    setIsMounted(true);
-    return () => setIsMounted(false);
+  // Determine if current user is viewing their own profile
+  const isOwnProfile = currentUserTalentId === data?.user?.id;
+
+  const handleBadgeClick = useCallback((badge: BadgeState) => {
+    setSelectedBadge(badge);
   }, []);
 
-  const handleBadgeClick = useCallback(
-    (badge: BadgeState) => {
-      if (isMounted) {
-        setSelectedBadge(badge);
-      }
-    },
-    [isMounted],
-  );
-
   const handleCloseModal = useCallback(() => {
-    if (isMounted) {
-      setSelectedBadge(null);
-    }
-  }, [isMounted]);
+    setSelectedBadge(null);
+  }, []);
 
-  // Don't render if component is unmounting
-  if (!isMounted) {
-    return null;
+  // Show loading state while fetching data
+  if (loading) {
+    return <LoadingState />;
   }
+
+  // Show error state if fetch failed
+  if (error) {
+    return <ErrorState error={error} />;
+  }
+
+  // Show error if no badge data
+  if (!data?.badges) {
+    return <ErrorState error="No badges found" />;
+  }
+
+  // Filter to only show earned badges (level > 0)
+  const publicBadges = data.badges.filter(badge => badge.currentLevel > 0);
 
   return (
     <>
       <div className="space-y-6">
         {/* Badge Grid */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {badges.map((badge) => (
+          {publicBadges.map((badge) => (
             <BadgeCard
               key={badge.badgeSlug}
               badge={badge}
@@ -89,8 +87,8 @@ export function ProfileBadgesClient({
         badge={selectedBadge}
         onClose={handleCloseModal}
         talentUUID={currentUserTalentId || undefined}
-        handle={handle} // Pass the handle (like "jessepollak") instead of UUID
-        profileOwnerTalentUUID={talentUUID} // Add profile owner's talentUUID for comparison
+        handle={identifier}
+        profileOwnerTalentUUID={data?.user?.id}
       />
     </>
   );
