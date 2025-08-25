@@ -50,21 +50,21 @@ export default function BadgesPage() {
     refetch,
   } = useBadges(talentUuid || undefined);
 
-  // Score refresh hook (exact same as profile page)
+    // Score refresh hook (exact same as profile page, but no auto-refetch)
   const {
     isRefreshing,
     error: refreshError,
     refreshScore: originalRefreshScore,
-  } = useScoreRefresh(talentUuid || "", refetch);
+  } = useScoreRefresh(talentUuid || "", undefined); // No auto-refetch callback
 
   // Enhanced refresh that also clears badge caches
-  const refreshScore = async () => {
+  const refreshBadges = async () => {
     if (!talentUuid) return;
-
-    // Call original refresh score
+    
+    // Call original refresh score to trigger Talent API calculation
     await originalRefreshScore();
-
-    // Also clear badge caches
+    
+    // Also clear badge caches for future manual refreshes
     try {
       await fetch("/api/badges/refresh", {
         method: "POST",
@@ -178,9 +178,9 @@ export default function BadgesPage() {
             </Typography>
           </div>
           <div className="flex items-center gap-2">
-            {/* Refresh Button (copied from ProfileLayoutContent.tsx) */}
+            {/* Refresh Button (adapted for badges) */}
             <Button
-              onClick={refreshScore}
+              onClick={refreshBadges}
               variant="default"
               size="sm"
               className={`${
@@ -196,12 +196,12 @@ export default function BadgesPage() {
               ) : refreshError ? (
                 <>
                   <RotateCcw className="w-4 h-4 mr-2" />
-                  Refresh Failed
+                  Try Again Later
                 </>
               ) : (
                 <>
                   <RotateCcw className="w-4 h-4 mr-2" />
-                  Refresh Score
+                  Refresh Badges
                 </>
               )}
             </Button>
