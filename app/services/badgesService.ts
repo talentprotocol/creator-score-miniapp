@@ -553,40 +553,73 @@ async function getBadgesForUserUncached(
  * Get all badges for a user with 5-minute caching
  * Returns badge sections and summary stats (earned count, completion percentage)
  */
-export const getBadgesForUser = unstable_cache(
-  getBadgesForUserUncached,
-  [CACHE_KEYS.USER_BADGES],
-  {
-    revalidate: CACHE_DURATION_5_MINUTES,
-    tags: [`${CACHE_KEYS.USER_BADGES}`],
-  },
-);
+/**
+ * Get all badges for a user with 5-minute caching
+ * Returns badge sections and summary stats (earned count, completion percentage)
+ *
+ * ARCHITECTURE NOTE: This follows the coding principles by:
+ * 1. Using Talent UUID as canonical identifier
+ * 2. User-scoped cache keys and tags
+ * 3. Proper caching with unstable_cache
+ */
+export function getBadgesForUser(talentUuid: string) {
+  return unstable_cache(
+    async () => getBadgesForUserUncached(talentUuid),
+    [`${CACHE_KEYS.USER_BADGES}-${talentUuid}`],
+    {
+      revalidate: CACHE_DURATION_5_MINUTES,
+      tags: [
+        `${CACHE_KEYS.USER_BADGES}-${talentUuid}`,
+        CACHE_KEYS.USER_BADGES, // Keep global tag for full cache clear if needed
+      ],
+    },
+  );
+}
 
 /**
  * Get detailed information for a specific badge
  * Used by the badge detail modal and individual badge pages
  */
-export async function getBadgeDetail(
-  talentUuid: string,
-  badgeSlug: string,
-): Promise<BadgeState | null> {
-  try {
-    const badgesData = await getBadgesForUser(talentUuid);
+/**
+ * Get detailed information for a specific badge
+ * Used by the badge detail modal and individual badge pages
+ *
+ * ARCHITECTURE NOTE: This follows the coding principles by:
+ * 1. Using Talent UUID as canonical identifier
+ * 2. User-scoped cache keys and tags
+ * 3. Proper caching with unstable_cache
+ */
+export function getBadgeDetail(talentUuid: string, badgeSlug: string) {
+  return unstable_cache(
+    async () => {
+      try {
+        const badgesData = await getBadgesForUser(talentUuid)();
 
-    // Find the badge across all sections or in flat array
-    let badge: BadgeState | undefined;
-    if (badgesData.sections) {
-      for (const section of badgesData.sections) {
-        badge = section.badges.find((b) => b.badgeSlug === badgeSlug);
-        if (badge) break;
+        // Find the badge across all sections or in flat array
+        let badge: BadgeState | undefined;
+        if (badgesData.sections) {
+          for (const section of badgesData.sections) {
+            badge = section.badges.find((b) => b.badgeSlug === badgeSlug);
+            if (badge) break;
+          }
+        } else if (badgesData.badges) {
+          badge = badgesData.badges.find((b) => b.badgeSlug === badgeSlug);
+        }
+
+        return badge || null;
+      } catch (error) {
+        console.error("[getBadgeDetail] Error:", error);
+        return null;
       }
-    } else if (badgesData.badges) {
-      badge = badgesData.badges.find((b) => b.badgeSlug === badgeSlug);
-    }
-
-    return badge || null;
-  } catch (error) {
-    console.error("[getBadgeDetail] Error:", error);
-    return null;
-  }
+    },
+    [`${CACHE_KEYS.USER_BADGES}-${talentUuid}-${badgeSlug}`],
+    {
+      revalidate: CACHE_DURATION_5_MINUTES,
+      tags: [
+        `${CACHE_KEYS.USER_BADGES}-${talentUuid}`,
+        `${CACHE_KEYS.USER_BADGES}-${talentUuid}-${badgeSlug}`,
+        CACHE_KEYS.USER_BADGES,
+      ],
+    },
+  );
 }

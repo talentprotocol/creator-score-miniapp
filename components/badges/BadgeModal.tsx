@@ -19,10 +19,18 @@ import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";
 import Image from "next/image";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { ShareModal } from "@/components/modals/ShareModal";
+import { ShareContentGenerators } from "@/lib/sharing";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { detectClient } from "@/lib/utils";
 
 interface BadgeModalProps {
   badge: BadgeState | null;
   onClose: () => void;
+  /** User's Talent Protocol UUID for sharing */
+  talentUUID?: string;
+  /** Public handle/identifier for share URLs */
+  handle?: string;
 }
 
 /**
@@ -39,14 +47,31 @@ interface BadgeModalProps {
  * - Dynamic button text/variant based on badge state
  * - Graceful image error handling with icon fallback
  */
-export function BadgeModal({ badge, onClose }: BadgeModalProps) {
+export function BadgeModal({
+  badge,
+  onClose,
+  talentUUID,
+  handle,
+}: BadgeModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [imageError, setImageError] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [client, setClient] = useState<string | null>(null);
+
+  // Get MiniKit context for client detection
+  const { context } = useMiniKit();
 
   // Reset image error when badge changes
   useEffect(() => {
     setImageError(false);
   }, [badge]);
+
+  // Detect client type for sharing
+  useEffect(() => {
+    detectClient(context).then((detectedClient) => {
+      setClient(detectedClient);
+    });
+  }, [context]);
 
   if (!badge) return null;
 
@@ -105,6 +130,43 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
 
     return `${formattedMissing}${uomText} left to reach ${levelText}`;
   };
+
+  // Handle badge sharing
+  const handleShareBadge = () => {
+    if (!talentUUID || !handle) {
+      console.warn("Badge sharing requires talentUUID and handle");
+      return;
+    }
+    setIsShareModalOpen(true);
+  };
+
+  // Check if sharing is available (only for earned badges with user context)
+  const canShare = badge.currentLevel > 0 && talentUUID && handle;
+
+  // Prepare sharing data if available
+  let shareContent, shareContext, shareAnalytics;
+
+  if (canShare) {
+    shareContext = {
+      talentUUID,
+      handle,
+      appClient: client,
+    };
+
+    shareAnalytics = {
+      eventPrefix: "badge_share",
+      metadata: {
+        share_type: "badge",
+        badge_slug: badge.badgeSlug,
+        badge_level: badge.currentLevel,
+        badge_category: badge.categoryName,
+        badge_title: badge.title,
+        is_earned: badge.currentLevel > 0,
+      },
+    };
+
+    shareContent = ShareContentGenerators.badge(shareContext, badge);
+  }
 
   const ModalContent = () => (
     <div className="space-y-6 text-center">
@@ -173,7 +235,11 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
       )}
 
       <div className="flex justify-center">
-        <Button onClick={onClose} className="w-full" variant="brand-purple">
+        <Button
+          onClick={canShare ? handleShareBadge : onClose}
+          className="w-full"
+          variant="brand-purple"
+        >
           {badge.currentLevel > 0 ? "Share Badge" : "Let's do this!"}
         </Button>
       </div>
@@ -206,6 +272,17 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
             </div>
           </DrawerContent>
         </Drawer>
+      )}
+
+      {/* Share Modal */}
+      {canShare && shareContent && shareContext && shareAnalytics && (
+        <ShareModal
+          open={isShareModalOpen}
+          onOpenChange={setIsShareModalOpen}
+          content={shareContent}
+          context={shareContext}
+          analytics={shareAnalytics}
+        />
       )}
     </>
   );

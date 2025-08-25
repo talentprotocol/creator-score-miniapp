@@ -2,6 +2,7 @@
 
 import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
+import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import type { BadgeState } from "@/app/services/badgesService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -39,6 +40,9 @@ export default function BadgesPage() {
   const router = useRouter();
   // Get current user's talent UUID (works for both Farcaster and Privy)
   const { talentUuid, loading: userLoading } = useFidToTalentUuid();
+
+  // Get user profile data for handle (needed for sharing)
+  const { displayName } = useResolvedTalentProfile();
 
   // Only fetch badges when we have a valid UUID
   const {
@@ -205,20 +209,36 @@ export default function BadgesPage() {
       ) : (
         /* Single grid layout for badges below threshold */
         <Section variant="content">
-          <div className="grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-3 md:gap-x-4 md:gap-y-6">
-            {allBadges.map((badge, index) => (
-              <BadgeCard
-                key={badge.badgeSlug}
-                badge={badge}
-                onBadgeClick={handleBadgeClick}
-                priority={index < 6} // Prioritize first 6 badges (2x3 grid)
-              />
-            ))}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-3 md:gap-x-4 md:gap-y-6 auto-rows-auto">
+            {allBadges.map((badge, index) => {
+              // Check if this badge should start on a new row (different section from previous)
+              const shouldStartNewRow =
+                index > 0 &&
+                allBadges[index - 1].categoryName !== badge.categoryName;
+
+              return (
+                <div
+                  key={badge.badgeSlug}
+                  className={shouldStartNewRow ? "col-start-1" : ""}
+                >
+                  <BadgeCard
+                    badge={badge}
+                    onBadgeClick={handleBadgeClick}
+                    priority={index < 6} // Prioritize first 6 badges (2x3 grid)
+                  />
+                </div>
+              );
+            })}
           </div>
         </Section>
       )}
 
-      <BadgeModal badge={selectedBadge} onClose={handleCloseModal} />
+      <BadgeModal
+        badge={selectedBadge}
+        onClose={handleCloseModal}
+        talentUUID={talentUuid || undefined}
+        handle={displayName || talentUuid || undefined}
+      />
 
       {usingSections && (
         <BadgeFilterModal

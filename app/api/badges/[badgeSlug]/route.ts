@@ -63,7 +63,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     // For now, just get the first badge from the main badges response
     const badgesData = await import("@/app/services/badgesService").then((m) =>
-      m.getBadgesForUser(talentUuid),
+      m.getBadgesForUser(talentUuid)(),
     );
 
     // Find the badge by slug

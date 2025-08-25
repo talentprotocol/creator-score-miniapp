@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
     // Use the cached badge service - leaderboard data is already cached for 1 hour
     // This leverages the existing caching infrastructure efficiently
-    const badgesData = await getBadgesForUser(talentUuid);
+    const badgesData = await getBadgesForUser(talentUuid)();
 
     return Response.json(badgesData);
   } catch (error) {
