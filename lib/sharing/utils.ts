@@ -121,9 +121,21 @@ export function resolveImageUrl(imageUrl: string, baseUrl?: string): string {
     return imageUrl;
   }
 
-  // For relative URLs, prepend base URL
-  const base =
-    baseUrl || process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+  // For relative URLs, determine the correct base URL
+  let base = baseUrl;
+  
+  if (!base) {
+    // In browser environment, use current origin
+    if (typeof window !== "undefined") {
+      base = window.location.origin;
+    } else {
+      // Server-side: prefer VERCEL_URL for deployments, fallback to NEXT_PUBLIC_URL or production
+      base = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    }
+  }
+  
   return `${base}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
 }
 
