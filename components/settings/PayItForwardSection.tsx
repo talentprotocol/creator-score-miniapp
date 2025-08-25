@@ -10,7 +10,7 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 import { ConfettiButton } from "@/components/ui/confetti";
 import { ShareModal } from "@/components/modals/ShareModal";
 import { ShareContentGenerators } from "@/lib/sharing";
-import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
+
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
 import { detectClient } from "@/lib/utils";
@@ -48,8 +48,7 @@ export function PayItForwardSection() {
     updateUserOptOutStatus,
   } = useLeaderboardData();
 
-  // Get profile data for sharing
-  const { displayName } = useResolvedTalentProfile();
+  // Note: We use talentUuid directly as handle for URL-safe sharing
   const { context } = useMiniKit();
   const posthog = usePostHog();
   const [client, setClient] = useState<string | null>(null);
@@ -185,10 +184,10 @@ export function PayItForwardSection() {
   const shareContext = React.useMemo(
     () => ({
       talentUUID: talentUuid || "",
-      handle: displayName || talentUuid || "creator",
+      handle: talentUuid || "creator", // Use talentUuid directly as handle for URL-safe sharing
       appClient: client,
     }),
-    [talentUuid, displayName, client],
+    [talentUuid, client], // Remove displayName dependency
   );
 
   const shareContent = React.useMemo(

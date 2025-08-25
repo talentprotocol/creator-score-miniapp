@@ -100,15 +100,7 @@ export function ShareModal({
   });
 
   // Resolve relative image URLs to absolute URLs for Next.js Image component
-  // Force client-side resolution to ensure correct deployment URL
-  const [resolvedImageUrl, setResolvedImageUrl] = React.useState(content.imageUrl);
-  
-  React.useEffect(() => {
-    // Only resolve on client-side to get correct deployment URL
-    if (typeof window !== "undefined") {
-      setResolvedImageUrl(resolveImageUrl(content.imageUrl));
-    }
-  }, [content.imageUrl]);
+  const resolvedImageUrl = resolveImageUrl(content.imageUrl);
 
   // Handle platform sharing actions
   const handleFarcasterShare = () => shareToFarcaster(content);
