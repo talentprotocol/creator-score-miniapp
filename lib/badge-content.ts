@@ -170,9 +170,9 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     uom: "collectors",
   },
 
-  "pay-it-forward": {
-    slug: "pay-it-forward",
-    title: "Pay It Forward",
+  "paid-forward": {
+    slug: "paid-forward",
+    title: "Paid Forward",
     description:
       "Help grow the creator economy by donating rewards to emerging creators!",
     levelThresholds: [0, 25, 50, 75, 100, 125],
@@ -207,7 +207,8 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
   base: {
     slug: "base",
     title: "Base",
-    description: "Earn 6 Base badges by making 10+, 50+, 100+, 250+, 500+, and 1K+ transactions!",
+    description:
+      "Earn 6 Base badges by making 10+, 50+, 100+, 250+, 500+, and 1K+ transactions!",
     levelThresholds: [10, 50, 100, 250, 500, 1000],
     levelLabels: [
       "10+ Base txs",

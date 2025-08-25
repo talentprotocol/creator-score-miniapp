@@ -117,6 +117,7 @@ export async function generateMetadata({
           return;
         }
 
+        // Parse credential-level readable_value only
         const cleanValue = point.readable_value;
         let value: number;
         const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");

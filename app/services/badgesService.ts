@@ -14,7 +14,11 @@ import {
   formatBadgeDescription,
   BADGE_SECTION_THRESHOLD,
 } from "@/lib/badge-content";
-import { calculateTotalRewards, getEthUsdcPrice } from "@/lib/utils";
+import {
+  calculateTotalRewards,
+  getEthUsdcPrice,
+  parseFormattedNumber,
+} from "@/lib/utils";
 import { getCollectorCountCredentials } from "@/lib/total-earnings-config";
 
 /**
@@ -311,7 +315,7 @@ async function computeWeeklyStreaksBadges(
 async function computePayItForwardBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const content = getBadgeContent("pay-it-forward");
+  const content = getBadgeContent("paid-forward");
   if (!content) return [];
 
   // Check if user has opted out of rewards (Pay It Forward action)
@@ -345,7 +349,9 @@ async function computeTotalCollectorsBadges(
   for (const group of credentials) {
     for (const point of group.points) {
       if (point.slug && collectorCredentialSlugs.includes(point.slug)) {
-        const value = parseFloat(point.readable_value?.toString() ?? "0") || 0;
+        const value = parseFormattedNumber(
+          point.readable_value?.toString() ?? "0",
+        );
         totalCollectors += value;
       }
     }
