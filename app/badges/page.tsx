@@ -2,6 +2,7 @@
 
 import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
+import { useScoreRefresh } from "@/hooks/useScoreRefresh";
 
 import type { BadgeState } from "@/app/services/badgesService";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ import { Section } from "@/components/common/Section";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/common/PageContainer";
-import { Settings2 } from "lucide-react";
+import { Settings2, RotateCcw, Loader2 } from "lucide-react";
 import { getAllBadgeSections } from "@/lib/badge-content";
 
 /**
@@ -48,6 +49,36 @@ export default function BadgesPage() {
     error,
     refetch,
   } = useBadges(talentUuid || undefined);
+
+  // Score refresh hook (exact same as profile page)
+  const {
+    isRefreshing,
+    error: refreshError,
+    refreshScore: originalRefreshScore,
+  } = useScoreRefresh(talentUuid || "", refetch);
+
+  // Enhanced refresh that also clears badge caches
+  const refreshScore = async () => {
+    if (!talentUuid) return;
+    
+    // Call original refresh score
+    await originalRefreshScore();
+    
+    // Also clear badge caches
+    try {
+      await fetch("/api/badges/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          talentUUID: talentUuid,
+          badgeSlug: "all",
+          cacheKeys: ["USER_BADGES", "USER_CREATOR_SCORE"],
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to clear badge caches:", error);
+    }
+  };
 
   /** Get available sections for filter */
   const availableSections = getAllBadgeSections();
@@ -146,15 +177,46 @@ export default function BadgesPage() {
               {badgesData.summary.completionPct}% completed
             </Typography>
           </div>
-          {usingSections && (
+          <div className="flex items-center gap-2">
+            {/* Refresh Button (copied from ProfileLayoutContent.tsx) */}
             <Button
-              variant="ghost"
-              onClick={() => setFilterModalOpen(true)}
-              className="h-10 w-10 p-0"
+              onClick={refreshScore}
+              variant="default"
+              size="sm"
+              className={`${
+                refreshError ? "text-red-700 hover:border-red-400" : ""
+              }`}
+              disabled={isRefreshing || !!refreshError}
             >
-              <Settings2 className="h-6 w-6 text-foreground" />
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Refresh Pending
+                </>
+              ) : refreshError ? (
+                <>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Refresh Failed
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Refresh Score
+                </>
+              )}
             </Button>
-          )}
+            
+            {/* Filter Button */}
+            {usingSections && (
+              <Button
+                variant="ghost"
+                onClick={() => setFilterModalOpen(true)}
+                className="h-10 w-10 p-0"
+              >
+                <Settings2 className="h-6 w-6 text-foreground" />
+              </Button>
+            )}
+          </div>
         </div>
       </Section>
 

@@ -245,7 +245,8 @@ export function BadgeModal({
   }
 
   const getVerifyButtonState = (): ButtonState => {
-    if (!isOwnProfile || badge.isMaxLevel) {
+    // Hide individual verify buttons now that we have global refresh
+    if (!isOwnProfile || badge.isMaxLevel || true) { // Always hide for now
       return {
         showVerify: false,
         verifyText: "",
