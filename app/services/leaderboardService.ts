@@ -188,10 +188,81 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   // Count boosted creators
   const boostedCreatorsCount = ranked.filter((entry) => entry.isBoosted).length;
 
+  // Update stored rewards for opted-out users after leaderboard calculation
+  try {
+    await updateOptedOutRewards(ranked);
+  } catch (error) {
+    console.error(
+      "[LeaderboardService] Failed to update rewards storage:",
+      error,
+    );
+    // Don't fail leaderboard if rewards update fails - it's a background operation
+  }
+
   return {
     entries: ranked,
     boostedCreatorsCount,
   };
+}
+
+/**
+ * Update stored rewards for all opted-out users in top 200
+ * This function is called automatically when leaderboard data is recalculated
+ * @param entries - Ranked leaderboard entries
+ */
+async function updateOptedOutRewards(
+  entries: LeaderboardEntry[],
+): Promise<void> {
+  // Find opted-out users in top 200
+  const optedOutUsers = entries
+    .filter((entry) => entry.isOptedOut && entry.rank <= 200)
+    .slice(0, 200); // Ensure only top 200
+
+  if (optedOutUsers.length === 0) {
+    console.log("[LeaderboardService] No opted-out users in top 200 to update");
+    return;
+  }
+
+  try {
+    // Import services dynamically to avoid circular dependencies
+    const { RewardsCalculationService } = await import(
+      "./rewardsCalculationService"
+    );
+    const { RewardsStorageService } = await import("./rewardsStorageService");
+
+    // Calculate rewards for each opted-out user
+    const rewardsToStore = optedOutUsers.map((user) => {
+      const rewardAmount = RewardsCalculationService.calculateUserReward(
+        user.score,
+        user.rank,
+        user.isBoosted || false,
+        false, // Calculate as if not opted out to get the donation amount
+        entries,
+      );
+
+      // Extract numeric value from formatted string (e.g., "$138" -> 138)
+      const numericAmount =
+        parseFloat(rewardAmount.replace(/[^0-9.-]/g, "")) || 0;
+
+      return {
+        talentUuid: String(user.talent_protocol_id),
+        amount: numericAmount,
+      };
+    });
+
+    // Batch update all opted-out user rewards
+    await RewardsStorageService.batchUpdateOptedOutRewards(rewardsToStore);
+
+    console.log(
+      `[LeaderboardService] Updated rewards storage for ${rewardsToStore.length} opted-out users`,
+    );
+  } catch (error) {
+    console.error(
+      "[LeaderboardService] Error updating opted-out rewards:",
+      error,
+    );
+    throw error; // Re-throw to be caught by caller
+  }
 }
 
 /**

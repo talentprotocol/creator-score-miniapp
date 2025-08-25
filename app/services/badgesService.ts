@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 import { LEVEL_RANGES } from "@/lib/constants";
+
 import { getCreatorScoreForTalentId } from "./scoresService";
 import { getSocialAccountsForTalentId } from "./socialAccountsService";
 import { getCachedUserTokenBalance } from "./tokenBalanceService";
@@ -24,20 +25,15 @@ import { getCollectorCountCredentials } from "@/lib/total-earnings-config";
 /**
  * BADGES SERVICE
  *
- * This service implements a compute-on-read MVP for the Creator Score Badges feature.
- * It calculates badge eligibility, progress, and states based on existing user data
- * from various Talent API endpoints, with 5-minute server-side caching.
+ * This service calculates badge eligibility, progress, and states based on user data
+ * from various sources including external APIs and database storage.
  *
  * Architecture:
  * - Uses existing services (scores, social accounts, token balance, credentials)
- * - Computes badge states on-demand (no new database tables)
- * - Caches results for 5 minutes using unstable_cache
+ * - Paid Forward badge uses database storage for optimal performance
+ * - Other badges compute on-demand with 5-minute caching
  * - Returns structured badge data with progress calculations
  *
- * Badge Categories:
- * 1. Trophies: Creator Score level-based achievements
- * 2. Metrics: Total Earnings and Total Followers milestones
- * 3. Platforms: $TALENT balance and Base transaction achievements (currently disabled)
  */
 
 // Types for badge system (updated for dynamic single-badge approach)
@@ -319,18 +315,39 @@ async function computePayItForwardBadges(
   if (!content) return [];
 
   // Check if user has opted out of rewards (Pay It Forward action)
-  // For now, we'll use a placeholder value since we don't have actual donation amounts yet
-  // TODO: Implement actual donation tracking when the feature is available
-  const hasOptedOut = await OptoutService.isOptedOut(talentUuid);
-  const currentValue = hasOptedOut ? 25 : 0; // Placeholder: $25 if opted out, $0 if not
+  const isOptedOut = await OptoutService.isOptedOut(talentUuid);
 
-  const badge = createDynamicBadge(
-    content,
-    currentValue,
-    content.levelThresholds,
-  );
+  if (!isOptedOut) {
+    // User hasn't opted out, so no donation amount
+    const badge = createDynamicBadge(content, 0, content.levelThresholds);
+    return [badge];
+  }
 
-  return [badge];
+  // User has opted out - get stored rewards amount from database
+  try {
+    const { RewardsStorageService } = await import("./rewardsStorageService");
+    const storedRewards =
+      await RewardsStorageService.getStoredRewards(talentUuid);
+
+    // Use stored donation amount (the amount they're donating by opting out)
+    const donationAmount = storedRewards?.rewards_amount || 0;
+
+    const badge = createDynamicBadge(
+      content,
+      donationAmount,
+      content.levelThresholds,
+    );
+    return [badge];
+  } catch (error) {
+    console.error(
+      "[computePayItForwardBadges] Error fetching stored rewards:",
+      error,
+    );
+
+    // Fallback: if database query fails, show 0 donation
+    const badge = createDynamicBadge(content, 0, content.levelThresholds);
+    return [badge];
+  }
 }
 
 async function computeTotalCollectorsBadges(

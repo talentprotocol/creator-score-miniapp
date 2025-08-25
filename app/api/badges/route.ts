@@ -49,7 +49,8 @@ export async function GET(request: Request) {
       return new Response("User not found", { status: 404 });
     }
 
-    // Fetch badges for the resolved user
+    // Use the cached badge service - leaderboard data is already cached for 1 hour
+    // This leverages the existing caching infrastructure efficiently
     const badgesData = await getBadgesForUser(talentUuid);
 
     return Response.json(badgesData);
