@@ -22,18 +22,21 @@ export async function GET(
       );
     }
 
-    // Always use canonical URL for sharing, but allow localhost for font loading in dev
-    const canonicalUrl = "https://creatorscore.app";
+    // Detect current deployment URL for asset loading (fonts, images)
     const baseUrl =
       process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
-        : process.env.NEXT_PUBLIC_URL || canonicalUrl;
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
 
     // Load fonts (reusing existing pattern)
     const [cyRegular, cyBold, cyExtraBold] = await Promise.all([
       fetch(`${baseUrl}/fonts/Cy Regular.ttf`).then((res) => res.arrayBuffer()),
       fetch(`${baseUrl}/fonts/Cy Bold.ttf`).then((res) => res.arrayBuffer()),
-      fetch(`${baseUrl}/fonts/Cy ExtraBold.ttf`).then((res) => res.arrayBuffer()),
+      fetch(`${baseUrl}/fonts/Cy ExtraBold.ttf`).then((res) =>
+        res.arrayBuffer(),
+      ),
     ]);
 
     // Determine badge artwork URL
@@ -54,7 +57,7 @@ export async function GET(
                 height: "100%",
                 position: "relative",
                 backgroundImage: `url(${baseUrl}/images/share/bg-only.png)`,
-                backgroundSize: "1600px 900px", 
+                backgroundSize: "1600px 900px",
                 backgroundRepeat: "no-repeat",
                 flexDirection: "column",
                 alignItems: "center",

@@ -2,7 +2,7 @@
 
 import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
+
 import type { BadgeState } from "@/app/services/badgesService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -40,9 +40,6 @@ export default function BadgesPage() {
   const router = useRouter();
   // Get current user's talent UUID (works for both Farcaster and Privy)
   const { talentUuid, loading: userLoading } = useFidToTalentUuid();
-
-  // Get user profile data for sharing context
-  useResolvedTalentProfile();
 
   // Only fetch badges when we have a valid UUID
   const {
