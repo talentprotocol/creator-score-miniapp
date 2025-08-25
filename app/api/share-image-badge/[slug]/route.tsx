@@ -50,11 +50,11 @@ export async function GET(
       ),
     ]);
 
-    // Determine badge artwork URL
+    // Determine badge artwork URL (PNG from share directory)
     const badgeSlug = params.slug;
     const badgeLevel = parseInt(level);
     const earnedSuffix = badgeLevel > 0 ? "earned" : "locked";
-    const badgeArtwork = `${baseUrl}/images/badges/${badgeSlug}/${badgeSlug}-${badgeLevel || 1}-${earnedSuffix}.webp`;
+    const badgeArtwork = `${baseUrl}/images/share/badges/${badgeSlug}/${badgeSlug}-${badgeLevel || 1}-${earnedSuffix}.png`;
 
     // Debug logging
     console.log("[Badge Share Image] Asset URLs:", {
@@ -75,14 +75,21 @@ export async function GET(
             width: "100%",
             height: "100%",
             position: "relative",
-            backgroundColor: "#F5F5F5",
+            backgroundImage: `url(${baseUrl}/images/share/bg-only.png)`,
+            backgroundSize: "1600px 900px",
+            backgroundRepeat: "no-repeat",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          {/* Badge Placeholder - Centered */}
-          <div
+          {/* Badge Artwork - Centered */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={badgeArtwork}
+            alt={`${title} badge`}
+            width={300}
+            height={300}
             style={{
               position: "absolute",
               left: "50%",
@@ -90,19 +97,9 @@ export async function GET(
               transform: "translate(-50%, -50%)",
               width: 300,
               height: 300,
-              backgroundColor: "#8E7BE5",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontSize: 24,
-              fontFamily: "Cy",
-              fontWeight: 700,
+              objectFit: "contain",
             }}
-          >
-            Badge
-          </div>
+          />
 
           {/* Badge Title */}
           <div
@@ -144,19 +141,20 @@ export async function GET(
           )}
 
           {/* Creator Score Logo - Bottom Right */}
-          <div
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${baseUrl}/images/share/creator-score-logo.png`}
+            alt="Creator Score"
+            width={200}
+            height={40}
             style={{
               position: "absolute",
               right: 40,
               bottom: 40,
-              fontSize: 20,
-              fontFamily: "Cy",
-              fontWeight: 700,
-              color: "#000000",
+              width: 200,
+              height: 40,
             }}
-          >
-            Creator Score
-          </div>
+          />
         </div>
       ),
       {
