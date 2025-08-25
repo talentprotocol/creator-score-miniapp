@@ -213,8 +213,7 @@ export default function BadgesPage() {
             {allBadges.map((badge, index) => {
               // Check if this badge should start on a new row (different section from previous)
               const shouldStartNewRow =
-                index > 0 &&
-                allBadges[index - 1].categoryName !== badge.categoryName;
+                index > 0 && allBadges[index - 1].sectionId !== badge.sectionId;
 
               return (
                 <div

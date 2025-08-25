@@ -23,6 +23,7 @@ export interface BadgeContent {
   levelLabels: string[];
   uom?: string;
   isStreakBadge?: boolean;
+  sectionId: string; // Section identifier (e.g., "trophies", "records", "special")
 }
 
 export interface BadgeSectionContent {
@@ -83,6 +84,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "Legendary Creator",
     ],
     uom: "pts",
+    sectionId: "trophies",
   },
 
   "daily-streaks": {
@@ -100,6 +102,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     ],
     uom: "days",
     isStreakBadge: true,
+    sectionId: "trophies",
   },
 
   "weekly-streaks": {
@@ -117,6 +120,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     ],
     uom: "weeks",
     isStreakBadge: true,
+    sectionId: "trophies",
   },
 
   "total-earnings": {
@@ -134,6 +138,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "$100K+ Earned",
     ],
     uom: "USD",
+    sectionId: "records",
   },
 
   "total-followers": {
@@ -151,6 +156,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "250K+ Followers",
     ],
     uom: "followers",
+    sectionId: "records",
   },
 
   "total-collectors": {
@@ -168,6 +174,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "10K+ Collectors",
     ],
     uom: "collectors",
+    sectionId: "records",
   },
 
   "paid-forward": {
@@ -185,6 +192,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "$125+ Donated",
     ],
     uom: "USD",
+    sectionId: "trophies",
   },
 
   talent: {
@@ -202,6 +210,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "10K+ $TALENT",
     ],
     uom: "$TALENT",
+    sectionId: "special",
   },
 
   base: {
@@ -219,6 +228,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
       "10K+ Base txs",
     ],
     uom: "txs",
+    sectionId: "special",
   },
 };
 
@@ -275,6 +285,10 @@ export function getBadgeMaxLevel(slug: string): number {
 
 export function getBadgeUOM(slug: string): string | undefined {
   return BADGE_CONTENT[slug]?.uom;
+}
+
+export function getBadgeSectionId(slug: string): string | undefined {
+  return BADGE_CONTENT[slug]?.sectionId;
 }
 
 export function formatBadgeDescription(

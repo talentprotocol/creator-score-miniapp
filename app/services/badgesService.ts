@@ -14,6 +14,7 @@ import {
   getAllBadgeSections,
   formatBadgeDescription,
   BADGE_SECTION_THRESHOLD,
+  getBadgeSectionId,
 } from "@/lib/badge-content";
 import {
   calculateTotalRewards,
@@ -49,6 +50,7 @@ export interface BadgeState {
   artworkUrl: string; // Current artwork URL
   description: string;
   categoryName: string; // Badge category name
+  sectionId: string; // Section identifier (e.g., "trophies", "records", "special")
   timesEarned?: number; // For streak badges: how many times this badge has been earned
 }
 
@@ -148,6 +150,7 @@ function createDynamicBadge(
       levelLabel,
     ),
     categoryName: content.title,
+    sectionId: getBadgeSectionId(content.slug) || "trophies", // fallback to trophies
   };
 }
 
@@ -196,6 +199,7 @@ function createStreakBadge(
       levelLabel,
     ),
     categoryName: content.title,
+    sectionId: getBadgeSectionId(content.slug) || "trophies", // fallback to trophies
     timesEarned, // Add timesEarned for streak badges
   };
 }

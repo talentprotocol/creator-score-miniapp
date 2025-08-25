@@ -201,7 +201,7 @@ export class ShareContentGenerators {
    * Generate share content for badges
    */
   static badge(context: ShareContext, badge: BadgeState): ShareContent {
-    const { handle } = context;
+    const { handle, talentUUID } = context;
 
     // Badge-specific content
     const badgeTitle = badge.title;
@@ -211,6 +211,14 @@ export class ShareContentGenerators {
     // Generate URLs and content
     const url = generateShareUrl(handle, "badges");
     const filename = sanitizeFilename(`${handle}-${badge.badgeSlug}-badge.png`);
+
+    // Generate dynamic badge share image URL
+    const badgeImageParams = new URLSearchParams({
+      talentUUID,
+      level: badge.currentLevel.toString(),
+      title: badgeTitle,
+    });
+    const imageUrl = `/api/share-image-badge/${badge.badgeSlug}?${badgeImageParams}`;
 
     // Different messaging for earned vs locked badges
     let farcasterText: string;
@@ -230,7 +238,7 @@ export class ShareContentGenerators {
       description: isEarned
         ? `Share your ${badgeTitle} achievement.`
         : `Share your progress towards ${badgeTitle}.`,
-      imageUrl: badge.artworkUrl, // Phase 1: use existing badge artwork
+      imageUrl, // Dynamic badge share image
       filename,
       url,
       farcasterText,
