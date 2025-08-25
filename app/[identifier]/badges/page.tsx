@@ -54,7 +54,13 @@ export default async function ProfileBadgesPage({
 
     console.log("[ProfileBadgesPage] Public badges:", publicBadges.length);
 
-    return <ProfileBadgesClient badges={publicBadges} identifier={user.id} />;
+    return (
+      <ProfileBadgesClient
+        badges={publicBadges}
+        talentUUID={user.id}
+        handle={params.identifier} // Pass the handle (like "jessepollak")
+      />
+    );
   } catch (error) {
     console.error("[ProfileBadgesPage] Error:", error);
     // On any error, redirect to profile badges tab to maintain user experience

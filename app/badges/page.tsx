@@ -110,7 +110,8 @@ export default function BadgesPage() {
   // Redirect unauthenticated users to leaderboard (following Settings page pattern)
   useEffect(() => {
     if (!userLoading && !talentUuid) {
-      router.push("/leaderboard");
+      // Don't redirect immediately - let the component render the loading state
+      // This prevents the global error boundary from triggering
       return;
     }
   }, [userLoading, talentUuid, router]);
@@ -162,9 +163,9 @@ export default function BadgesPage() {
     return <LoadingState />;
   }
 
-  // Redirect unauthenticated users (will redirect via useEffect)
+  // Show loading state for unauthenticated users instead of redirecting
   if (!talentUuid) {
-    return null;
+    return <LoadingState />;
   }
 
   if (badgesLoading) {
