@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getTalentUserService } from "@/app/services/userService";
 import { getBadgeDetail } from "@/app/services/badgesService";
 
@@ -18,7 +17,7 @@ export default async function PublicBadgePage({
       params.identifier,
       params.badgeSlug,
     );
-    
+
     // Validate params early to prevent unnecessary API calls
     if (!params.identifier || !params.badgeSlug) {
       console.log("[PublicBadgePage] Invalid params, redirecting to home");

@@ -5,7 +5,6 @@ import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useScoreRefresh } from "@/hooks/useScoreRefresh";
 
 import type { BadgeState } from "@/app/services/badgesService";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BadgeCard,
@@ -44,7 +43,6 @@ import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
  * - Always-visible sections with thin gray separators
  */
 export default function BadgesPage() {
-  const router = useRouter();
   // Get current user's talent UUID (works for both Farcaster and Privy)
   const { talentUuid, loading: userLoading } = useFidToTalentUuid();
 

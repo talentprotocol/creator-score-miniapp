@@ -42,11 +42,14 @@ export function ProfileBadgesClient({
     return () => setIsMounted(false);
   }, []);
 
-  const handleBadgeClick = useCallback((badge: BadgeState) => {
-    if (isMounted) {
-      setSelectedBadge(badge);
-    }
-  }, [isMounted]);
+  const handleBadgeClick = useCallback(
+    (badge: BadgeState) => {
+      if (isMounted) {
+        setSelectedBadge(badge);
+      }
+    },
+    [isMounted],
+  );
 
   const handleCloseModal = useCallback(() => {
     if (isMounted) {
