@@ -60,10 +60,10 @@ export default function BadgesPage() {
   // Enhanced refresh that also clears badge caches
   const refreshScore = async () => {
     if (!talentUuid) return;
-    
+
     // Call original refresh score
     await originalRefreshScore();
-    
+
     // Also clear badge caches
     try {
       await fetch("/api/badges/refresh", {
@@ -205,7 +205,7 @@ export default function BadgesPage() {
                 </>
               )}
             </Button>
-            
+
             {/* Filter Button */}
             {usingSections && (
               <Button

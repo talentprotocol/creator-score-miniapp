@@ -246,7 +246,8 @@ export function BadgeModal({
 
   const getVerifyButtonState = (): ButtonState => {
     // Hide individual verify buttons now that we have global refresh
-    if (!isOwnProfile || badge.isMaxLevel || true) { // Always hide for now
+    if (!isOwnProfile || badge.isMaxLevel || true) {
+      // Always hide for now
       return {
         showVerify: false,
         verifyText: "",
@@ -255,7 +256,7 @@ export function BadgeModal({
       };
     }
 
-    const isInCooldown = cooldownMinutes !== null && cooldownMinutes > 0;
+    const isInCooldown = cooldownMinutes != null && (cooldownMinutes as number) > 0;
 
     // Handle verification states (mimic ProfileHeader refresh pattern)
     if (isVerifying) {
@@ -279,14 +280,14 @@ export function BadgeModal({
     if (isInCooldown) {
       return {
         showVerify: true,
-        verifyText: `Verify in ${cooldownMinutes}min`,
+        verifyText: `Verify in ${cooldownMinutes ?? 0}min`,
         verifyVariant: "default",
         verifyDisabled: true,
       };
     }
 
     // Available for verification
-    const verifyText = badge.currentLevel === 0 ? "Verify" : "Verify Next";
+    const verifyText = badge?.currentLevel === 0 ? "Verify" : "Verify Next";
     return {
       showVerify: true,
       verifyText,
