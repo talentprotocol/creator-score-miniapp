@@ -2,7 +2,7 @@ import { getTalentUserService } from "@/app/services/userService";
 import { getBadgeDetail } from "@/app/services/badgesService";
 import { getAllBadgeSlugs, getBadgeContent } from "@/lib/badge-content";
 import { RESERVED_WORDS } from "@/lib/constants";
-import { BadgeCard } from "@/components/badges";
+
 import { Callout } from "@/components/common/Callout";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
@@ -92,7 +92,7 @@ export default async function PublicBadgePage({
     notFound();
   }
 
-    // 7. Prepare display data
+  // 7. Prepare display data
   const displayName = (user.display_name || user.fname || "Creator") as string;
 
   return (
@@ -120,11 +120,11 @@ export default async function PublicBadgePage({
       <Section variant="content">
         <div className="flex flex-col items-center space-y-6 text-center">
           {/* Large badge display */}
-          <div className="w-64 h-64">
-            <BadgeCard
-              badge={badge}
-              onBadgeClick={() => {}} // No interaction needed for public view
-              priority={true}
+          <div className="w-64 h-64 flex items-center justify-center">
+            <img
+              src={badge.artworkUrl}
+              alt={`${badgeContent.title} - Level ${badge.currentLevel}`}
+              className="w-full h-full object-contain"
             />
           </div>
 
