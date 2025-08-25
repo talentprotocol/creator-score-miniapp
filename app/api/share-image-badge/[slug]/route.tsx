@@ -22,7 +22,11 @@ export async function GET(
 
     // Validate required parameters
     if (!talentUUID || !level || !title) {
-      console.error("[Badge Share Image] Missing parameters:", { talentUUID, level, title });
+      console.error("[Badge Share Image] Missing parameters:", {
+        talentUUID,
+        level,
+        title,
+      });
       return NextResponse.json(
         { error: "Missing required parameters: talentUUID, level, title" },
         { status: 400 },
@@ -64,113 +68,113 @@ export async function GET(
     // Generate image (temporarily remove caching for debugging)
     console.log("[Badge Share Image] Starting ImageResponse generation");
     const imageResponse = new ImageResponse(
-          (
+      (
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            height: "100%",
+            position: "relative",
+            backgroundImage: `url(${baseUrl}/images/share/bg-only.png)`,
+            backgroundSize: "1600px 900px",
+            backgroundRepeat: "no-repeat",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* Badge Artwork - Centered */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={badgeArtwork}
+            alt={`${title} badge`}
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 300,
+              height: 300,
+              objectFit: "contain",
+            }}
+          />
+
+          {/* Badge Title */}
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "75%",
+              transform: "translateX(-50%)",
+              fontSize: 48,
+              fontFamily: "Cy",
+              fontWeight: 800,
+              color: "#000000",
+              lineHeight: 1,
+              textAlign: "center",
+              maxWidth: 800,
+            }}
+          >
+            {title}
+          </div>
+
+          {/* Level Label (if earned) */}
+          {badgeLevel > 0 && (
             <div
               style={{
-                display: "flex",
-                width: "100%",
-                height: "100%",
-                position: "relative",
-                backgroundImage: `url(${baseUrl}/images/share/bg-only.png)`,
-                backgroundSize: "1600px 900px",
-                backgroundRepeat: "no-repeat",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
+                position: "absolute",
+                left: "50%",
+                top: "83%",
+                transform: "translateX(-50%)",
+                fontSize: 32,
+                fontFamily: "Cy",
+                fontWeight: 600,
+                color: "#6C7587",
+                lineHeight: 1,
+                textAlign: "center",
               }}
             >
-              {/* Badge Artwork - Centered */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={badgeArtwork}
-                alt={`${title} badge`}
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: 300,
-                  height: 300,
-                  objectFit: "contain",
-                }}
-              />
-
-              {/* Badge Title */}
-              <div
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "75%",
-                  transform: "translateX(-50%)",
-                  fontSize: 48,
-                  fontFamily: "Cy",
-                  fontWeight: 800,
-                  color: "#000000",
-                  lineHeight: 1,
-                  textAlign: "center",
-                  maxWidth: 800,
-                }}
-              >
-                {title}
-              </div>
-
-              {/* Level Label (if earned) */}
-              {badgeLevel > 0 && (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "83%",
-                    transform: "translateX(-50%)",
-                    fontSize: 32,
-                    fontFamily: "Cy",
-                    fontWeight: 600,
-                    color: "#6C7587",
-                    lineHeight: 1,
-                    textAlign: "center",
-                  }}
-                >
-                  Level {badgeLevel}
-                </div>
-              )}
-
-              {/* Creator Score Logo - Bottom Right */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`${baseUrl}/images/share/creator-score-logo.png`}
-                alt="Creator Score"
-                style={{
-                  position: "absolute",
-                  right: 40,
-                  bottom: 40,
-                  width: 200,
-                  height: 40,
-                }}
-              />
+              Level {badgeLevel}
             </div>
-          ),
+          )}
+
+          {/* Creator Score Logo - Bottom Right */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${baseUrl}/images/share/creator-score-logo.png`}
+            alt="Creator Score"
+            style={{
+              position: "absolute",
+              right: 40,
+              bottom: 40,
+              width: 200,
+              height: 40,
+            }}
+          />
+        </div>
+      ),
+      {
+        width: 1600,
+        height: 900,
+        fonts: [
           {
-            width: 1600,
-            height: 900,
-            fonts: [
-              {
-                name: "Cy",
-                data: cyRegular,
-                weight: 400,
-              },
-              {
-                name: "Cy",
-                data: cyBold,
-                weight: 700,
-              },
-              {
-                name: "Cy",
-                data: cyExtraBold,
-                weight: 800,
-              },
-            ],
+            name: "Cy",
+            data: cyRegular,
+            weight: 400,
           },
-        );
+          {
+            name: "Cy",
+            data: cyBold,
+            weight: 700,
+          },
+          {
+            name: "Cy",
+            data: cyExtraBold,
+            weight: 800,
+          },
+        ],
+      },
+    );
 
     // Set appropriate headers
     const response = new Response(imageResponse.body, {
@@ -185,7 +189,11 @@ export async function GET(
   } catch (error) {
     console.error("Error generating badge share image:", error);
     return NextResponse.json(
-      { error: "Failed to generate badge image" },
+      { 
+        error: "Failed to generate badge image",
+        details: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      },
       {
         status: 500,
         headers: {
