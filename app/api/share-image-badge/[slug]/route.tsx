@@ -142,22 +142,7 @@ export async function GET(
             </div>
           )}
 
-          {/* Creator Score Logo - Bottom Right */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`${baseUrl}/images/share/creator-score-logo.png`}
-            alt="Creator Score"
-            width={200}
-            height={84}
-            style={{
-              position: "absolute",
-              right: 40,
-              bottom: 40,
-              width: 200,
-              height: 84,
-              objectFit: "contain",
-            }}
-          />
+
         </div>
       ),
       {
