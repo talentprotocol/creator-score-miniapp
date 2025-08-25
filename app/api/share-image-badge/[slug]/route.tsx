@@ -75,19 +75,14 @@ export async function GET(
             width: "100%",
             height: "100%",
             position: "relative",
-            backgroundImage: `url(${baseUrl}/images/share/bg-only.png)`,
-            backgroundSize: "1600px 900px",
-            backgroundRepeat: "no-repeat",
+            backgroundColor: "#F5F5F5",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          {/* Badge Artwork - Centered */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={badgeArtwork}
-            alt={`${title} badge`}
+          {/* Badge Placeholder - Centered */}
+          <div
             style={{
               position: "absolute",
               left: "50%",
@@ -95,9 +90,19 @@ export async function GET(
               transform: "translate(-50%, -50%)",
               width: 300,
               height: 300,
-              objectFit: "contain",
+              backgroundColor: "#8E7BE5",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: 24,
+              fontFamily: "Cy",
+              fontWeight: 700,
             }}
-          />
+          >
+            Badge
+          </div>
 
           {/* Badge Title */}
           <div
@@ -139,18 +144,19 @@ export async function GET(
           )}
 
           {/* Creator Score Logo - Bottom Right */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`${baseUrl}/images/share/creator-score-logo.png`}
-            alt="Creator Score"
+          <div
             style={{
               position: "absolute",
               right: 40,
               bottom: 40,
-              width: 200,
-              height: 40,
+              fontSize: 20,
+              fontFamily: "Cy",
+              fontWeight: 700,
+              color: "#000000",
             }}
-          />
+          >
+            Creator Score
+          </div>
         </div>
       ),
       {
@@ -189,10 +195,10 @@ export async function GET(
   } catch (error) {
     console.error("Error generating badge share image:", error);
     return NextResponse.json(
-      { 
+      {
         error: "Failed to generate badge image",
         details: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       {
         status: 500,
