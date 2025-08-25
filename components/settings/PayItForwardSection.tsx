@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { Typography } from "@/components/ui/typography";
 import { HandHeart, Share2 } from "lucide-react";
@@ -8,11 +8,12 @@ import { useOptOutStatus } from "@/hooks/useOptOutStatus";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { ConfettiButton } from "@/components/ui/confetti";
-import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
+import { ShareModal } from "@/components/modals/ShareModal";
+import { ShareContentGenerators } from "@/lib/sharing";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
-import { detectClient, openExternalUrl } from "@/lib/utils";
+import { detectClient } from "@/lib/utils";
 
 /**
  * PayItForwardSection Component
@@ -170,7 +171,7 @@ export function PayItForwardSection() {
    * - Opens modal for platform selection
    */
   const handleShareStats = async () => {
-    // Track pay it forward share click
+    // Track pay it forward share click (preserve existing analytics)
     posthog?.capture("pay_it_forward_share_clicked", {
       talent_uuid: talentUuid,
       current_rewards: currentRewards,
@@ -180,66 +181,32 @@ export function PayItForwardSection() {
     setIsShareModalOpen(true);
   };
 
-  /**
-   * Handles Farcaster sharing from modal
-   * - Uses native SDK in Farcaster/Base clients
-   * - Falls back to web intent URLs for other clients
-   * - Tracks analytics events
-   */
-  const handleShareFarcaster = useCallback(async () => {
-    const profileUrl = `https://creatorscore.app/${talentUuid}`;
-    const farcasterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score app, built by @talent 👇`;
+  // Prepare sharing data for the new sharing system
+  const shareContext = React.useMemo(
+    () => ({
+      talentUUID: talentUuid || "",
+      handle: displayName || talentUuid || "creator",
+      appClient: client,
+    }),
+    [talentUuid, displayName, client],
+  );
 
-    // Track Farcaster share
-    posthog?.capture("pay_it_forward_share_farcaster_clicked", {
-      talent_uuid: talentUuid,
-      current_rewards: currentRewards,
-    });
+  const shareContent = React.useMemo(
+    () => ShareContentGenerators.optout(shareContext),
+    [shareContext],
+  );
 
-    if (client === "farcaster" || client === "base") {
-      try {
-        const { sdk } = await import("@farcaster/frame-sdk");
-        await sdk.actions.composeCast({
-          text: farcasterText,
-          embeds: [profileUrl],
-        });
-      } catch (error) {
-        console.error("Failed to compose cast:", error);
-      }
-    } else {
-      // Open Farcaster web app with pre-filled cast for browser
-      const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
-      if (client === "browser") {
-        window.open(farcasterUrl, "_blank");
-      } else {
-        openExternalUrl(farcasterUrl, null, client);
-      }
-    }
-  }, [talentUuid, currentRewards, posthog, client]);
-
-  /**
-   * Handles Twitter sharing from modal
-   * - Always uses web intent URLs for consistency
-   * - Tracks analytics events
-   */
-  const handleShareTwitter = useCallback(() => {
-    const profileUrl = `https://creatorscore.app/${talentUuid}`;
-    const twitterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score App, built by @TalentProtocol 👇`;
-
-    // Track Twitter share
-    posthog?.capture("pay_it_forward_share_twitter_clicked", {
-      talent_uuid: talentUuid,
-      current_rewards: currentRewards,
-    });
-
-    // Always use web URL for Twitter sharing
-    const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(profileUrl)}`;
-    if (client === "browser") {
-      window.open(twitterUrl, "_blank");
-    } else {
-      openExternalUrl(twitterUrl, null, client);
-    }
-  }, [talentUuid, currentRewards, posthog, client]);
+  const shareAnalytics = React.useMemo(
+    () => ({
+      eventPrefix: "pay_it_forward_share",
+      metadata: {
+        share_type: "optout" as const,
+        talent_uuid: talentUuid,
+        current_rewards: currentRewards,
+      },
+    }),
+    [talentUuid, currentRewards],
+  );
 
   return (
     <div className="relative space-y-4">
@@ -341,19 +308,16 @@ export function PayItForwardSection() {
         </div>
       </div>
 
-      {/* Share Stats Modal */}
-      <ShareStatsModal
+      {/* Share Good Deed Modal */}
+      <ShareModal
         open={isShareModalOpen}
         onOpenChange={setIsShareModalOpen}
-        talentUUID={talentUuid || ""}
-        handle={displayName || talentUuid || "creator"}
-        onShareFarcaster={handleShareFarcaster}
-        onShareTwitter={handleShareTwitter}
-        appClient={client}
-        disableTwitter={client !== "browser"}
-        title="Share Your Good Deed"
-        description="Let the world know you support creators"
-        imageUrl={`/api/share-image-optout/${talentUuid}`}
+        content={shareContent}
+        context={shareContext}
+        analytics={shareAnalytics}
+        options={{
+          disableTwitter: client !== "browser",
+        }}
       />
     </div>
   );

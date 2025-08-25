@@ -146,11 +146,14 @@ function ProfileLayoutContentInner({
   ]);
 
   // Prepare sharing data for the new sharing system
-  const shareContext = React.useMemo(() => ({
-    talentUUID,
-    handle: profile?.fname || identifier,
-    appClient: client,
-  }), [talentUUID, profile?.fname, identifier, client]);
+  const shareContext = React.useMemo(
+    () => ({
+      talentUUID,
+      handle: profile?.fname || identifier,
+      appClient: client,
+    }),
+    [talentUUID, profile?.fname, identifier, client],
+  );
 
   const profileShareData = React.useMemo(() => {
     // Get creator type from credentials
@@ -164,31 +167,43 @@ function ProfileLayoutContentInner({
       totalFollowers,
       totalEarnings,
       rank,
-      displayName: (profile?.display_name || profile?.name) as string | undefined,
+      displayName: (profile?.display_name || profile?.name) as
+        | string
+        | undefined,
       fname: profile?.fname,
       creatorType: categoryData?.primaryCategory?.name,
       creatorEmoji: categoryData?.primaryCategory?.emoji,
     };
   }, [creatorScore, totalFollowers, totalEarnings, rank, profile, profileData]);
 
-  const shareContent = React.useMemo(() => 
-    ShareContentGenerators.profile(shareContext, profileShareData),
-    [shareContext, profileShareData]
+  const shareContent = React.useMemo(
+    () => ShareContentGenerators.profile(shareContext, profileShareData),
+    [shareContext, profileShareData],
   );
 
-  const shareAnalytics = React.useMemo(() => ({
-    eventPrefix: "profile_share",
-    metadata: {
-      share_type: "profile" as const,
-      creator_score: creatorScore,
-      total_earnings: totalEarnings,
-      total_followers: totalFollowers,
-      is_own_profile: isOwnProfile,
-      has_score: !hasNoScore,
+  const shareAnalytics = React.useMemo(
+    () => ({
+      eventPrefix: "profile_share",
+      metadata: {
+        share_type: "profile" as const,
+        creator_score: creatorScore,
+        total_earnings: totalEarnings,
+        total_followers: totalFollowers,
+        is_own_profile: isOwnProfile,
+        has_score: !hasNoScore,
+        rank,
+        method: "modal", // Preserve existing analytics structure
+      },
+    }),
+    [
+      creatorScore,
+      totalEarnings,
+      totalFollowers,
+      isOwnProfile,
+      hasNoScore,
       rank,
-      method: "modal", // Preserve existing analytics structure
-    },
-  }), [creatorScore, totalEarnings, totalFollowers, isOwnProfile, hasNoScore, rank]);
+    ],
+  );
 
   // Profile data comes from server-side, no loading state needed
   if (!profile) {

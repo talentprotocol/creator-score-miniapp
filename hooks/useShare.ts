@@ -49,8 +49,15 @@ export function useShare(context: ShareContext, analytics: ShareAnalytics) {
         setError(null);
         trackEvent("farcaster_clicked");
         await PlatformSharing.shareToFarcaster(content, context);
-        // Also track legacy completed event for backward compatibility
-        trackEvent("completed", { platform: "farcaster" });
+        // Track legacy completed event for backward compatibility
+        if (analytics.eventPrefix === "pay_it_forward_share") {
+          // Use existing PayItForward analytics event names
+          posthog?.capture("pay_it_forward_share_farcaster_clicked", {
+            ...analytics.metadata,
+          });
+        } else {
+          trackEvent("completed", { platform: "farcaster" });
+        }
       } catch (err) {
         const errorMsg =
           err instanceof Error ? err.message : "Failed to share to Farcaster";
@@ -70,8 +77,15 @@ export function useShare(context: ShareContext, analytics: ShareAnalytics) {
         setError(null);
         trackEvent("twitter_clicked");
         await PlatformSharing.shareToTwitter(content, context);
-        // Also track legacy completed event for backward compatibility
-        trackEvent("completed", { platform: "twitter" });
+        // Track legacy completed event for backward compatibility
+        if (analytics.eventPrefix === "pay_it_forward_share") {
+          // Use existing PayItForward analytics event names
+          posthog?.capture("pay_it_forward_share_twitter_clicked", {
+            ...analytics.metadata,
+          });
+        } else {
+          trackEvent("completed", { platform: "twitter" });
+        }
       } catch (err) {
         const errorMsg =
           err instanceof Error ? err.message : "Failed to share to Twitter";
