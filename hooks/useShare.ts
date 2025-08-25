@@ -49,6 +49,8 @@ export function useShare(context: ShareContext, analytics: ShareAnalytics) {
         setError(null);
         trackEvent("farcaster_clicked");
         await PlatformSharing.shareToFarcaster(content, context);
+        // Also track legacy completed event for backward compatibility
+        trackEvent("completed", { platform: "farcaster" });
       } catch (err) {
         const errorMsg =
           err instanceof Error ? err.message : "Failed to share to Farcaster";
@@ -68,6 +70,8 @@ export function useShare(context: ShareContext, analytics: ShareAnalytics) {
         setError(null);
         trackEvent("twitter_clicked");
         await PlatformSharing.shareToTwitter(content, context);
+        // Also track legacy completed event for backward compatibility
+        trackEvent("completed", { platform: "twitter" });
       } catch (err) {
         const errorMsg =
           err instanceof Error ? err.message : "Failed to share to Twitter";

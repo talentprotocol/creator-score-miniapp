@@ -134,9 +134,9 @@ export interface ProfileData {
   creatorScore?: number;
   totalFollowers?: number;
   totalEarnings?: number;
-  rank?: number;
+  rank?: number | null;
   displayName?: string;
-  fname?: string;
+  fname?: string | null;
   creatorType?: string;
   creatorEmoji?: string;
 }
