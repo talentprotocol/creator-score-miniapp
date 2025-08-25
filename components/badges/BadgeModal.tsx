@@ -70,7 +70,7 @@ export function BadgeModal({ badge, onClose }: BadgeModalProps) {
     }
 
     // Fallback for other badge types
-    return "bg-brand-green";
+    return "bg-badge-level-6";
   };
 
   // Calculate progress text for non-max level badges

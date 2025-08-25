@@ -315,14 +315,15 @@ async function computePayItForwardBadges(
   if (!content) return [];
 
   // Check if user has opted out of rewards (Pay It Forward action)
+  // For now, we'll use a placeholder value since we don't have actual donation amounts yet
+  // TODO: Implement actual donation tracking when the feature is available
   const hasOptedOut = await OptoutService.isOptedOut(talentUuid);
-  const currentValue = hasOptedOut ? 1 : 0;
+  const currentValue = hasOptedOut ? 25 : 0; // Placeholder: $25 if opted out, $0 if not
 
-  const badge = createStreakBadge(
+  const badge = createDynamicBadge(
     content,
     currentValue,
     content.levelThresholds,
-    currentValue, // For Pay It Forward, timesEarned equals currentValue (0 or 1)
   );
 
   return [badge];

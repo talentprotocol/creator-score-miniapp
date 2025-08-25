@@ -51,7 +51,7 @@ export function BadgeCard({
     }
 
     // Fallback for other badge types
-    return "bg-brand-green";
+    return "bg-badge-level-6";
   };
 
   // Reset image error when badge changes
