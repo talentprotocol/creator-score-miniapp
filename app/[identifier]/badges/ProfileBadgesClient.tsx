@@ -100,6 +100,15 @@ export function ProfileBadgesClient({
         handle={handle} // Pass the handle (like "jessepollak") instead of UUID
         profileOwnerTalentUUID={talentUUID} // Add profile owner's talentUUID for comparison
       />
+
+      {/* Debug logging */}
+      {console.log("[ProfileBadgesClient] Debug values:", {
+        currentUserTalentId,
+        talentUUID,
+        handle,
+        isOwnProfile,
+        comparison: currentUserTalentId === talentUUID
+      })}
     </>
   );
 }
