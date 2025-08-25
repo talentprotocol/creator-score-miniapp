@@ -32,10 +32,9 @@ import posthog from "posthog-js";
 interface BadgeModalProps {
   badge: BadgeState | null;
   onClose: () => void;
-  /** User's Talent Protocol UUID for sharing */
-  talentUUID?: string;
-  /** Public handle/identifier for share URLs */
-  handle?: string;
+  talentUUID?: string; // Current user's talent UUID
+  handle?: string; // Profile owner's handle
+  profileOwnerTalentUUID?: string; // Profile owner's talent UUID for comparison
   /** Function to refetch badge data after verification */
   onBadgeRefetch?: () => Promise<void>;
 }
@@ -59,6 +58,7 @@ export function BadgeModal({
   onClose,
   talentUUID,
   handle,
+  profileOwnerTalentUUID,
   onBadgeRefetch,
 }: BadgeModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -180,7 +180,10 @@ export function BadgeModal({
   const isLocked = badge.currentLevel === 0;
   const badgeContent = getBadgeContent(badge.badgeSlug);
   const isStreakBadge = badgeContent?.isStreakBadge || false;
-  const isOwnProfile = !!talentUUID && !!handle; // User is viewing their own badges
+  
+  // Determine if current user is viewing their own profile
+  // Compare the current user's talentUUID with the profile owner's talentUUID
+  const isOwnProfile = !!talentUUID && !!profileOwnerTalentUUID && talentUUID === profileOwnerTalentUUID;
 
   // Generate motivational message based on progress
   const getMotivationalMessage = () => {
@@ -379,7 +382,7 @@ export function BadgeModal({
   // Prepare sharing data if available
   let shareContent, shareContext, shareAnalytics;
 
-  if (canShare) {
+  if (canShare && talentUUID && handle) {
     shareContext = {
       talentUUID,
       handle,

@@ -80,6 +80,7 @@ export function ProfileBadgesClient({
         onClose={handleCloseModal}
         talentUUID={currentUserTalentId || undefined}
         handle={handle} // Pass the handle (like "jessepollak") instead of UUID
+        profileOwnerTalentUUID={talentUUID} // Add profile owner's talentUUID for comparison
       />
     </>
   );
