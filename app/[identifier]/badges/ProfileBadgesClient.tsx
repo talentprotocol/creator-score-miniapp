@@ -19,7 +19,7 @@ export function ProfileBadgesClient({ identifier }: ProfileBadgesClientProps) {
 
   // Get current user's talent UUID for comparison
   const { talentUuid: currentUserTalentId } = useFidToTalentUuid();
-  
+
   // Fetch badge data for the profile owner
   const { data, loading, error } = useBadges(undefined, identifier);
 
@@ -50,13 +50,13 @@ export function ProfileBadgesClient({ identifier }: ProfileBadgesClientProps) {
   }
 
   // Filter to only show earned badges (level > 0)
-  const publicBadges = data.badges.filter(badge => badge.currentLevel > 0);
+  const publicBadges = data.badges.filter((badge) => badge.currentLevel > 0);
 
   return (
     <>
       <div className="space-y-6">
         {/* Badge Grid */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {publicBadges.map((badge) => (
             <BadgeCard
               key={badge.badgeSlug}

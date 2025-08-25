@@ -331,6 +331,7 @@ export default function BadgesPage() {
         onClose={handleCloseModal}
         talentUUID={talentUuid || undefined}
         handle={talentUuid || undefined}
+        profileOwnerTalentUUID={talentUuid || undefined}
         onBadgeRefetch={refetch}
       />
 
