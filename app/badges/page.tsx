@@ -46,6 +46,7 @@ export default function BadgesPage() {
     data: badgesData,
     loading: badgesLoading,
     error,
+    refetch,
   } = useBadges(talentUuid || undefined);
 
   /** Get available sections for filter */
@@ -234,6 +235,7 @@ export default function BadgesPage() {
         onClose={handleCloseModal}
         talentUUID={talentUuid || undefined}
         handle={talentUuid || undefined}
+        onBadgeRefetch={refetch}
       />
 
       {usingSections && (

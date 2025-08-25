@@ -16,13 +16,15 @@ import type { BadgeState } from "@/app/services/badgesService";
 import { getBadgeContent } from "@/lib/badge-content";
 import { formatCompactNumber } from "@/lib/utils";
 import { Typography } from "@/components/ui/typography";
-import { Medal } from "lucide-react";
+import { Medal, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { ShareModal } from "@/components/modals/ShareModal";
 import { ShareContentGenerators } from "@/lib/sharing";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { detectClient } from "@/lib/utils";
+import { useBadgeVerify } from "@/hooks/useBadgeVerify";
+import { Confetti } from "@/components/ui/confetti";
 
 interface BadgeModalProps {
   badge: BadgeState | null;
@@ -31,6 +33,8 @@ interface BadgeModalProps {
   talentUUID?: string;
   /** Public handle/identifier for share URLs */
   handle?: string;
+  /** Function to refetch badge data after verification */
+  onBadgeRefetch?: () => Promise<void>;
 }
 
 /**
@@ -52,11 +56,14 @@ export function BadgeModal({
   onClose,
   talentUUID,
   handle,
+  onBadgeRefetch,
 }: BadgeModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [imageError, setImageError] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [client, setClient] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [wasJustUnlocked, setWasJustUnlocked] = useState(false);
 
   // Get MiniKit context for client detection
   const { context } = useMiniKit();
@@ -73,11 +80,177 @@ export function BadgeModal({
     });
   }, [context]);
 
+  // Initialize badge verification hook (always called to follow React hooks rules)
+  const badgeVerifyResult = useBadgeVerify(
+    talentUUID || "",
+    badge || {
+      badgeSlug: "",
+      title: "",
+      currentLevel: 0,
+      maxLevel: 1,
+      isMaxLevel: false,
+      levelLabel: "",
+      progressLabel: "",
+      progressPct: 0,
+      artworkUrl: "",
+      description: "",
+      categoryName: "",
+      sectionId: "",
+    },
+    onBadgeRefetch,
+  );
+
+  const {
+    isVerifying,
+    cooldownMinutes,
+    error: verifyError,
+    progressMessage,
+    verifyBadge,
+    clearError,
+  } = badgeVerifyResult;
+
+  // Handle successful verification with celebration
+  useEffect(() => {
+    if (progressMessage && progressMessage.includes("completed")) {
+      // Check if badge was just unlocked by comparing with previous state
+      if (badge && badge.currentLevel > 0 && !wasJustUnlocked) {
+        setWasJustUnlocked(true);
+        setShowConfetti(true);
+
+        // Hide confetti after 3 seconds
+        setTimeout(() => {
+          setShowConfetti(false);
+        }, 3000);
+      }
+    }
+  }, [progressMessage, badge, wasJustUnlocked]);
+
+  // Reset unlock state when badge changes
+  useEffect(() => {
+    setWasJustUnlocked(false);
+    setShowConfetti(false);
+    clearError();
+  }, [badge?.badgeSlug, clearError]);
+
   if (!badge) return null;
 
   const isLocked = badge.currentLevel === 0;
   const badgeContent = getBadgeContent(badge.badgeSlug);
   const isStreakBadge = badgeContent?.isStreakBadge || false;
+  const isOwnProfile = !!talentUUID && !!handle; // User is viewing their own badges
+
+  // Generate motivational message based on progress
+  const getMotivationalMessage = () => {
+    if (!badgeContent || badge.isMaxLevel) return null;
+
+    const progressPct = badge.progressPct;
+    const nextThreshold = badgeContent.levelThresholds[badge.currentLevel];
+
+    if (!nextThreshold) return null;
+
+    // Use progress percentage for motivation messages
+
+    // Almost there (90%+ progress)
+    if (progressPct >= 90) {
+      const messages = [
+        "You're almost there! 🎯",
+        "So close! Keep it up! ⚡",
+        "Almost unlocked! 🔓",
+        "Final stretch! 💪",
+      ];
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    // Good progress (60%+ progress)
+    if (progressPct >= 60) {
+      const messages = [
+        "Great progress! 🚀",
+        "You're doing amazing! ⭐",
+        "Keep up the momentum! 🔥",
+        "Well on your way! 📈",
+      ];
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    // Some progress (20%+ progress)
+    if (progressPct >= 20) {
+      const messages = [
+        "Keep going! 💪",
+        "Every step counts! 👟",
+        "You're making progress! 📊",
+        "Stay motivated! ✨",
+      ];
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    // Just started (< 20% progress)
+    const messages = [
+      "Just getting started! 🌱",
+      "Every journey begins with one step! 🚶",
+      "Your potential is unlimited! 🌟",
+      "The adventure begins! 🗺️",
+    ];
+    return messages[Math.floor(Math.random() * messages.length)];
+  };
+
+  // Get verification button state
+  interface ButtonState {
+    showVerify: boolean;
+    verifyText: string;
+    verifyVariant: "brand-green" | "destructive" | "default";
+    verifyDisabled: boolean;
+  }
+
+  const getVerifyButtonState = (): ButtonState => {
+    if (!isOwnProfile || badge.isMaxLevel) {
+      return {
+        showVerify: false,
+        verifyText: "",
+        verifyVariant: "brand-green",
+        verifyDisabled: true,
+      };
+    }
+
+    const isInCooldown = cooldownMinutes !== null && cooldownMinutes > 0;
+
+    if (verifyError) {
+      return {
+        showVerify: true,
+        verifyText: "Verification Failed",
+        verifyVariant: "destructive",
+        verifyDisabled: false,
+      };
+    }
+
+    if (isVerifying) {
+      return {
+        showVerify: true,
+        verifyText: "Verifying...",
+        verifyVariant: "brand-green",
+        verifyDisabled: true,
+      };
+    }
+
+    if (isInCooldown) {
+      return {
+        showVerify: true,
+        verifyText: `Verify in ${cooldownMinutes}min`,
+        verifyVariant: "default",
+        verifyDisabled: true,
+      };
+    }
+
+    // Available for verification
+    const verifyText = badge.currentLevel === 0 ? "Verify" : "Verify Next";
+    return {
+      showVerify: true,
+      verifyText,
+      verifyVariant: "brand-green",
+      verifyDisabled: false,
+    };
+  };
+
+  const verifyButtonState = getVerifyButtonState();
 
   // Get progress bar color based on current level
   const getBadgeProgressColor = (currentLevel: number, maxLevel: number) => {
@@ -140,8 +313,16 @@ export function BadgeModal({
     setIsShareModalOpen(true);
   };
 
+  // Handle badge verification
+  const handleVerifyBadge = async () => {
+    if (!verifyButtonState.verifyDisabled) {
+      clearError(); // Clear any previous errors
+      await verifyBadge();
+    }
+  };
+
   // Check if sharing is available (only for earned badges with user context)
-  const canShare = badge.currentLevel > 0 && talentUUID && handle;
+  const canShare = badge.currentLevel > 0 && isOwnProfile;
 
   // Prepare sharing data if available
   let shareContent, shareContext, shareAnalytics;
@@ -234,14 +415,87 @@ export function BadgeModal({
         </div>
       )}
 
-      <div className="flex justify-center">
-        <Button
-          onClick={canShare ? handleShareBadge : onClose}
-          className="w-full"
-          variant="brand-purple"
-        >
-          {badge.currentLevel > 0 ? "Share Badge" : "Let's do this!"}
-        </Button>
+      {/* Action Buttons */}
+      <div className="space-y-3">
+        {/* Progress or Error Message */}
+        {(progressMessage || verifyError) && (
+          <div className="text-center">
+            <Typography size="sm" color={verifyError ? "destructive" : "muted"}>
+              {verifyError || progressMessage}
+            </Typography>
+          </div>
+        )}
+
+        {/* Motivational Message for No Progress */}
+        {verifyError && !progressMessage && (
+          <div className="text-center">
+            <Typography size="sm" color="muted">
+              {getMotivationalMessage()}
+            </Typography>
+          </div>
+        )}
+
+        {/* Button Layout */}
+        {!isOwnProfile ? (
+          // No buttons for viewing other profiles
+          <div className="text-center">
+            <Typography size="sm" color="muted">
+              Badge details for {handle || "user"}
+            </Typography>
+          </div>
+        ) : badge.isMaxLevel ? (
+          // Max level: Only show Share
+          <div className="flex justify-center">
+            <Button
+              onClick={handleShareBadge}
+              className="w-full"
+              variant="brand-purple"
+            >
+              Share Badge
+            </Button>
+          </div>
+        ) : badge.currentLevel > 0 ? (
+          // Earned badge: Show both Share and Verify Next
+          <div className="flex gap-2">
+            <Button
+              onClick={handleShareBadge}
+              className="flex-1"
+              variant="brand-purple"
+            >
+              Share Badge
+            </Button>
+            {verifyButtonState.showVerify && (
+              <Button
+                onClick={handleVerifyBadge}
+                className="flex-1"
+                variant={verifyButtonState.verifyVariant}
+                disabled={verifyButtonState.verifyDisabled}
+              >
+                {isVerifying && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
+                {verifyButtonState.verifyText}
+              </Button>
+            )}
+          </div>
+        ) : (
+          // Locked badge: Only show Verify
+          <div className="flex justify-center">
+            {verifyButtonState.showVerify && (
+              <Button
+                onClick={handleVerifyBadge}
+                className="w-full"
+                variant={verifyButtonState.verifyVariant}
+                disabled={verifyButtonState.verifyDisabled}
+              >
+                {isVerifying && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
+                {verifyButtonState.verifyText}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -282,6 +536,18 @@ export function BadgeModal({
           content={shareContent}
           context={shareContext}
           analytics={shareAnalytics}
+        />
+      )}
+
+      {/* Confetti Celebration */}
+      {showConfetti && (
+        <Confetti
+          options={{
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+          }}
+          className="fixed inset-0 z-50 pointer-events-none"
         />
       )}
     </>

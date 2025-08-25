@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { BadgesResponse } from "@/app/services/badgesService";
 
 interface UseBadgesReturn {
   data: BadgesResponse | null;
   loading: boolean;
   error: string | null;
+  refetch: () => Promise<void>;
 }
 
 /**
@@ -21,44 +22,49 @@ export function useBadges(userId?: string): UseBadgesReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    /** Fetch badge data from API with proper error handling */
-    async function fetchBadges() {
-      // Don't fetch if no userId is provided
-      if (!userId) {
-        setLoading(false);
-        setData(null);
-        setError(null);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Build query params for development/testing
-        const params = new URLSearchParams();
-        params.append("userId", userId);
-
-        const queryString = params.toString();
-        const url = `/api/badges?${queryString}`;
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch badges: ${response.status}`);
-        }
-
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch badges");
-      } finally {
-        setLoading(false);
-      }
+  /** Fetch badge data from API with proper error handling */
+  const fetchBadges = useCallback(async () => {
+    // Don't fetch if no userId is provided
+    if (!userId) {
+      setLoading(false);
+      setData(null);
+      setError(null);
+      return;
     }
 
-    fetchBadges();
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Build query params for development/testing
+      const params = new URLSearchParams();
+      params.append("userId", userId);
+
+      const queryString = params.toString();
+      const url = `/api/badges?${queryString}`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch badges: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch badges");
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
-  return { data, loading, error };
+  /** Manual refetch function for badge verification */
+  const refetch = useCallback(async () => {
+    await fetchBadges();
+  }, [fetchBadges]);
+
+  useEffect(() => {
+    fetchBadges();
+  }, [fetchBadges]);
+
+  return { data, loading, error, refetch };
 }
