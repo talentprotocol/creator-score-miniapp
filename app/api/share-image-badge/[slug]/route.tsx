@@ -88,15 +88,15 @@ export async function GET(
           <img
             src={badgeArtwork}
             alt={`${title} badge`}
-            width={300}
-            height={300}
+            width={512}
+            height={512}
             style={{
               position: "absolute",
               left: "50%",
               top: "50%",
               transform: "translate(-50%, -50%)",
-              width: 300,
-              height: 300,
+              width: 512,
+              height: 512,
               objectFit: "contain",
             }}
           />
@@ -107,7 +107,7 @@ export async function GET(
               display: "flex",
               position: "absolute",
               left: "50%",
-              top: "75%",
+              top: "72%",
               transform: "translateX(-50%)",
               fontSize: 48,
               fontFamily: "Cy",
@@ -128,7 +128,7 @@ export async function GET(
                 display: "flex",
                 position: "absolute",
                 left: "50%",
-                top: "83%",
+                top: "80%",
                 transform: "translateX(-50%)",
                 fontSize: 32,
                 fontFamily: "Cy",
@@ -148,13 +148,14 @@ export async function GET(
             src={`${baseUrl}/images/share/creator-score-logo.png`}
             alt="Creator Score"
             width={200}
-            height={40}
+            height={84}
             style={{
               position: "absolute",
               right: 40,
               bottom: 40,
               width: 200,
-              height: 40,
+              height: 84,
+              objectFit: "contain",
             }}
           />
         </div>
