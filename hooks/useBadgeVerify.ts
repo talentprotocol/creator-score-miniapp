@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useProfileContext } from "@/contexts/ProfileContext";
 import posthog from "posthog-js";
 import type { BadgeState } from "@/app/services/badgesService";
 
@@ -46,7 +45,6 @@ export function useBadgeVerify(
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
 
   const hasCalledSuccessRef = useRef(false);
-  const profileContext = useProfileContext();
 
   /**
    * Calculate cooldown from lastCalculatedAt timestamp
@@ -73,21 +71,11 @@ export function useBadgeVerify(
   );
 
   /**
-   * Hybrid cooldown detection: use ProfileContext when available,
-   * otherwise fetch fresh profile data
+   * Fetch cooldown data from API
    */
   useEffect(() => {
     const detectCooldown = async () => {
-      // Try to get cooldown from existing ProfileContext first
-      if (profileContext?.profileData?.lastCalculatedAt) {
-        const cooldown = calculateCooldown(
-          profileContext.profileData.lastCalculatedAt,
-        );
-        setCooldownMinutes(cooldown);
-        return;
-      }
-
-      // Fallback: fetch fresh profile data for cooldown
+      // Fetch fresh profile data for cooldown
       try {
         const response = await fetch(
           `/api/user-profile?talentUuid=${talentUUID}`,
@@ -110,11 +98,7 @@ export function useBadgeVerify(
       const interval = setInterval(detectCooldown, 60000);
       return () => clearInterval(interval);
     }
-  }, [
-    talentUUID,
-    profileContext?.profileData?.lastCalculatedAt,
-    calculateCooldown,
-  ]);
+  }, [talentUUID, calculateCooldown]);
 
   /**
    * Clear error state
@@ -238,6 +222,17 @@ export function useBadgeVerify(
               old_level: oldLevel,
               old_progress_pct: oldProgressPct,
             });
+
+            // Track badge earning (if level increased)
+            if (badge.currentLevel > oldLevel) {
+              posthog.capture("badge_earned", {
+                badge_slug: badge.badgeSlug,
+                level_earned: badge.currentLevel,
+                earning_method: "verification",
+                previous_level: oldLevel,
+                progress_jump: badge.progressPct - oldProgressPct,
+              });
+            }
 
             // Clear progress message after delay
             setTimeout(() => {
