@@ -196,7 +196,7 @@ export default function BadgesPage() {
               ) : refreshError ? (
                 <>
                   <RotateCcw className="w-4 h-4 mr-2" />
-                  Try Again Later
+                  Still refreshing...
                 </>
               ) : (
                 <>

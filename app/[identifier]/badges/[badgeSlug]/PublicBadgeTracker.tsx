@@ -12,7 +12,7 @@ interface PublicBadgeTrackerProps {
 
 /**
  * PUBLIC BADGE TRACKER
- *
+ * 
  * Simple client component for tracking public badge page views.
  * Co-located with the page for better organization.
  */
@@ -35,11 +35,9 @@ export function PublicBadgeTracker({
       badge_slug: badgeSlug,
       badge_level: badgeLevel,
       badge_title: badgeTitle,
-      viewed_user_id: viewedUserTalentUUID,
-      visitor_authenticated: false, // Always false for public pages
+      viewed_user_talent_uuid: viewedUserTalentUUID,
     });
   }, [posthog, badgeSlug, badgeLevel, badgeTitle, viewedUserTalentUUID]);
 
-  // This component doesn't render anything
-  return null;
+  return null; // This component only tracks, no UI
 }

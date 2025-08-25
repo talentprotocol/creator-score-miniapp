@@ -61,19 +61,17 @@ export default async function ProfileBadgesPage({
   }
 
   // 4. Prepare display data
-  const displayName = (user.display_name || user.name || "Creator") as string;
   const canonical = (user.fname ||
     user.wallet ||
     user.id ||
     "unknown") as string;
 
   return (
-    <ProfileBadgesClient
-      badgesData={badgesData}
-      displayName={displayName}
-      talentUUID={user.id!}
-      handle={canonical}
-    />
+          <ProfileBadgesClient
+        badgesData={badgesData}
+        talentUUID={user.id!}
+        handle={canonical}
+      />
   );
 }
 

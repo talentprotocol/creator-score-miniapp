@@ -20,7 +20,6 @@ interface ProfileBadgesClientProps {
       completionPct: number;
     };
   };
-  displayName: string;
   talentUUID: string;
   handle: string;
 }
@@ -33,7 +32,6 @@ interface ProfileBadgesClientProps {
  */
 export function ProfileBadgesClient({
   badgesData,
-  displayName,
   talentUUID,
   handle,
 }: ProfileBadgesClientProps) {
@@ -55,19 +53,6 @@ export function ProfileBadgesClient({
 
   return (
     <>
-      {/* Header section */}
-      <Section variant="content">
-        <div className="mb-6">
-          <Typography as="h1" size="xl" weight="bold">
-            {displayName}&apos;s Badges
-          </Typography>
-          <Typography color="muted">
-            {badgesData.summary.completionPct}% completed •{" "}
-            {badgesData.summary.earnedCount} of {badgesData.summary.totalCount}{" "}
-            badges earned
-          </Typography>
-        </div>
-      </Section>
 
       {/* Conditional rendering: sections vs flat grid */}
       {usingSections ? (
