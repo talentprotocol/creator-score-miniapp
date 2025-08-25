@@ -322,8 +322,19 @@ async function computePayItForwardBadges(
   const isOptedOut = await OptoutService.isOptedOut(talentUuid);
 
   if (!isOptedOut) {
-    // User hasn't opted out, so no donation amount
+    // User hasn't opted out, so they should get a locked badge (level 0)
+    // This represents the potential they could unlock by opting out
     const badge = createDynamicBadge(content, 0, content.levelThresholds);
+    
+    // Force the badge to be locked (level 0) for non-opted-out users
+    if (badge.currentLevel > 0) {
+      badge.currentLevel = 0;
+      badge.levelLabel = "Locked";
+      badge.progressLabel = "Opt out to unlock";
+      badge.progressPct = 0;
+      badge.artworkUrl = getBadgeArtworkUrl(badge.badgeSlug, 0);
+    }
+    
     return [badge];
   }
 

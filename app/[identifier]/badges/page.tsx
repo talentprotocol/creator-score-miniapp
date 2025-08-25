@@ -57,8 +57,7 @@ export default async function ProfileBadgesPage({
     return <ProfileBadgesClient badges={publicBadges} identifier={user.id} />;
   } catch (error) {
     console.error("[ProfileBadgesPage] Error:", error);
-    // On any error, redirect to home instead of throwing
-    // This prevents the error boundary from showing briefly
-    redirect("/");
+    // On any error, redirect to profile badges tab to maintain user experience
+    redirect(`/${params.identifier}/badges`);
   }
 }

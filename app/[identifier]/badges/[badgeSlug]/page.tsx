@@ -22,8 +22,8 @@ export default async function PublicBadgePage({
     // Get user data for metadata generation
     const user = await getTalentUserService(params.identifier);
     if (!user?.id) {
-      console.log("[PublicBadgePage] User not found, redirecting to home");
-      redirect("/");
+      console.log("[PublicBadgePage] User not found, redirecting to profile");
+      redirect(`/${params.identifier}/badges`);
     }
 
     console.log("[PublicBadgePage] User found:", user.id);
@@ -37,9 +37,9 @@ export default async function PublicBadgePage({
 
     if (!badge || badge.currentLevel === 0) {
       console.log(
-        "[PublicBadgePage] Badge not found or locked, redirecting to home",
+        "[PublicBadgePage] Badge not found or locked, redirecting to profile",
       );
-      redirect("/");
+      redirect(`/${params.identifier}/badges`);
     }
 
     console.log("[PublicBadgePage] Badge found, redirecting to profile badges");
@@ -49,8 +49,7 @@ export default async function PublicBadgePage({
     redirect(`/${params.identifier}/badges`);
   } catch (error) {
     console.error("[PublicBadgePage] Error:", error);
-    // On any error, redirect to home instead of throwing
-    // This prevents the error boundary from showing briefly
-    redirect("/");
+    // On any error, redirect to profile badges tab to maintain user experience
+    redirect(`/${params.identifier}/badges`);
   }
 }

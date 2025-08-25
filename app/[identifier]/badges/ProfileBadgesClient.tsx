@@ -18,11 +18,11 @@ export function ProfileBadgesClient({
   identifier,
 }: ProfileBadgesClientProps) {
   const [selectedBadge, setSelectedBadge] = useState<BadgeState | null>(null);
-  
+
   // Safely use the auth hook with error handling
   let talentId: string | null = null;
   let isOwnProfile = false;
- 
+
   try {
     const auth = usePrivyAuth({});
     talentId = auth.talentId;
