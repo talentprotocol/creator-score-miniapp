@@ -22,12 +22,12 @@ export async function GET(
       );
     }
 
-    // Get base URL for asset loading
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === "development"
+    // Always use canonical URL for sharing, but allow localhost for font loading in dev
+    const canonicalUrl = "https://creatorscore.app";
+    const baseUrl =
+      process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
-        : "https://creatorscore.app";
+        : process.env.NEXT_PUBLIC_URL || canonicalUrl;
 
     // Load fonts (reusing existing pattern)
     const [cyRegular, cyBold, cyExtraBold] = await Promise.all([

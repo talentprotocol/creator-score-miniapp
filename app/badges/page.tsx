@@ -41,8 +41,8 @@ export default function BadgesPage() {
   // Get current user's talent UUID (works for both Farcaster and Privy)
   const { talentUuid, loading: userLoading } = useFidToTalentUuid();
 
-  // Get user profile data for handle (needed for sharing)
-  const { displayName } = useResolvedTalentProfile();
+  // Get user profile data for sharing context
+  useResolvedTalentProfile();
 
   // Only fetch badges when we have a valid UUID
   const {
@@ -236,7 +236,7 @@ export default function BadgesPage() {
         badge={selectedBadge}
         onClose={handleCloseModal}
         talentUUID={talentUuid || undefined}
-        handle={displayName || talentUuid || undefined}
+        handle={talentUuid || undefined}
       />
 
       {usingSections && (
