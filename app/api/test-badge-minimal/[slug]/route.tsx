@@ -28,10 +28,10 @@ export async function GET(
             fontFamily: "system-ui",
           }}
         >
-          <div style={{ fontSize: 48, fontWeight: "bold" }}>
+          <div style={{ display: "flex", fontSize: 48, fontWeight: "bold" }}>
             {params.slug} Badge
           </div>
-          <div style={{ fontSize: 32, marginTop: 20 }}>
+          <div style={{ display: "flex", fontSize: 32, marginTop: 20 }}>
             {title} - Level {level}
           </div>
         </div>

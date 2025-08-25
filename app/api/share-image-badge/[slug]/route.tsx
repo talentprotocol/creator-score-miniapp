@@ -104,6 +104,7 @@ export async function GET(
           {/* Badge Title */}
           <div
             style={{
+              display: "flex",
               position: "absolute",
               left: "50%",
               top: "75%",
@@ -124,6 +125,7 @@ export async function GET(
           {badgeLevel > 0 && (
             <div
               style={{
+                display: "flex",
                 position: "absolute",
                 left: "50%",
                 top: "83%",
