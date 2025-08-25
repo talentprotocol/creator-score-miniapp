@@ -1,9 +1,12 @@
+"use client";
+
 import type { BadgeState } from "@/app/services/badgesService";
 import { getBadgeContent } from "@/lib/badge-content";
 import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import posthog from "posthog-js";
 
 interface BadgeCardProps {
   badge: BadgeState;
@@ -59,10 +62,25 @@ export function BadgeCard({
     setImageError(false);
   }, [badge.badgeSlug, badge.currentLevel]);
 
+  const handleBadgeClick = () => {
+    // Analytics: Track badge card clicks
+    posthog.capture("badge_card_clicked", {
+      badge_slug: badge.badgeSlug,
+      badge_level: badge.currentLevel,
+      is_earned: badge.currentLevel > 0,
+      section_id: badge.sectionId,
+      user_progress_pct: badge.progressPct,
+      badge_title: badge.title,
+      is_max_level: badge.isMaxLevel,
+    });
+
+    onBadgeClick(badge);
+  };
+
   return (
     <div
       className="flex flex-col items-center cursor-pointer transition-all active:scale-95"
-      onClick={() => onBadgeClick(badge)}
+      onClick={handleBadgeClick}
     >
       {/* Badge Artwork */}
       <div className="w-28 h-28 relative">

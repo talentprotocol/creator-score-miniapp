@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -25,6 +27,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { detectClient } from "@/lib/utils";
 import { useBadgeVerify } from "@/hooks/useBadgeVerify";
 import { Confetti } from "@/components/ui/confetti";
+import posthog from "posthog-js";
 
 interface BadgeModalProps {
   badge: BadgeState | null;
@@ -64,6 +67,8 @@ export function BadgeModal({
   const [client, setClient] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [wasJustUnlocked, setWasJustUnlocked] = useState(false);
+  const [modalOpenTime, setModalOpenTime] = useState<number | null>(null);
+  const [actionsInSession, setActionsInSession] = useState<string[]>([]);
 
   // Get MiniKit context for client detection
   const { context } = useMiniKit();
@@ -131,6 +136,44 @@ export function BadgeModal({
     setShowConfetti(false);
     clearError();
   }, [badge?.badgeSlug, clearError]);
+
+  // Analytics: Track modal open
+  useEffect(() => {
+    if (badge) {
+      const openTime = Date.now();
+      setModalOpenTime(openTime);
+      setActionsInSession(["viewed"]);
+      const userIsOwnProfile = !!talentUUID && !!handle;
+
+      posthog.capture("badge_modal_opened", {
+        badge_slug: badge.badgeSlug,
+        badge_title: badge.title,
+        badge_level: badge.currentLevel,
+        is_earned: badge.currentLevel > 0,
+        badge_state: badge.currentLevel > 0 ? "earned" : "locked",
+        section_id: badge.sectionId,
+        progress_pct: badge.progressPct,
+        entry_point: "card_click", // Default assumption
+        is_own_profile: userIsOwnProfile,
+      });
+    }
+  }, [badge, talentUUID, handle]);
+
+  // Analytics: Track modal close
+  const handleModalClose = () => {
+    if (badge && modalOpenTime) {
+      const timeSpentSeconds = Math.round((Date.now() - modalOpenTime) / 1000);
+
+      posthog.capture("badge_modal_closed", {
+        badge_slug: badge.badgeSlug,
+        time_spent_seconds: timeSpentSeconds,
+        actions_taken: actionsInSession,
+        final_badge_level: badge.currentLevel,
+      });
+    }
+
+    onClose();
+  };
 
   if (!badge) return null;
 
@@ -310,12 +353,17 @@ export function BadgeModal({
       console.warn("Badge sharing requires talentUUID and handle");
       return;
     }
+
+    // Track action
+    setActionsInSession((prev) => Array.from(new Set([...prev, "shared"])));
     setIsShareModalOpen(true);
   };
 
   // Handle badge verification
   const handleVerifyBadge = async () => {
     if (!verifyButtonState.verifyDisabled) {
+      // Track action
+      setActionsInSession((prev) => Array.from(new Set([...prev, "verified"])));
       clearError(); // Clear any previous errors
       await verifyBadge();
     }
@@ -504,7 +552,7 @@ export function BadgeModal({
     <>
       {/* Desktop Modal */}
       {isDesktop && (
-        <Dialog open={!!badge} onOpenChange={onClose}>
+        <Dialog open={!!badge} onOpenChange={handleModalClose}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{badge.categoryName}</DialogTitle>
@@ -516,7 +564,7 @@ export function BadgeModal({
 
       {/* Mobile Bottom Sheet */}
       {!isDesktop && (
-        <Drawer open={!!badge} onOpenChange={onClose}>
+        <Drawer open={!!badge} onOpenChange={handleModalClose}>
           <DrawerContent>
             <DrawerHeader>
               <DrawerTitle>{badge.categoryName}</DrawerTitle>
