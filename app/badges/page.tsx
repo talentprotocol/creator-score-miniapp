@@ -50,7 +50,7 @@ export default function BadgesPage() {
     refetch,
   } = useBadges(talentUuid || undefined);
 
-    // Score refresh hook (exact same as profile page, but no auto-refetch)
+  // Score refresh hook (exact same as profile page, but no auto-refetch)
   const {
     isRefreshing,
     error: refreshError,
@@ -60,10 +60,10 @@ export default function BadgesPage() {
   // Enhanced refresh that also clears badge caches
   const refreshBadges = async () => {
     if (!talentUuid) return;
-    
+
     // Call original refresh score to trigger Talent API calculation
     await originalRefreshScore();
-    
+
     // Also clear badge caches for future manual refreshes
     try {
       await fetch("/api/badges/refresh", {
