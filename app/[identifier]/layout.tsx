@@ -1,4 +1,4 @@
-import { getTalentUserService } from "@/app/services/userService";
+// Removed direct service import - now using API route for compliance
 import { redirect } from "next/navigation";
 import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
@@ -34,8 +34,17 @@ export async function generateMetadata({
   }
 
   try {
-    // Resolve user
-    const user = await getTalentUserService(params.identifier);
+    // Resolve user via API route for compliance
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
+    );
+    if (!response.ok) {
+      return {
+        title: "Creator Not Found - Creator Score",
+        description: "This creator could not be found.",
+      };
+    }
+    const user = await response.json();
 
     if (!user || !user.id) {
       return {
@@ -234,15 +243,21 @@ export default async function ProfileLayout({
     return <CreatorNotFoundCard />;
   }
 
-  // Resolve user using direct service call
+  // Resolve user via API route for compliance
   const userResolutionTimer = dtimer("ProfileLayout", "user_resolution");
-  dlog("ProfileLayout", "calling_getTalentUserService", {
+  dlog("ProfileLayout", "calling_api_route", {
     identifier: params.identifier,
   });
 
-  const user = await getTalentUserService(params.identifier);
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
+  );
+  if (!response.ok) {
+    return <CreatorNotFoundCard />;
+  }
+  const user = await response.json();
 
-  dlog("ProfileLayout", "getTalentUserService_result", {
+  dlog("ProfileLayout", "api_route_result", {
     identifier: params.identifier,
     user_found: !!user,
     user_id: user?.id || null,
