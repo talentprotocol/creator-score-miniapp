@@ -58,6 +58,8 @@ export async function POST(
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
+      rewards_optout,
+      how_to_earn_modal_seen,
     }: UserPreferencesUpdateRequest = await req.json();
 
     if (!talent_uuid) {
@@ -91,6 +93,8 @@ export async function POST(
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
+      rewards_optout,
+      how_to_earn_modal_seen,
     });
 
     return NextResponse.json(result);
