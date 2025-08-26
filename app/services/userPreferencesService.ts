@@ -14,7 +14,9 @@ export async function getUserPreferencesByTalentUuid(
 ): Promise<UserPreferencesResponse> {
   const { data, error } = await supabase
     .from("user_preferences")
-    .select("creator_category, callout_prefs, rewards_optout")
+    .select(
+      "creator_category, callout_prefs, rewards_optout, how_to_earn_modal_seen",
+    )
     .eq("talent_uuid", talentUUID)
     .single();
 
@@ -34,6 +36,7 @@ export async function getUserPreferencesByTalentUuid(
       permanentlyHiddenIds: callout_prefs.permanentlyHiddenIds ?? [],
     },
     rewards_optout: (data?.rewards_optout as boolean) ?? false,
+    how_to_earn_modal_seen: (data?.how_to_earn_modal_seen as boolean) ?? false,
   };
 }
 
@@ -51,6 +54,8 @@ export async function updateUserPreferencesAtomic(
       permanentlyHiddenIds: new Set(current.callout_prefs.permanentlyHiddenIds),
     },
     rewards_optout: req.rewards_optout ?? current.rewards_optout ?? false,
+    how_to_earn_modal_seen:
+      req.how_to_earn_modal_seen ?? current.how_to_earn_modal_seen ?? false,
   } as {
     creator_category: UserPreferences["creator_category"];
     callout_prefs: {
@@ -58,6 +63,7 @@ export async function updateUserPreferencesAtomic(
       permanentlyHiddenIds: Set<string>;
     };
     rewards_optout: boolean;
+    how_to_earn_modal_seen: boolean;
   };
 
   if (req.add_dismissed_id)
@@ -79,13 +85,16 @@ export async function updateUserPreferencesAtomic(
       permanentlyHiddenIds: Array.from(next.callout_prefs.permanentlyHiddenIds),
     },
     rewards_optout: next.rewards_optout,
+    how_to_earn_modal_seen: next.how_to_earn_modal_seen,
     updated_at: new Date().toISOString(),
   } satisfies Partial<UserPreferences> & { talent_uuid: string };
 
   const { data, error } = await supabase
     .from("user_preferences")
     .upsert(payload, { onConflict: "talent_uuid" })
-    .select("creator_category, callout_prefs, rewards_optout")
+    .select(
+      "creator_category, callout_prefs, rewards_optout, how_to_earn_modal_seen",
+    )
     .single();
 
   if (error) throw error;

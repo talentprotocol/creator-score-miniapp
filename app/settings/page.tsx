@@ -28,11 +28,10 @@ import {
   HandHeart,
   Coins,
   Loader2,
-
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
-import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
+import { useAutoModal } from "@/hooks/useAutoModal";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
 import { useSearchParams } from "next/navigation";
@@ -42,16 +41,18 @@ import {
   SwapResult,
 } from "@/lib/talent-swap";
 
-
 // Separate component that uses search params
 function SettingsContent() {
   const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
-    const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
+  const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
-  const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore(false);
+  const { isOpen, onOpenChange, openForTesting } = useAutoModal({
+    storageKey: "share-creator-score-seen",
+    autoOpen: false,
+  });
   const searchParams = useSearchParams();
- 
+
   // Talent swap state
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
     state: "idle",
@@ -179,8 +180,6 @@ function SettingsContent() {
         return <Coins className="h-4 w-4" />;
     }
   };
-
-
 
   return (
     <PageContainer noPadding>
