@@ -10,21 +10,17 @@ export interface AutoModalConfig {
 
 export function useAutoModal(config: AutoModalConfig) {
   const { storageKey, databaseField, checkDate, autoOpen = false } = config;
-  const [isOpen, setIsOpen] = useState(false);
   const [hasSeenModal, setHasSeenModal] = useState(true); // Default to true to prevent flash
-  const [isLoading, setIsLoading] = useState(true); // Track loading state
   const { talentUuid } = useFidToTalentUuid();
 
   useEffect(() => {
     // Only auto-open when explicitly enabled
     if (!autoOpen) {
-      setIsLoading(false);
       return;
     }
 
     // Check if date condition is met (e.g., rewards period ended)
     if (checkDate && new Date() >= checkDate) {
-      setIsLoading(false);
       return;
     }
 
@@ -35,8 +31,6 @@ export function useAutoModal(config: AutoModalConfig) {
       // For non-authenticated users or no database field, use localStorage
       const seen = localStorage.getItem(storageKey);
       setHasSeenModal(!!seen);
-      setIsOpen(!seen);
-      setIsLoading(false);
     }
   }, [talentUuid, autoOpen, storageKey, databaseField, checkDate]);
 
@@ -48,20 +42,15 @@ export function useAutoModal(config: AutoModalConfig) {
       const json = await res.json();
       const hasSeen = json[databaseField!] ?? false;
       setHasSeenModal(hasSeen);
-      setIsOpen(!hasSeen);
     } catch (e) {
       // Fallback to localStorage if API fails
       const seen = localStorage.getItem(storageKey);
       setHasSeenModal(!!seen);
-      setIsOpen(!seen);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const onOpenChange = useCallback(
     (open: boolean) => {
-      setIsOpen(open);
       if (!open) {
         // Mark as seen when closing
         if (talentUuid && databaseField) {
@@ -97,13 +86,15 @@ export function useAutoModal(config: AutoModalConfig) {
   };
 
   const openForTesting = useCallback(() => {
-    setIsOpen(true);
+    setHasSeenModal(false);
   }, []);
+
+  // Modal should be open when user hasn't seen it and autoOpen is enabled
+  const isOpen = !hasSeenModal && autoOpen;
 
   return {
     isOpen,
     hasSeenModal,
-    isLoading,
     onOpenChange,
     openForTesting,
   };

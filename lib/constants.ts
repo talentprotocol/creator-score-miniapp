@@ -84,6 +84,11 @@ export const PROJECT_ACCOUNTS_TO_EXCLUDE = [
   "aa08b53c-622f-49f0-ba70-46bb1dabcfc1", // matchaxyz
   "09b20fc9-a28d-4477-8103-f9f195ec76b1", // rainbow
   "1b04461c-0160-487e-8022-d2b59d4a05ec", // walletconnect
+  "e6892c35-0c8c-4b91-9e57-b894345bedbd", // dune.eth
+  "f3cba5f4-6eb8-485d-815b-5775619a22bb", // drakula
+  "1e8eec23-d32d-4f64-bdc4-4a46a0ff8fa4", // daylightenergy
+  "b4405975-e209-4f3c-b5b4-7f83a1a652c3", // interface
+  "a2609b4d-1b19-4d50-87b2-f415d85535a9", // doodles
 ];
 
 // Environment variable validation
