@@ -12,14 +12,21 @@ export function useAutoModal(config: AutoModalConfig) {
   const { storageKey, databaseField, checkDate, autoOpen = false } = config;
   const [isOpen, setIsOpen] = useState(false);
   const [hasSeenModal, setHasSeenModal] = useState(true); // Default to true to prevent flash
+  const [isLoading, setIsLoading] = useState(true); // Track loading state
   const { talentUuid } = useFidToTalentUuid();
 
   useEffect(() => {
     // Only auto-open when explicitly enabled
-    if (!autoOpen) return;
+    if (!autoOpen) {
+      setIsLoading(false);
+      return;
+    }
 
     // Check if date condition is met (e.g., rewards period ended)
-    if (checkDate && new Date() >= checkDate) return;
+    if (checkDate && new Date() >= checkDate) {
+      setIsLoading(false);
+      return;
+    }
 
     // For authenticated users with database field, check user preferences
     if (talentUuid && databaseField) {
@@ -29,6 +36,7 @@ export function useAutoModal(config: AutoModalConfig) {
       const seen = localStorage.getItem(storageKey);
       setHasSeenModal(!!seen);
       setIsOpen(!seen);
+      setIsLoading(false);
     }
   }, [talentUuid, autoOpen, storageKey, databaseField, checkDate]);
 
@@ -46,6 +54,8 @@ export function useAutoModal(config: AutoModalConfig) {
       const seen = localStorage.getItem(storageKey);
       setHasSeenModal(!!seen);
       setIsOpen(!seen);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -93,6 +103,7 @@ export function useAutoModal(config: AutoModalConfig) {
   return {
     isOpen,
     hasSeenModal,
+    isLoading,
     onOpenChange,
     openForTesting,
   };
