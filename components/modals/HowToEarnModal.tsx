@@ -105,8 +105,8 @@ function HowToEarnContent() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="p-2 bg-brand-purple-light rounded-lg">
-            <HandHeart className="h-5 w-5 text-primary" />
+          <div className="p-2 bg-brand-green-light rounded-lg">
+            <HandHeart className="h-5 w-5 text-brand-green" />
           </div>
           <p className="text-sm">Opt-out of Rewards to Support Creators</p>
         </div>
