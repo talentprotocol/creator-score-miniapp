@@ -1,11 +1,11 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { Button } from "./button";
 import type { ButtonProps } from "./button";
 import { Typography } from "@/components/ui/typography";
-import { cn, openExternalUrl } from "@/lib/utils";
+import { cn, openExternalUrl, detectClient } from "@/lib/utils";
 
 type ButtonBaseVariant = NonNullable<ButtonProps["variant"]>;
 
@@ -16,6 +16,7 @@ interface ButtonFullWidthProps extends Omit<ButtonProps, "variant"> {
   variant?: ButtonBaseVariant | "muted";
   showRightIcon?: boolean;
   align?: "left" | "center"; // layout alignment (default: center)
+  rightIcon?: React.ReactNode; // custom right icon
 }
 
 const ButtonFullWidth = React.forwardRef<
@@ -33,6 +34,7 @@ const ButtonFullWidth = React.forwardRef<
       variant,
       showRightIcon,
       align,
+      rightIcon,
       ...props
     },
     ref,
@@ -41,6 +43,24 @@ const ButtonFullWidth = React.forwardRef<
     const isExternal = external ?? (href ? href.startsWith("http") : false);
     const isMutedVariant = variant === "muted";
     const computedAlign = align ?? (href ? "left" : "center");
+    
+    // Client detection for default right icon
+    const [client, setClient] = React.useState<string | null>(null);
+    
+    React.useEffect(() => {
+      detectClient(context).then((detectedClient) => {
+        setClient(detectedClient);
+      });
+    }, [context]);
+    
+    // Determine right icon to use
+    const getRightIcon = () => {
+      if (rightIcon) return rightIcon;
+      if (isExternal || href?.startsWith("http")) {
+        return client === "browser" ? <ExternalLink className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />;
+      }
+      return <ArrowRight className="h-4 w-4" />;
+    };
 
     const content = (
       <div
@@ -93,7 +113,7 @@ const ButtonFullWidth = React.forwardRef<
           </Typography>
         </div>
         {(showRightIcon ?? !!href) && (
-          <ArrowRight
+          <div
             className={cn(
               "h-4 w-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5",
               variant?.startsWith("brand-")
@@ -110,7 +130,9 @@ const ButtonFullWidth = React.forwardRef<
                   ? "text-red-700"
                   : "text-muted-foreground",
             )}
-          />
+          >
+            {getRightIcon()}
+          </div>
         )}
       </div>
     );

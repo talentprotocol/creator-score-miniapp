@@ -101,14 +101,14 @@ function HowToEarnContent() {
           <div className="p-2 bg-brand-purple-light rounded-lg">
             <Coins className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-sm">Get Paid USDC on Sep 1st</p>
+          <p className="text-sm">Get Paid USDC in September, or…</p>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="p-2 bg-brand-purple-light rounded-lg">
             <HandHeart className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-sm">Opt out of rewards to support creators</p>
+          <p className="text-sm">Opt-out of Rewards to Support Creators</p>
         </div>
       </div>
 

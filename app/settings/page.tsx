@@ -28,6 +28,7 @@ import {
   HandHeart,
   Coins,
   Loader2,
+
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
@@ -41,15 +42,16 @@ import {
   SwapResult,
 } from "@/lib/talent-swap";
 
+
 // Separate component that uses search params
 function SettingsContent() {
   const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
-  const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
+    const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore(false);
   const searchParams = useSearchParams();
-
+ 
   // Talent swap state
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
     state: "idle",
@@ -178,6 +180,8 @@ function SettingsContent() {
     }
   };
 
+
+
   return (
     <PageContainer noPadding>
       {/* Header section */}
@@ -255,7 +259,7 @@ function SettingsContent() {
             align="left"
             onClick={handleTalentSwapClick}
             disabled={swapResult.state === "loading"}
-            showRightIcon={false}
+            showRightIcon={true}
           >
             <span className="font-medium">{getTalentButtonText()}</span>
           </ButtonFullWidth>
