@@ -9,7 +9,7 @@ import { dlog, dtimer } from "@/lib/debug";
  * Used by server components - no HTTP requests to own API routes
  */
 export async function getTalentUserService(identifier: string): Promise<{
-  id: string | null;
+  id: string;
   fid: number | null;
   wallet: string | null;
   github: string | null;

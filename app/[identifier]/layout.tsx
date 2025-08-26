@@ -50,8 +50,8 @@ export async function generateMetadata({
     // Fetch basic data for metadata with graceful fallbacks
     const [creatorScoreResult, socialAccountsResult, credentialsResult] =
       await Promise.allSettled([
-        getCreatorScoreForTalentId(user.id!)().catch(() => ({ score: 0 })),
-        getSocialAccountsForTalentId(user.id!)().catch((error) => {
+        getCreatorScoreForTalentId(user.id)().catch(() => ({ score: 0 })),
+        getSocialAccountsForTalentId(user.id)().catch((error) => {
           console.error(
             "[Profile Layout] Social accounts fetch failed:",
             error,
@@ -59,7 +59,7 @@ export async function generateMetadata({
           return []; // Return empty array for graceful degradation
         }),
         unstable_cache(
-          async () => getCredentialsForTalentId(user.id!),
+          async () => getCredentialsForTalentId(user.id),
           [`credentials-${user.id!}`],
           {
             tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
@@ -312,7 +312,7 @@ export default async function ProfileLayout({
     credentialsResult,
     postsResult,
   ] = await Promise.allSettled([
-    getCreatorScoreForTalentId(user.id!)().catch((error) => {
+    getCreatorScoreForTalentId(user.id)().catch((error) => {
       dlog("ProfileLayout", "creator_score_fetch_failed", {
         user_id: user.id,
         error: error instanceof Error ? error.message : String(error),
@@ -325,7 +325,7 @@ export default async function ProfileLayout({
         calculating: false,
       };
     }),
-    getSocialAccountsForTalentId(user.id!)().catch((error) => {
+    getSocialAccountsForTalentId(user.id)().catch((error) => {
       dlog("ProfileLayout", "social_accounts_fetch_failed", {
         user_id: user.id,
         error: error instanceof Error ? error.message : String(error),
@@ -333,8 +333,8 @@ export default async function ProfileLayout({
       return []; // Return empty array for graceful degradation
     }),
     unstable_cache(
-      async () => getCredentialsForTalentId(user.id!),
-      [`credentials-${user.id!}`],
+      async () => getCredentialsForTalentId(user.id),
+      [`credentials-${user.id}`],
       {
         tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
         revalidate: CACHE_DURATION_30_MINUTES,
@@ -346,7 +346,7 @@ export default async function ProfileLayout({
       });
       return []; // Return empty array for graceful degradation
     }),
-    getAllPostsForTalentId(user.id!)().catch((error) => {
+    getAllPostsForTalentId(user.id)().catch((error) => {
       dlog("ProfileLayout", "posts_fetch_failed", {
         user_id: user.id,
         error: error instanceof Error ? error.message : String(error),
