@@ -47,25 +47,41 @@ export async function generateMetadata({
     // Determine canonical identifier
     const canonical = user.fname || user.wallet || user.id;
 
-    // Fetch basic data for metadata
-    const [creatorScoreData, socialAccounts, credentials] = await Promise.all([
-      getCreatorScoreForTalentId(user.id!)().catch(() => ({ score: 0 })),
-      getSocialAccountsForTalentId(user.id!)().catch((error) => {
-        console.error("[Profile Layout] Data fetch failed:", error);
-        throw error; // Don't cache failures - allow retries
-      }),
-      unstable_cache(
-        async () => getCredentialsForTalentId(user.id!),
-        [`credentials-${user.id!}`],
-        {
-          tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_30_MINUTES,
-        },
-      )().catch((error) => {
-        console.error("[Profile Layout] Data fetch failed:", error);
-        throw error; // Don't cache failures - allow retries
-      }),
-    ]);
+    // Fetch basic data for metadata with graceful fallbacks
+    const [creatorScoreResult, socialAccountsResult, credentialsResult] =
+      await Promise.allSettled([
+        getCreatorScoreForTalentId(user.id!)().catch(() => ({ score: 0 })),
+        getSocialAccountsForTalentId(user.id!)().catch((error) => {
+          console.error(
+            "[Profile Layout] Social accounts fetch failed:",
+            error,
+          );
+          return []; // Return empty array for graceful degradation
+        }),
+        unstable_cache(
+          async () => getCredentialsForTalentId(user.id!),
+          [`credentials-${user.id!}`],
+          {
+            tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
+            revalidate: CACHE_DURATION_30_MINUTES,
+          },
+        )().catch((error) => {
+          console.error("[Profile Layout] Credentials fetch failed:", error);
+          return []; // Return empty array for graceful degradation
+        }),
+      ]);
+
+    // Extract successful results with fallbacks
+    const creatorScoreData =
+      creatorScoreResult.status === "fulfilled"
+        ? creatorScoreResult.value
+        : { score: 0 };
+    const socialAccounts =
+      socialAccountsResult.status === "fulfilled"
+        ? socialAccountsResult.value
+        : [];
+    const credentials =
+      credentialsResult.status === "fulfilled" ? credentialsResult.value : [];
 
     // Calculate total followers
     const totalFollowers = socialAccounts.reduce((sum, account) => {
@@ -289,50 +305,103 @@ export default async function ProfileLayout({
   const dataFetchTimer = dtimer("ProfileLayout", "data_fetch_bundle");
   dlog("ProfileLayout", "fetch_bundle_start", { user_id: user.id });
 
-  const [creatorScoreData, socialAccounts, credentials, posts] =
-    await Promise.all([
-      getCreatorScoreForTalentId(user.id!)().catch((error) => {
-        dlog("ProfileLayout", "creator_score_fetch_failed", {
-          user_id: user.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        return {
+  // Use Promise.allSettled to handle individual service failures gracefully
+  const [
+    creatorScoreResult,
+    socialAccountsResult,
+    credentialsResult,
+    postsResult,
+  ] = await Promise.allSettled([
+    getCreatorScoreForTalentId(user.id!)().catch((error) => {
+      dlog("ProfileLayout", "creator_score_fetch_failed", {
+        user_id: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        score: 0,
+        level: 1,
+        levelName: "Level 1",
+        lastCalculatedAt: null,
+        calculating: false,
+      };
+    }),
+    getSocialAccountsForTalentId(user.id!)().catch((error) => {
+      dlog("ProfileLayout", "social_accounts_fetch_failed", {
+        user_id: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return []; // Return empty array for graceful degradation
+    }),
+    unstable_cache(
+      async () => getCredentialsForTalentId(user.id!),
+      [`credentials-${user.id!}`],
+      {
+        tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
+        revalidate: CACHE_DURATION_30_MINUTES,
+      },
+    )().catch((error) => {
+      dlog("ProfileLayout", "credentials_fetch_failed", {
+        user_id: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return []; // Return empty array for graceful degradation
+    }),
+    getAllPostsForTalentId(user.id!)().catch((error) => {
+      dlog("ProfileLayout", "posts_fetch_failed", {
+        user_id: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return []; // Return empty array for graceful degradation
+    }),
+  ]);
+
+  // Extract successful results with fallbacks for failed services
+  const creatorScoreData =
+    creatorScoreResult.status === "fulfilled"
+      ? creatorScoreResult.value
+      : {
           score: 0,
           level: 1,
           levelName: "Level 1",
           lastCalculatedAt: null,
           calculating: false,
         };
-      }),
-      getSocialAccountsForTalentId(user.id!)().catch((error) => {
-        dlog("ProfileLayout", "social_accounts_fetch_failed", {
-          user_id: user.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        throw error; // Don't cache failures - allow retries
-      }),
-      unstable_cache(
-        async () => getCredentialsForTalentId(user.id!),
-        [`credentials-${user.id!}`],
-        {
-          tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_30_MINUTES,
-        },
-      )().catch((error) => {
-        dlog("ProfileLayout", "credentials_fetch_failed", {
-          user_id: user.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        throw error; // Don't cache failures - allow retries
-      }),
-      getAllPostsForTalentId(user.id!)().catch((error) => {
-        dlog("ProfileLayout", "posts_fetch_failed", {
-          user_id: user.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        throw error; // Don't cache failures - allow retries
-      }),
-    ]);
+
+  const socialAccounts =
+    socialAccountsResult.status === "fulfilled"
+      ? socialAccountsResult.value
+      : [];
+
+  const credentials =
+    credentialsResult.status === "fulfilled" ? credentialsResult.value : [];
+
+  const posts = postsResult.status === "fulfilled" ? postsResult.value : [];
+
+  // Log any failed services for monitoring
+  if (creatorScoreResult.status === "rejected") {
+    dlog("ProfileLayout", "creator_score_service_failed", {
+      user_id: user.id,
+      error: creatorScoreResult.reason,
+    });
+  }
+  if (socialAccountsResult.status === "rejected") {
+    dlog("ProfileLayout", "social_accounts_service_failed", {
+      user_id: user.id,
+      error: socialAccountsResult.reason,
+    });
+  }
+  if (credentialsResult.status === "rejected") {
+    dlog("ProfileLayout", "credentials_service_failed", {
+      user_id: user.id,
+      error: credentialsResult.reason,
+    });
+  }
+  if (postsResult.status === "rejected") {
+    dlog("ProfileLayout", "posts_service_failed", {
+      user_id: user.id,
+      error: postsResult.reason,
+    });
+  }
 
   // Process posts into yearly data (same logic as hooks)
   const yearlyDataMap = posts.reduce(
