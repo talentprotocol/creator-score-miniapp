@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { LeaderboardEntry } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
+import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 export interface UseLeaderboardOptimizedReturn {
   entries: LeaderboardEntry[];
@@ -32,6 +33,28 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
+  // Filter out entries with $0 rewards or rank > 200
+  const filterValidEntries = useCallback(
+    (rawEntries: LeaderboardEntry[]): LeaderboardEntry[] => {
+      return rawEntries.filter((entry) => {
+        // Skip entries with rank > 200
+        if (!entry.rank || entry.rank > 200) return false;
+
+        // Skip entries with $0 rewards
+        const reward = RewardsCalculationService.calculateUserReward(
+          entry.score,
+          entry.rank,
+          entry.isBoosted || false,
+          entry.isOptedOut || false,
+          rawEntries,
+        );
+
+        return reward !== "$0";
+      });
+    },
+    [],
+  );
+
   // Load basic data immediately
   const loadBasicData = useCallback(async () => {
     // Check cache first
@@ -44,7 +67,10 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
 
     if (cachedData) {
-      setEntries(cachedData.entries);
+      // Filter out entries with $0 rewards or rank > 200
+      const filteredEntries = filterValidEntries(cachedData.entries);
+
+      setEntries(filteredEntries);
       setBoostedCreatorsCount(cachedData.boostedCreatorsCount);
       setLastUpdated(cachedData.lastUpdated);
       setNextUpdate(cachedData.nextUpdate);
@@ -69,14 +95,17 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
 
       const data = await response.json();
 
-      setEntries(data.entries);
+      // Filter out entries with $0 rewards or rank > 200
+      const filteredEntries = filterValidEntries(data.entries);
+
+      setEntries(filteredEntries);
       setBoostedCreatorsCount(data.boostedCreatorsCount);
       setLastUpdated(data.lastUpdated);
       setNextUpdate(data.nextUpdate);
 
-      // Cache the data
+      // Cache the filtered data
       setCachedData(cacheKey, {
-        entries: data.entries,
+        entries: filteredEntries,
         boostedCreatorsCount: data.boostedCreatorsCount,
         lastUpdated: data.lastUpdated,
         nextUpdate: data.nextUpdate,
@@ -95,7 +124,10 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     (forceFresh?: boolean) => {
       try {
         if (forceFresh && typeof window !== "undefined") {
-          console.log("[Leaderboard] Force fresh refetch: clearing localStorage cache key", CACHE_KEYS.LEADERBOARD_BASIC);
+          console.log(
+            "[Leaderboard] Force fresh refetch: clearing localStorage cache key",
+            CACHE_KEYS.LEADERBOARD_BASIC,
+          );
           localStorage.removeItem(CACHE_KEYS.LEADERBOARD_BASIC);
         }
       } catch {}
@@ -135,7 +167,12 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
                 : e,
             ),
           };
-          console.log("[Leaderboard] Updated local cache entry opt-out status for", talentUuid, "=", isOptedOut);
+          console.log(
+            "[Leaderboard] Updated local cache entry opt-out status for",
+            talentUuid,
+            "=",
+            isOptedOut,
+          );
           setCachedData(cacheKey, updatedCached);
         }
       } catch {}
