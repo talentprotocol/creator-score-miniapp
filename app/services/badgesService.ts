@@ -68,6 +68,7 @@ export interface BadgesResponse {
     totalCount: number;
     completionPct: number;
   };
+  lastCalculatedAt?: string | null; // Last time the badges were calculated from Talent API
 }
 
 /**
@@ -325,7 +326,7 @@ async function computePayItForwardBadges(
     // User hasn't opted out, so they should get a locked badge (level 0)
     // This represents the potential they could unlock by opting out
     const badge = createDynamicBadge(content, 0, content.levelThresholds);
-    
+
     // Force the badge to be locked (level 0) for non-opted-out users
     if (badge.currentLevel > 0) {
       badge.currentLevel = 0;
@@ -334,7 +335,7 @@ async function computePayItForwardBadges(
       badge.progressPct = 0;
       badge.artworkUrl = getBadgeArtworkUrl(badge.badgeSlug, 0);
     }
-    
+
     return [badge];
   }
 
@@ -451,6 +452,10 @@ async function getBadgesForUserUncached(
   talentUuid: string,
 ): Promise<BadgesResponse> {
   try {
+    // Fetch score data to get lastCalculatedAt
+    const scoreData = await getCreatorScoreForTalentId(talentUuid)();
+    const lastCalculatedAt = scoreData.lastCalculatedAt;
+
     const [
       creatorScoreBadges,
       totalEarningsBadges,
@@ -537,12 +542,14 @@ async function getBadgesForUserUncached(
       return {
         sections,
         summary,
+        lastCalculatedAt,
       };
     } else {
       // Return flat badge array when below threshold
       return {
         badges: allBadges,
         summary,
+        lastCalculatedAt,
       };
     }
   } catch (error) {
@@ -556,6 +563,7 @@ async function getBadgesForUserUncached(
         totalCount: 0,
         completionPct: 0,
       },
+      lastCalculatedAt: null,
     };
   }
 }

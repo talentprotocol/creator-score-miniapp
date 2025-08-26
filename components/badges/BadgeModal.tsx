@@ -181,6 +181,9 @@ export function BadgeModal({
   const badgeContent = getBadgeContent(badge.badgeSlug);
   const isStreakBadge = badgeContent?.isStreakBadge || false;
 
+  // Generate unique ID for accessibility
+  const descriptionId = `badge-modal-description-${badge.badgeSlug}`;
+
   // Determine if current user is viewing their own profile
   // Compare the current user's talentUUID with the profile owner's talentUUID
   const isOwnProfile =
@@ -326,6 +329,12 @@ export function BadgeModal({
 
   // Calculate progress text for non-max level badges
   const getProgressText = () => {
+    // Locked badges should never show "Max Level" - check this first
+    if (badge.currentLevel === 0) {
+      return "Locked";
+    }
+
+    // Check for max level or missing content after confirming badge is earned
     if (badge.isMaxLevel || !badgeContent) {
       return "Max Level";
     }
@@ -408,7 +417,7 @@ export function BadgeModal({
   }
 
   const ModalContent = () => (
-    <div className="space-y-6 text-center">
+    <div className="space-y-6 text-center" id={descriptionId}>
       <div className="flex flex-col items-center gap-4">
         {/* Large Badge Artwork */}
         <div className="w-64 h-64 relative">
@@ -547,7 +556,10 @@ export function BadgeModal({
       {/* Desktop Modal */}
       {isDesktop && (
         <Dialog open={!!badge} onOpenChange={handleModalClose}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent
+            className="sm:max-w-md"
+            aria-describedby={descriptionId}
+          >
             <DialogHeader>
               <DialogTitle>{badge.categoryName}</DialogTitle>
             </DialogHeader>
@@ -559,7 +571,7 @@ export function BadgeModal({
       {/* Mobile Bottom Sheet */}
       {!isDesktop && (
         <Drawer open={!!badge} onOpenChange={handleModalClose}>
-          <DrawerContent>
+          <DrawerContent aria-describedby={descriptionId}>
             <DrawerHeader>
               <DrawerTitle>{badge.categoryName}</DrawerTitle>
             </DrawerHeader>

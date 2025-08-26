@@ -252,6 +252,22 @@ export default function BadgesPage() {
             )}
           </div>
         </div>
+
+        {/* Last Updated Date */}
+        {badgesData.lastCalculatedAt && (
+          <div className="text-right">
+            <Typography size="xs" color="muted">
+              Last updated:{" "}
+              {new Date(badgesData.lastCalculatedAt)
+                .toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+                .replace(/ /g, ".")}
+            </Typography>
+          </div>
+        )}
       </Section>
 
       {/* Conditional rendering: sections vs flat grid */}

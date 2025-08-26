@@ -49,8 +49,10 @@ export function ProfileBadgesClient({ identifier }: ProfileBadgesClientProps) {
     return <ErrorState error="No badges found" />;
   }
 
-  // Filter to only show earned badges (level > 0)
-  const publicBadges = data.badges.filter((badge) => badge.currentLevel > 0);
+  // Show all badges when viewing own profile, only earned badges for others
+  const publicBadges = isOwnProfile
+    ? data.badges // Show all badges (earned + locked) for own profile
+    : data.badges.filter((badge) => badge.currentLevel > 0); // Show only earned for others
 
   return (
     <>

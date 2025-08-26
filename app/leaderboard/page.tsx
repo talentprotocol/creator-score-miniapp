@@ -33,7 +33,7 @@ import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Trophy } from "lucide-react";
+import { HandHeart, Trophy, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
@@ -287,6 +287,23 @@ function LeaderboardContent() {
                 onClose: () => {
                   // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
                   // The actual dismissal logic is handled by CalloutCarousel, not here
+                },
+              });
+
+              // BADGES ANNOUNCEMENT (pink) – new feature announcement, first priority
+              items.push({
+                id: "badges-announcement",
+                variant: "brand-pink",
+                icon: <Award className="h-4 w-4" />,
+                title: "New: Creator Badges",
+                description: "Track your progress and earn badges.",
+                href: isLoggedIn ? "/badges" : undefined,
+                onClick: !isLoggedIn
+                  ? () => setLoginModalOpen(true)
+                  : undefined,
+                permanentHideKey: "badges_announcement_dismissed",
+                onClose: () => {
+                  // Handle dismissal - this triggers CalloutCarousel's handleDismiss which handles server-side persistence
                 },
               });
 

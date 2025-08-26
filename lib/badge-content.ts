@@ -199,7 +199,7 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     slug: "talent",
     title: "Talent Protocol",
     description:
-      "Unlock 6 Talent Protocol badges: 100+, 500+, 1K+, 2500+, 5K+, and 10K+ $TALENT tokens!",
+      "Unlock 6 badges by holding & staking: 100+, 500+, 1K+, 2500+, 5K+, and 10K+ $TALENT tokens!",
     levelThresholds: [100, 500, 1000, 2500, 5000, 10000],
     levelLabels: [
       "100+ $TALENT",
