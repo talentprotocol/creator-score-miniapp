@@ -12,6 +12,7 @@ export interface UserPreferences {
     permanentlyHiddenIds?: string[];
   };
   rewards_optout?: boolean;
+  how_to_earn_modal_seen?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -23,6 +24,7 @@ export interface UserPreferencesResponse {
     permanentlyHiddenIds: string[];
   };
   rewards_optout: boolean;
+  how_to_earn_modal_seen: boolean;
 }
 
 export interface UserPreferencesUpdateRequest {
@@ -35,6 +37,8 @@ export interface UserPreferencesUpdateRequest {
   remove_permanently_hidden_id?: string;
   // Rewards opt-out preference
   rewards_optout?: boolean;
+  // How to earn modal seen preference
+  how_to_earn_modal_seen?: boolean;
 }
 
 export interface UserPreferencesError {

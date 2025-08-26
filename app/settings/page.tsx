@@ -26,13 +26,20 @@ import {
   XCircle,
   Share,
   HandHeart,
+  Coins,
+  Loader2,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
-import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
+import { useAutoModal } from "@/hooks/useAutoModal";
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
 import { useSearchParams } from "next/navigation";
+import {
+  handleGetTalent,
+  DEFAULT_TALENT_SWAP_URL,
+  SwapResult,
+} from "@/lib/talent-swap";
 
 // Separate component that uses search params
 function SettingsContent() {
@@ -40,8 +47,16 @@ function SettingsContent() {
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
-  const { isOpen, onOpenChange, openForTesting } = useShareCreatorScore(false);
+  const { isOpen, onOpenChange, openForTesting } = useAutoModal({
+    storageKey: "share-creator-score-seen",
+    autoOpen: false,
+  });
   const searchParams = useSearchParams();
+
+  // Talent swap state
+  const [swapResult, setSwapResult] = React.useState<SwapResult>({
+    state: "idle",
+  });
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
@@ -125,6 +140,47 @@ function SettingsContent() {
     handleLogout();
   };
 
+  // Handle talent swap click
+  const handleTalentSwapClick = async () => {
+    // Track analytics
+    posthog?.capture("get_talent_button_clicked", {
+      location: "settings_page",
+    });
+
+    await handleGetTalent(DEFAULT_TALENT_SWAP_URL, setSwapResult);
+  };
+
+  // Get button text based on swap state
+  const getTalentButtonText = () => {
+    switch (swapResult.state) {
+      case "loading":
+        return "Processing...";
+      case "success":
+        return "Swap Successful!";
+      case "error":
+        return "Swap Failed";
+      case "rejected":
+        return "Swap Cancelled";
+      default:
+        return "Get $TALENT";
+    }
+  };
+
+  // Get button icon based on swap state
+  const getTalentButtonIcon = () => {
+    switch (swapResult.state) {
+      case "loading":
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+      case "success":
+        return <CheckCircle className="h-4 w-4" />;
+      case "error":
+      case "rejected":
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Coins className="h-4 w-4" />;
+    }
+  };
+
   return (
     <PageContainer noPadding>
       {/* Header section */}
@@ -193,6 +249,20 @@ function SettingsContent() {
             },
           ]}
         />
+
+        {/* Get $TALENT */}
+        <div className="mt-2">
+          <ButtonFullWidth
+            variant="muted"
+            icon={getTalentButtonIcon()}
+            align="left"
+            onClick={handleTalentSwapClick}
+            disabled={swapResult.state === "loading"}
+            showRightIcon={true}
+          >
+            <span className="font-medium">{getTalentButtonText()}</span>
+          </ButtonFullWidth>
+        </div>
 
         {/* Dev Docs */}
         <div className="mt-2">

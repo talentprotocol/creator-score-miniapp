@@ -18,80 +18,13 @@ import {
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { Coins, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { formatTokenAmount, detectClient, openExternalUrl } from "@/lib/utils";
+import { formatTokenAmount } from "@/lib/utils";
 import { BOOST_CONFIG } from "@/lib/constants";
-
-// TALENT token CAIP-19 asset ID on Base chain
-const TALENT_TOKEN_CAIP19 =
-  "eip155:8453/erc20:0x9a33406165f562e16c3abd82fd1185482e01b49a";
-
-// Swap states for user feedback
-type SwapState = "idle" | "loading" | "success" | "error" | "rejected";
-
-interface SwapResult {
-  state: SwapState;
-  message?: string;
-  transactions?: string[];
-}
-
-/**
- * Handle token swap with Farcaster native swap or fallback to Aerodrome
- */
-async function handleGetTalent(
-  fallbackUrl: string,
-  onStateChange: (result: SwapResult) => void,
-): Promise<void> {
-  const client = await detectClient();
-
-  // Try Farcaster native swap first
-  if (client === "farcaster" || client === "base") {
-    try {
-      onStateChange({ state: "loading" });
-
-      const { sdk } = await import("@farcaster/miniapp-sdk");
-
-      const result = await sdk.actions.swapToken({
-        buyToken: TALENT_TOKEN_CAIP19,
-        // sellToken and sellAmount are optional - user can choose what to sell
-      });
-
-      if (result.success) {
-        onStateChange({
-          state: "success",
-          message: `${result.swap.transactions.length} transaction(s) executed.`,
-          transactions: result.swap.transactions,
-        });
-      } else {
-        const errorMessage =
-          result.reason === "rejected_by_user"
-            ? "Swap was cancelled by user"
-            : `Swap failed: ${result.error?.message || "Unknown error"}`;
-
-        onStateChange({
-          state: result.reason === "rejected_by_user" ? "rejected" : "error",
-          message: errorMessage,
-        });
-      }
-
-      return; // Don't fall through to external URL
-    } catch (error) {
-      console.warn("Native swap failed, falling back to Aerodrome:", error);
-      onStateChange({
-        state: "error",
-        message: "Native swap unavailable, redirecting to Aerodrome...",
-      });
-
-      // Small delay to show the message before redirect
-      setTimeout(async () => {
-        await openExternalUrl(fallbackUrl, null, client);
-      }, 1500);
-      return;
-    }
-  }
-
-  // Fallback to external Aerodrome URL for non-Farcaster environments
-  await openExternalUrl(fallbackUrl, null, client);
-}
+import {
+  handleGetTalent,
+  DEFAULT_TALENT_SWAP_URL,
+  SwapResult,
+} from "@/lib/talent-swap";
 
 interface RewardBoostsModalProps {
   open: boolean;
@@ -100,7 +33,6 @@ interface RewardBoostsModalProps {
   tokenBalance?: number | null;
   boostUsd: string; // boost amount, pre-formatted
   totalUsd: string; // total reward with boost applied, pre-formatted
-  getTalentUrl?: string; // override link if needed
   rank?: number;
   score: number;
 }
@@ -112,7 +44,6 @@ function Content({
   totalUsd,
   rank,
   score,
-  getTalentUrl = "https://aerodrome.finance/swap?from=eth&to=0x9a33406165f562e16c3abd82fd1185482e01b49a&chain0=8453&chain1=8453",
 }: Omit<RewardBoostsModalProps, "open" | "onOpenChange">) {
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
     state: "idle",
@@ -130,7 +61,7 @@ function Content({
   })();
 
   const handleSwapClick = async () => {
-    await handleGetTalent(getTalentUrl, setSwapResult);
+    await handleGetTalent(DEFAULT_TALENT_SWAP_URL, setSwapResult);
   };
 
   const resetSwapState = () => {
@@ -186,12 +117,12 @@ function Content({
         <div
           className={`p-4 rounded-lg border ${
             swapResult.state === "success"
-              ? "bg-green-50 border-green-200 text-green-800"
+              ? "bg-success-light border-success text-success"
               : swapResult.state === "loading"
-                ? "bg-blue-50 border-blue-200 text-blue-800"
+                ? "bg-info-light border-info text-info"
                 : swapResult.state === "rejected"
-                  ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-                  : "bg-red-50 border-red-200 text-red-800"
+                  ? "bg-warning-light border-warning text-warning"
+                  : "bg-error-light border-error text-error"
           }`}
         >
           <div className="flex items-center gap-2">

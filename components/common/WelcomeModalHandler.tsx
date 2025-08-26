@@ -1,10 +1,13 @@
 "use client";
 
 import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
-import { useShareCreatorScore } from "@/hooks/useShareCreatorScore";
+import { useAutoModal } from "@/hooks/useAutoModal";
 
 export function WelcomeModalHandler() {
-  const { isOpen, onOpenChange } = useShareCreatorScore(true);
+  const { isOpen, onOpenChange } = useAutoModal({
+    storageKey: "share-creator-score-seen",
+    autoOpen: true,
+  });
 
   return <ShareCreatorScoreModal open={isOpen} onOpenChange={onOpenChange} />;
 }
