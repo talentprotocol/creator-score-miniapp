@@ -24,24 +24,20 @@ export interface CalloutCarouselItem {
   enabled?: boolean;
   // Presence of onClose indicates dismissible; the actual persistence/removal is handled here
   onClose?: () => void;
-  // Optional season-aware storage key to persist dismissal for this item
-  dismissKey?: string;
   // Optional permanent hide key (no season)
   permanentHideKey?: string;
 }
 
 interface CalloutCarouselProps {
   items: CalloutCarouselItem[];
-  roundEndsAtIso: string;
+  roundEndsAtIso?: string; // Optional since we no longer use seasonal dismissal
   className?: string;
   onDismiss?: (id: string) => void;
   // Auto-advance interval in ms; set 0 or undefined to disable
   autoAdvanceMs?: number;
-  // Server-provided persisted dismissal state (optional)
-  dismissedIds?: string[];
+  // Server-provided persisted permanent hide state (optional)
   permanentlyHiddenIds?: string[];
-  // Persist callbacks to store server-side (optional)
-  onPersistDismiss?: (id: string) => void;
+  // Persist callback to store server-side (optional)
   onPersistPermanentHide?: (id: string) => void;
   // Visual indicator (dots)
   showDots?: boolean;
@@ -53,9 +49,7 @@ export function CalloutCarousel({
   className,
   onDismiss,
   autoAdvanceMs = 3000,
-  dismissedIds,
   permanentlyHiddenIds,
-  onPersistDismiss,
   onPersistPermanentHide,
   showDots = true,
 }: CalloutCarouselProps) {
@@ -109,18 +103,11 @@ export function CalloutCarousel({
         if (permanentlyHiddenIds && permanentlyHiddenIds.includes(item.id)) {
           return false;
         }
-        if (dismissedIds && dismissedIds.includes(item.id)) {
-          return false;
-        }
         if (
           item.permanentHideKey &&
           localStorage.getItem(item.permanentHideKey) === "true"
         ) {
           return false;
-        }
-        if (item.dismissKey) {
-          const key = `${item.dismissKey}:${roundEndsAtIso}`;
-          if (localStorage.getItem(key) === "true") return false;
         }
         return true;
       });
@@ -128,7 +115,7 @@ export function CalloutCarousel({
     } catch {
       setVisible(items);
     }
-  }, [items, roundEndsAtIso, mounted, dismissedIds, permanentlyHiddenIds]);
+  }, [items, roundEndsAtIso, mounted, permanentlyHiddenIds]);
 
   // Derive slides (no looping)
   const hasMultiple = visible.length > 1;
@@ -305,12 +292,6 @@ export function CalloutCarousel({
           onPersistPermanentHide(item.id);
         } else if (item.permanentHideKey) {
           localStorage.setItem(item.permanentHideKey, "true");
-        }
-        if (onPersistDismiss && item.dismissKey) {
-          onPersistDismiss(item.id);
-        } else if (item.dismissKey) {
-          const key = `${item.dismissKey}:${roundEndsAtIso}`;
-          localStorage.setItem(key, "true");
         }
       } catch {}
       setVisible((prev) => prev.filter((i) => i.id !== item.id));
