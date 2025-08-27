@@ -33,7 +33,7 @@ import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Gift } from "lucide-react";
+import { HandHeart, Gift, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
@@ -323,6 +323,21 @@ function LeaderboardContent() {
                   : () => setRewardBoostsOpen(true),
               });
             }
+            // HOW TO EARN REWARDS (blue) – first position, permanently dismissible
+            items.push({
+              id: "how_to_earn",
+              variant: "brand-blue",
+              icon: <Trophy className="h-4 w-4" />,
+              title: "How to Earn Rewards",
+              description: "Get paid USDC for creating content.",
+              onClick: () => setHowToEarnOpen(true),
+              permanentHideKey: "how_to_earn_callout_hidden",
+              onClose: () => {
+                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                // The actual dismissal logic is handled by CalloutCarousel, not here
+              },
+            });
+
             // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
             items.push({
               id: "optout",
@@ -344,35 +359,36 @@ function LeaderboardContent() {
             });
 
             // CREATOR PERK (blue) – interactive, dismissible; reflects entered state
-            items.push({
-              id: "perk_screen_studio",
-              variant: "brand-blue",
-              icon: <Gift className="h-4 w-4" />,
-              title: "Creator Perk",
-              description:
-                perkStatus?.status === "closed"
-                  ? `Draw closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                  : perkStatus?.status === "entered"
-                    ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                    : "Get a free Screen Studio subscription.",
-              href: undefined,
-              external: undefined,
-              onClick: !isLoggedIn
-                ? () => setLoginModalOpen(true)
-                : () => {
-                    try {
-                      posthog.capture("perk_draw_open", {
-                        perk: "screen_studio",
-                      });
-                    } catch {}
-                    setPerkOpen(true);
-                  },
-              dismissKey: "perk_callout_dismissed",
-              onClose: () => {
-                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                // The actual dismissal logic is handled by CalloutCarousel, not here
-              },
-            });
+            // TODO: Uncomment when we have new perks to show
+            // items.push({
+            //   id: "perk_screen_studio",
+            //   variant: "brand-blue",
+            //   icon: <Gift className="h-4 w-4" />,
+            //   title: "Creator Perk",
+            //   description:
+            //     perkStatus?.status === "closed"
+            //       ? `Draw closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+            //       : perkStatus?.status === "entered"
+            //         ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+            //         : "Get a free Screen Studio subscription.",
+            //   href: undefined,
+            //   external: undefined,
+            //   onClick: !isLoggedIn
+            //     ? () => setLoginModalOpen(true)
+            //     : () => {
+            //         try {
+            //           posthog.capture("perk_draw_open", {
+            //             perk: "screen_studio",
+            //           });
+            //         } catch {}
+            //         setPerkOpen(true);
+            //       },
+            //   dismissKey: "perk_callout_dismissed",
+            //   onClose: () => {
+            //     // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+            //     // The actual dismissal logic is handled by CalloutCarousel, not here
+            //   },
+            // });
 
             return items;
           })()}

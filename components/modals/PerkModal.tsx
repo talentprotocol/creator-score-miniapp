@@ -26,6 +26,9 @@ import { Loader2 } from "lucide-react";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { PERK_DRAW_DATE_UTC } from "@/lib/constants";
 
+// NOTE: Perk system is currently disabled/inaccessible
+// This modal remains functional for future perk implementations
+
 export interface PerkModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
