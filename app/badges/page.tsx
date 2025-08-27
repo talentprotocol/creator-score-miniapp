@@ -13,6 +13,7 @@ import {
   ErrorState,
   LoadingState,
 } from "@/components/badges";
+import { BadgesPageLoadingState } from "@/components/badges/BadgesPageLoadingState";
 import { Section } from "@/components/common/Section";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
@@ -159,7 +160,7 @@ export default function BadgesPage() {
 
   // Show loading while resolving user
   if (userLoading) {
-    return <LoadingState />;
+    return <BadgesPageLoadingState />;
   }
 
   // Show FarcasterAccessModal for unauthenticated users
@@ -179,7 +180,7 @@ export default function BadgesPage() {
   }
 
   if (badgesLoading) {
-    return <LoadingState />;
+    return <BadgesPageLoadingState />;
   }
 
   if (error) {

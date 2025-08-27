@@ -75,7 +75,7 @@ export async function GET(
             width: "100%",
             height: "100%",
             position: "relative",
-            backgroundImage: `url(${baseUrl}/images/share/bg-only.png)`,
+            backgroundImage: `url(${baseUrl}/images/share/badges/badges-share-bg.png)`,
             backgroundSize: "1600px 900px",
             backgroundRepeat: "no-repeat",
             flexDirection: "column",
