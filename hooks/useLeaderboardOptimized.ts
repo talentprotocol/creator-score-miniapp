@@ -33,23 +33,15 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
-  // Filter out entries with $0 rewards or rank > 200
+  // Filter out entries with rank > 200 only
   const filterValidEntries = useCallback(
     (rawEntries: LeaderboardEntry[]): LeaderboardEntry[] => {
       return rawEntries.filter((entry) => {
         // Skip entries with rank > 200
         if (!entry.rank || entry.rank > 200) return false;
 
-        // Skip entries with $0 rewards
-        const reward = RewardsCalculationService.calculateUserReward(
-          entry.score,
-          entry.rank,
-          entry.isBoosted || false,
-          entry.isOptedOut || false,
-          rawEntries,
-        );
-
-        return reward !== "$0";
+        // Don't filter out opted-out users - they should show their donated amount
+        return true;
       });
     },
     [],
@@ -67,7 +59,7 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
 
     if (cachedData) {
-      // Filter out entries with $0 rewards or rank > 200
+      // Filter out entries with rank > 200 only
       const filteredEntries = filterValidEntries(cachedData.entries);
 
       setEntries(filteredEntries);
@@ -95,7 +87,7 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
 
       const data = await response.json();
 
-      // Filter out entries with $0 rewards or rank > 200
+      // Filter out entries with rank > 200 only
       const filteredEntries = filterValidEntries(data.entries);
 
       setEntries(filteredEntries);
