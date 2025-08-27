@@ -27,6 +27,14 @@ export interface ServerProfileData {
   yearlyData: { year: number; months: number[]; total: number }[];
   credentials: unknown[];
   earningsBreakdown: { totalEarnings: number; segments: unknown[] };
+  collectorsBreakdown: {
+    totalCollectors: number;
+    segments: Array<{
+      name: string;
+      value: number;
+      percentage: number;
+    }>;
+  };
 }
 
 interface ProfileContextType {

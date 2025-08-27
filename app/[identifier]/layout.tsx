@@ -7,7 +7,11 @@ import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
-import { isEarningsCredential } from "@/lib/total-earnings-config";
+import {
+  isEarningsCredential,
+  getCollectorCountCredentials,
+  getPlatformDisplayName,
+} from "@/lib/total-earnings-config";
 import {
   getEthUsdcPrice,
   getPolUsdPrice,
@@ -172,25 +176,25 @@ export async function generateMetadata({
 
     // Always use canonical URL for Open Graph metadata (not localhost)
     const canonicalUrl = "https://creatorscore.app";
-    
+
     // Determine content based on sharing context
     const shareType = searchParams?.share;
-    const isOptout = shareType === 'optout';
-    
+    const isOptout = shareType === "optout";
+
     // Select appropriate image URL and content
-    const dynamicImageUrl = isOptout 
+    const dynamicImageUrl = isOptout
       ? `${canonicalUrl}/api/share-image-optout/${user.id}`
       : `${canonicalUrl}/api/share-image/${user.id}`;
-      
-    const title = isOptout 
+
+    const title = isOptout
       ? `${displayName} - Paid It Forward`
       : `${displayName} - Creator Score`;
-      
+
     const description = isOptout
       ? `${displayName} paid forward 100% of their Creator Score rewards to support onchain creators.`
       : `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`;
-      
-    const altText = isOptout 
+
+    const altText = isOptout
       ? `${displayName} Paid It Forward`
       : `${displayName} Creator Score Card`;
 
@@ -545,6 +549,147 @@ export default async function ProfileLayout({
     })),
   };
 
+  // Calculate collectors breakdown from collector count credentials
+  const platformCollectorCounts = new Map<string, number>();
+  let totalCollectors = 0;
+
+  credentials.forEach((credentialGroup) => {
+    credentialGroup.points.forEach((point) => {
+      if (!getCollectorCountCredentials().includes(point.slug || "")) {
+        return;
+      }
+      if (!point.readable_value) return;
+
+      // Parse collector count value
+      const cleanValue = point.readable_value;
+      let value: number;
+      const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+      if (numericValue.includes("K")) {
+        value = parseFloat(numericValue.replace("K", "")) * 1000;
+      } else if (numericValue.includes("M")) {
+        value = parseFloat(numericValue.replace("M", "")) * 1000000;
+      } else {
+        value = parseFloat(numericValue);
+      }
+
+      if (isNaN(value)) return;
+
+      // Use helper function for platform name mapping
+      const platformName = getPlatformDisplayName(point.slug || "");
+      platformCollectorCounts.set(platformName, value);
+      totalCollectors += value;
+    });
+  });
+
+  // Create collectors breakdown
+  const sortedPlatforms = Array.from(platformCollectorCounts.entries()).sort(
+    ([, a], [, b]) => b - a,
+  );
+
+  const collectorsBreakdown = {
+    totalCollectors,
+    segments: sortedPlatforms.map(([platform, value]) => ({
+      name: platform,
+      value,
+      percentage: totalCollectors > 0 ? (value / totalCollectors) * 100 : 0,
+    })),
+  };
+
+  // Calculate collectors breakdown from collector count credentials
+  const platformCollectorCounts = new Map<string, number>();
+  let totalCollectors = 0;
+
+  credentials.forEach((credentialGroup) => {
+    credentialGroup.points.forEach((point) => {
+      if (!getCollectorCountCredentials().includes(point.slug || "")) {
+        return;
+      }
+      if (!point.readable_value) return;
+
+      // Parse collector count value
+      const cleanValue = point.readable_value;
+      let value: number;
+      const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+      if (numericValue.includes("K")) {
+        value = parseFloat(numericValue.replace("K", "")) * 1000;
+      } else if (numericValue.includes("M")) {
+        value = parseFloat(numericValue.replace("M", "")) * 1000000;
+      } else {
+        value = parseFloat(numericValue);
+      }
+
+      if (isNaN(value)) return;
+
+      // Use helper function for platform name mapping
+      const platformName = getPlatformDisplayName(point.slug || "");
+      platformCollectorCounts.set(platformName, value);
+      totalCollectors += value;
+    });
+  });
+
+  // Create collectors breakdown
+  const sortedPlatforms = Array.from(platformCollectorCounts.entries()).sort(
+    ([, a], [, b]) => b - a,
+  );
+
+  const collectorsBreakdown = {
+    totalCollectors,
+    segments: sortedPlatforms.map(([platform, value]) => ({
+      name: platform,
+      value,
+      percentage: totalCollectors > 0 ? (value / totalCollectors) * 100 : 0,
+    })),
+  };
+
+  // Calculate collectors breakdown from collector count credentials
+  const platformCollectorCounts = new Map<string, number>();
+  let totalCollectors = 0;
+
+  credentials.forEach((credentialGroup) => {
+    credentialGroup.points.forEach((point) => {
+      if (!getCollectorCountCredentials().includes(point.slug || "")) {
+        return;
+      }
+      if (!point.readable_value) return;
+
+      // Parse collector count value
+      const cleanValue = point.readable_value;
+      let value: number;
+      const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+      if (numericValue.includes("K")) {
+        value = parseFloat(numericValue.replace("K", "")) * 1000;
+      } else if (numericValue.includes("M")) {
+        value = parseFloat(numericValue.replace("M", "")) * 1000000;
+      } else {
+        value = parseFloat(numericValue);
+      }
+
+      if (isNaN(value)) return;
+
+      // Use helper function for platform name mapping
+      const platformName = getPlatformDisplayName(point.slug || "");
+      platformCollectorCounts.set(platformName, value);
+      totalCollectors += value;
+    });
+  });
+
+  // Create collectors breakdown
+  const sortedPlatforms = Array.from(platformCollectorCounts.entries()).sort(
+    ([, a], [, b]) => b - a,
+  );
+
+  const collectorsBreakdown = {
+    totalCollectors,
+    segments: sortedPlatforms.map(([platform, value]) => ({
+      name: platform,
+      value,
+      percentage: totalCollectors > 0 ? (value / totalCollectors) * 100 : 0,
+    })),
+  };
+
   // Calculate total followers
   const totalFollowers = socialAccounts.reduce((sum, account) => {
     return sum + (account.followerCount || 0);
@@ -605,6 +750,7 @@ export default async function ProfileLayout({
         yearlyData,
         credentials,
         earningsBreakdown,
+        collectorsBreakdown,
         rank,
       }}
     >

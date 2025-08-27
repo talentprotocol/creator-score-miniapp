@@ -130,3 +130,19 @@ export function getCollectorCountCredentials(): string[] {
 export function getPortfolioMetricCredentials(): string[] {
   return TOTAL_EARNINGS_CONFIG.portfolioMetrics;
 }
+
+// Platform display name mappings for collector count credentials
+export const PLATFORM_NAME_MAPPINGS: Record<string, string> = {
+  coop_records_holders: "Coop Records",
+  mirror_unique_collectors: "Mirror",
+  opensea_nft_total_owners: "OpenSea",
+  paragraph_unique_collectors: "Paragraph",
+  zora_unique_holders: "Zora",
+};
+
+/**
+ * Get the display name for a credential slug
+ */
+export function getPlatformDisplayName(credentialSlug: string): string {
+  return PLATFORM_NAME_MAPPINGS[credentialSlug] || credentialSlug;
+}
