@@ -116,7 +116,10 @@ export function FarcasterAccessModal({
             </Button>
 
             <Button
-              onClick={() => login({ walletChainType: "ethereum-only" })}
+              onClick={() => {
+                onOpenChange(false);
+                login({ walletChainType: "ethereum-only" });
+              }}
               className="w-full"
               disabled={!ready}
             >
@@ -153,7 +156,10 @@ export function FarcasterAccessModal({
               Open in Farcaster
             </Button>
             <Button
-              onClick={() => login({ walletChainType: "ethereum-only" })}
+              onClick={() => {
+                onOpenChange(false);
+                login({ walletChainType: "ethereum-only" });
+              }}
               className="w-full"
               disabled={!ready}
             >
