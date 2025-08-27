@@ -4,8 +4,7 @@ import * as React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PfpBorder } from "@/components/ui/pfp-border";
 import { ChevronUp, ChevronDown, Sparkles } from "lucide-react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { getUserContext } from "@/lib/user-context";
+
 import { ProfileAccountsSheet } from "./ProfileAccountsSheet";
 import { useUserCategory } from "@/hooks/useUserCategory";
 import { useCreatorCategory } from "@/hooks/useCreatorCategory";
@@ -40,8 +39,6 @@ export function ProfileHeader({
   hasCreatorScore?: boolean;
   rank?: number;
 }) {
-  const { context } = useMiniKit();
-  const currentUser = getUserContext(context);
   // Get category data from ProfileContext instead of making API calls
   const { profileData } = useProfileContext();
   const categoryData = profileData?.credentials
@@ -88,15 +85,8 @@ export function ProfileHeader({
     categoryData?.primaryCategory,
   ]);
 
-  const name =
-    displayName ||
-    currentUser?.displayName ||
-    currentUser?.username ||
-    "Unknown user";
-  const image =
-    profileImage ||
-    currentUser?.pfpUrl ||
-    "https://api.dicebear.com/7.x/identicon/svg?seed=profile";
+  const name = displayName || "Unknown Creator";
+  const image = profileImage; // No fallback - let AvatarFallback handle it with initials
 
   const [isBioExpanded, setIsBioExpanded] = React.useState(false);
 
@@ -189,7 +179,9 @@ export function ProfileHeader({
             <div className="relative h-16 w-16">
               <Avatar className="h-full w-full">
                 <AvatarImage src={image} alt={name} />
-                <AvatarFallback></AvatarFallback>
+                <AvatarFallback>
+                  {name ? name[0]?.toUpperCase() : "?"}
+                </AvatarFallback>
               </Avatar>
               <div className="absolute inset-0 pointer-events-none">
                 <PfpBorder />

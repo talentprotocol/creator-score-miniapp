@@ -15,7 +15,7 @@ export function CreatorNotFoundCard() {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          router.push("/");
+          router.push("/leaderboard");
           return 0;
         }
         return prev - 1;

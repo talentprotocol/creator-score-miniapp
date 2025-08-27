@@ -27,13 +27,12 @@ import {
   BOOST_CONFIG,
   LEVEL_RANGES,
   PERK_DRAW_DEADLINE_UTC,
-  PERK_DRAW_DATE_UTC,
 } from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Gift } from "lucide-react";
+import { HandHeart, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
@@ -67,24 +66,8 @@ function LeaderboardContent() {
   const user = getUserContext(context);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("creators");
-  const [, setShowBoostCallout] = useState(true);
   const [perkOpen, setPerkOpen] = useState(false);
   const searchParams = useSearchParams();
-  // Season-aware dismissal for the "Rewards Boost" callout.
-  // We persist the user's dismissal in localStorage with a key that includes
-  // ROUND_ENDS_AT so the callout automatically reappears next rewards round.
-  const boostDismissKey = React.useMemo(
-    () => `boost_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
-    [],
-  );
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const dismissed = localStorage.getItem(boostDismissKey);
-      if (dismissed === "true") setShowBoostCallout(false);
-    } catch {}
-  }, [boostDismissKey]);
   const { talentUuid: userTalentUuid } = useFidToTalentUuid();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
   const [rewardBoostsOpen, setRewardBoostsOpen] = useState(false);
@@ -114,7 +97,7 @@ function LeaderboardContent() {
   const name = unifiedName ?? user?.displayName ?? user?.username;
   const loadingStats = unifiedLoading;
   const level = getLevelFromScore(creatorScore);
-  const { data: perkStatus, refresh: refreshPerkStatus } = usePerkEntry(
+  const { refresh: refreshPerkStatus } = usePerkEntry(
     "screen_studio",
     userTalentUuid,
   );
@@ -137,9 +120,7 @@ function LeaderboardContent() {
 
   // Server-persisted callout preferences
   const {
-    dismissedIds: dismissedCalloutIds,
     permanentlyHiddenIds: permanentlyHiddenCalloutIds,
-    addDismissedId,
     addPermanentlyHiddenId,
   } = useUserCalloutPrefs(userTalentUuid ?? null);
 
@@ -270,10 +251,7 @@ function LeaderboardContent() {
       {/* Callout Carousel (below MyRewards) - visible to all users */}
       <div className="mt-4 mb-2">
         <CalloutCarousel
-          roundEndsAtIso={ROUND_ENDS_AT.toISOString()}
-          dismissedIds={dismissedCalloutIds}
           permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-          onPersistDismiss={(id) => addDismissedId(id)}
           onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
           items={(() => {
             const items = [] as Array<{
@@ -290,10 +268,24 @@ function LeaderboardContent() {
               href?: string;
               external?: boolean;
               onClick?: () => void;
-              dismissKey?: string;
               permanentHideKey?: string;
               onClose?: () => void;
             }>;
+
+            // HOW TO EARN REWARDS (blue) – first position, permanently dismissible
+            items.push({
+              id: "how_to_earn",
+              variant: "brand-blue",
+              icon: <Trophy className="h-4 w-4" />,
+              title: "How to Earn Rewards",
+              description: "Get paid USDC for creating content.",
+              onClick: () => setHowToEarnOpen(true),
+              permanentHideKey: "how_to_earn_callout_hidden",
+              onClose: () => {
+                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                // The actual dismissal logic is handled by CalloutCarousel, not here
+              },
+            });
 
             // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
             const base = {
@@ -306,13 +298,11 @@ function LeaderboardContent() {
             if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
               items.push({
                 ...base,
-                dismissKey: "boost_callout_dismissed",
+                permanentHideKey: "boost_callout_hidden",
                 onClick: () => setRewardBoostsOpen(true),
                 onClose: () => {
-                  try {
-                    localStorage.setItem(boostDismissKey, "true");
-                  } catch {}
-                  setShowBoostCallout(false);
+                  // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                  // The actual dismissal logic is handled by CalloutCarousel, not here
                 },
               });
             } else {
@@ -323,6 +313,7 @@ function LeaderboardContent() {
                   : () => setRewardBoostsOpen(true),
               });
             }
+
             // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
             items.push({
               id: "optout",
@@ -332,47 +323,44 @@ function LeaderboardContent() {
               description: "Give your rewards, keep your rank.",
               href: isLoggedIn ? "/settings?section=pay-it-forward" : undefined,
               onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
-              dismissKey: "optout_callout_dismissed",
-              onClose: () => {
-                try {
-                  localStorage.setItem(
-                    `optout_callout_dismissed:${ROUND_ENDS_AT.toISOString()}`,
-                    "true",
-                  );
-                } catch {}
-              },
-            });
-
-            // CREATOR PERK (blue) – interactive, dismissible; reflects entered state
-            items.push({
-              id: "perk_screen_studio",
-              variant: "brand-blue",
-              icon: <Gift className="h-4 w-4" />,
-              title: "Creator Perk",
-              description:
-                perkStatus?.status === "closed"
-                  ? `Draw closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                  : perkStatus?.status === "entered"
-                    ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                    : "Get a free Screen Studio subscription.",
-              href: undefined,
-              external: undefined,
-              onClick: !isLoggedIn
-                ? () => setLoginModalOpen(true)
-                : () => {
-                    try {
-                      posthog.capture("perk_draw_open", {
-                        perk: "screen_studio",
-                      });
-                    } catch {}
-                    setPerkOpen(true);
-                  },
-              dismissKey: "perk_callout_dismissed",
+              permanentHideKey: "optout_callout_hidden",
               onClose: () => {
                 // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
                 // The actual dismissal logic is handled by CalloutCarousel, not here
               },
             });
+
+            // CREATOR PERK (blue) – interactive, dismissible; reflects entered state
+            // TODO: Uncomment when we have new perks to show
+            // items.push({
+            //   id: "perk_screen_studio",
+            //   variant: "brand-blue",
+            //   icon: <Gift className="h-4 w-4" />,
+            //   title: "Creator Perk",
+            //   description:
+            //     perkStatus?.status === "closed"
+            //       ? `Draw closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+            //       : perkStatus?.status === "entered"
+            //         ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+            //         : "Get a free Screen Studio subscription.",
+            //   href: undefined,
+            //   external: undefined,
+            //   onClick: !isLoggedIn
+            //     ? () => setLoginModalOpen(true)
+            //     : () => {
+            //         try {
+            //           posthog.capture("perk_draw_open", {
+            //             perk: "screen_studio",
+            //           });
+            //         } catch {}
+            //         setPerkOpen(true);
+            //       },
+            //   dismissKey: "perk_callout_dismissed",
+            //   onClose: () => {
+            //     // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+            //     // The actual dismissal logic is handled by CalloutCarousel, not here
+            //   },
+            // });
 
             return items;
           })()}

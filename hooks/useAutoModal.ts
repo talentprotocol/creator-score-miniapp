@@ -10,25 +10,31 @@ export interface AutoModalConfig {
 
 export function useAutoModal(config: AutoModalConfig) {
   const { storageKey, databaseField, checkDate, autoOpen = false } = config;
-  const [isOpen, setIsOpen] = useState(false);
   const [hasSeenModal, setHasSeenModal] = useState(true); // Default to true to prevent flash
   const { talentUuid } = useFidToTalentUuid();
 
   useEffect(() => {
     // Only auto-open when explicitly enabled
-    if (!autoOpen) return;
+    if (!autoOpen) {
+      return;
+    }
 
     // Check if date condition is met (e.g., rewards period ended)
-    if (checkDate && new Date() >= checkDate) return;
+    if (checkDate && new Date() >= checkDate) {
+      return;
+    }
 
-    // For authenticated users with database field, check user preferences
+    // Wait for talentUuid to be resolved before making decisions
+    if (talentUuid === null) {
+      return;
+    }
+
+    // Only proceed if we have both talentUuid and databaseField
     if (talentUuid && databaseField) {
       checkUserPreferences();
     } else {
-      // For non-authenticated users or no database field, use localStorage
-      const seen = localStorage.getItem(storageKey);
-      setHasSeenModal(!!seen);
-      setIsOpen(!seen);
+      // For non-authenticated users or missing config, don't show modal
+      setHasSeenModal(true);
     }
   }, [talentUuid, autoOpen, storageKey, databaseField, checkDate]);
 
@@ -40,29 +46,24 @@ export function useAutoModal(config: AutoModalConfig) {
       const json = await res.json();
       const hasSeen = json[databaseField!] ?? false;
       setHasSeenModal(hasSeen);
-      setIsOpen(!hasSeen);
     } catch (e) {
-      // Fallback to localStorage if API fails
-      const seen = localStorage.getItem(storageKey);
-      setHasSeenModal(!!seen);
-      setIsOpen(!seen);
+      console.error("API call failed:", e);
+      // If API fails, assume user has seen modal to prevent flash
+      setHasSeenModal(true);
     }
   };
 
   const onOpenChange = useCallback(
     (open: boolean) => {
-      setIsOpen(open);
       if (!open) {
         // Mark as seen when closing
         if (talentUuid && databaseField) {
           markAsSeenInDatabase();
-        } else {
-          localStorage.setItem(storageKey, "true");
         }
         setHasSeenModal(true);
       }
     },
-    [talentUuid, databaseField, storageKey],
+    [talentUuid, databaseField],
   );
 
   const markAsSeenInDatabase = async () => {
@@ -81,14 +82,16 @@ export function useAutoModal(config: AutoModalConfig) {
       }
     } catch (e) {
       console.error("Failed to mark modal as seen:", e);
-      // Fallback to localStorage
-      localStorage.setItem(storageKey, "true");
+      // No fallback needed - user will see modal again next time
     }
   };
 
   const openForTesting = useCallback(() => {
-    setIsOpen(true);
+    setHasSeenModal(false);
   }, []);
+
+  // Modal should be open when user hasn't seen it and autoOpen is enabled
+  const isOpen = !hasSeenModal && autoOpen;
 
   return {
     isOpen,

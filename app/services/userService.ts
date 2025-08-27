@@ -59,6 +59,16 @@ export async function getTalentUserService(identifier: string): Promise<{
           response_statusText: response.statusText,
         });
 
+        // Log the raw response body to understand what Talent API is returning
+        if (!response.ok) {
+          const responseText = await response.text();
+          dlog("UserService", "getProfile_error_response_body", {
+            identifier,
+            status: response.status,
+            response_body: responseText,
+          });
+        }
+
         if (!response.ok) {
           dlog("UserService", "getProfile_non_ok_response", {
             identifier,
@@ -83,6 +93,13 @@ export async function getTalentUserService(identifier: string): Promise<{
             user &&
             (user.fid || user.wallet || user.github || user.id)
           ),
+        });
+
+        // Log the full response to understand what Talent API returns
+        dlog("UserService", "getProfile_full_response", {
+          identifier,
+          response_data: user,
+          response_keys: user ? Object.keys(user) : [],
         });
 
         if (user && (user.fid || user.wallet || user.github || user.id)) {
