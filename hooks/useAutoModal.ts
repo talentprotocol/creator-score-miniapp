@@ -40,16 +40,20 @@ export function useAutoModal(config: AutoModalConfig) {
       return;
     }
 
-    // For authenticated users with database field, check user preferences
+    // Wait for talentUuid to be resolved before making decisions
+    if (talentUuid === null) {
+      console.log("Waiting for talentUuid to be resolved");
+      return;
+    }
+
+    // Only proceed if we have both talentUuid and databaseField
     if (talentUuid && databaseField) {
       console.log("Checking user preferences in database");
       checkUserPreferences();
     } else {
-      // For non-authenticated users or no database field, use localStorage
-      console.log("Using localStorage fallback");
-      const seen = localStorage.getItem(storageKey);
-      console.log("localStorage value:", seen);
-      setHasSeenModal(!!seen);
+      console.log("Missing talentUuid or databaseField, modal will not show");
+      // For non-authenticated users or missing config, don't show modal
+      setHasSeenModal(true);
     }
   }, [talentUuid, autoOpen, storageKey, databaseField, checkDate]);
 
@@ -64,13 +68,9 @@ export function useAutoModal(config: AutoModalConfig) {
       console.log("Database response:", { json, databaseField, hasSeen });
       setHasSeenModal(hasSeen);
     } catch (e) {
-      console.error("API call failed, falling back to localStorage:", e);
-      // Only fallback to localStorage if we're not authenticated
-      if (!talentUuid || !databaseField) {
-        const seen = localStorage.getItem(storageKey);
-        setHasSeenModal(!!seen);
-      }
-      // If authenticated, keep hasSeenModal = true to prevent flash
+      console.error("API call failed:", e);
+      // If API fails, assume user has seen modal to prevent flash
+      setHasSeenModal(true);
     }
   };
 
@@ -80,13 +80,11 @@ export function useAutoModal(config: AutoModalConfig) {
         // Mark as seen when closing
         if (talentUuid && databaseField) {
           markAsSeenInDatabase();
-        } else {
-          localStorage.setItem(storageKey, "true");
         }
         setHasSeenModal(true);
       }
     },
-    [talentUuid, databaseField, storageKey],
+    [talentUuid, databaseField],
   );
 
   const markAsSeenInDatabase = async () => {
@@ -105,8 +103,7 @@ export function useAutoModal(config: AutoModalConfig) {
       }
     } catch (e) {
       console.error("Failed to mark modal as seen:", e);
-      // Fallback to localStorage
-      localStorage.setItem(storageKey, "true");
+      // No fallback needed - user will see modal again next time
     }
   };
 
