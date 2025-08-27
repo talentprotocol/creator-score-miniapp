@@ -12,14 +12,10 @@ export function HowToEarnModalHandler() {
     autoOpen: true,
   });
 
-  console.log("HowToEarnModalHandler render:", { isOpen, hasSeenModal });
-
   // Don't render modal if user has already seen it
   if (hasSeenModal) {
-    console.log("User has seen modal, not rendering");
     return null;
   }
 
-  console.log("User hasn't seen modal, rendering modal");
   return <HowToEarnModal open={isOpen} onOpenChange={onOpenChange} />;
 }

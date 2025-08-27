@@ -62,7 +62,7 @@
 @layer utilities {
   /* Shared modal/drawer backdrop overlay */
   .modal-overlay {
-    @apply fixed inset-0 z-50 bg-black/70 backdrop-blur-sm;
+    @apply fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0;
   }
 
   /* Brand Color Utilities - Semantic access to brand colors */
