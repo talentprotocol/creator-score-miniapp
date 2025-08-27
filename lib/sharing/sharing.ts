@@ -7,7 +7,7 @@
  */
 
 import { openExternalUrl } from "@/lib/utils";
-import type { BadgeState } from "@/app/services/badgesService";
+import type { BadgeState } from "@/lib/types/badges";
 import type { ShareContent, ShareContext } from "./utils";
 import { sanitizeFilename, generateShareUrl } from "./utils";
 

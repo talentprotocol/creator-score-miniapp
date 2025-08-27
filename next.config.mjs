@@ -27,7 +27,13 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: ["api.dicebear.com", "i.imgur.com", "imagedelivery.net"],
+    domains: [
+      "api.dicebear.com",
+      "i.imgur.com",
+      "imagedelivery.net",
+      "www.creatorscore.app",
+      "creatorscore.app",
+    ],
   },
   experimental: {
     esmExternals: false,

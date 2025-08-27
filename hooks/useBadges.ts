@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { BadgesResponse } from "@/app/services/badgesService";
+import type { BadgesResponse } from "@/lib/types/badges";
 
 // Extended response type for profile badges that includes user information
 interface ExtendedBadgesResponse extends BadgesResponse {
@@ -27,7 +27,10 @@ interface UseBadgesReturn {
  * @param identifier - Optional profile identifier (e.g., "jessepollak") for viewing other users' badges
  * @returns Object with badge data, loading state, and error state
  */
-export function useBadges(userId?: string, identifier?: string): UseBadgesReturn {
+export function useBadges(
+  userId?: string,
+  identifier?: string,
+): UseBadgesReturn {
   const [data, setData] = useState<ExtendedBadgesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

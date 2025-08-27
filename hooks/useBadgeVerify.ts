@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import posthog from "posthog-js";
-import type { BadgeState } from "@/app/services/badgesService";
+import type { BadgeState } from "@/lib/types/badges";
 
 interface UseBadgeVerifyResult {
   isVerifying: boolean;

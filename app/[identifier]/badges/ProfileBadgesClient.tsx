@@ -7,7 +7,7 @@ import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBadges } from "@/hooks/useBadges";
 import { LoadingState, ErrorState } from "@/components/badges";
-import type { BadgeState } from "@/app/services/badgesService";
+import type { BadgeState } from "@/lib/types/badges";
 import { Award } from "lucide-react";
 
 interface ProfileBadgesClientProps {

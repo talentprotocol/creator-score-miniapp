@@ -10,6 +10,9 @@ import { usePrivyAuth } from "./usePrivyAuth";
 // Maps user identifiers (fid, wallet, etc.) to Talent Protocol UUID
 const userResolutionCache = new Map<number, string | null>();
 
+// Cache for user handles to avoid repeated API calls
+const userHandleCache = new Map<string, string | null>();
+
 /**
  * Hook to resolve and cache a user's Talent Protocol UUID from multiple sources
  *
@@ -22,6 +25,7 @@ const userResolutionCache = new Map<number, string | null>();
  *   - talentUuid: The resolved Talent Protocol UUID or null if not found
  *   - loading: Boolean indicating if resolution is in progress
  *   - error: Error message if resolution failed, null otherwise
+ *   - handle: The user's Farcaster handle or null if not found
  */
 export function useFidToTalentUuid() {
   // Get the current MiniKit context and user information
@@ -35,6 +39,7 @@ export function useFidToTalentUuid() {
   const [talentUuid, setTalentUuid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [handle, setHandle] = useState<string | null>(null);
 
   useEffect(() => {
     /**
@@ -51,6 +56,10 @@ export function useFidToTalentUuid() {
       // Case 1: User already has a talentId from Privy auth (highest priority)
       if (talentId) {
         setTalentUuid(talentId);
+
+        // For Privy users, fetch handle from talent-socials API
+        await fetchUserHandle(talentId);
+
         setLoading(false);
         return;
       }
@@ -66,6 +75,12 @@ export function useFidToTalentUuid() {
       if (userResolutionCache.has(user.fid)) {
         const cachedUuid = userResolutionCache.get(user.fid) || null;
         setTalentUuid(cachedUuid);
+
+        // If we have a cached UUID, also fetch the handle
+        if (cachedUuid) {
+          await fetchUserHandle(cachedUuid);
+        }
+
         setLoading(false);
         return;
       }
@@ -83,6 +98,11 @@ export function useFidToTalentUuid() {
         userResolutionCache.set(user.fid, uuid);
 
         setTalentUuid(uuid);
+
+        // If we got a UUID, fetch the handle
+        if (uuid) {
+          await fetchUserHandle(uuid);
+        }
       } catch (err) {
         console.error("Error resolving user talent UUID:", err);
 
@@ -98,16 +118,56 @@ export function useFidToTalentUuid() {
       }
     }
 
+    /**
+     * Fetch user's Farcaster handle from talent-socials API
+     */
+    async function fetchUserHandle(uuid: string) {
+      // Check cache first
+      if (userHandleCache.has(uuid)) {
+        const cachedHandle = userHandleCache.get(uuid);
+        setHandle(cachedHandle || null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/talent-socials?uuid=${uuid}`);
+        if (response.ok) {
+          const data = await response.json();
+
+          // Extract Farcaster handle from the response
+          // The API returns social accounts, we need to find the Farcaster one
+          const farcasterAccount = data.socials?.find(
+            (social: any) => social.platform === "farcaster",
+          );
+
+          const userHandle = farcasterAccount?.username || null;
+
+          // Cache the result
+          userHandleCache.set(uuid, userHandle);
+          setHandle(userHandle);
+        } else {
+          console.warn("Failed to fetch user handle from talent-socials API");
+          setHandle(null);
+        }
+      } catch (err) {
+        console.warn("Error fetching user handle:", err);
+        setHandle(null);
+      }
+    }
+
     // Execute resolution whenever fid, privy readiness, or talentId changes
     resolveUserTalentUuid();
   }, [user?.fid, talentId, privyReady]);
+
+  // For MiniKit users, prioritize the context username over the fetched handle
+  const finalHandle = user?.username || handle || null;
 
   return {
     talentUuid,
     loading,
     error,
-    // Also return the user's handle from MiniKit context
-    handle: user?.username || null,
+    // Return the handle from MiniKit context if available, otherwise use fetched handle
+    handle: finalHandle,
   };
 }
 
@@ -117,4 +177,5 @@ export function useFidToTalentUuid() {
  */
 export function clearUserResolutionCache() {
   userResolutionCache.clear();
+  userHandleCache.clear();
 }

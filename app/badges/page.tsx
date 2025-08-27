@@ -4,7 +4,7 @@ import { useBadges } from "@/hooks/useBadges";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useScoreRefresh } from "@/hooks/useScoreRefresh";
 
-import type { BadgeState } from "@/app/services/badgesService";
+import type { BadgeState } from "@/lib/types/badges";
 import { useEffect, useState } from "react";
 import {
   BadgeCard,
@@ -208,7 +208,7 @@ export default function BadgesPage() {
               Badges
             </Typography>
             <Typography color="muted">
-              {badgesData.summary.completionPct}% completed
+              {badgesData.summary?.completionPct ?? 0}% completed
             </Typography>
           </div>
           <div className="flex items-center gap-2">

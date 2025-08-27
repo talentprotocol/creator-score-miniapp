@@ -1,6 +1,6 @@
 "use client";
 
-import type { BadgeState } from "@/app/services/badgesService";
+import type { BadgeState } from "@/lib/types/badges";
 import { getBadgeContent } from "@/lib/badge-content";
 import { Typography } from "@/components/ui/typography";
 import { Medal } from "lucide-react";

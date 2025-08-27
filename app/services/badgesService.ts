@@ -23,6 +23,12 @@ import {
 } from "@/lib/utils";
 import { getCollectorCountCredentials } from "@/lib/total-earnings-config";
 
+import type {
+  BadgeState,
+  BadgeSection,
+  BadgesResponse,
+} from "@/lib/types/badges";
+
 /**
  * BADGES SERVICE
  *
@@ -37,39 +43,7 @@ import { getCollectorCountCredentials } from "@/lib/total-earnings-config";
  *
  */
 
-// Types for badge system (updated for dynamic single-badge approach)
-export interface BadgeState {
-  badgeSlug: string; // Badge family identifier (e.g., "creator-score", "total-earnings")
-  title: string; // Badge category title (e.g., "Creator Score", "Total Followers")
-  currentLevel: number; // 0 = locked, 1+ = earned level
-  maxLevel: number; // Total number of levels
-  isMaxLevel: boolean;
-  levelLabel: string; // Current level display (e.g., "Level 3", "1K Followers")
-  progressLabel: string; // Progress to next level (e.g., "50 left", "Max Level")
-  progressPct: number; // Progress percentage (0-100)
-  artworkUrl: string; // Current artwork URL
-  description: string;
-  categoryName: string; // Badge category name
-  sectionId: string; // Section identifier (e.g., "trophies", "records", "special")
-  timesEarned?: number; // For streak badges: how many times this badge has been earned
-}
-
-export interface BadgeSection {
-  id: string;
-  title: string;
-  badges: BadgeState[];
-}
-
-export interface BadgesResponse {
-  sections?: BadgeSection[];
-  badges?: BadgeState[];
-  summary: {
-    earnedCount: number;
-    totalCount: number;
-    completionPct: number;
-  };
-  lastCalculatedAt?: string | null; // Last time the badges were calculated from Talent API
-}
+// Types are now imported from @/lib/types/badges
 
 /**
  * UTILITY FUNCTIONS

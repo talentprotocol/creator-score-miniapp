@@ -6,31 +6,10 @@
  * enable localization, and perform A/B testing without touching core logic.
  */
 
-/**
- * BadgeContent
- * - slug: canonical identifier for the badge family (e.g., "creator-score", "total-earnings") used in URLs and asset paths
- * - title: human-readable badge family title shown in UI (e.g., "Creator Score")
- * - description: copy template supporting placeholders like {level} and {amount} to render per-level descriptions
- * - levelThresholds: ordered numeric thresholds for each level within the badge family (min values or counts)
- * - levelLabels: human-facing names for each level (e.g., "40-79", "1K", "3 Days"); must align by index with levelThresholds
- * - uom: optional unit of measure to display with values (e.g., "USD", "followers", "$TALENT", "days")
- */
-export interface BadgeContent {
-  slug: string;
-  title: string;
-  description: string;
-  levelThresholds: number[];
-  levelLabels: string[];
-  uom?: string;
-  isStreakBadge?: boolean;
-  sectionId: string; // Section identifier (e.g., "trophies", "records", "special")
-}
+import type { BadgeContent, BadgeSectionContent } from "@/lib/types/badges";
 
-export interface BadgeSectionContent {
-  id: string;
-  title: string;
-  description?: string;
-}
+// Re-export types for backward compatibility
+export type { BadgeContent, BadgeSectionContent };
 
 // Top-level Section definitions (UI groups)
 export const BADGE_SECTIONS: BadgeSectionContent[] = [

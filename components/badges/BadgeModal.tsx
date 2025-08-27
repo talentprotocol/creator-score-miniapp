@@ -14,7 +14,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { BadgeState } from "@/app/services/badgesService";
+import type { BadgeState } from "@/lib/types/badges";
 import { getBadgeContent } from "@/lib/badge-content";
 import { formatCompactNumber } from "@/lib/utils";
 import { Typography } from "@/components/ui/typography";
