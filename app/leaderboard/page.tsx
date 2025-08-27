@@ -272,6 +272,21 @@ function LeaderboardContent() {
               onClose?: () => void;
             }>;
 
+            // HOW TO EARN REWARDS (blue) – first position, permanently dismissible
+            items.push({
+              id: "how_to_earn",
+              variant: "brand-blue",
+              icon: <Trophy className="h-4 w-4" />,
+              title: "How to Earn Rewards",
+              description: "Get paid USDC for creating content.",
+              onClick: () => setHowToEarnOpen(true),
+              permanentHideKey: "how_to_earn_callout_hidden",
+              onClose: () => {
+                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                // The actual dismissal logic is handled by CalloutCarousel, not here
+              },
+            });
+
             // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
             const base = {
               id: "boost",
@@ -298,20 +313,6 @@ function LeaderboardContent() {
                   : () => setRewardBoostsOpen(true),
               });
             }
-            // HOW TO EARN REWARDS (blue) – first position, permanently dismissible
-            items.push({
-              id: "how_to_earn",
-              variant: "brand-blue",
-              icon: <Trophy className="h-4 w-4" />,
-              title: "How to Earn Rewards",
-              description: "Get paid USDC for creating content.",
-              onClick: () => setHowToEarnOpen(true),
-              permanentHideKey: "how_to_earn_callout_hidden",
-              onClose: () => {
-                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                // The actual dismissal logic is handled by CalloutCarousel, not here
-              },
-            });
 
             // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
             items.push({

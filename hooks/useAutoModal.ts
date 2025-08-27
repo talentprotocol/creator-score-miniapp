@@ -65,9 +65,12 @@ export function useAutoModal(config: AutoModalConfig) {
       setHasSeenModal(hasSeen);
     } catch (e) {
       console.error("API call failed, falling back to localStorage:", e);
-      // Fallback to localStorage if API fails
-      const seen = localStorage.getItem(storageKey);
-      setHasSeenModal(!!seen);
+      // Only fallback to localStorage if we're not authenticated
+      if (!talentUuid || !databaseField) {
+        const seen = localStorage.getItem(storageKey);
+        setHasSeenModal(!!seen);
+      }
+      // If authenticated, keep hasSeenModal = true to prevent flash
     }
   };
 
