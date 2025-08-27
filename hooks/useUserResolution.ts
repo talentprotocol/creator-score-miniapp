@@ -102,7 +102,13 @@ export function useFidToTalentUuid() {
     resolveUserTalentUuid();
   }, [user?.fid, talentId, privyReady]);
 
-  return { talentUuid, loading, error };
+  return {
+    talentUuid,
+    loading,
+    error,
+    // Also return the user's handle from MiniKit context
+    handle: user?.username || null,
+  };
 }
 
 /**

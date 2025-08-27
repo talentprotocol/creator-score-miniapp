@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { Link, Download } from "lucide-react";
+import { Link, Download, AlertCircle } from "lucide-react";
 import { useShare } from "@/hooks/useShare";
-import { generateAltText, resolveImageUrl } from "@/lib/sharing";
+import { generateAltText } from "@/lib/sharing";
 import type {
   ShareContent,
   ShareContext,
@@ -63,6 +63,10 @@ export function ShareModal({
 }: ShareModalProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
 
+  // Image loading and error states
+  const [imageLoading, setImageLoading] = React.useState(true);
+  const [imageError, setImageError] = React.useState(false);
+
   // Initialize sharing hook with context and analytics
   const {
     shareToFarcaster,
@@ -90,6 +94,9 @@ export function ShareModal({
   React.useEffect(() => {
     if (!open) {
       resetStates();
+      // Reset image states when modal closes
+      setImageLoading(true);
+      setImageError(false);
     }
   }, [open, resetStates]);
 
@@ -99,8 +106,19 @@ export function ShareModal({
     badge_level: analytics.metadata.badge_level,
   });
 
-  // Resolve relative image URLs to absolute URLs for Next.js Image component
-  const resolvedImageUrl = resolveImageUrl(content.imageUrl);
+  // Handle image loading events
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  // Since we're now using absolute URLs in the sharing system, we don't need to resolve them
+  const imageUrl = content.imageUrl;
 
   // Handle platform sharing actions
   const handleFarcasterShare = () => shareToFarcaster(content);
@@ -112,13 +130,45 @@ export function ShareModal({
     <div className="space-y-6">
       {/* Share Image Preview */}
       <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-muted">
-        <Image
-          src={resolvedImageUrl}
-          alt={altText}
-          fill
-          className="object-cover"
-          priority
-        />
+        {/* Loading State */}
+        {imageLoading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-muted-foreground">
+                Generating preview...
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {imageError && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center space-y-2 text-center p-6">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+              <p className="text-sm text-destructive font-medium">
+                Failed to load preview
+              </p>
+              <p className="text-xs text-muted-foreground">
+                The image couldn&apos;t be generated
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Image */}
+        {!imageError && (
+          <Image
+            src={imageUrl}
+            alt={altText}
+            fill
+            className="object-cover"
+            priority
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        )}
       </div>
 
       {/* Error Display */}

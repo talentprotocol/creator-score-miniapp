@@ -9,7 +9,7 @@
 import { openExternalUrl } from "@/lib/utils";
 import type { BadgeState } from "@/app/services/badgesService";
 import type { ShareContent, ShareContext } from "./utils";
-import { sanitizeFilename, generateShareUrl, resolveImageUrl } from "./utils";
+import { sanitizeFilename, generateShareUrl } from "./utils";
 
 // ============================================================================
 // PLATFORM SHARING LOGIC
@@ -100,7 +100,8 @@ export class PlatformSharing {
       const { imageUrl, filename } = content;
       const { appClient } = context;
 
-      const fullImageUrl = resolveImageUrl(imageUrl);
+      // Since we're now using absolute URLs, no need to resolve them
+      const fullImageUrl = imageUrl;
 
       if (appClient === "browser") {
         const response = await fetch(fullImageUrl);
@@ -181,6 +182,10 @@ export class ShareContentGenerators {
     const url = generateShareUrl(handle);
     const filename = sanitizeFilename(`${handle}-creator-score.png`);
 
+    // Use absolute URL for share image
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    const imageUrl = `${baseUrl}/api/share-image/${talentUUID}`;
+
     const farcasterText = `Check @${farcasterHandle}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @Talent 👇`;
 
     const twitterText = `Check ${displayName}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n🏆 Rank: ${rankText}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
@@ -189,7 +194,7 @@ export class ShareContentGenerators {
       type: "profile",
       title: "Share Your Creator Score",
       description: "Share your creator stats with your audience.",
-      imageUrl: `/api/share-image/${talentUUID}`,
+      imageUrl,
       filename,
       url,
       farcasterText,
@@ -214,13 +219,14 @@ export class ShareContentGenerators {
       : generateShareUrl(handle); // Link to profile for locked badges
     const filename = sanitizeFilename(`${handle}-${badge.badgeSlug}-badge.png`);
 
-    // Generate dynamic badge share image URL
+    // Generate dynamic badge share image URL with absolute URL
     const badgeImageParams = new URLSearchParams({
       talentUUID,
       level: badge.currentLevel.toString(),
       title: badgeTitle,
     });
-    const imageUrl = `/api/share-image-badge/${badge.badgeSlug}?${badgeImageParams}`;
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    const imageUrl = `${baseUrl}/api/share-image-badge/${badge.badgeSlug}?${badgeImageParams}`;
 
     // Different messaging for earned vs locked badges
     let farcasterText: string;
@@ -240,7 +246,7 @@ export class ShareContentGenerators {
       description: isEarned
         ? `Share your ${badgeTitle} achievement.`
         : `Share your progress towards ${badgeTitle}.`,
-      imageUrl, // Dynamic badge share image
+      imageUrl, // Dynamic badge share image with absolute URL
       filename,
       url,
       farcasterText,
@@ -258,6 +264,10 @@ export class ShareContentGenerators {
     const url = `${generateShareUrl(handle)}?share=optout`;
     const filename = sanitizeFilename(`${handle}-paid-forward.png`);
 
+    // Use absolute URL for share image
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    const imageUrl = `${baseUrl}/api/share-image-optout/${talentUUID}`;
+
     const farcasterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score app, built by @talent 👇`;
 
     const twitterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score App, built by @TalentProtocol 👇`;
@@ -266,7 +276,7 @@ export class ShareContentGenerators {
       type: "optout",
       title: "Share Your Good Deed",
       description: "Let the world know you support creators",
-      imageUrl: `/api/share-image-optout/${talentUUID}`,
+      imageUrl,
       filename,
       url,
       farcasterText,

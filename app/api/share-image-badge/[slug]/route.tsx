@@ -33,13 +33,8 @@ export async function GET(
       );
     }
 
-    // Detect current deployment URL for asset loading (fonts, images)
-    const baseUrl =
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    // Use NEXT_PUBLIC_URL for asset loading (fonts, images)
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
 
     // Load fonts (reusing existing pattern)
     const [cyRegular, cyBold, cyExtraBold] = await Promise.all([

@@ -129,10 +129,8 @@ export function resolveImageUrl(imageUrl: string, baseUrl?: string): string {
     if (typeof window !== "undefined") {
       base = window.location.origin;
     } else {
-      // Server-side: prefer VERCEL_URL for deployments, fallback to NEXT_PUBLIC_URL or production
-      base = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+      // Server-side: prioritize NEXT_PUBLIC_URL over VERCEL_URL for consistent behavior
+      base = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
     }
   }
 

@@ -246,6 +246,15 @@ export function StatsContent() {
         error={null}
       />
       <SegmentedBar
+        title="Total Collectors"
+        total={collectorsBreakdown.totalCollectors}
+        segments={collectorsBreakdown.segments}
+        color="purple"
+        formatValue={(value) => value.toLocaleString()}
+        loading={false}
+        error={null}
+      />
+      <SegmentedBar
         title="Total Followers"
         total={followersBreakdown.totalFollowers}
         segments={followersBreakdown.segments}
@@ -259,15 +268,6 @@ export function StatsContent() {
         total={postsBreakdown.totalPosts}
         segments={postsBreakdown.segments}
         color="blue"
-        formatValue={(value) => value.toLocaleString()}
-        loading={false}
-        error={null}
-      />
-      <SegmentedBar
-        title="Total Collectors"
-        total={collectorsBreakdown.totalCollectors}
-        segments={collectorsBreakdown.segments}
-        color="purple"
         formatValue={(value) => value.toLocaleString()}
         loading={false}
         error={null}

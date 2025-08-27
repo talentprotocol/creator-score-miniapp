@@ -141,12 +141,8 @@ export async function GET(
       "Creator";
     const avatar = (profileData as { image_url?: string }).image_url;
 
-    // Always use canonical URL for sharing, but allow localhost for font loading in dev
-    const canonicalUrl = "https://www.creatorscore.app";
-    const baseUrl =
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : process.env.NEXT_PUBLIC_URL || canonicalUrl;
+    // Use NEXT_PUBLIC_URL for asset loading (fonts, images)
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
 
     // Strip emojis (PRESERVED EXACTLY from Canvas version)
     const cleanName = displayName.replace(

@@ -46,10 +46,8 @@ export async function triggerScoreCalculation(
       // Client-side: use relative path to ensure we call our own API routes
       baseUrl = "";
     } else {
-      // Server-side: use the current origin
-      baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_URL || "";
+      // Server-side: prioritize NEXT_PUBLIC_URL over VERCEL_URL for consistent behavior
+      baseUrl = process.env.NEXT_PUBLIC_URL || "";
     }
 
     const requestBody = {

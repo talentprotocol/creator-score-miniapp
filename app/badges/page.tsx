@@ -44,8 +44,12 @@ import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
  * - Always-visible sections with thin gray separators
  */
 export default function BadgesPage() {
-  // Get current user's talent UUID (works for both Farcaster and Privy)
-  const { talentUuid, loading: userLoading } = useFidToTalentUuid();
+  // Get current user's talent UUID and handle (works for both Farcaster and Privy)
+  const {
+    talentUuid,
+    loading: userLoading,
+    handle: userHandle,
+  } = useFidToTalentUuid();
 
   // Only fetch badges when we have a valid UUID
   const {
@@ -263,7 +267,6 @@ export default function BadgesPage() {
                 .toLocaleDateString("en-GB", {
                   day: "2-digit",
                   month: "short",
-                  year: "numeric",
                 })
                 .replace(/ /g, ".")}
             </Typography>
@@ -347,7 +350,7 @@ export default function BadgesPage() {
         badge={selectedBadge}
         onClose={handleCloseModal}
         talentUUID={talentUuid || undefined}
-        handle={talentUuid || undefined}
+        handle={userHandle || talentUuid || undefined}
         profileOwnerTalentUUID={talentUuid || undefined}
         onBadgeRefetch={refetch}
       />
