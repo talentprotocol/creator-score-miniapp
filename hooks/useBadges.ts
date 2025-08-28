@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BadgeSection, mockBadgeData } from "@/lib/badge-data";
 
 export function useBadges() {
@@ -6,31 +6,36 @@ export function useBadges() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchBadges() {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchBadges = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-        // For now, return mock data
-        // Later this can be replaced with: const response = await fetch('/api/badges');
-        setData(mockBadgeData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch badges");
-      } finally {
-        setLoading(false);
-      }
+      // For now, return mock data
+      // Later this can be replaced with: const response = await fetch('/api/badges');
+      setData(mockBadgeData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch badges");
+    } finally {
+      setLoading(false);
     }
-
-    fetchBadges();
   }, []);
+
+  useEffect(() => {
+    fetchBadges();
+  }, [fetchBadges]);
+
+  const refetch = useCallback(() => {
+    fetchBadges();
+  }, [fetchBadges]);
 
   return {
     data,
     loading,
     error,
+    refetch,
   };
 }
