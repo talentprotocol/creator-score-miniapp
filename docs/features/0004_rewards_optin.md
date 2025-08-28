@@ -49,21 +49,25 @@ const multiplier = activePool / totalOptedInBoostedScores;
 ## File Mapping
 
 ### New Files to Create:
-- `components/modals/RewardsDecisionModal.tsx` - Modal asking users to opt-in or opt-out (forked from HowToEarnModal)
-- `components/common/RewardsDecisionModalHandler.tsx` - Handler for the rewards decision modal
+- `components/modals/RewardsDecisionModal.tsx` - Modal with two-step flow: decision + wallet selection (forked from HowToEarnModal)
+- `components/modals/RewardsDecisionModalHandler.tsx` - Handler for showing modal to top 200 users on leaderboard page
+- `components/modals/WalletSelectionStep.tsx` - Step 2 component for wallet selection (opt-in users only)
+- `components/common/SponsorRecognition.tsx` - Compact sponsor display in decision step
+- `app/services/leaderboardSnapshotService.ts` - Service for creating and retrieving leaderboard snapshots
+- `app/api/leaderboard/snapshot/route.ts` - API endpoint for snapshot operations
 
 ### Existing Files to Modify:
 - `lib/constants.ts` - Add new constants for rewards distribution dates and pool separation
-- `app/services/rewardsCalculationService.ts` - Modify to use separate pools (active vs. future)
-- `app/services/optoutService.ts` - Modify to handle new opt-in/opt-out system and track future pool contributions
-- `app/api/user-preferences/optout/route.ts` - Update to handle new rewards decision system
-- `lib/types/user-preferences.ts` - Add new fields for rewards decision and future pool tracking
-- `app/services/userPreferencesService.ts` - Add handling for new rewards decision fields
-- `app/leaderboard/page.tsx` - Add RewardsDecisionModalHandler to show modal to top 200 users
-- `hooks/useOptOutStatus.ts` - Extend existing hook to handle new rewards decision system
+- `app/services/rewardsCalculationService.ts` - ✅ Already modified for separate pools
+- `app/services/optoutService.ts` - ✅ Already extended for new decision system
+- `app/api/user-preferences/optout/route.ts` - ✅ Already updated for new decision system
+- `lib/types/user-preferences.ts` - ✅ Already updated with new fields
+- `app/services/userPreferencesService.ts` - ✅ Already updated for new fields
+- `app/leaderboard/page.tsx` - Add RewardsDecisionModalHandler integration
+- `hooks/useUserRewardsDecision.ts` - ✅ Already renamed and updated (was useOptOutStatus)
 
 ### Database Changes:
-- **REPLACE** existing `rewards_optout` boolean field with new `rewards_decision` enum field ('opted_in', 'opted_out', null)
+- **ADD** new `rewards_decision` enum field ('opted_in', 'opted_out', null) alongside existing `rewards_optout` field
 - Add `decision_made_at` timestamp field
 - Add `future_pool_contribution` numeric field to track how much each opted-out user contributed to future pool
 - Add `primary_wallet_address` field to store the selected wallet address for rewards (default: Farcaster primaryEthAddress, fallback: first Talent verified wallet)
@@ -71,25 +75,25 @@ const multiplier = activePool / totalOptedInBoostedScores;
 
 ## Database Migration Strategy
 
-### Field Replacement Approach:
-- **Replace** `rewards_optout` boolean with `rewards_decision` enum
+### Field Addition Approach:
+- **Keep** existing `rewards_optout` boolean field alongside new `rewards_decision` enum
 - **Migration Logic**: 
   - `rewards_optout = true` → `rewards_decision = 'opted_out'`
-  - `rewards_optout = false` → `rewards_decision = 'opted_in'`
+  - `rewards_optout = false` → `rewards_decision = null` (no decision yet)
   - `rewards_optout = null` → `rewards_decision = null`
 - **Future Pool Calculation**: For users with `rewards_decision = 'opted_out'`, calculate their historical contribution to the rewards pool and set `future_pool_contribution`
 
 ### Migration Steps:
-1. Add new fields to `user_preferences` table
-2. Create migration script to populate `rewards_decision` based on existing `rewards_optout` values
-3. Calculate and populate `future_pool_contribution` for opted-out users
+1. ✅ Add new fields to `user_preferences` table
+2. ✅ Create migration script to populate `rewards_decision` based on existing `rewards_optout` values
+3. ✅ Calculate and populate `future_pool_contribution` for opted-out users
 4. Populate `primary_wallet_address` field with verified addresses from Farcaster (primaryEthAddress preferred) and Talent Protocol
-5. Drop old `rewards_optout` field after successful migration
+5. Keep `rewards_optout` field until full implementation is tested and deployed
 
 ## Architecture Compliance
 
 ### Hook → API Route → Service → External API Pattern:
-- **Client Hook**: `useOptOutStatus` (extended) manages local state and API calls
+- **Client Hook**: `useUserRewardsDecision` (renamed from useOptOutStatus) manages local state and API calls
 - **API Route**: Existing `/api/user-preferences/optout` handles both opt-in and opt-out requests
 - **Service**: Extended `OptoutService` manages business logic for both decisions and pool tracking
 - **Database**: Supabase stores future pool data and user decisions
@@ -131,7 +135,7 @@ const multiplier = activePool / totalOptedInBoostedScores;
 - Reuse `useAutoModal` hook for modal persistence logic
 - Leverage existing `userPreferencesService` for storing decisions
 - Use existing modal components (`Dialog`, `Drawer`) for responsive behavior
-- Extend existing `useOptOutStatus` hook instead of creating new one
+- Extend existing `useUserRewardsDecision` hook (already renamed and updated)
 
 ### Existing Services:
 - Extend `rewardsCalculationService` for separate pool calculations
@@ -141,15 +145,15 @@ const multiplier = activePool / totalOptedInBoostedScores;
 
 ## Phase Breakdown
 
-### Phase 1: Separate Pool Logic (Foundation) - IMPLEMENT FIRST
-1. **Database Migration**: Replace `rewards_optout` with `rewards_decision` and add future pool fields
-2. **Service Updates**: Modify rewards calculation to use separate pools
-3. **API Updates**: Update opt-out endpoint to handle pool separation
-4. **Testing**: Verify pool separation works correctly with real data
+### Phase 1: Separate Pool Logic (Foundation) - ✅ COMPLETE
+1. **Database Migration**: Replace `rewards_optout` with `rewards_decision` and add future pool fields ✅
+2. **Service Updates**: Modify rewards calculation to use separate pools ✅
+3. **API Updates**: Update opt-out endpoint to handle pool separation ✅
+4. **Testing**: Verify pool separation works correctly with real data ✅
 
-### Phase 2: Opt-in/Opt-out Flow (User Experience) - AFTER PHASE 1
-1. **Database Schema**: Add leaderboard snapshots table
-2. **Service Extensions**: Add snapshot functionality and decision management
+### Phase 2: Opt-in/Opt-out Flow (User Experience) - 🔄 IN PROGRESS
+1. **Database Schema**: Add leaderboard snapshots table and primary_wallet_address field
+2. **Service Extensions**: Add snapshot functionality and wallet selection logic
 3. **UI Components**: Create modal and handler components with sponsor recognition
 4. **Integration**: Connect all components and services
 5. **Scheduled Job**: Implement cron job at ROUND_ENDS_AT to create leaderboard snapshot
@@ -163,7 +167,7 @@ const multiplier = activePool / totalOptedInBoostedScores;
 4. **Performance Testing**: Ensure no impact on existing leaderboard performance
 
 ### Phase 4: Production Migration & Cleanup
-1. **Final Migration Check**: Before merging to production, re-run migration to catch any new opted-out users
+1. **Final Migration Check**: Before merging to production, re-run migration to catch any new opted-out users ⚠️ 
 2. **Remove Redundant Fields**: After confirming all users migrated, remove `rewards_optout` field
 
 
