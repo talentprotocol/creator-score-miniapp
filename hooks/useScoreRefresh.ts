@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { triggerScoreCalculation } from "@/app/services/scoreRefreshService";
+import { clearUserCredentialsCache } from "@/lib/cache-keys";
 import posthog from "posthog-js";
 
 interface UseScoreRefreshResult {
@@ -57,6 +58,9 @@ export function useScoreRefresh(
       setError(null);
       setSuccessMessage(null);
       hasCalledSuccessRef.current = false;
+
+      // Clear user's credential cache before triggering refresh
+      clearUserCredentialsCache(talentUUID);
 
       const result = await triggerScoreCalculation(talentUUID);
 

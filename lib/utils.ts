@@ -474,7 +474,9 @@ export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
   }
 
   try {
-    const cached = localStorage.getItem(key);
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    const cached = localStorage.getItem(cacheKey);
     if (!cached) {
       return null;
     }
@@ -483,7 +485,7 @@ export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
     const age = Date.now() - parsed.timestamp;
 
     if (age > maxAgeMs) {
-      localStorage.removeItem(key);
+      localStorage.removeItem(cacheKey);
       return null;
     }
 
@@ -504,7 +506,9 @@ export function setCachedData<T>(key: string, data: T): void {
       timestamp: Date.now(),
     };
 
-    localStorage.setItem(key, JSON.stringify(cacheData));
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
   } catch {
     // Storage quota exceeded or other error, silently fail
   }
