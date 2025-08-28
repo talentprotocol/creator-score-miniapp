@@ -3,6 +3,49 @@
 ## Context Description
 Currently, creators who opt out of rewards have their money automatically redistributed to remaining creators in the same pool. We need to implement a new system where opted-out money goes to a separate future rewards pool, and later add an explicit opt-in/opt-out flow for all top 200 creators before the August 31st deadline.
 
+## Timeline & Deadlines
+
+### Key Dates:
+- **ROUND_ENDS_AT**: August 31st (leaderboard freezes)
+- **Decision Deadline**: September 15th, 11:59 PM (default opt-out)
+- **Distribution Date**: September 17th (manual distribution)
+
+### Decision Rules Timeline:
+- **Before September 15th**: Users can change from opt-in to opt-out
+- **September 15th, 11:59 PM**: Deadline for all decisions
+- **After Deadline**: All undecided users automatically default to opt-out
+- **Opt-out is IRREVERSIBLE**: Once opted-out, cannot change to opt-in
+
+### Phase 1: Separate Pool Logic Algorithm:
+1. **Pool Calculation**: When calculating rewards, separate opted-out users' contributions into `future_rewards_pool`
+2. **Active Pool**: `TOTAL_SPONSORS_POOL - future_pools_total` = money available for opted-in creators
+3. **Future Pool**: Accumulate all opted-out amounts for later distribution
+4. **Data Migration**: Update existing opted-out users to have `rewards_decision: 'opted_out'` and calculate their `future_pool_contribution`
+
+### Phase 2: Opt-in/Opt-out Flow Algorithm:
+1. **Snapshot Creation**: On `ROUND_ENDS_AT`, create frozen copy of top 200 leaderboard entries
+2. **Modal Display**: Show `RewardsDecisionModal` to top 200 users when they visit `/leaderboard` page
+3. **Decision Storage**: Store user's choice in `user_preferences.rewards_decision` field
+4. **Decision Rules**: 
+   - **Opt-out is IRREVERSIBLE**: Once opted-out, users cannot change to opt-in
+   - **Opt-in is REVERSIBLE**: Users can change from opt-in to opt-out until the deadline
+   - **Deadline**: September 15th, 11:59 PM - after this, all undecided users default to opt-out
+5. **Default Behavior**: If no decision by deadline, default to opt-out
+
+### Pool Separation Algorithm:
+```typescript
+// Calculate active pool (for opted-in creators)
+const activePool = TOTAL_SPONSORS_POOL - futurePoolTotal;
+
+// Calculate future pool (accumulated opted-out amounts)
+const futurePool = optedOutUsers.reduce((sum, user) => 
+  sum + user.future_pool_contribution, 0
+);
+
+// Distribute active pool only to opted-in creators
+const multiplier = activePool / totalOptedInBoostedScores;
+```
+
 ## File Mapping
 
 ### New Files to Create:
@@ -42,51 +85,6 @@ Currently, creators who opt out of rewards have their money automatically redist
 3. Calculate and populate `future_pool_contribution` for opted-out users
 4. Populate `primary_wallet_address` field with verified addresses from Farcaster (primaryEthAddress preferred) and Talent Protocol
 5. Drop old `rewards_optout` field after successful migration
-
-## Timeline & Deadlines
-
-### Key Dates:
-- **ROUND_ENDS_AT**: August 31st (leaderboard freezes)
-- **Decision Deadline**: September 15th, 11:59 PM (default opt-out)
-- **Distribution Date**: September 17th (manual distribution)
-
-### Decision Rules Timeline:
-- **Before September 15th**: Users can change from opt-in to opt-out
-- **September 15th, 11:59 PM**: Deadline for all decisions
-- **After Deadline**: All undecided users automatically default to opt-out
-- **Opt-out is IRREVERSIBLE**: Once opted-out, cannot change to opt-in
-
-## Code Explanation
-
-### Phase 1: Separate Pool Logic Algorithm:
-1. **Pool Calculation**: When calculating rewards, separate opted-out users' contributions into `future_rewards_pool`
-2. **Active Pool**: `TOTAL_SPONSORS_POOL - future_pools_total` = money available for opted-in creators
-3. **Future Pool**: Accumulate all opted-out amounts for later distribution
-4. **Data Migration**: Update existing opted-out users to have `rewards_decision: 'opted_out'` and calculate their `future_pool_contribution`
-
-### Phase 2: Opt-in/Opt-out Flow Algorithm:
-1. **Snapshot Creation**: On `ROUND_ENDS_AT`, create frozen copy of top 200 leaderboard entries
-2. **Modal Display**: Show `RewardsDecisionModal` to top 200 users when they visit `/leaderboard` page
-3. **Decision Storage**: Store user's choice in `user_preferences.rewards_decision` field
-4. **Decision Rules**: 
-   - **Opt-out is IRREVERSIBLE**: Once opted-out, users cannot change to opt-in
-   - **Opt-in is REVERSIBLE**: Users can change from opt-in to opt-out until the deadline
-   - **Deadline**: September 15th, 11:59 PM - after this, all undecided users default to opt-out
-5. **Default Behavior**: If no decision by deadline, default to opt-out
-
-### Pool Separation Algorithm:
-```typescript
-// Calculate active pool (for opted-in creators)
-const activePool = TOTAL_SPONSORS_POOL - futurePoolTotal;
-
-// Calculate future pool (accumulated opted-out amounts)
-const futurePool = optedOutUsers.reduce((sum, user) => 
-  sum + user.future_pool_contribution, 0
-);
-
-// Distribute active pool only to opted-in creators
-const multiplier = activePool / totalOptedInBoostedScores;
-```
 
 ## Architecture Compliance
 
