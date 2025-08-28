@@ -327,18 +327,6 @@ export function PayItForwardSection() {
                   : "Confirm and Pay It Forward"}
             </ButtonFullWidth>
           )}
-
-          {/* TEMP: Test Confetti */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="mt-4">
-              <ConfettiButton
-                variant="ghost"
-                className="w-full border border-dashed border-gray-300"
-              >
-                🎉 Test Confetti (Dev Only)
-              </ConfettiButton>
-            </div>
-          )}
         </div>
       </div>
 

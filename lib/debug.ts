@@ -1,5 +1,4 @@
 // Debug utilities for structured logging
-// TEMPORARY: Always enabled for debugging profile resolution issues
 
 export function dlog(
   scope: string,

@@ -23,6 +23,7 @@ Currently, creators who opt out of rewards have their money automatically redist
 - **REPLACE** existing `rewards_optout` boolean field with new `rewards_decision` enum field ('opted_in', 'opted_out', null)
 - Add `decision_made_at` timestamp field
 - Add `future_pool_contribution` numeric field to track how much each opted-out user contributed to future pool
+- Add `primary_wallet_address` field to store the selected wallet address for rewards (default: Farcaster primaryEthAddress, fallback: first Talent verified wallet)
 - `leaderboard_snapshots` table: New table to store frozen leaderboard data at `ROUND_ENDS_AT`
 
 ## Database Migration Strategy
@@ -39,7 +40,21 @@ Currently, creators who opt out of rewards have their money automatically redist
 1. Add new fields to `user_preferences` table
 2. Create migration script to populate `rewards_decision` based on existing `rewards_optout` values
 3. Calculate and populate `future_pool_contribution` for opted-out users
-4. Drop old `rewards_optout` field after successful migration
+4. Populate `primary_wallet_address` field with verified addresses from Farcaster (primaryEthAddress preferred) and Talent Protocol
+5. Drop old `rewards_optout` field after successful migration
+
+## Timeline & Deadlines
+
+### Key Dates:
+- **ROUND_ENDS_AT**: August 31st (leaderboard freezes)
+- **Decision Deadline**: September 15th, 11:59 PM (default opt-out)
+- **Distribution Date**: September 17th (manual distribution)
+
+### Decision Rules Timeline:
+- **Before September 15th**: Users can change from opt-in to opt-out
+- **September 15th, 11:59 PM**: Deadline for all decisions
+- **After Deadline**: All undecided users automatically default to opt-out
+- **Opt-out is IRREVERSIBLE**: Once opted-out, cannot change to opt-in
 
 ## Code Explanation
 
@@ -53,7 +68,10 @@ Currently, creators who opt out of rewards have their money automatically redist
 1. **Snapshot Creation**: On `ROUND_ENDS_AT`, create frozen copy of top 200 leaderboard entries
 2. **Modal Display**: Show `RewardsDecisionModal` to top 200 users when they visit `/leaderboard` page
 3. **Decision Storage**: Store user's choice in `user_preferences.rewards_decision` field
-4. **Irreversible Choice**: Once decided, choice cannot be changed and modal won't show again
+4. **Decision Rules**: 
+   - **Opt-out is IRREVERSIBLE**: Once opted-out, users cannot change to opt-in
+   - **Opt-in is REVERSIBLE**: Users can change from opt-in to opt-out until the deadline
+   - **Deadline**: September 15th, 11:59 PM - after this, all undecided users default to opt-out
 5. **Default Behavior**: If no decision by deadline, default to opt-out
 
 ### Pool Separation Algorithm:
@@ -86,10 +104,16 @@ const multiplier = activePool / totalOptedInBoostedScores;
 ## Design System Compliance
 
 ### UI Components:
-- Fork `HowToEarnModal` to create `RewardsDecisionModal`
+- Fork `HowToEarnModal` to create `RewardsDecisionModal` with two-step flow:
+  - **Step 1**: Opt-in/Opt-out decision
+  - **Step 2**: Wallet selection (only shown for opt-in users)
 - Use existing `useAutoModal` hook for modal persistence
-- Follow existing modal patterns for mobile-first responsive design
+- Follow existing modal patterns for mobile-first responsive design (bottom sheet on mobile, overlay on desktop)
 - Use semantic colors: green for opt-out, purple for boost
+- **Wallet Selection UI**: Radio buttons for important choice, showing truncated address + copy address button
+- **Wallet Labels**: Include subtle labels for Farcaster custodyAddress, Farcaster primaryEthAddress, and Talent verified wallets
+- **Default Selection**: Farcaster primaryEthAddress (fallback: first Talent verified wallet)
+- **Confirmation**: Wallet selection mandatory for opt-in, with "Confirm" button before saving decision
 
 ### Sponsor Recognition in Modal:
 - **Requirement**: The opt-in/opt-out modal should prominently mention and thank all sponsors who contributed to the rewards pool
@@ -130,12 +154,20 @@ const multiplier = activePool / totalOptedInBoostedScores;
 2. **Service Extensions**: Add snapshot functionality and decision management
 3. **UI Components**: Create modal and handler components with sponsor recognition
 4. **Integration**: Connect all components and services
+5. **Scheduled Job**: Implement cron job at ROUND_ENDS_AT to create leaderboard snapshot
+6. **Data Source Switch**: Update leaderboard logic to fetch from snapshot DB after ROUND_ENDS_AT instead of Talent API (but keep Talent API as fallback code)
+7. **UI Updates**: Change rewards amount display to text-muted-foreground for "no decision" users
 
 ### Phase 3: Testing & Validation
 1. **Pool Logic Testing**: Verify separate pools work correctly with real opted-out users
 2. **User Flow Testing**: Test opt-in/opt-out decision flow
 3. **Integration Testing**: End-to-end testing of complete system
 4. **Performance Testing**: Ensure no impact on existing leaderboard performance
+
+### Phase 4: Production Migration & Cleanup
+1. **Final Migration Check**: Before merging to production, re-run migration to catch any new opted-out users
+2. **Remove Redundant Fields**: After confirming all users migrated, remove `rewards_optout` field
+
 
 ## Implementation Notes
 
@@ -146,10 +178,16 @@ const multiplier = activePool / totalOptedInBoostedScores;
 
 ### UI Restrictions:
 - No UI elements to show future pool amounts
-- No way for users to change decisions after making them
+- **Opt-out decisions are irreversible** - no UI to change from opt-out to opt-in
+- **Opt-in decisions are reversible** - users can change to opt-out until September 15th deadline in the /settings page
 - Modal only shows to top 200 users on `/leaderboard` page
+- After deadline, all undecided users automatically default to opt-out
 
 ### Security & Validation:
-- Server-side validation prevents decision changes after deadline
+- Server-side validation prevents opt-out to opt-in changes (irreversible)
+- Server-side validation allows opt-in to opt-out changes until September 15th deadline
 - No client-side manipulation of pool calculations
 - All critical logic handled in services layer
+- Wallet address validation ensures decisions are tied to verified addresses
+- Store both `rewards_decision` and `primary_wallet_address` in same database record
+- Wallet selection mandatory for opt-in users
