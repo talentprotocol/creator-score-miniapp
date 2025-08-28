@@ -85,6 +85,12 @@
 - Client
   - `useBadges`: fetch `/api/badges`; return `{data, loading, error}` pattern with sections and derived completion summary.
   - Detail page: RSC/server fetch to `/api/badges/[badgeSlug]` and render with error boundaries.
+  - `useBadgeVerify`: handles badge verification with integrated cache clearing - clears credential cache before badge cache invalidation to ensure fresh data.
+
+### Cache Management
+- **Server-side caching**: 5-minute cache duration with proper cache keys (`USER_BADGES`) for optimal performance
+- **Cache invalidation**: Badge verification clears both credential and badge caches via `clearUserCredentialsCache()` and `/api/badges/refresh` endpoint
+- **Data freshness**: Ensures users see updated badge progress immediately after verification
 
 ### Content-Logic Separation Architecture
 - **Content Configuration**: `lib/badge-content.ts` contains all badge titles, descriptions, thresholds, and labels

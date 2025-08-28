@@ -11,32 +11,6 @@ A Farcaster MiniApp that shows creator scores, leaderboards, and rewards.
 - **Profile Management** - Connect wallets and social accounts
 - **Account association** - Allows users to add your frame to their account, enables notifications
 
-## Environment Variables
-
-Create a `.env.local` file with the following variables:
-
-```bash
-# Required
-NEXT_PUBLIC_URL=http://localhost:3000
-NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_onchainkit_api_key
-TALENT_API_KEY=your_talent_protocol_api_key
-
-# Optional
-NEYNAR_API_KEY=your_neynar_api_key
-FARCASTER_HEADER=your_farcaster_header
-FARCASTER_PAYLOAD=your_farcaster_payload
-FARCASTER_SIGNATURE=your_farcaster_signature
-```
-
-## Development
-
-```bash
-npm install
-npm run dev
-```
-
-## Features
-
 ### Core Functionality
 - Creator score display and ranking
 - Leaderboard with pagination
@@ -52,7 +26,12 @@ npm run dev
 - **Boost Multiplier** - 10% reward boost for users holding 100+ $TALENT tokens
 - **Pay It Forward** - Allow creators to donate their entire reward allocation to other creators
 - **Smart Redistribution** - Opted-out rewards are redistributed proportionally among remaining eligible creators
-- **Badge System** - Visual indicators for boosted and opted-out users
+
+### Badge System
+- **Dynamic Achievement Badges** - 6-level progression system for creator milestones
+- **Multiple Categories** - Trophies (Creator Score, Streaks), Records (Earnings, Followers), Special (Platform badges)
+- **Progress Tracking** - Visual progress bars and artwork for earned/locked states
+- **Real-time Updates** - Badges automatically unlock based on user metrics
 
 ### Notifications
 - In-app notification system

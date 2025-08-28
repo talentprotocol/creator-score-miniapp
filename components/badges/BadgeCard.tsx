@@ -139,9 +139,9 @@ export function BadgeCard({
         {/* Secondary: Subtitle - Different logic for streak vs regular badges */}
         <Typography size="xs" color="muted" className="mt-0.5">
           {isStreakBadge
-            ? // Streak badges: Show "Earned X times" or "Locked"
+            ? // Streak badges: Show "Earned X times" or "Coming soon" (TEMP: change back to "Locked" when streak system is implemented)
               isLocked
-              ? "Locked"
+              ? "Coming soon"
               : `Earned ${badge.timesEarned || 0} times`
             : // Regular badges: Show "Level X", "Max Level", or "Locked"
               isLocked

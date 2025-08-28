@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import posthog from "posthog-js";
 import type { BadgeState } from "@/lib/types/badges";
+import { clearUserCredentialsCache } from "@/lib/cache-keys";
 
 interface UseBadgeVerifyResult {
   isVerifying: boolean;
@@ -188,6 +189,9 @@ export function useBadgeVerify(
       }
 
       // Step 2: Clear badge-specific caches
+      // First, clear credential cache to ensure fresh data for badge calculations
+      clearUserCredentialsCache(talentUUID);
+
       const cacheKeys = getBadgeCacheKeys(badge.badgeSlug);
       await fetch("/api/badges/refresh", {
         method: "POST",
