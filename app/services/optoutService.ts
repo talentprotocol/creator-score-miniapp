@@ -1,17 +1,21 @@
 import { supabase } from "@/lib/supabase-client";
-
-export interface OptoutRequest {
-  talent_uuid: string;
-  confirm_optout: boolean;
-}
+import { RewardsDecision } from "@/lib/types/user-preferences";
 
 export interface OptoutResponse {
   success: boolean;
   data?: {
-    rewards_optout: boolean;
-    updated_at: string;
+    rewards_decision: RewardsDecision;
+    decision_made_at: string;
+    future_pool_contribution: number;
   };
   error?: string;
+}
+
+function emptyCalloutPrefs() {
+  return {
+    dismissedIds: [],
+    permanentlyHiddenIds: [],
+  };
 }
 
 /**
@@ -35,7 +39,7 @@ export class OptoutService {
 
       const { data: existingPrefs } = await supabase
         .from("user_preferences")
-        .select("rewards_optout, callout_prefs")
+        .select("rewards_decision, callout_prefs, future_pool_contribution")
         .eq("talent_uuid", talent_uuid)
         .single();
 
@@ -46,7 +50,8 @@ export class OptoutService {
         permanentlyHiddenIds?: string[];
       };
       const currentPrefs: CalloutPrefs =
-        (existingPrefs?.callout_prefs as CalloutPrefs | null) ?? {};
+        (existingPrefs?.callout_prefs as CalloutPrefs | null) ??
+        emptyCalloutPrefs();
       const currentDismissed = Array.isArray(currentPrefs.dismissedIds)
         ? currentPrefs.dismissedIds
         : [];
@@ -68,16 +73,19 @@ export class OptoutService {
         .upsert(
           {
             talent_uuid,
-            rewards_optout: true,
+            rewards_decision: "opted_out" as RewardsDecision,
             callout_prefs: nextCalloutPrefs as unknown as Record<
               string,
               unknown
             >,
+            decision_made_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
           { onConflict: "talent_uuid" },
         )
-        .select("rewards_optout, updated_at")
+        .select(
+          "rewards_decision, decision_made_at, future_pool_contribution, updated_at",
+        )
         .single();
 
       if (error) {
@@ -91,12 +99,69 @@ export class OptoutService {
       return {
         success: true,
         data: {
-          rewards_optout: data.rewards_optout,
-          updated_at: data.updated_at,
+          rewards_decision: data.rewards_decision,
+          decision_made_at: data.decision_made_at,
+          future_pool_contribution: data.future_pool_contribution,
         },
       };
     } catch (error) {
       console.error("Unexpected error in optOut:", error);
+      return {
+        success: false,
+        error: "An unexpected error occurred",
+      };
+    }
+  }
+
+  /**
+   * Opt in to rewards for a user
+   * @param talent_uuid - The user's Talent Protocol UUID
+   * @returns Promise<OptoutResponse>
+   */
+  static async optIn(talent_uuid: string): Promise<OptoutResponse> {
+    try {
+      // Validate input
+      if (!talent_uuid || typeof talent_uuid !== "string") {
+        return {
+          success: false,
+          error: "Invalid talent_uuid provided",
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .upsert(
+          {
+            talent_uuid,
+            rewards_decision: "opted_in" as RewardsDecision,
+            decision_made_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "talent_uuid" },
+        )
+        .select(
+          "rewards_decision, decision_made_at, future_pool_contribution, updated_at",
+        )
+        .single();
+
+      if (error) {
+        console.error("Error updating opt-in preference:", error);
+        return {
+          success: false,
+          error: "Failed to update opt-in preference",
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          rewards_decision: data.rewards_decision,
+          decision_made_at: data.decision_made_at,
+          future_pool_contribution: data.future_pool_contribution,
+        },
+      };
+    } catch (error) {
+      console.error("Unexpected error in optIn:", error);
       return {
         success: false,
         error: "An unexpected error occurred",
@@ -113,19 +178,96 @@ export class OptoutService {
     try {
       const { data, error } = await supabase
         .from("user_preferences")
-        .select("rewards_optout")
+        .select("rewards_decision")
         .eq("talent_uuid", talent_uuid)
         .single();
 
-      if (error && error.code !== "PGRST116") {
+      if (error) {
         console.error("Error checking opt-out status:", error);
         return false;
       }
 
-      return data?.rewards_optout === true;
+      return data?.rewards_decision === "opted_out";
     } catch (error) {
       console.error("Unexpected error checking opt-out status:", error);
       return false;
+    }
+  }
+
+  /**
+   * Check if a user has opted in to rewards
+   * @param talent_uuid - The user's Talent Protocol UUID
+   * @returns Promise<boolean>
+   */
+  static async isOptedIn(talent_uuid: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .select("rewards_decision")
+        .eq("talent_uuid", talent_uuid)
+        .single();
+
+      if (error) {
+        console.error("Error checking opt-in status:", error);
+        return false;
+      }
+
+      return data?.rewards_decision === "opted_in";
+    } catch (error) {
+      console.error("Unexpected error checking opt-in status:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if a user has made a rewards decision
+   * @param talent_uuid - The user's Talent Protocol UUID
+   * @returns Promise<boolean>
+   */
+  static async hasMadeDecision(talent_uuid: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .select("rewards_decision")
+        .eq("talent_uuid", talent_uuid)
+        .single();
+
+      if (error) {
+        console.error("Error checking decision status:", error);
+        return false;
+      }
+
+      return data?.rewards_decision !== null;
+    } catch (error) {
+      console.error("Unexpected error checking decision status:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get the user's current rewards decision
+   * @param talent_uuid - The user's Talent Protocol UUID
+   * @returns Promise<RewardsDecision>
+   */
+  static async getRewardsDecision(
+    talent_uuid: string,
+  ): Promise<RewardsDecision> {
+    try {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .select("rewards_decision")
+        .eq("talent_uuid", talent_uuid)
+        .single();
+
+      if (error) {
+        console.error("Error getting rewards decision:", error);
+        return null;
+      }
+
+      return data?.rewards_decision ?? null;
+    } catch (error) {
+      console.error("Unexpected error getting rewards decision:", error);
+      return null;
     }
   }
 
@@ -138,7 +280,7 @@ export class OptoutService {
       const { data, error } = await supabase
         .from("user_preferences")
         .select("talent_uuid")
-        .eq("rewards_optout", true);
+        .eq("rewards_decision", "opted_out");
 
       if (error) {
         console.error("Error fetching opted-out users:", error);

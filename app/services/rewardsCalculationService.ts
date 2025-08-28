@@ -3,6 +3,8 @@ import type { LeaderboardEntry } from "./types";
 
 export interface RewardsCalculationResult {
   totalPool: number;
+  activePool: number;
+  futurePool: number;
   totalEligibleScores: number;
   optedOutUsers: number;
   optedOutContribution: number;
@@ -19,28 +21,27 @@ export interface UserRewardCalculation {
   rank: number;
   baseReward: number;
   finalReward: number;
-  optedOutContribution: number;
 }
 
 /**
- * Service for calculating rewards with opt-out support.
+ * Service for calculating rewards with separate pool logic.
  *
- * Rewards Redistribution Algorithm:
+ * Rewards Distribution Algorithm:
  * 1. Apply 1.1x boost multiplier to users with 100+ TALENT tokens
- * 2. Filter out opted-out users from reward recipients
- * 3. Redistribute the full reward pool proportionally among remaining eligible creators
- * 4. Opted-out users contribute their boosted score to the pool but receive $0
+ * 2. Separate opted-out users' contributions into a future rewards pool
+ * 3. Distribute the active pool only to opted-in creators
+ * 4. Future pool accumulates opted-out amounts for later distribution
  *
- * This ensures the total reward pool ($8,850) remains constant while allowing
- * generous creators to increase rewards for others through the Pay It Forward feature.
+ * This ensures opted-out money doesn't get redistributed to remaining creators,
+ * but instead goes to a separate future pool for later use.
  */
 export class RewardsCalculationService {
   /**
-   * Calculate rewards for all top 200 users, handling boosts and opt-outs
+   * Calculate rewards for all top 200 users, handling boosts and separate pools
    * @param entries - Top 200 leaderboard entries
    * @returns Array of user reward calculations
    */
-  static calculateRewardsWithOptouts(
+  static calculateRewardsWithSeparatePools(
     entries: LeaderboardEntry[],
   ): UserRewardCalculation[] {
     if (entries.length === 0) return [];
@@ -54,96 +55,99 @@ export class RewardsCalculationService {
       boostedScore: entry.isBoosted ? entry.score * 1.1 : entry.score,
     }));
 
-    // Step 3: Identify opted-out users
+    // Step 3: Identify opted-out users and separate pools
     const optedOutEntries = boostedEntries.filter((entry) => entry.isOptedOut);
     const activeEntries = boostedEntries.filter((entry) => !entry.isOptedOut);
 
-    // Step 4: Calculate total pool and opted-out contribution
-    // const totalOptedOutContribution = optedOutEntries.reduce(
-    //   (sum, entry) => sum + entry.boostedScore,
-    //   0,
-    // );
+    // Step 4: Calculate separate pools
+    const futurePool = optedOutEntries.reduce(
+      (sum, entry) => sum + entry.boostedScore,
+      0,
+    );
 
-    // Step 5: Calculate multiplier for remaining users
-    // Remaining users share the full pool proportionally
+    const activePool = TOTAL_SPONSORS_POOL - futurePool;
+
+    // Step 5: Calculate multiplier for opted-in users only
     const totalActiveBoostedScores = activeEntries.reduce(
       (sum, entry) => sum + entry.boostedScore,
       0,
     );
 
     const multiplier =
-      totalActiveBoostedScores > 0
-        ? TOTAL_SPONSORS_POOL / totalActiveBoostedScores
-        : 0;
+      totalActiveBoostedScores > 0 ? activePool / totalActiveBoostedScores : 0;
 
     // Step 6: Calculate individual rewards
-    const results: UserRewardCalculation[] = [];
+    return boostedEntries.map((entry, index) => {
+      const baseReward = entry.boostedScore * multiplier;
 
-    // Process opted-out users (they contribute but don't receive)
-    optedOutEntries.forEach((entry) => {
-      results.push({
-        talentUuid: entry.talent_protocol_id.toString(),
+      return {
+        talentUuid: String(entry.talent_protocol_id),
         name: entry.name,
         baseScore: entry.score,
         boostedScore: entry.boostedScore,
         isBoosted: entry.isBoosted || false,
-        isOptedOut: true,
-        rank: entry.rank,
-        baseReward: 0,
-        finalReward: 0,
-        optedOutContribution: entry.boostedScore,
-      });
-    });
-
-    // Process active users (they receive redistributed rewards)
-    activeEntries.forEach((entry) => {
-      const baseReward = entry.score * multiplier;
-      const finalReward = entry.boostedScore * multiplier;
-
-      results.push({
-        talentUuid: entry.talent_protocol_id.toString(),
-        name: entry.name,
-        baseScore: entry.score,
-        boostedScore: entry.boostedScore,
-        isBoosted: entry.isBoosted || false,
-        isOptedOut: false,
-        rank: entry.rank,
+        isOptedOut: entry.isOptedOut || false,
+        rank: index + 1,
         baseReward,
-        finalReward,
-        optedOutContribution: 0,
-      });
+        finalReward: entry.isOptedOut ? 0 : baseReward,
+      };
     });
-
-    // Sort by rank to maintain order
-    results.sort((a, b) => a.rank - b.rank);
-
-    return results;
   }
 
   /**
-   * Get summary statistics for rewards calculation
+   * Get summary of rewards calculation with separate pools
    * @param entries - Top 200 leaderboard entries
-   * @returns Summary of rewards calculation
+   * @returns Rewards calculation summary
    */
   static getRewardsSummary(
     entries: LeaderboardEntry[],
   ): RewardsCalculationResult {
-    const calculations = this.calculateRewardsWithOptouts(entries);
+    if (entries.length === 0) {
+      return {
+        totalPool: TOTAL_SPONSORS_POOL,
+        activePool: TOTAL_SPONSORS_POOL,
+        futurePool: 0,
+        totalEligibleScores: 0,
+        optedOutUsers: 0,
+        optedOutContribution: 0,
+        multiplier: 0,
+      };
+    }
 
-    const optedOutUsers = calculations.filter((c) => c.isOptedOut).length;
-    const optedOutContribution = calculations
-      .filter((c) => c.isOptedOut)
-      .reduce((sum, c) => sum + c.optedOutContribution, 0);
+    const eligibleEntries = entries.slice(0, 200);
+    const optedOutUsers = eligibleEntries.filter(
+      (entry) => entry.isOptedOut,
+    ).length;
 
-    const totalEligibleScores = calculations
-      .filter((c) => !c.isOptedOut)
-      .reduce((sum, c) => sum + c.boostedScore, 0);
+    // Calculate total boosted scores for opted-out users (future pool)
+    const optedOutContribution = eligibleEntries
+      .filter((entry) => entry.isOptedOut)
+      .reduce(
+        (sum, entry) =>
+          sum + (entry.isBoosted ? entry.score * 1.1 : entry.score),
+        0,
+      );
 
+    // Calculate active pool (for opted-in users)
+    const activePool = TOTAL_SPONSORS_POOL - optedOutContribution;
+
+    // Calculate total boosted scores for opted-in users
+    const totalEligibleScores = eligibleEntries
+      .filter((entry) => !entry.isOptedOut)
+      .reduce(
+        (sum, entry) =>
+          sum + (entry.isBoosted ? entry.score * 1.1 : entry.score),
+        0,
+      );
+
+    // Calculate multiplier for active pool distribution
     const multiplier =
-      totalEligibleScores > 0 ? TOTAL_SPONSORS_POOL / totalEligibleScores : 0;
+      totalEligibleScores > 0 ? activePool / totalEligibleScores : 0;
 
     return {
       totalPool: TOTAL_SPONSORS_POOL,
+      activePool,
+      futurePool: optedOutContribution,
       totalEligibleScores,
       optedOutUsers,
       optedOutContribution,
@@ -170,13 +174,13 @@ export class RewardsCalculationService {
     // Only top 200 creators can earn rewards
     if (!rank || rank > 200) return "$0";
 
-    // If opted out, show $0
+    // If opted out, show $0 (money goes to future pool)
     if (isOptedOut) return "$0";
 
     // Calculate boosted score (only if user has 100+ TALENT tokens)
     const boostedScore = isBoosted ? score * 1.1 : score;
 
-    // Get multiplier from current leaderboard state
+    // Get multiplier from current leaderboard state with separate pools
     const summary = this.getRewardsSummary(entries);
     if (summary.multiplier === 0) return "$0";
 
@@ -188,5 +192,34 @@ export class RewardsCalculationService {
     } else {
       return `$${reward.toFixed(2)}`;
     }
+  }
+
+  /**
+   * Get the future pool amount (total contribution from opted-out users)
+   * @param entries - Top 200 leaderboard entries
+   * @returns Future pool amount
+   */
+  static getFuturePoolAmount(entries: LeaderboardEntry[]): number {
+    if (entries.length === 0) return 0;
+
+    const eligibleEntries = entries.slice(0, 200);
+
+    return eligibleEntries
+      .filter((entry) => entry.isOptedOut)
+      .reduce(
+        (sum, entry) =>
+          sum + (entry.isBoosted ? entry.score * 1.1 : entry.score),
+        0,
+      );
+  }
+
+  /**
+   * Get the active pool amount (available for opted-in users)
+   * @param entries - Top 200 leaderboard entries
+   * @returns Active pool amount
+   */
+  static getActivePoolAmount(entries: LeaderboardEntry[]): number {
+    const futurePool = this.getFuturePoolAmount(entries);
+    return TOTAL_SPONSORS_POOL - futurePool;
   }
 }

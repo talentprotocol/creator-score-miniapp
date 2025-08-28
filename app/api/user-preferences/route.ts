@@ -12,7 +12,6 @@ import type {
   UserPreferencesResponse,
   UserPreferencesUpdateRequest,
   UserPreferencesError,
-  UserPreferencesSuccess,
 } from "@/lib/types/user-preferences";
 
 export async function GET(
@@ -49,7 +48,7 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-): Promise<NextResponse<UserPreferencesSuccess | UserPreferencesError>> {
+): Promise<NextResponse<UserPreferencesResponse | UserPreferencesError>> {
   try {
     const {
       talent_uuid,
@@ -58,7 +57,7 @@ export async function POST(
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
-      rewards_optout,
+      rewards_decision,
       how_to_earn_modal_seen,
     }: UserPreferencesUpdateRequest = await req.json();
 
@@ -78,9 +77,9 @@ export async function POST(
 
     // Allow null to clear the category
     if (creator_category !== null) {
-      if (!validateCreatorCategory(creator_category)) {
+      if (!validateCreatorCategory(creator_category as string)) {
         return NextResponse.json(
-          { error: getCreatorCategoryErrorMessage(creator_category) },
+          { error: getCreatorCategoryErrorMessage(creator_category as string) },
           { status: 400 },
         );
       }
@@ -93,7 +92,7 @@ export async function POST(
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
-      rewards_optout,
+      rewards_decision,
       how_to_earn_modal_seen,
     });
 

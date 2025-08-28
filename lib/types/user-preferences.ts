@@ -1,6 +1,8 @@
-import { CREATOR_CATEGORIES } from "../credentialUtils";
+import { CREATOR_CATEGORIES } from "@/lib/credentialUtils";
 
 export type CreatorCategory = keyof typeof CREATOR_CATEGORIES;
+
+export type RewardsDecision = "opted_in" | "opted_out" | null;
 
 export interface UserPreferences {
   talent_uuid: string;
@@ -11,7 +13,9 @@ export interface UserPreferences {
     dismissedIds?: string[];
     permanentlyHiddenIds?: string[];
   };
-  rewards_optout?: boolean;
+  rewards_decision?: RewardsDecision;
+  decision_made_at?: string;
+  future_pool_contribution?: number;
   how_to_earn_modal_seen?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -23,8 +27,10 @@ export interface UserPreferencesResponse {
     dismissedIds: string[];
     permanentlyHiddenIds: string[];
   };
-  rewards_optout: boolean;
+  rewards_decision: RewardsDecision;
+  future_pool_contribution: number;
   how_to_earn_modal_seen: boolean;
+  updated_at?: string;
 }
 
 export interface UserPreferencesUpdateRequest {
@@ -35,8 +41,8 @@ export interface UserPreferencesUpdateRequest {
   add_permanently_hidden_id?: string;
   remove_dismissed_id?: string;
   remove_permanently_hidden_id?: string;
-  // Rewards opt-out preference
-  rewards_optout?: boolean;
+  // Rewards decision preference
+  rewards_decision?: RewardsDecision;
   // How to earn modal seen preference
   how_to_earn_modal_seen?: boolean;
 }

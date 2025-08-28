@@ -45,7 +45,8 @@ import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
-import { useOptOutStatus } from "@/hooks/useOptOutStatus";
+
+import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -113,10 +114,9 @@ function LeaderboardContent() {
       : null;
 
   // Get opt-out status for all users (top 200 and non-top 200)
-  const { isOptedOut } = useOptOutStatus(
-    userTalentUuid,
-    userTop200Entry || undefined,
-  );
+  const {
+    data: { isOptedOut },
+  } = useUserRewardsDecision(userTalentUuid, userTop200Entry || undefined);
 
   // Server-persisted callout preferences
   const {

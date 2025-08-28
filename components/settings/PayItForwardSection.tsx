@@ -4,7 +4,7 @@ import { Typography } from "@/components/ui/typography";
 import { HandHeart, Share2 } from "lucide-react";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
-import { useOptOutStatus } from "@/hooks/useOptOutStatus";
+
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { ConfettiButton } from "@/components/ui/confetti";
@@ -13,6 +13,7 @@ import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
 import { detectClient, openExternalUrl } from "@/lib/utils";
+import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 
 /**
  * PayItForwardSection Component
@@ -59,10 +60,9 @@ export function PayItForwardSection() {
   );
 
   // Use combined opt-out status check for both top-200 and non-top-200 users
-  const { isOptedOut: isAlreadyOptedOut } = useOptOutStatus(
-    talentUuid,
-    userTop200Entry,
-  );
+  const {
+    data: { isOptedOut: isAlreadyOptedOut },
+  } = useUserRewardsDecision(talentUuid, userTop200Entry);
   const hasPaidForward = success || isAlreadyOptedOut;
 
   // Show share button for already opted out users (from previous sessions) or after confetti completes
@@ -122,7 +122,8 @@ export function PayItForwardSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           talent_uuid: talentUuid,
-          confirm_optout: true,
+          decision: "opted_out",
+          confirm_decision: true,
         }),
       });
 

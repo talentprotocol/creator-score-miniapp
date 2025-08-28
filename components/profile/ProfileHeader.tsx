@@ -74,9 +74,10 @@ export function ProfileHeader({
     if (!categoryName) return null;
 
     return {
-      name: categoryName,
-      emoji:
-        CREATOR_CATEGORIES[categoryName as keyof typeof CREATOR_CATEGORIES],
+      name: categoryName as CreatorCategoryType,
+      emoji: CREATOR_CATEGORIES[
+        categoryName as keyof typeof CREATOR_CATEGORIES
+      ] as string,
     };
   }, [
     isOwnProfile,
