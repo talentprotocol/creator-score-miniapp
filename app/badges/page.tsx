@@ -86,9 +86,9 @@ export default function BadgesPage() {
     // Call original refresh score to trigger Talent API calculation
     await originalRefreshScore();
 
-    // Also clear badge caches for future manual refreshes
+    // Also clear badge caches for future manual refreshes (non-blocking)
     try {
-      await fetch("/api/badges/refresh", {
+      fetch("/api/badges/refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

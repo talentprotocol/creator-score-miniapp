@@ -12,8 +12,7 @@ interface NeynarToken {
   updated_at?: string;
 }
 
-// Admin UUIDs - hardcoded for security
-const ADMIN_UUIDS = ["bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"];
+import { validateAdminTokenWithResponse } from "@/lib/admin-auth";
 
 type RequestBody = {
   title: string;
@@ -44,12 +43,10 @@ export async function POST(request: NextRequest) {
 
   const token = authHeader.slice("Bearer ".length).trim();
 
-  // Check if it's a Talent UUID for admin verification
-  if (!ADMIN_UUIDS.includes(token)) {
-    return NextResponse.json(
-      { error: "Admin access required" },
-      { status: 403 },
-    );
+  // Validate admin token using environment variables
+  const authError = validateAdminTokenWithResponse(token);
+  if (authError) {
+    return authError;
   }
 
   let body: RequestBody;

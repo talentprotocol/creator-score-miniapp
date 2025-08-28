@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// Admin UUIDs - hardcoded for security
-const ADMIN_UUIDS = ["bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"];
+import { validateAdminTokenWithResponse } from "@/lib/admin-auth";
 
 export async function GET(request: NextRequest) {
   const authHeader =
@@ -14,12 +12,10 @@ export async function GET(request: NextRequest) {
 
   const token = authHeader.slice("Bearer ".length).trim();
 
-  // Check if it's a Talent UUID for admin verification
-  if (!ADMIN_UUIDS.includes(token)) {
-    return NextResponse.json(
-      { error: "Admin access required" },
-      { status: 500 },
-    );
+  // Validate admin token using environment variables
+  const authError = validateAdminTokenWithResponse(token);
+  if (authError) {
+    return authError;
   }
 
   try {
