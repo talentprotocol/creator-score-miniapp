@@ -3,6 +3,9 @@ import { resolveTalentUser } from "@/lib/user-resolver";
 import { getUserContext } from "@/lib/user-context";
 import { getTalentUserService } from "@/app/services/userService";
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/badges
  *
@@ -40,11 +43,19 @@ export async function GET(request: Request) {
       talentUuid = user?.id || null;
     } else if (userIdParam) {
       // 2. Direct UUID provided for development/testing via ?userId=<uuid>
+      // Validate UUID format for security
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          userIdParam,
+        )
+      ) {
+        return new Response("Invalid UUID format", { status: 400 });
+      }
       talentUuid = userIdParam;
     } else {
       // 3. Farcaster context (MiniApp) or development fallback
       const context = getUserContext(null);
-      
+
       if (context?.fid) {
         const user = await resolveTalentUser(String(context.fid));
         talentUuid = user?.id || null;
@@ -68,8 +79,8 @@ export async function GET(request: Request) {
       ...badgesData,
       user: {
         id: talentUuid,
-        identifier: identifierParam || null
-      }
+        identifier: identifierParam || null,
+      },
     };
 
     return Response.json(responseData);

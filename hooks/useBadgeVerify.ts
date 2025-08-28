@@ -263,8 +263,7 @@ export function useBadgeVerify(
     talentUUID,
     isVerifying,
     cooldownMinutes,
-    badge,
-    getBadgeCacheKeys,
+    badge.badgeSlug,
     onBadgeRefetch,
   ]);
 

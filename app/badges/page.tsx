@@ -188,14 +188,14 @@ export default function BadgesPage() {
   }
 
   if (error) {
-    return <ErrorState error={error} />;
+    return <ErrorState error={error} retry={refetch} />;
   }
 
   if (
     !badgesData ||
     (!badgesData.sections?.length && !badgesData.badges?.length)
   ) {
-    return <ErrorState error="No badge data available" />;
+    return <ErrorState error="No badge data available" retry={refetch} />;
   }
 
   return (

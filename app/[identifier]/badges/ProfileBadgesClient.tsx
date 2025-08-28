@@ -21,7 +21,7 @@ export function ProfileBadgesClient({ identifier }: ProfileBadgesClientProps) {
   const { talentUuid: currentUserTalentId } = useFidToTalentUuid();
 
   // Fetch badge data for the profile owner
-  const { data, loading, error } = useBadges(undefined, identifier);
+  const { data, loading, error, refetch } = useBadges(undefined, identifier);
 
   // Determine if current user is viewing their own profile
   const isOwnProfile = currentUserTalentId === data?.user?.id;
@@ -41,12 +41,12 @@ export function ProfileBadgesClient({ identifier }: ProfileBadgesClientProps) {
 
   // Show error state if fetch failed
   if (error) {
-    return <ErrorState error={error} />;
+    return <ErrorState error={error} retry={refetch} />;
   }
 
   // Show error if no badge data
   if (!data?.badges) {
-    return <ErrorState error="No badges found" />;
+    return <ErrorState error="No badges found" retry={refetch} />;
   }
 
   // Show all badges when viewing own profile, only earned badges for others
