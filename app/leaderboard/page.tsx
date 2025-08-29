@@ -295,7 +295,7 @@ function LeaderboardContent() {
                 id: "badges-announcement",
                 variant: "brand-pink",
                 icon: <Award className="h-4 w-4" />,
-                title: "New: Creator Badges",
+                title: "NEW: Creator Badges",
                 description: "Track your progress and earn badges.",
                 href: isLoggedIn ? "/badges" : undefined,
                 onClick: !isLoggedIn
