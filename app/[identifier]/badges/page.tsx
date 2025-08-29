@@ -1,6 +1,6 @@
 "use client";
 
-import { ProfileBadgesClient } from "./ProfileBadgesClient";
+import { ProfileBadgesClient } from "@/components/badges/ProfileBadgesClient";
 
 interface ProfileBadgesPageProps {
   params: {

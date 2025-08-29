@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveTalentUser } from "@/lib/user-resolver";
-import { getUserContext } from "@/lib/user-context";
+import { getBadgesForUser } from "@/app/services/badgesService";
 
 interface RouteParams {
   params: {
@@ -17,7 +16,8 @@ interface RouteParams {
  * Path Parameters:
  * - badgeSlug: The badge family identifier (e.g., "creator-score", "total-earnings")
  *
- * Authentication: Same as /api/badges (Farcaster context with development fallback)
+ * Query Parameters:
+ * - talentUuid: The Talent Protocol UUID of the user (required)
  *
  * Response: Single DynamicBadge object with computed state and progress
  */
@@ -33,38 +33,32 @@ export async function GET(request: Request, { params }: RouteParams) {
       );
     }
 
-    // Get Farcaster context from headers (for MiniApp) or Privy or fallback
-    const context = getUserContext(null); // In real usage, this would get actual context
-
-    // Parse URL to check for development parameters
+    // Parse URL to get query parameters
     const url = new URL(request.url);
-    const talentUuidParam = url.searchParams.get("talentUuid");
+    const talentUuid = url.searchParams.get("talentUuid");
 
-    let talentUuid: string | null = null;
-
-    if (talentUuidParam) {
-      // Direct UUID provided for development/testing
-      talentUuid = talentUuidParam;
-    } else if (context?.fid) {
-      // Resolve from Farcaster context
-      const user = await resolveTalentUser(String(context.fid));
-      talentUuid = user?.id || null;
-    } else if (process.env.NODE_ENV === "development") {
-      // Development fallback: use a default user for testing
-      talentUuid = "bd9d2b22-1b5b-43d3-b559-c53cbf1b7891"; // @macedo
-    }
-
+    // Validate required query parameter
     if (!talentUuid) {
       return NextResponse.json(
-        { error: "User not found or not authenticated" },
-        { status: 404 },
+        { error: "talentUuid parameter is required" },
+        { status: 400 },
       );
     }
 
-    // For now, just get the first badge from the main badges response
-    const badgesData = await import("@/app/services/badgesService").then((m) =>
-      m.getBadgesForUser(talentUuid)(),
-    );
+    // Validate UUID format for security
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        talentUuid,
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Invalid UUID format" },
+        { status: 400 },
+      );
+    }
+
+    // Get badge data using existing service
+    const badgesData = await getBadgesForUser(talentUuid)();
 
     // Find the badge by slug
     let badge = null;

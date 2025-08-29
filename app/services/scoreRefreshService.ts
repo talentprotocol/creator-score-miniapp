@@ -12,7 +12,6 @@ export interface TokenBalanceData {
  */
 export async function getTokenBalanceForProfileManual(
   profileId: string,
-  _apiKey: string, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<TokenBalanceData> {
   try {
     // Use the new dataPointsService instead of direct API call
