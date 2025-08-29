@@ -2,26 +2,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function LoadingState() {
   return (
-    <div className="max-w-xl mx-auto w-full p-4 space-y-6 pb-24">
-      <div className="space-y-1">
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-5 w-48" />
-      </div>
-
-      <div className="space-y-2">
+    <div className="space-y-6">
+      {/* Badge grid skeleton - matches ProfileBadgesClient layout exactly */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="bg-muted rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-5 w-8" />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
-              {[...Array(6)].map((_, j) => (
-                <div key={j} className="flex flex-col items-center gap-1">
-                  <Skeleton className="w-12 h-12 rounded-full" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              ))}
+          <div key={i} className="flex flex-col items-center">
+            {/* Badge artwork skeleton - matches BadgeCard w-28 h-28 */}
+            <Skeleton className="w-28 h-28 rounded-lg" />
+
+            {/* Badge info skeleton */}
+            <div className="text-center w-full mt-2">
+              {/* Title skeleton */}
+              <Skeleton className="h-4 w-20 mx-auto" />
+
+              {/* Progress bar skeleton - matches BadgeCard w-28 */}
+              <Skeleton className="w-28 h-1 rounded-full mx-auto mt-1" />
+
+              {/* Subtitle skeleton */}
+              <Skeleton className="h-3 w-16 mx-auto mt-0.5" />
             </div>
           </div>
         ))}

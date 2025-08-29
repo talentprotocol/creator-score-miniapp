@@ -31,7 +31,7 @@ export const creatorScoreFrame = {
     title: "Check Your Score",
     action: {
       type: "launch_frame",
-      name: "Creator Score Mini App",
+      name: "Creator Score",
       url: "https://www.creatorscore.app",
       splashImageUrl: "https://www.creatorscore.app/splash.png",
       splashBackgroundColor: "#C79AF6",
@@ -41,7 +41,7 @@ export const creatorScoreFrame = {
 
 // Static metadata configuration (version controlled)
 export const APP_METADATA = {
-  name: "Creator Score Mini App",
+  name: "Creator Score App",
   subtitle: "Create Onchain. Earn Rewards.",
   description:
     "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens, and start earning rewards in USDC.",
@@ -52,7 +52,7 @@ export const APP_METADATA = {
   primaryCategory: "social",
   tags: ["creator", "onchain", "reputation", "base", "rewards"],
 
-  ogTitle: "Creator Score Mini App",
+  ogTitle: "Creator Score App",
   ogDescription:
     "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens.",
 };

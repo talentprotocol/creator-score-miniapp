@@ -4,10 +4,6 @@ import type {
   UserSettings,
   AccountManagementAction,
   HumanityCredential,
-  ConnectedAccountsResponse,
-  ProfileResponse,
-  HumanityCredentialsResponse,
-  ConnectedAccount,
 } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
@@ -19,56 +15,14 @@ async function getConnectedAccountsForTalentId(
   talentId: string | number,
 ): Promise<GroupedConnectedAccounts> {
   try {
-    const [accountsResponse, profileResponse] = await Promise.all([
-      fetch(`/api/talent-accounts?id=${talentId}`),
-      fetch(`/api/talent-user?id=${talentId}`),
-    ]);
+    const response = await fetch(`/api/connected-accounts?id=${talentId}`);
 
-    if (!accountsResponse.ok) {
-      throw new Error(
-        `HTTP ${accountsResponse.status}: ${accountsResponse.statusText}`,
-      );
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const accountsData: ConnectedAccountsResponse =
-      await accountsResponse.json();
-    let profileData: ProfileResponse | null = null;
-
-    // Get profile data for primary wallet information
-    if (profileResponse.ok) {
-      profileData = await profileResponse.json();
-    }
-
-    // Determine the primary wallet address (Farcaster first, then Talent)
-    const primaryWalletAddress =
-      profileData?.farcaster_primary_wallet_address ||
-      profileData?.main_wallet_address ||
-      null;
-
-    // Group accounts by type for settings management
-    const socialAccounts = accountsData.accounts.filter(
-      (account: ConnectedAccount) =>
-        account.source === "github" ||
-        account.source === "twitter" ||
-        account.source === "x_twitter",
-    );
-
-    const walletAccounts = accountsData.accounts
-      .filter((account: ConnectedAccount) => account.source === "wallet")
-      .map((account: ConnectedAccount) => ({
-        ...account,
-        is_primary: account.identifier === primaryWalletAddress,
-      }));
-
-    return {
-      social: socialAccounts,
-      wallet: walletAccounts,
-      primaryWalletInfo: {
-        main_wallet_address: profileData?.main_wallet_address || null,
-        farcaster_primary_wallet_address:
-          profileData?.farcaster_primary_wallet_address || null,
-      },
-    };
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error(
       "[useConnectedAccounts] Error fetching connected accounts:",
@@ -203,7 +157,7 @@ async function updateNotificationSettings(
  */
 async function fetchHumanityCredentials(
   talentUuid: string,
-): Promise<HumanityCredentialsResponse> {
+): Promise<{ credentials: HumanityCredential[] }> {
   try {
     const response = await fetch(`/api/talent-humanity?id=${talentUuid}`, {
       headers: {
@@ -215,7 +169,7 @@ async function fetchHumanityCredentials(
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data: HumanityCredentialsResponse = await response.json();
+    const data = await response.json();
     return data;
   } catch (error) {
     console.error(

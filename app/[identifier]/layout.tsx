@@ -2,12 +2,17 @@
 import { redirect } from "next/navigation";
 import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
+import { validateIdentifier } from "@/lib/validation";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
-import { isEarningsCredential } from "@/lib/total-earnings-config";
+import {
+  isEarningsCredential,
+  getCollectorCountCredentials,
+  getPlatformDisplayName,
+} from "@/lib/total-earnings-config";
 import {
   getEthUsdcPrice,
   getPolUsdPrice,
@@ -23,9 +28,19 @@ import { dlog, dtimer } from "@/lib/debug";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: { identifier: string };
+  searchParams?: { share?: string };
 }): Promise<Metadata> {
+  // Validate identifier format to prevent injection attacks
+  if (!validateIdentifier(params.identifier)) {
+    return {
+      title: "Creator Not Found - Creator Score",
+      description: "This creator could not be found.",
+    };
+  }
+
   if (RESERVED_WORDS.includes(params.identifier)) {
     return {
       title: "Creator Not Found - Creator Score",
@@ -117,6 +132,7 @@ export async function generateMetadata({
           return;
         }
 
+        // Parse credential-level readable_value only
         const cleanValue = point.readable_value;
         let value: number;
         const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
@@ -169,20 +185,40 @@ export async function generateMetadata({
 
     // Always use canonical URL for Open Graph metadata (not localhost)
     const canonicalUrl = "https://creatorscore.app";
-    const dynamicImageUrl = `${canonicalUrl}/api/share-image/${user.id}`;
+
+    // Determine content based on sharing context
+    const shareType = searchParams?.share;
+    const isOptout = shareType === "optout";
+
+    // Select appropriate image URL and content
+    const dynamicImageUrl = isOptout
+      ? `${canonicalUrl}/api/share-image-optout/${user.id}`
+      : `${canonicalUrl}/api/share-image/${user.id}`;
+
+    const title = isOptout
+      ? `${displayName} - Paid It Forward`
+      : `${displayName} - Creator Score`;
+
+    const description = isOptout
+      ? `${displayName} paid forward 100% of their Creator Score rewards to support onchain creators.`
+      : `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`;
+
+    const altText = isOptout
+      ? `${displayName} Paid It Forward`
+      : `${displayName} Creator Score Card`;
 
     return {
-      title: `${displayName} - Creator Score`,
-      description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`,
+      title,
+      description,
       openGraph: {
-        title: `${displayName} - Creator Score`,
-        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`,
+        title,
+        description,
         images: [
           {
             url: dynamicImageUrl,
             width: 1600,
             height: 900,
-            alt: `${displayName} Creator Score Card`,
+            alt: altText,
           },
         ],
         type: "website",
@@ -190,8 +226,8 @@ export async function generateMetadata({
       },
       twitter: {
         card: "summary_large_image",
-        title: `${displayName} - Creator Score`,
-        description: `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`,
+        title,
+        description,
         images: [dynamicImageUrl],
       },
       // Add Farcaster frame metadata for profile pages
@@ -203,7 +239,7 @@ export async function generateMetadata({
             title: "Check Your Score",
             action: {
               type: "launch_frame",
-              name: "Creator Score Mini App",
+              name: "Creator Score App",
               url: canonicalUrl,
               splashImageUrl: `${canonicalUrl}/splash.png`,
               splashBackgroundColor: "#C79AF6",
@@ -522,6 +558,53 @@ export default async function ProfileLayout({
     })),
   };
 
+  // Calculate collectors breakdown from collector count credentials
+  const platformCollectorCounts = new Map<string, number>();
+  let totalCollectors = 0;
+
+  credentials.forEach((credentialGroup) => {
+    credentialGroup.points.forEach((point) => {
+      if (!getCollectorCountCredentials().includes(point.slug || "")) {
+        return;
+      }
+      if (!point.readable_value) return;
+
+      // Parse collector count value
+      const cleanValue = point.readable_value;
+      let value: number;
+      const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+      if (numericValue.includes("K")) {
+        value = parseFloat(numericValue.replace("K", "")) * 1000;
+      } else if (numericValue.includes("M")) {
+        value = parseFloat(numericValue.replace("M", "")) * 1000000;
+      } else {
+        value = parseFloat(numericValue);
+      }
+
+      if (isNaN(value)) return;
+
+      // Use helper function for platform name mapping
+      const platformName = getPlatformDisplayName(point.slug || "");
+      platformCollectorCounts.set(platformName, value);
+      totalCollectors += value;
+    });
+  });
+
+  // Create collectors breakdown
+  const sortedPlatforms = Array.from(platformCollectorCounts.entries()).sort(
+    ([, a], [, b]) => b - a,
+  );
+
+  const collectorsBreakdown = {
+    totalCollectors,
+    segments: sortedPlatforms.map(([platform, value]) => ({
+      name: platform,
+      value,
+      percentage: totalCollectors > 0 ? (value / totalCollectors) * 100 : 0,
+    })),
+  };
+
   // Calculate total followers
   const totalFollowers = socialAccounts.reduce((sum, account) => {
     return sum + (account.followerCount || 0);
@@ -582,6 +665,7 @@ export default async function ProfileLayout({
         yearlyData,
         credentials,
         earningsBreakdown,
+        collectorsBreakdown,
         rank,
       }}
     >

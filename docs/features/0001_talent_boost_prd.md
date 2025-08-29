@@ -28,7 +28,7 @@ Add a 10% reward boost for creators holding 1000+ TALENT tokens, displayed throu
 ### Visual Indicators
 - **Main Leaderboard**: Subtle indicator using Talent Protocol logo + "+10%" text
 - **My Rewards Component**: Display base reward + boost amount + token balance
-- **Token Acquisition CTA**: External link to Uniswap via modal
+- **Token Acquisition CTA**: External link to Aerodrome via modal
 
 
 
@@ -41,7 +41,7 @@ Add a 10% reward boost for creators holding 1000+ TALENT tokens, displayed throu
 
 ### For Non-Token Holders
 - **As a creator without tokens**, I see a clear callout explaining the 10% boost opportunity with a CTA to acquire tokens
-- **As a potential token buyer**, I can access Uniswap directly from the app, so I can easily acquire tokens
+- **As a potential token buyer**, I can access Aerodrome directly from the app, so I can easily acquire tokens
 
 ### For All Users
 - **As any user**, I can switch to the "Boosts" tab to see only boosted creators, so I can view the premium tier of token-holding creators
@@ -64,7 +64,7 @@ Add a 10% reward boost for creators holding 1000+ TALENT tokens, displayed throu
 ### Token Acquisition Flow
 - **Callout Component**: Existing callout component placed under MyRewards on /leaderboard
 - **Content**: Talent icon + "Hold 1000+ TALENT tokens for 10% reward boost"
-- **CTA**: "Get Tokens" button opens modal with external Uniswap link
+- **CTA**: "Get Tokens" button opens modal with external Aerodrome link
 
 
 
@@ -84,7 +84,7 @@ Add a 10% reward boost for creators holding 1000+ TALENT tokens, displayed throu
 
 ### Phase 3: Token Acquisition Flow (PENDING)
 - **Callout Component**: Add boost explanation under MyRewards for non-holders
-- **Uniswap Modal**: Implement external link modal for token purchase
+- **Token Modal**: Implement external link modal for token purchase
 - **Integration Testing**: End-to-end testing of acquisition funnel
 
 ### Phase 4: Polish & Launch (PENDING)
@@ -158,7 +158,7 @@ Add a 10% reward boost for creators holding 1000+ TALENT tokens, displayed throu
 - **Token data unavailable**: Hide boost indicators, show standard leaderboard
 - **API timeout**: Graceful degradation - show cached boost status with staleness indicator
 - **Invalid token balance**: Treat as zero tokens, no boost applied
-- **External link failure**: Show error message with manual Uniswap URL
+- **External link failure**: Show error message with manual Aerodrome URL
 - **Cache miss**: Return leaderboard immediately with empty token data
 
 ### Data Consistency
@@ -187,7 +187,7 @@ A: Your token balance updates whenever your Creator Score refreshes. You can ref
 A: You'll lose the 10% boost immediately on the next score update. The boost will return once you hold 1000+ tokens again.
 
 **Q: Where can I buy TALENT tokens?**
-A: Click "Get Tokens" in the app to access Uniswap, where you can swap for TALENT tokens.
+A: Click "Get Tokens" in the app to access Aerodrome, where you can swap for TALENT tokens.
 
 **Q: Does the boost apply to all future rewards?**
 A: The boost applies to the current reward period. For the September 1st distribution, you need to hold 1000+ tokens when final calculations are made.

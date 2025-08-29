@@ -9,7 +9,7 @@ import { sdk } from "@farcaster/frame-sdk";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 import {
-  formatWithK,
+  formatCompactNumber,
   formatCurrency,
   openExternalUrl,
   getLevelFromScore,
@@ -28,11 +28,12 @@ import {
   LEVEL_RANGES,
   PERK_DRAW_DEADLINE_UTC,
 } from "@/lib/constants";
-import { PageContainer } from "@/components/common/PageContainer";
+
 import { Section } from "@/components/common/Section";
+import { PageContainer } from "@/components/common/PageContainer";
 import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Trophy } from "lucide-react";
+import { HandHeart, Trophy, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
@@ -211,163 +212,199 @@ function LeaderboardContent() {
   const isLoggedIn = !!(user || unifiedName);
 
   return (
-    <>
-      {/* My Rewards Hero - Show only when we have authenticated user context */}
-      {(user || unifiedName) && (
-        <MyRewards
-          rewards={
-            creatorScore
-              ? getUsdcRewards(
-                  creatorScore,
-                  userTop200Entry?.rank,
-                  userTop200Entry?.isBoosted,
-                )
-              : "$0"
-          }
-          score={creatorScore}
-          avatarUrl={avatarUrl}
-          name={name!}
-          isLoading={loadingStats || (top200Loading && !userTop200Entry)}
-          rank={userTop200Entry?.rank}
-          pointsToTop200={pointsToTop200}
-          onHowToEarnClick={() => setHowToEarnOpen(true)}
-          onBoostInfoClick={() => setRewardBoostsOpen(true)}
-          tokenBalance={tokenBalance}
-          tokenLoading={tokenLoading}
-          isBoosted={userTop200Entry?.isBoosted}
-          boostAmountUsd={getBoostAmountUsd(
-            userTop200Entry?.score ?? creatorScore,
-            userTop200Entry?.rank,
-            userTop200Entry?.isBoosted,
-          )}
-          activeCreatorsTotal={activeCreatorsTotal}
-          isOptedOut={isOptedOut}
-          onOptOutBadgeClick={() =>
-            router.push("/settings?section=pay-it-forward")
-          }
-        />
-      )}
+    <PageContainer>
+      {/* Header section with all elements above tabs */}
+      <Section variant="header">
+        {/* My Rewards Hero - Show only when we have authenticated user context */}
+        {(user || unifiedName) && (
+          <MyRewards
+            rewards={
+              creatorScore
+                ? getUsdcRewards(
+                    creatorScore,
+                    userTop200Entry?.rank,
+                    userTop200Entry?.isBoosted,
+                  )
+                : "$0"
+            }
+            score={creatorScore}
+            avatarUrl={avatarUrl}
+            name={name!}
+            isLoading={loadingStats || (top200Loading && !userTop200Entry)}
+            rank={userTop200Entry?.rank}
+            pointsToTop200={pointsToTop200}
+            onHowToEarnClick={() => setHowToEarnOpen(true)}
+            onBoostInfoClick={() => setRewardBoostsOpen(true)}
+            tokenBalance={tokenBalance}
+            tokenLoading={tokenLoading}
+            isBoosted={userTop200Entry?.isBoosted}
+            boostAmountUsd={getBoostAmountUsd(
+              userTop200Entry?.score ?? creatorScore,
+              userTop200Entry?.rank,
+              userTop200Entry?.isBoosted,
+            )}
+            activeCreatorsTotal={activeCreatorsTotal}
+            isOptedOut={isOptedOut}
+            onOptOutBadgeClick={() =>
+              router.push("/settings?section=pay-it-forward")
+            }
+          />
+        )}
 
-      {/* Callout Carousel (below MyRewards) - visible to all users */}
-      <div className="mt-4 mb-2">
-        <CalloutCarousel
-          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-          items={(() => {
-            const items = [] as Array<{
-              id: string;
-              variant:
-                | "brand-purple"
-                | "brand-green"
-                | "brand-blue"
-                | "brand-pink"
-                | "muted";
-              icon?: React.ReactNode;
-              title: React.ReactNode;
-              description?: React.ReactNode;
-              href?: string;
-              external?: boolean;
-              onClick?: () => void;
-              permanentHideKey?: string;
-              onClose?: () => void;
-            }>;
+        {/* Callout Carousel (below MyRewards) - visible to all users */}
+        <div className="mt-4 mb-2">
+          <CalloutCarousel
+            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+            items={(() => {
+              const items = [] as Array<{
+                id: string;
+                variant:
+                  | "brand-purple"
+                  | "brand-green"
+                  | "brand-blue"
+                  | "brand-pink"
+                  | "muted";
+                icon?: React.ReactNode;
+                title: React.ReactNode;
+                description?: React.ReactNode;
+                href?: string;
+                external?: boolean;
+                onClick?: () => void;
+                permanentHideKey?: string;
+                onClose?: () => void;
+              }>;
 
-            // HOW TO EARN REWARDS (blue) – first position, permanently dismissible
-            items.push({
-              id: "how_to_earn",
-              variant: "brand-blue",
-              icon: <Trophy className="h-4 w-4" />,
-              title: "How to Earn Rewards",
-              description: "Get paid USDC for creating content.",
-              onClick: () => setHowToEarnOpen(true),
-              permanentHideKey: "how_to_earn_callout_hidden",
-              onClose: () => {
-                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                // The actual dismissal logic is handled by CalloutCarousel, not here
-              },
-            });
-
-            // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
-            const base = {
-              id: "boost",
-              variant: "brand-purple" as const,
-              icon: <Rocket className="h-4 w-4" />,
-              title: "10% Rewards Boost",
-              description: <>Hold 100+ $TALENT to earn a boost.</>,
-            };
-            if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
+              // HOW TO EARN REWARDS (blue) – first position, permanently dismissible
               items.push({
-                ...base,
-                permanentHideKey: "boost_callout_hidden",
-                onClick: () => setRewardBoostsOpen(true),
+                id: "how_to_earn",
+                variant: "brand-blue",
+                icon: <Trophy className="h-4 w-4" />,
+                title: "How to Earn Rewards",
+                description: "Get paid USDC for creating content.",
+                onClick: () => setHowToEarnOpen(true),
+                permanentHideKey: "how_to_earn_callout_hidden",
                 onClose: () => {
                   // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
                   // The actual dismissal logic is handled by CalloutCarousel, not here
                 },
               });
-            } else {
+
+              // BADGES ANNOUNCEMENT (pink) – new feature announcement, first priority
               items.push({
-                ...base,
+                id: "badges-announcement",
+                variant: "brand-pink",
+                icon: <Award className="h-4 w-4" />,
+                title: "NEW: Creator Badges",
+                description: "Track your progress and earn badges.",
+                href: isLoggedIn ? "/badges" : undefined,
                 onClick: !isLoggedIn
                   ? () => setLoginModalOpen(true)
-                  : () => setRewardBoostsOpen(true),
+                  : undefined,
+                permanentHideKey: "badges_announcement_dismissed",
+                onClose: () => {
+                  // Handle dismissal - this triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                },
               });
-            }
 
-            // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
-            items.push({
-              id: "optout",
-              variant: "brand-green",
-              icon: <HandHeart className="h-4 w-4" />,
-              title: "Pay It Forward",
-              description: "Give your rewards, keep your rank.",
-              href: isLoggedIn ? "/settings?section=pay-it-forward" : undefined,
-              onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
-              permanentHideKey: "optout_callout_hidden",
-              onClose: () => {
-                // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                // The actual dismissal logic is handled by CalloutCarousel, not here
-              },
-            });
+              // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
+              const base = {
+                id: "boost",
+                variant: "brand-purple" as const,
+                icon: <Rocket className="h-4 w-4" />,
+                title: "10% Rewards Boost",
+                description: <>Hold 100+ $TALENT to earn a boost.</>,
+              };
+              if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
+                items.push({
+                  ...base,
+                  permanentHideKey: "boost_callout_hidden",
+                  onClick: () => setRewardBoostsOpen(true),
+                  onClose: () => {
+                    // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                    // The actual dismissal logic is handled by CalloutCarousel, not here
+                  },
+                });
+              } else {
+                items.push({
+                  ...base,
+                  onClick: !isLoggedIn
+                    ? () => setLoginModalOpen(true)
+                    : () => setRewardBoostsOpen(true),
+                });
+              }
 
-            // CREATOR PERK (blue) – interactive, dismissible; reflects entered state
-            // TODO: Uncomment when we have new perks to show
-            // items.push({
-            //   id: "perk_screen_studio",
-            //   variant: "brand-blue",
-            //   icon: <Gift className="h-4 w-4" />,
-            //   title: "Creator Perk",
-            //   description:
-            //     perkStatus?.status === "closed"
-            //       ? `Draw closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-            //       : perkStatus?.status === "entered"
-            //         ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-            //         : "Get a free Screen Studio subscription.",
-            //   href: undefined,
-            //   external: undefined,
-            //   onClick: !isLoggedIn
-            //     ? () => setLoginModalOpen(true)
-            //     : () => {
-            //         try {
-            //           posthog.capture("perk_draw_open", {
-            //             perk: "screen_studio",
-            //           });
-            //         } catch {}
-            //         setPerkOpen(true);
-            //       },
-            //   dismissKey: "perk_callout_dismissed",
-            //   onClose: () => {
-            //     // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-            //     // The actual dismissal logic is handled by CalloutCarousel, not here
-            //   },
-            // });
+              // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
+              items.push({
+                id: "optout",
+                variant: "brand-green",
+                icon: <HandHeart className="h-4 w-4" />,
+                title: "Pay It Forward",
+                description: "Give your rewards, keep your rank.",
+                href: isLoggedIn
+                  ? "/settings?section=pay-it-forward"
+                  : undefined,
+                onClick: !isLoggedIn
+                  ? () => setLoginModalOpen(true)
+                  : undefined,
+                permanentHideKey: "optout_callout_hidden",
+                onClose: () => {
+                  // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+                  // The actual dismissal logic is handled by CalloutCarousel, not here
+                },
+              });
 
-            return items;
-          })()}
-        />
-      </div>
+              // CREATOR PERK (blue) – interactive, dismissible; reflects entered state
+              // TODO: Uncomment when we have new perks to show
+              // items.push({
+              //   id: "perk_screen_studio",
+              //   variant: "brand-blue",
+              //   icon: <Gift className="h-4 w-4" />,
+              //   title: "Creator Perk",
+              //   description:
+              //     perkStatus?.status === "closed"
+              //       ? `Draw closed. Winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+              //       : perkStatus?.status === "entered"
+              //         ? `You're in! 20 winners announced ${PERK_DRAW_DATE_UTC.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+              //         : "Get a free Screen Studio subscription.",
+              //   href: undefined,
+              //   external: undefined,
+              //   onClick: !isLoggedIn
+              //     ? () => setLoginModalOpen(true)
+              //     : () => {
+              //         try {
+              //           posthog.capture("perk_draw_open", {
+              //             perk: "screen_studio",
+              //           });
+              //         } catch {}
+              //         setPerkOpen(true);
+              //       },
+              //   dismissKey: "perk_callout_dismissed",
+              //   onClose: () => {
+              //     // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+              //     // The actual dismissal logic is handled by CalloutCarousel, not here
+              //   },
+              // });
 
-      {/* How to Earn Modal */}
+              return items;
+            })()}
+          />
+        </div>
+
+        {/* Simplified Stat Cards */}
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <StatCard
+            title="Rewards Pool"
+            value={`$${formatCompactNumber(TOTAL_SPONSORS_POOL)}`}
+          />
+          <StatCard
+            title="Rewards Distribution"
+            value={`${countdown.days}d ${countdown.hours}h`}
+          />
+        </div>
+      </Section>
+
+      {/* Modals - outside Section wrapper */}
       <HowToEarnModal open={howToEarnOpen} onOpenChange={setHowToEarnOpen} />
 
       {/* Reward Boosts Modal (triggered only by MyRewards rocket) */}
@@ -426,35 +463,25 @@ function LeaderboardContent() {
         onOpenChange={setLoginModalOpen}
       />
 
-      {/* Simplified Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 my-4">
-        <StatCard
-          title="Rewards Pool"
-          value={`$${formatWithK(TOTAL_SPONSORS_POOL)}`}
-        />
-        <StatCard
-          title="Rewards Distribution"
-          value={`${countdown.days}d ${countdown.hours}h`}
-        />
-      </div>
-
-      {/* Full width tabs */}
+      {/* Full width tabs - outside PageContainer constraints */}
       <Section variant="full-width">
-        <TabNavigation
-          tabs={[
-            {
-              id: "creators",
-              label: "Top 200",
-            },
-            {
-              id: "sponsors",
-              label: "Sponsors",
-              count: ACTIVE_SPONSORS.length,
-            },
-          ]}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
+        <div className="w-full border-b border-border bg-background">
+          <TabNavigation
+            tabs={[
+              {
+                id: "creators",
+                label: "Top 200",
+              },
+              {
+                id: "sponsors",
+                label: "Sponsors",
+                count: ACTIVE_SPONSORS.length,
+              },
+            ]}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
       </Section>
 
       {/* Content section */}
@@ -738,19 +765,14 @@ function LeaderboardContent() {
           </div>
         )}
       </Section>
-    </>
+    </PageContainer>
   );
 }
 
 export default function LeaderboardPage() {
   return (
-    <PageContainer noPadding>
-      {/* Header section */}
-      <Section variant="header">
-        <Suspense fallback={<Skeleton className="h-16 w-full" />}>
-          <LeaderboardContent />
-        </Suspense>
-      </Section>
-    </PageContainer>
+    <Suspense fallback={<Skeleton className="h-16 w-full" />}>
+      <LeaderboardContent />
+    </Suspense>
   );
 }

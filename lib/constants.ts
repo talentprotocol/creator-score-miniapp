@@ -156,13 +156,23 @@ export const ACTIVE_SPONSORS = [
     farcasterUrl: "https://farcaster.xyz/base",
   },
   {
+    id: "walletconnect",
+    name: "WalletConnect  ",
+    avatar:
+      "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/176d9a0c-dcd3-4120-6530-bb2d242c8800/anim=false,fit=contain,f=auto,w=576",
+    amount: 2500,
+    handle: "@walletconnect",
+    rank: 3,
+    farcasterUrl: "https://farcaster.xyz/walletconnect",
+  },
+  {
     id: "talent",
     name: "Talent Protocol",
     avatar:
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/002f0efe-2513-41e7-3d89-d38875d76800/anim=false,f=auto,w=288",
     amount: 2500,
     handle: "@talent",
-    rank: 3,
+    rank: 4,
     farcasterUrl: "https://farcaster.xyz/talent",
   },
   {
@@ -172,7 +182,7 @@ export const ACTIVE_SPONSORS = [
       "https://pbs.twimg.com/profile_images/1899112167468638208/H7XicSUE_400x400.png",
     amount: 1350,
     handle: "@efp",
-    rank: 4,
+    rank: 5,
     farcasterUrl: "https://x.com/efp",
   },
   {
@@ -182,7 +192,7 @@ export const ACTIVE_SPONSORS = [
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/9b5ad594-f3e9-4160-9c33-4e0eeaf28500/anim=false,fit=contain,f=auto,w=576",
     amount: 1250,
     handle: "@phi",
-    rank: 5,
+    rank: 6,
     farcasterUrl: "https://farcaster.xyz/phi",
   },
   {
@@ -192,7 +202,7 @@ export const ACTIVE_SPONSORS = [
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/96aabcca-a8ce-47d6-b6f6-d2b6d1272500/anim=false,fit=contain,f=auto,w=576",
     amount: 1250,
     handle: "@noiceapp",
-    rank: 6,
+    rank: 7,
     farcasterUrl: "https://farcaster.xyz/noiceapp",
   },
   {
@@ -202,17 +212,17 @@ export const ACTIVE_SPONSORS = [
       "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/d984e36e-e040-4118-9122-b2027955de00/anim=false,fit=contain,f=auto,w=576",
     amount: 1200,
     handle: "@web3bio",
-    rank: 7,
+    rank: 8,
     farcasterUrl: "https://farcaster.xyz/web3bio",
   },
   {
-    id: "firefly",
+    id: "fireflyapp",
     name: "Firefly App",
     avatar:
       "https://wrpcd.net/cdn-cgi/image/anim=false,fit=contain,f=auto,w=576/https%3A%2F%2Fmedia.firefly.land%2Ffarcaster%2F8b064ce5-dffa-4260-9f8c-1c8c48e9eac0.png",
     amount: 1200,
     handle: "@fireflyapp",
-    rank: 8,
+    rank: 9,
     farcasterUrl: "https://farcaster.xyz/fireflyapp",
   },
 ];

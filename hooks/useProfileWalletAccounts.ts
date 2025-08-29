@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { getWalletAccountsForTalentId } from "@/app/services/walletAccountsService";
 import type { GroupedWalletAccounts } from "@/app/services/types";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 
@@ -30,7 +29,14 @@ export function useProfileWalletAccounts(talentUUID: string | undefined) {
     setLoading(true);
     setError(undefined);
     try {
-      const data = await getWalletAccountsForTalentId(talentUUID);
+      // ✅ FIXED: Call API route instead of service directly
+      const response = await fetch(`/api/talent-accounts?id=${talentUUID}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       setWalletData(data);
       setError(undefined);
 

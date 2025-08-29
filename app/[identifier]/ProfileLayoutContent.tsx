@@ -11,7 +11,6 @@ import {
   formatCompactNumber,
   calculateTotalFollowers,
   detectClient,
-  openExternalUrl,
 } from "@/lib/utils";
 import { processCreatorCategories } from "@/lib/credentialUtils";
 import { useProfileActions } from "@/hooks/useProfileActions";
@@ -19,33 +18,26 @@ import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { Share, RotateCcw, Loader2, AtSign } from "lucide-react";
-import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
-import { ShareStatsModal } from "@/components/modals/ShareStatsModal";
+import {
+  ProfileProvider,
+  useProfileContext,
+  type ServerProfileData,
+  type ProfileData,
+} from "@/contexts/ProfileContext";
+import { ShareModal } from "@/components/modals/ShareModal";
+import { ShareContentGenerators } from "@/lib/sharing";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
 
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 
-interface ProfileData {
-  creatorScore: number | undefined;
-  lastCalculatedAt: string | null;
-  calculating: boolean;
-  socialAccounts: unknown[];
-  totalEarnings: number | undefined;
-  rank: number | null;
-  posts: unknown[];
-  yearlyData: { year: number; months: number[]; total: number }[];
-  credentials: unknown[];
-  earningsBreakdown: { totalEarnings: number; segments: unknown[] };
-}
-
 interface ProfileLayoutContentProps {
   talentUUID: string;
   identifier: string;
   children: React.ReactNode;
-  profile: unknown | null; // Profile from server-side
-  profileData: ProfileData; // All profile data from server-side
+  profile: ProfileData | null; // Profile from server-side
+  profileData: ServerProfileData; // All profile data from server-side
 }
 
 function ProfileLayoutContentInner({
@@ -79,15 +71,13 @@ function ProfileLayoutContentInner({
   const earningsLoading = false;
 
   // Calculate total followers
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const totalFollowers = calculateTotalFollowers(socialAccounts as any);
+  const totalFollowers = calculateTotalFollowers(socialAccounts);
 
   // Check if user has score
   const hasNoScore = !creatorScore || creatorScore === 0;
 
   // Use profile actions hook for buttons and user logic
   const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isOwnProfile,
     isCalculatingOrRefreshing,
     isInCooldown,
@@ -115,7 +105,7 @@ function ProfileLayoutContentInner({
 
   // Main share stats handler - detects environment and either opens modal or shares directly
   const handleShareStats = React.useCallback(async () => {
-    // Track share stats click
+    // Track share stats click (preserve existing analytics event name)
     posthog?.capture("profile_share_stats_clicked", {
       creator_score: creatorScore,
       total_earnings: totalEarnings,
@@ -145,118 +135,69 @@ function ProfileLayoutContentInner({
     client,
   ]);
 
-  // Handle Farcaster sharing from modal (browser only)
-  const handleShareFarcaster = React.useCallback(() => {
-    const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
-    const followersText = formatCompactNumber(totalFollowers || 0);
-    const earningsText = totalEarnings
-      ? formatNumberWithSuffix(totalEarnings)
-      : "—";
+  // Prepare sharing data for the new sharing system
+  const shareContext = React.useMemo(
+    () => ({
+      talentUUID,
+      handle: profile?.fname || identifier,
+      appClient: client,
+    }),
+    [talentUUID, profile?.fname, identifier, client],
+  );
 
+  const profileShareData = React.useMemo(() => {
     // Get creator type from credentials
     const categoryData = profileData?.credentials
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        processCreatorCategories(profileData.credentials as any)
+      ? processCreatorCategories(profileData.credentials)
       : null;
-    const creatorType = categoryData?.primaryCategory?.name || "Creator";
-    const creatorEmoji = categoryData?.primaryCategory?.emoji || "👤";
 
-    // Get rank text
-    const rankText = rank ? `#${rank.toLocaleString()}` : "—";
+    return {
+      creatorScore,
+      totalFollowers,
+      totalEarnings,
+      rank,
+      displayName: (profile?.display_name || profile?.name) as
+        | string
+        | undefined,
+      fname: profile?.fname,
+      creatorType: categoryData?.primaryCategory?.name,
+      creatorEmoji: categoryData?.primaryCategory?.emoji,
+    };
+  }, [creatorScore, totalFollowers, totalEarnings, rank, profile, profileData]);
 
-    const farcasterHandle = profile?.fname || "creator";
-    const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
+  const shareContent = React.useMemo(
+    () => ShareContentGenerators.profile(shareContext, profileShareData),
+    [shareContext, profileShareData],
+  );
 
-    const farcasterShareText = `Check @${farcasterHandle}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @Talent 👇`;
-
-    // Open Farcaster web app with pre-filled cast
-    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(farcasterShareText)}&embeds[]=${encodeURIComponent(profileUrl)}`;
-
-    if (client === "browser") {
-      window.open(farcasterUrl, "_blank");
-    } else {
-      openExternalUrl(farcasterUrl, null, client);
-    }
-
-    // Track modal share
-    posthog?.capture("profile_share_completed", {
-      platform: "farcaster",
-      method: "modal",
-      creator_score: creatorScore,
-      total_earnings: totalEarnings,
-      total_followers: totalFollowers,
-      is_own_profile: isOwnProfile,
-    });
-  }, [
-    profile,
-    creatorScore,
-    totalFollowers,
-    totalEarnings,
-    isOwnProfile,
-    profileData,
-    rank,
-    posthog,
-    client,
-  ]);
-
-  // Handle Twitter sharing from modal (browser only)
-  const handleShareTwitter = React.useCallback(() => {
-    const scoreText = creatorScore ? creatorScore.toLocaleString() : "—";
-    const followersText = formatCompactNumber(totalFollowers || 0);
-    const earningsText = totalEarnings
-      ? formatNumberWithSuffix(totalEarnings)
-      : "—";
-
-    // Get creator type from credentials
-    const categoryData = profileData?.credentials
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        processCreatorCategories(profileData.credentials as any)
-      : null;
-    const creatorType = categoryData?.primaryCategory?.name || "Creator";
-    const creatorEmoji = categoryData?.primaryCategory?.emoji || "👤";
-
-    // Get rank text
-    const rankText = rank ? `#${rank.toLocaleString()}` : "—";
-
-    const displayName = profile?.display_name || profile?.name || "Creator";
-    const farcasterHandle = profile?.fname || "creator";
-    const profileUrl = `https://creatorscore.app/${encodeURIComponent(farcasterHandle)}`;
-
-    const twitterShareText = `Check ${displayName}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @TalentProtocol 👇`;
-
-    // Open Twitter web app with pre-filled tweet
-    const twitterUrl = `https://x.com/intent/post?text=${encodeURIComponent(twitterShareText)}&url=${encodeURIComponent(profileUrl)}`;
-    if (client === "browser") {
-      window.open(twitterUrl, "_blank");
-    } else {
-      openExternalUrl(twitterUrl, null, client);
-    }
-
-    // Track modal share
-    posthog?.capture("profile_share_completed", {
-      platform: "twitter",
-      method: "modal",
-      creator_score: creatorScore,
-      total_earnings: totalEarnings,
-      total_followers: totalFollowers,
-      is_own_profile: isOwnProfile,
-    });
-  }, [
-    profile,
-    creatorScore,
-    totalFollowers,
-    totalEarnings,
-    isOwnProfile,
-    profileData,
-    rank,
-    posthog,
-    client,
-  ]);
+  const shareAnalytics = React.useMemo(
+    () => ({
+      eventPrefix: "profile_share",
+      metadata: {
+        share_type: "profile" as const,
+        creator_score: creatorScore,
+        total_earnings: totalEarnings,
+        total_followers: totalFollowers,
+        is_own_profile: isOwnProfile,
+        has_score: !hasNoScore,
+        rank,
+        method: "modal", // Preserve existing analytics structure
+      },
+    }),
+    [
+      creatorScore,
+      totalEarnings,
+      totalFollowers,
+      isOwnProfile,
+      hasNoScore,
+      rank,
+    ],
+  );
 
   // Profile data comes from server-side, no loading state needed
   if (!profile) {
     return (
-      <PageContainer noPadding>
+      <PageContainer>
         <Section variant="content">
           <Callout>
             <strong>Error loading profile:</strong> Profile not found
@@ -266,8 +207,20 @@ function ProfileLayoutContentInner({
     );
   }
 
+  if (!profileData) {
+    return (
+      <PageContainer>
+        <Section variant="content">
+          <Callout>
+            <strong>Error loading profile data:</strong> No data available
+          </Callout>
+        </Section>
+      </PageContainer>
+    );
+  }
+
   return (
-    <PageContainer noPadding>
+    <PageContainer>
       {/* Header section */}
       <Section variant="header">
         <ProfileHeader
@@ -275,8 +228,7 @@ function ProfileLayoutContentInner({
           displayName={profile.display_name || undefined}
           profileImage={profile.image_url || undefined}
           bio={profile.bio || undefined}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          socialAccounts={socialAccounts as any}
+          socialAccounts={socialAccounts}
           talentUUID={talentUUID}
           isOwnProfile={!!isOwnProfile}
           hasCreatorScore={!hasNoScore}
@@ -382,15 +334,15 @@ function ProfileLayoutContentInner({
       </Section>
 
       {/* Share Stats Modal */}
-      <ShareStatsModal
+      <ShareModal
         open={isShareModalOpen}
         onOpenChange={setIsShareModalOpen}
-        talentUUID={talentUUID}
-        handle={profile?.fname || identifier}
-        onShareFarcaster={handleShareFarcaster}
-        onShareTwitter={handleShareTwitter}
-        appClient={client}
-        disableTwitter={client !== "browser"} // Disable Twitter button in non-browser contexts
+        content={shareContent}
+        context={shareContext}
+        analytics={shareAnalytics}
+        options={{
+          disableTwitter: client !== "browser", // Disable Twitter button in non-browser contexts
+        }}
       />
     </PageContainer>
   );
@@ -406,8 +358,7 @@ export function ProfileLayoutContent({
 }: ProfileLayoutContentProps) {
   return (
     <ProfileProvider
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      profile={profile as any}
+      profile={profile}
       talentUUID={talentUUID}
       identifier={identifier}
       profileData={profileData}

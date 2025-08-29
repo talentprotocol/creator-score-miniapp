@@ -21,7 +21,9 @@ export function ProfileTabs({
     ? "content"
     : pathname.endsWith("/score")
       ? "credentials"
-      : "score"; // default to stats tab
+      : pathname.endsWith("/badges")
+        ? "badges"
+        : "score"; // default to stats tab
 
   const tabs = [
     {
@@ -38,6 +40,11 @@ export function ProfileTabs({
       id: "credentials",
       label: "Score",
       href: `/${identifier}/score`,
+    },
+    {
+      id: "badges",
+      label: "Badges",
+      href: `/${identifier}/badges`,
     },
   ];
 

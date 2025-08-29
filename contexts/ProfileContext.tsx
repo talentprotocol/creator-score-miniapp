@@ -1,6 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from "react";
+import type {
+  SocialAccount,
+  IssuerCredentialGroup,
+} from "@/app/services/types";
 
 // Profile data interface matching the server-side resolver
 export interface ProfileData {
@@ -20,13 +24,21 @@ export interface ServerProfileData {
   creatorScore: number | undefined;
   lastCalculatedAt: string | null;
   calculating: boolean;
-  socialAccounts: unknown[];
+  socialAccounts: SocialAccount[];
   totalEarnings: number | undefined;
   rank: number | null;
   posts: unknown[];
   yearlyData: { year: number; months: number[]; total: number }[];
-  credentials: unknown[];
+  credentials: IssuerCredentialGroup[];
   earningsBreakdown: { totalEarnings: number; segments: unknown[] };
+  collectorsBreakdown: {
+    totalCollectors: number;
+    segments: Array<{
+      name: string;
+      value: number;
+      percentage: number;
+    }>;
+  };
 }
 
 interface ProfileContextType {

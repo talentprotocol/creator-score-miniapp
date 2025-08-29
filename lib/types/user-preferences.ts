@@ -17,6 +17,8 @@ export interface UserPreferences {
   decision_made_at?: string;
   future_pool_contribution?: number;
   how_to_earn_modal_seen?: boolean;
+  rewards_amount?: number;
+  rewards_calculated_at?: string;
   created_at?: string;
   updated_at?: string;
 }
