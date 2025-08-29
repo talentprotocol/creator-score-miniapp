@@ -203,7 +203,9 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     try {
       await updateOptedOutRewards(ranked);
       batchUpdateCooldown.timestamp = now;
-      console.log("[LeaderboardService] Batch update completed, cooldown reset");
+      console.log(
+        "[LeaderboardService] Batch update completed, cooldown reset",
+      );
     } catch (error) {
       console.error(
         "[LeaderboardService] Failed to update rewards storage:",
@@ -212,8 +214,14 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       // Don't fail leaderboard if rewards update fails - it's a background operation
     }
   } else {
-    const remainingCooldown = Math.ceil((BATCH_UPDATE_COOLDOWN_MS - (now - batchUpdateCooldown.timestamp)) / 1000 / 60);
-    console.log(`[LeaderboardService] Batch update skipped, cooldown active (${remainingCooldown} minutes remaining)`);
+    const remainingCooldown = Math.ceil(
+      (BATCH_UPDATE_COOLDOWN_MS - (now - batchUpdateCooldown.timestamp)) /
+        1000 /
+        60,
+    );
+    console.log(
+      `[LeaderboardService] Batch update skipped, cooldown active (${remainingCooldown} minutes remaining)`,
+    );
   }
 
   return {

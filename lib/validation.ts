@@ -48,11 +48,13 @@ export function validateWalletAddress(address: string): boolean {
  * Accepts Farcaster handles, wallet addresses, or Talent UUIDs
  */
 export function validateIdentifier(identifier: string): boolean {
-  if (!identifier || typeof identifier !== 'string') {
+  if (!identifier || typeof identifier !== "string") {
     return false;
   }
-  
-  return validateFarcasterHandle(identifier) || 
-         validateWalletAddress(identifier) || 
-         validateTalentUUID(identifier);
+
+  return (
+    validateFarcasterHandle(identifier) ||
+    validateWalletAddress(identifier) ||
+    validateTalentUUID(identifier)
+  );
 }
