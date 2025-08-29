@@ -13,7 +13,7 @@ import { ShareContentGenerators } from "@/lib/sharing";
 
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
-import { detectClient, openExternalUrl } from "@/lib/utils";
+import { detectClient } from "@/lib/utils";
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 
 /**

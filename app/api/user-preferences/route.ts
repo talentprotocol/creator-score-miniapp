@@ -58,6 +58,7 @@ export async function POST(
       remove_dismissed_id,
       remove_permanently_hidden_id,
       rewards_decision,
+      primary_wallet_address,
       how_to_earn_modal_seen,
     }: UserPreferencesUpdateRequest = await req.json();
 
@@ -75,8 +76,8 @@ export async function POST(
       );
     }
 
-    // Allow null to clear the category
-    if (creator_category !== null) {
+    // Allow null to clear the category, or skip validation if only updating wallet address
+    if (creator_category !== null && creator_category !== undefined) {
       if (!validateCreatorCategory(creator_category as string)) {
         return NextResponse.json(
           { error: getCreatorCategoryErrorMessage(creator_category as string) },
@@ -93,6 +94,7 @@ export async function POST(
       remove_dismissed_id,
       remove_permanently_hidden_id,
       rewards_decision,
+      primary_wallet_address,
       how_to_earn_modal_seen,
     });
 

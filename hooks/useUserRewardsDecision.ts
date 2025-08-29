@@ -34,21 +34,29 @@ export function useUserRewardsDecision(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If user is in top 200, use leaderboard data (fast path)
+  // Check if we should use cached leaderboard data
   const isInTop200 = Boolean(userTop200Entry);
-  const top200OptOutStatus = userTop200Entry?.isOptedOut || false;
 
-  // For non-top-200 users, fetch status separately
+  // TODO: Add snapshot logic when LeaderboardSnapshotService is implemented
+  // const shouldUseSnapshot = LeaderboardSnapshotService.shouldUseSnapshot();
+  const shouldUseSnapshot = false; // Placeholder for testing
+
+  // Priority order:
+  // 1. Snapshot data (after ROUND_ENDS_AT) - most accurate
+  // 2. Cached leaderboard data (before ROUND_ENDS_AT) - fastest
+  // 3. Database API call (fallback) - most reliable
+
   useEffect(() => {
-    if (!talentUuid || isInTop200) {
-      // Clear any previous separate status when switching to top 200 user
-      if (isInTop200 && separateRewardsDecision !== null) {
-        setSeparateRewardsDecision(null);
-        setError(null);
-      }
+    if (!talentUuid) {
       return;
     }
 
+    // If we have cached data and shouldn't use snapshot, use it
+    if (isInTop200 && !shouldUseSnapshot) {
+      return;
+    }
+
+    // Otherwise, fetch from database
     const fetchRewardsDecision = async () => {
       setLoading(true);
       setError(null);
@@ -76,21 +84,38 @@ export function useUserRewardsDecision(
       } catch (err) {
         console.error("Error fetching rewards decision status:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
-        setSeparateRewardsDecision(null); // Default to no decision on error
+        setSeparateRewardsDecision(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRewardsDecision();
-  }, [talentUuid, isInTop200]);
+  }, [talentUuid, isInTop200, shouldUseSnapshot]);
 
-  // Return combined status based on data source
-  const rewardsDecision: RewardsDecision = isInTop200
-    ? top200OptOutStatus
-      ? "opted_out"
-      : "opted_in"
-    : separateRewardsDecision || null;
+  // Determine the best data source
+  let rewardsDecision: RewardsDecision;
+
+  if (shouldUseSnapshot) {
+    // TODO: After ROUND_ENDS_AT: Use snapshot data (most accurate)
+    // This will be implemented when LeaderboardSnapshotService is ready
+    rewardsDecision = separateRewardsDecision || null;
+  } else if (isInTop200 && userTop200Entry) {
+    // Before ROUND_ENDS_AT: Use cached leaderboard data (fastest)
+    // Note: This only knows about opted-out users, not opted-in users
+    // So we need to handle the "unknown" case properly
+    const top200OptOutStatus = userTop200Entry.isOptedOut;
+    if (top200OptOutStatus === true) {
+      rewardsDecision = "opted_out";
+    } else {
+      // User hasn't opted out, but we don't know if they've opted in
+      // Fall back to database data
+      rewardsDecision = separateRewardsDecision || null;
+    }
+  } else {
+    // Non-top-200 users: Use database data
+    rewardsDecision = separateRewardsDecision || null;
+  }
 
   const isOptedOut = rewardsDecision === "opted_out";
   const isOptedIn = rewardsDecision === "opted_in";
@@ -103,7 +128,7 @@ export function useUserRewardsDecision(
       hasMadeDecision,
       rewardsDecision,
     },
-    loading: loading && !isInTop200, // Only show loading for non-top-200 users
+    loading: loading && !(isInTop200 && !shouldUseSnapshot), // Don't show loading for cached data
     error,
   };
 }

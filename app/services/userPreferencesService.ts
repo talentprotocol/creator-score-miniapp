@@ -17,7 +17,7 @@ export async function getUserPreferencesByTalentUuid(
   const { data, error } = await supabase
     .from("user_preferences")
     .select(
-      "creator_category, callout_prefs, rewards_decision, future_pool_contribution, how_to_earn_modal_seen",
+      "creator_category, callout_prefs, rewards_decision, future_pool_contribution, primary_wallet_address, how_to_earn_modal_seen",
     )
     .eq("talent_uuid", talentUUID)
     .single();
@@ -42,6 +42,7 @@ export async function getUserPreferencesByTalentUuid(
       (data?.rewards_decision as UserPreferencesResponse["rewards_decision"]) ??
       null,
     future_pool_contribution: (data?.future_pool_contribution as number) ?? 0,
+    primary_wallet_address: data?.primary_wallet_address ?? undefined,
     how_to_earn_modal_seen: (data?.how_to_earn_modal_seen as boolean) ?? false,
   };
 }
@@ -61,6 +62,8 @@ export async function updateUserPreferencesAtomic(
       permanentlyHiddenIds: new Set(current.callout_prefs.permanentlyHiddenIds),
     },
     rewards_decision: req.rewards_decision ?? current.rewards_decision ?? null,
+    primary_wallet_address:
+      req.primary_wallet_address ?? current.primary_wallet_address ?? undefined,
     how_to_earn_modal_seen:
       req.how_to_earn_modal_seen ?? current.how_to_earn_modal_seen ?? false,
   } as {
@@ -70,6 +73,7 @@ export async function updateUserPreferencesAtomic(
       permanentlyHiddenIds: Set<string>;
     };
     rewards_decision: UserPreferencesResponse["rewards_decision"];
+    primary_wallet_address?: string;
     how_to_earn_modal_seen: boolean;
   };
 
@@ -92,6 +96,7 @@ export async function updateUserPreferencesAtomic(
       permanentlyHiddenIds: Array.from(next.callout_prefs.permanentlyHiddenIds),
     },
     rewards_decision: next.rewards_decision,
+    primary_wallet_address: next.primary_wallet_address,
     how_to_earn_modal_seen: next.how_to_earn_modal_seen,
     updated_at: new Date().toISOString(),
     decision_made_at: undefined as string | undefined,
@@ -109,7 +114,7 @@ export async function updateUserPreferencesAtomic(
     .from("user_preferences")
     .upsert(payload, { onConflict: "talent_uuid" })
     .select(
-      "creator_category, callout_prefs, rewards_decision, future_pool_contribution, how_to_earn_modal_seen, updated_at",
+      "creator_category, callout_prefs, rewards_decision, future_pool_contribution, primary_wallet_address, how_to_earn_modal_seen, updated_at",
     )
     .single();
 
@@ -135,6 +140,7 @@ export async function updateUserPreferencesAtomic(
     },
     rewards_decision: data.rewards_decision,
     future_pool_contribution: data.future_pool_contribution,
+    primary_wallet_address: data.primary_wallet_address,
     how_to_earn_modal_seen: data.how_to_earn_modal_seen,
     updated_at: data.updated_at,
   };

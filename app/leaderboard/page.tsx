@@ -48,6 +48,7 @@ import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
+import { RewardsDecisionModalHandler } from "@/components/modals/RewardsDecisionModalHandler";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -764,6 +765,11 @@ function LeaderboardContent() {
             </Callout>
           </div>
         )}
+
+        {/* Rewards Decision Modal Handler */}
+        <RewardsDecisionModalHandler
+          userTop200Entry={userTop200Entry || undefined}
+        />
       </Section>
     </PageContainer>
   );
