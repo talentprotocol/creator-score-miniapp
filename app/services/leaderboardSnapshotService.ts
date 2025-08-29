@@ -124,9 +124,7 @@ export class LeaderboardSnapshotService {
    */
   static async snapshotExists(): Promise<boolean> {
     try {
-      console.log(
-        `[LeaderboardSnapshotService] Checking if snapshot exists`,
-      );
+      console.log(`[LeaderboardSnapshotService] Checking if snapshot exists`);
 
       const { count, error } = await this.supabase
         .from("leaderboard_snapshots")
@@ -182,34 +180,5 @@ export class LeaderboardSnapshotService {
     }
   }
 
-  /**
-   * Delete the snapshot (use with caution)
-   */
-  static async deleteSnapshot(): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Delete all records from the table
-      const { error } = await this.supabase
-        .from("leaderboard_snapshots")
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000"); // Always false, but satisfies WHERE requirement
-
-      if (error) {
-        console.error("Error deleting snapshot:", error);
-        return {
-          success: false,
-          error: `Failed to delete snapshot: ${error.message}`,
-        };
-      }
-
-      console.log(`Deleted leaderboard snapshot`);
-      return { success: true };
-    } catch (error) {
-      console.error("Unexpected error deleting snapshot:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
 
 }

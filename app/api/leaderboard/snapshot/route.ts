@@ -10,10 +10,7 @@ export async function GET() {
     // Check if snapshot exists
     const exists = await LeaderboardSnapshotService.snapshotExists();
     if (!exists) {
-      return NextResponse.json(
-        { error: "No snapshot found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "No snapshot found" }, { status: 404 });
     }
 
     // Get snapshot data
@@ -57,6 +54,15 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    // API key authentication
+    const apiKey = request.headers.get('x-api-key');
+    if (apiKey !== process.env.SNAPSHOT_API_KEY) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { entries } = body;
 
@@ -69,10 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate entries structure
-    const requiredFields = [
-      "rank",
-      "id",
-    ];
+    const requiredFields = ["rank", "id"];
     const isValidEntry = (entry: Record<string, unknown>) => {
       return requiredFields.every((field) => entry.hasOwnProperty(field));
     };
@@ -124,40 +127,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * DELETE /api/leaderboard/snapshot
- * Delete a snapshot for a specific round (use with caution)
- */
-export async function DELETE() {
-  try {
-    // Check if snapshot exists
-    const exists = await LeaderboardSnapshotService.snapshotExists();
-    if (!exists) {
-      return NextResponse.json(
-        { error: "No snapshot found" },
-        { status: 404 },
-      );
-    }
 
-    // Delete snapshot
-    const result = await LeaderboardSnapshotService.deleteSnapshot();
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error || "Failed to delete snapshot" },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Successfully deleted snapshot`,
-    });
-  } catch (error) {
-    console.error("Error in snapshot DELETE endpoint:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
