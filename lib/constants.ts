@@ -235,6 +235,11 @@ export const TOTAL_SPONSORS_POOL = ACTIVE_SPONSORS.reduce(
 
 export const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
+// Rewards distribution timeline
+export const REWARDS_CONFIG = {
+  DECISION_DEADLINE: new Date(Date.UTC(2025, 8, 15, 23, 59, 59)), // September 15th, 11:59 PM UTC
+} as const;
+
 // Creator Perk (Draw) timeline - DISABLED: Perk system is currently inactive
 // Entries close on Aug 22nd 14:59 UTC, winners drawn on Aug 22nd 15:00 UTC
 // TODO: Update dates when perk system is re-enabled

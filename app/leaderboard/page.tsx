@@ -768,7 +768,12 @@ function LeaderboardContent() {
 
         {/* Rewards Decision Modal Handler */}
         <RewardsDecisionModalHandler
-          userTop200Entry={userTop200Entry || undefined}
+          userRank={userTop200Entry?.rank}
+          userEarnings={
+            userTop200Entry?.boostedReward || userTop200Entry?.baseReward
+          }
+          hasVerifiedWallets={true} // TODO: Implement wallet verification check
+          optedOutPercentage={undefined} // TODO: Calculate from database
         />
       </Section>
     </PageContainer>

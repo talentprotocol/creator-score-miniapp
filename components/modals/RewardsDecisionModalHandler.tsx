@@ -1,65 +1,39 @@
 "use client";
 
-import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
-import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
-import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import { LeaderboardEntry } from "@/app/services/types";
+import { useAutoModal } from "@/hooks/useAutoModal";
+import { RewardsDecisionModal } from "./RewardsDecisionModal";
 
 interface RewardsDecisionModalHandlerProps {
-  userTop200Entry?: LeaderboardEntry;
+  userRank?: number;
+  userEarnings?: number;
+  hasVerifiedWallets?: boolean;
+  optedOutPercentage?: number;
 }
 
 export function RewardsDecisionModalHandler({
-  userTop200Entry,
+  userRank,
+  userEarnings,
+  hasVerifiedWallets = true,
+  optedOutPercentage,
 }: RewardsDecisionModalHandlerProps) {
-  const { talentUuid } = useFidToTalentUuid();
-
-  // Check if user has made a rewards decision
-  const { data: rewardsDecision, loading } = useUserRewardsDecision(
-    talentUuid,
-    userTop200Entry,
-  );
-
-  // Debug logging
-  console.log("[RewardsDecisionModalHandler] Debug info:", {
-    userTop200Entry,
-    talentUuid,
-    rewardsDecision,
-    loading,
-    hasUserTop200Entry: Boolean(userTop200Entry),
-    hasMadeDecision: rewardsDecision.hasMadeDecision,
-    shouldShow: Boolean(
-      userTop200Entry &&
-        !rewardsDecision.hasMadeDecision &&
-        !loading &&
-        talentUuid,
-    ),
+  const { onOpenChange } = useAutoModal({
+    storageKey: "rewards-decision",
+    databaseField: "rewards_decision_modal_seen",
+    autoOpen: false, // Don't auto-open for now
   });
 
-  // Only show modal if:
-  // 1. User is in top 200 (has userTop200Entry)
-  // 2. User hasn't made a decision yet
-  // 3. Not loading
-  const shouldShowModal = Boolean(
-    userTop200Entry &&
-      !rewardsDecision.hasMadeDecision &&
-      !loading &&
-      talentUuid,
-  );
-
-  // Get user's rank from leaderboard entry
-  const userRank = userTop200Entry?.rank;
-
-  if (!shouldShowModal) {
-    return null;
-  }
+  // For testing, we'll always show the modal
+  // TODO: Implement proper logic to check if user is in top 200
+  const modalOpen = true;
 
   return (
     <RewardsDecisionModal
-      open={shouldShowModal}
-      onOpenChange={() => {}} // No-op for now
-      talentUuid={talentUuid!}
+      open={modalOpen}
+      onOpenChange={onOpenChange}
       userRank={userRank}
+      userEarnings={userEarnings}
+      hasVerifiedWallets={hasVerifiedWallets}
+      optedOutPercentage={optedOutPercentage}
     />
   );
 }

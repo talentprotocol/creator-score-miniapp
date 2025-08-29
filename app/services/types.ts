@@ -112,6 +112,21 @@ export type LeaderboardEntry = {
   boostedReward?: number;
 };
 
+// Leaderboard snapshot types for frozen data storage
+export interface LeaderboardSnapshot {
+  id: string;
+  talent_uuid: string;
+  rank: number;
+  rewards_amount: number;
+  created_at: string;
+}
+
+export interface LeaderboardSnapshotResponse {
+  snapshots: LeaderboardSnapshot[];
+  total_count: number;
+  created_at: string;
+}
+
 // Wallet account types for Talent Protocol API
 export interface WalletAccount {
   identifier: string; // wallet address
