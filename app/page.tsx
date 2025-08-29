@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: frameMetadata.ogImageUrl,
           width: 1600,
           height: 900,
-          alt: "Creator Score Mini App",
+          alt: "Creator Score App",
         },
       ],
       type: "website",

@@ -30,9 +30,24 @@ The app operates as a mobile-first web application built on Next.js, designed to
 ### Advanced Features
 - **TALENT Token Integration**: 10% reward boost for users holding 100+ TALENT tokens
 - **Pay It Forward**: Creators can opt out of rewards to redistribute them to other creators while maintaining leaderboard position
-- **Badge System**: Achievement-based badges for milestones in creator score, earnings, and platform engagement
+- **Badge System**: Dynamic achievement badges for creator milestones with 6-level progression system
 - **Multi-Platform Support**: Integration with Ethereum, Base, Farcaster, Lens, Twitter, GitHub, and other social platforms
 - **Notification System**: In-app notifications and webhook support for real-time updates
+
+### Badge System
+The badge system provides gamified achievement tracking with dynamic 6-level progression across multiple categories. Badges automatically unlock based on user metrics and provide visual progress tracking with custom artwork.
+
+**Core Features:**
+- **Dynamic Progression**: Single badge per category with 6 unlockable levels based on thresholds
+- **Multiple Categories**: Trophies (Creator Score, Streaks), Records (Earnings, Followers), Special (Platform badges)
+- **Visual Progress**: Progress bars and artwork for both earned and locked states
+- **Real-time Updates**: Badges update automatically as users achieve new milestones
+- **Mobile-First Design**: Responsive 3-column grid with touch interactions
+
+**Badge Categories:**
+- **Trophies**: Creator Score levels, Daily/Weekly streaks, Pay It Forward opt-out
+- **Records**: Total earnings ($10-$100k), Total followers (100-250k), Total collectors
+- **Special**: Talent Protocol ($TALENT holdings), Base Network (transaction count)
 
 ### Pay It Forward System
 The Pay It Forward feature transforms the leaderboard from purely competitive to community-driven, allowing creators to give back while receiving social recognition for their generosity.
@@ -105,6 +120,6 @@ The app operates within the Talent Protocol ecosystem, where:
 - ✅ TALENT token boost integration
 - ✅ Multi-platform credential tracking
 - ✅ Pay It Forward (rewards opt-out) system
-- 🔄 Badge system (Phase 1 - Database & Core Logic)
+- ✅ Badge system with dynamic 6-level progression
 
 The app serves as a critical infrastructure piece for the creator economy, providing transparency, gamification, and financial incentives for quality content creation across onchain platforms.

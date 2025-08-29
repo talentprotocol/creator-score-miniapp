@@ -1,4 +1,4 @@
-# Creator Score Mini App - Design System
+# Creator Score App - Design System
 
 ## Core Principles
 
@@ -84,14 +84,27 @@
 ## Layout Standards
 
 ### Page Structure
-Every page follows this pattern:
+**All pages use `PageContainer` + `Section` components for consistent layout and spacing.**
+
+**Single Pattern (All Pages):**
 ```tsx
-<PageContainer noPadding>
-  <Section variant="header">     {/* Title and context */}
-  <Section variant="full-width"> {/* Tabs, navigation */}
-  <Section variant="content">    {/* Main content */}
+<PageContainer>
+  <Section variant="header">Title & context</Section>
+  <Section variant="full-width">Tabs/dividers (edge-to-edge)</Section>
+  <Section variant="content">Main content</Section>
 </PageContainer>
 ```
+
+**Section variants handle all padding:**
+- **`header`**: `px-4 pt-6 pb-3` - Page titles and context
+- **`content`**: `px-4 py-4` - Main content with padding
+- **`full-width`**: `w-full` - Edge-to-edge elements (tabs, dividers)
+
+**PageContainer provides:**
+- **Layout structure**: `min-h-screen` + `overflow-y-auto` + `relative`
+- **Max-width constraint**: `max-w-xl` (576px) for consistent mobile design
+- **Responsive bottom spacing**: `pb-24` (mobile) + `md:pb-4` (desktop)
+- **No horizontal padding**: Section variants handle all content spacing
 
 ### Spacing Scale
 - **Large**: `mb-6 sm:mb-8`

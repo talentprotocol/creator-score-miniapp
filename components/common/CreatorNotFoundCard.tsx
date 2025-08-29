@@ -49,7 +49,7 @@ export function CreatorNotFoundCard() {
             </Button>
           </div>
           <div className="pt-4 text-xs text-muted-foreground">
-            Redirecting to home in {countdown} second
+            Redirecting to leaderboard in {countdown} second
             {countdown !== 1 ? "s" : ""}...
           </div>
         </Card>

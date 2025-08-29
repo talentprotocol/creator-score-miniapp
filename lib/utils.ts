@@ -147,6 +147,74 @@ export function convertPolToUsdc(polAmount: number, polPrice: number): number {
   return polAmount * polPrice;
 }
 
+/**
+ * Smart number formatter that intelligently handles decimal precision
+ * - 1-digit K/M/B: Always show 2 decimals (5.00K, 5.53K)
+ * - 2+ digit K/M/B: Show max 1 decimal (15K, 15.5K, 15.53K)
+ * - Rounds .5 and above up, below .5 down
+ * - Removes trailing zeros
+ */
+export function formatNumberSmart(num: number): string {
+  // Handle invalid numbers
+  if (isNaN(num) || !isFinite(num)) {
+    return "—";
+  }
+
+  // Handle negative numbers
+  if (num < 0) {
+    return "—";
+  }
+
+  // Handle exactly 0
+  if (num === 0) {
+    return "0";
+  }
+
+  // Billions
+  if (num >= 1_000_000_000) {
+    const billions = num / 1_000_000_000;
+    if (billions < 10) {
+      // 1-digit B: always show 2 decimals
+      return `${billions.toFixed(2)}B`;
+    } else {
+      // 2+ digit B: show max 1 decimal
+      const rounded = Math.round(billions * 10) / 10;
+      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}B`;
+    }
+  }
+
+  // Millions
+  if (num >= 1_000_000) {
+    const millions = num / 1_000_000;
+    if (millions < 10) {
+      // 1-digit M: always show 2 decimals
+      return `${millions.toFixed(2)}M`;
+    } else {
+      // 2+ digit M: show max 1 decimal
+      const rounded = Math.round(millions * 10) / 10;
+      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+    }
+  }
+
+  // Thousands
+  if (num >= 10_000) {
+    const thousands = num / 1_000;
+    if (thousands < 10) {
+      // 1-digit K: always show 2 decimals
+      return `${thousands.toFixed(2)}K`;
+    } else {
+      // 2+ digit K: show max 1 decimal
+      const rounded = Math.round(thousands * 10) / 10;
+      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+    }
+  }
+
+  // For numbers under 10,000, round to nearest integer
+  const rounded = Math.round(num);
+  // Add comma only for 4-digit numbers
+  return rounded >= 1000 ? rounded.toLocaleString() : `${rounded}`;
+}
+
 export function formatNumberWithSuffix(num: number): string {
   // Handle invalid numbers - return error indicator instead of $0
   if (isNaN(num) || !isFinite(num)) {
@@ -163,46 +231,31 @@ export function formatNumberWithSuffix(num: number): string {
     return "$0";
   }
 
-  if (num >= 1_000_000_000) {
-    return `$${(num / 1_000_000_000).toFixed(2)}B`;
-  }
-  if (num >= 1_000_000) {
-    return `$${(num / 1_000_000).toFixed(2)}M`;
-  }
-  if (num >= 10_000) {
-    return `$${(num / 1_000).toFixed(2)}K`;
-  }
-  // For numbers under 10,000, round to nearest integer
-  const rounded = Math.round(num);
-  // Add comma only for 4-digit numbers
-  return `$${rounded >= 1000 ? rounded.toLocaleString() : rounded}`;
+  // Use the new smart formatter and add $ prefix
+  return `$${formatNumberSmart(num)}`;
 }
 
 /**
  * Calculate total earnings from credentials by summing up creator earnings
  * and converting ETH to USDC using current market price.
  *
+ * UPDATED: Now follows project rule to ignore points_calculation_logic
+ * and uses only top-level credential fields (slug, readable_value, uom).
+ *
  * FIXED: Previously had a data structure mismatch where currency detection
  * was checking readable_value (e.g., "2.67") for "ETH" instead of the
  * original value field (e.g., "1.6341052597675584 ETH"). Now correctly uses:
  * - readable_value for clean numeric amount
- * - original value field for currency detection
+ * - uom field for currency detection
  *
  * UPDATED: Now uses credential slugs instead of names for reliable earnings
  * detection, preventing issues with display name variations.
  */
 export async function calculateTotalRewards(
   credentials: Array<{
-    name: string;
     slug?: string;
-    points_calculation_logic?: {
-      data_points: Array<{
-        name?: string;
-        value: string | null;
-        readable_value: string | null;
-        uom?: string | null;
-      }>;
-    };
+    readable_value: string | null;
+    uom: string | null;
   }>,
   getEthUsdcPriceFn: () => Promise<number>,
 ): Promise<number> {
@@ -215,42 +268,31 @@ export async function calculateTotalRewards(
     if (!isEarnings) {
       return sum;
     }
-    if (!credential.points_calculation_logic?.data_points) {
+
+    if (!credential.readable_value) {
       return sum;
     }
-    const credentialTotal =
-      credential.points_calculation_logic.data_points.reduce(
-        (acc, dataPoint) => {
-          if (!dataPoint.readable_value && !dataPoint.value) {
-            return acc;
-          }
-          const cleanValue = dataPoint.readable_value || dataPoint.value || "";
-          const originalValue = dataPoint.value || "";
-          let value: number;
-          const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
-          if (numericValue.includes("K")) {
-            value = parseFloat(numericValue.replace("K", "")) * 1000;
-          } else if (numericValue.includes("M")) {
-            value = parseFloat(numericValue.replace("M", "")) * 1000000;
-          } else {
-            value = parseFloat(numericValue);
-          }
-          if (isNaN(value)) {
-            return acc;
-          }
-          let contribution = 0;
-          // This fixes the issue where readable_value (e.g., "2.67") was being checked for "ETH"
-          // instead of the original value field (e.g., "1.6341052597675584 ETH")
-          if (originalValue.includes("ETH")) {
-            contribution = convertEthToUsdc(value, ethPrice);
-          } else if (originalValue.includes("USDC")) {
-            contribution = value;
-          }
-          return acc + contribution;
-        },
-        0,
-      );
-    return sum + credentialTotal;
+
+    // Use the existing parseFormattedNumber utility for consistent parsing
+    const value = parseFormattedNumber(credential.readable_value);
+    if (isNaN(value)) {
+      return sum;
+    }
+
+    let contribution = 0;
+    const uom = credential.uom || "";
+
+    // Handle different UOMs (ETH, USDC, USD)
+    if (uom === "ETH") {
+      contribution = convertEthToUsdc(value, ethPrice);
+    } else if (uom === "USDC" || uom === "USD") {
+      contribution = value;
+    } else {
+      // For unknown UOMs, assume USD
+      contribution = value;
+    }
+
+    return sum + contribution;
   }, 0);
 
   return total;
@@ -326,10 +368,34 @@ export function formatReadableValue(
 
   // Currency: USDC/USD
   if (uom === "USDC" || uom === "USD") {
-    // Use 1 decimal for non-integers, 0 decimals for whole numbers
-    if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(1)}B`;
-    if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 10_000) return `$${(num / 1_000).toFixed(1)}K`;
+    // Use consistent logic with the smart formatter
+    if (num >= 1_000_000_000) {
+      const billions = num / 1_000_000_000;
+      if (billions < 10) {
+        return `$${billions.toFixed(2)}B`;
+      } else {
+        const rounded = Math.round(billions * 10) / 10;
+        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}B`;
+      }
+    }
+    if (num >= 1_000_000) {
+      const millions = num / 1_000_000;
+      if (millions < 10) {
+        return `$${millions.toFixed(2)}M`;
+      } else {
+        const rounded = Math.round(millions * 10) / 10;
+        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+      }
+    }
+    if (num >= 10_000) {
+      const thousands = num / 1_000;
+      if (thousands < 10) {
+        return `$${thousands.toFixed(2)}K`;
+      } else {
+        const rounded = Math.round(thousands * 10) / 10;
+        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      }
+    }
     return Number.isInteger(num) ? `$${num.toFixed(0)}` : `$${num.toFixed(1)}`;
   }
 
@@ -348,19 +414,41 @@ export function formatReadableValue(
     "points",
   ]);
   if (uom && COUNT_UOMS.has(uom)) {
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    if (num >= 1000) {
+      const thousands = num / 1000;
+      if (thousands < 10) {
+        return `${thousands.toFixed(2)}K`;
+      } else {
+        const rounded = Math.round(thousands * 10) / 10;
+        return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      }
+    }
     return Math.round(num).toString();
   }
 
   // Token-like units (e.g., $TALENT, $KAITO, $WCT)
   if (uom && uom.startsWith("$")) {
-    if (num >= 1000) return `${(num / 1000).toFixed(2)}K`;
+    if (num >= 1000) {
+      const thousands = num / 1000;
+      if (thousands < 10) {
+        return `${thousands.toFixed(2)}K`;
+      } else {
+        const rounded = Math.round(thousands * 10) / 10;
+        return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      }
+    }
     return num >= 1 ? num.toFixed(2) : num.toFixed(3);
   }
 
   // Generic numeric formatting
   if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
+    const thousands = num / 1000;
+    if (thousands < 10) {
+      return `${thousands.toFixed(2)}K`;
+    } else {
+      const rounded = Math.round(thousands * 10) / 10;
+      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+    }
   }
   // For small generic numbers, trim excessive precision
   return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
@@ -657,7 +745,13 @@ export function formatPostDate(dateString: string): string {
 // Helper to format numbers with K notation (2 decimals)
 export function formatWithK(value: number): string {
   if (value >= 1000) {
-    return `${(value / 1000).toFixed(2)}K`;
+    const thousands = value / 1000;
+    if (thousands < 10) {
+      return `${thousands.toFixed(2)}K`;
+    } else {
+      const rounded = Math.round(thousands * 10) / 10;
+      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+    }
   }
   return value.toString();
 }
@@ -677,17 +771,8 @@ export function formatCompactNumber(amount: number): string {
   if (amount < 0) return "—";
   if (amount === 0) return "0";
 
-  if (amount >= 1_000_000_000) {
-    return `${(amount / 1_000_000_000).toFixed(2)}B`;
-  }
-  if (amount >= 1_000_000) {
-    return `${(amount / 1_000_000).toFixed(2)}M`;
-  }
-  if (amount >= 10_000) {
-    return `${(amount / 1_000).toFixed(2)}K`;
-  }
-  const rounded = Math.round(amount);
-  return rounded >= 1000 ? rounded.toLocaleString() : `${rounded}`;
+  // Use the new smart formatter for consistency
+  return formatNumberSmart(amount);
 }
 
 // USD-specific compact formatter (kept for backward compatibility with existing usages)

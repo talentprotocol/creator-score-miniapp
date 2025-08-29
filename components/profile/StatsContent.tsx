@@ -79,12 +79,6 @@ export function StatsContent() {
   const typedEarningsBreakdown = earningsBreakdown as any;
 
   // No loading states needed - data comes from server
-  const postsLoading = false;
-  const socialAccountsLoading = false;
-  const earningsLoading = false;
-  const postsError = null;
-  const socialAccountsError = null;
-  const earningsError = null;
 
   // Process followers breakdown with URLs
   const processFollowersBreakdown = () => {
@@ -220,9 +214,25 @@ export function StatsContent() {
     };
   };
 
+  // Process collectors breakdown from server data
+  const processCollectorsBreakdown = () => {
+    if (!profileData.collectorsBreakdown) {
+      return {
+        totalCollectors: 0,
+        segments: [],
+      };
+    }
+
+    return {
+      totalCollectors: profileData.collectorsBreakdown.totalCollectors || 0,
+      segments: profileData.collectorsBreakdown.segments || [],
+    };
+  };
+
   const followersBreakdown = processFollowersBreakdown();
   const earningsBreakdownWithUrls = processEarningsBreakdown();
   const postsBreakdown = processPostsBreakdown();
+  const collectorsBreakdown = processCollectorsBreakdown();
 
   return (
     <div className="space-y-6">
@@ -232,8 +242,17 @@ export function StatsContent() {
         segments={earningsBreakdownWithUrls?.segments || []}
         color="green"
         formatValue={formatRewardValue}
-        loading={earningsLoading}
-        error={earningsError}
+        loading={false}
+        error={null}
+      />
+      <SegmentedBar
+        title="Total Collectors"
+        total={collectorsBreakdown.totalCollectors}
+        segments={collectorsBreakdown.segments}
+        color="purple"
+        formatValue={(value) => value.toLocaleString()}
+        loading={false}
+        error={null}
       />
       <SegmentedBar
         title="Total Followers"
@@ -241,8 +260,8 @@ export function StatsContent() {
         segments={followersBreakdown.segments}
         color="pink"
         formatValue={(value) => value.toLocaleString()}
-        loading={socialAccountsLoading}
-        error={socialAccountsError}
+        loading={false}
+        error={null}
       />
       <SegmentedBar
         title="Total Posts"
@@ -250,8 +269,8 @@ export function StatsContent() {
         segments={postsBreakdown.segments}
         color="blue"
         formatValue={(value) => value.toLocaleString()}
-        loading={postsLoading}
-        error={postsError}
+        loading={false}
+        error={null}
       />
     </div>
   );

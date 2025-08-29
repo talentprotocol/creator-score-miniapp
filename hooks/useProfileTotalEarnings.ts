@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import {
-  getEthUsdcPrice,
-  convertEthToUsdc,
   getCachedData,
   setCachedData,
   CACHE_DURATIONS,
   formatNumberWithSuffix,
+  calculateTotalRewards,
+  getEthUsdcPrice,
 } from "@/lib/utils";
-import { isEarningsCredential } from "@/lib/total-earnings-config";
 import { useProfileCredentials } from "./useProfileCredentials";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 
@@ -68,59 +67,19 @@ export function useProfileTotalEarnings(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        // Match earnings calculation logic used in app/[identifier]/layout.tsx
-        const ethPrice = await getEthUsdcPrice();
+        // Transform credentials to match calculateTotalRewards signature
+        const transformedCredentials = credentialsGroups.flatMap((group) =>
+          group.points.map((point) => ({
+            slug: point.slug,
+            readable_value: point.readable_value,
+            uom: point.uom,
+          })),
+        );
 
-        const issuerTotals = new Map<string, number>();
-
-        credentialsGroups.forEach((credentialGroup) => {
-          // Check if this group contains any earnings-related credentials
-          const hasEarningsCredentials = credentialGroup.points.some((point) =>
-            isEarningsCredential(point.slug || ""),
-          );
-
-          if (!hasEarningsCredentials) return;
-
-          let issuerTotal = 0;
-
-          credentialGroup.points.forEach((point) => {
-            if (!isEarningsCredential(point.slug || "")) return;
-            if (!point.readable_value) return;
-
-            // Parse credential-level readable_value only
-            const cleanValue = point.readable_value;
-            const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
-
-            let value: number;
-            if (numericValue.includes("K")) {
-              value = parseFloat(numericValue.replace("K", "")) * 1000;
-            } else if (numericValue.includes("M")) {
-              value = parseFloat(numericValue.replace("M", "")) * 1000000;
-            } else {
-              value = parseFloat(numericValue);
-            }
-
-            if (isNaN(value)) return;
-
-            let usdValue = 0;
-            const uom = point.uom || "";
-            if (uom === "ETH") {
-              usdValue = convertEthToUsdc(value, ethPrice);
-            } else if (uom === "USDC" || uom === "USD") {
-              usdValue = value;
-            }
-
-            issuerTotal += usdValue;
-          });
-
-          if (issuerTotal > 0) {
-            issuerTotals.set(credentialGroup.issuer, issuerTotal);
-          }
-        });
-
-        const total = Array.from(issuerTotals.values()).reduce(
-          (sum, value) => sum + value,
-          0,
+        // Use the shared calculateTotalRewards function for consistent earnings calculation
+        const total = await calculateTotalRewards(
+          transformedCredentials,
+          getEthUsdcPrice,
         );
 
         setTotalEarnings(total);

@@ -40,7 +40,7 @@ export function ExploreLayout({ children }: ExploreLayoutProps) {
   };
 
   return (
-    <PageContainer noPadding>
+    <PageContainer>
       {/* Header section */}
       <Section variant="header">
         <SearchBar

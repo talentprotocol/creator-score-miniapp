@@ -124,7 +124,7 @@ export function useProfileActions({
     const profileUrl = `${window.location.origin}/${talentUUID}`;
 
     // Create platform-specific share text
-    const farcasterText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score mini app, built by @talent 👇`;
+    const farcasterText = `Check @${farcasterHandle}'s reputation as an onchain creator:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nSee the full profile in the Creator Score app, built by @talent 👇`;
 
     const twitterText = `Check ${profile?.display_name || profile?.name || "Creator"}'s onchain creator stats:\n\n📊 Creator Score: ${scoreText}\n🫂 Total Followers: ${followersText}\n💰 Total Earnings: ${earningsText}\n\nTrack your reputation in the Creator Score App, built by @TalentProtocol 👇`;
 

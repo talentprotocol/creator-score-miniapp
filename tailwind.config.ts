@@ -39,6 +39,14 @@ const config: Config = {
     "bg-green-500",
     "bg-blue-500",
     "bg-pink-500",
+
+    // Badge level progression colors (dynamically constructed in getBadgeProgressColor)
+    "bg-badge-level-1",
+    "bg-badge-level-2",
+    "bg-badge-level-3",
+    "bg-badge-level-4",
+    "bg-badge-level-5",
+    "bg-badge-level-6",
   ],
   theme: {
     extend: {

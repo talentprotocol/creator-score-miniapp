@@ -32,7 +32,7 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
         const { sdk } = await import("@farcaster/frame-sdk");
 
         await sdk.actions.composeCast({
-          text: "Check out my creator stats in the Creator Score mini app! 📊",
+          text: "Check out my creator stats in the Creator Score app! 📊",
           embeds: [`https://creatorscore.app/${talentUuid}`],
         });
       } catch (error) {

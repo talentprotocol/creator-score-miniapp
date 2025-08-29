@@ -32,6 +32,14 @@
     --creator-green: 142 76% 36%;   /* green-600 #16a34a */  
     --creator-blue: 197 71% 40%;    /* cyan-600 #0891b2 */
     --creator-pink: 327 73% 50%;    /* pink-600 #db2777 */
+
+    /* Badge Level Progression Colors */
+    --badge-level-1: 217 91% 60%;   /* blue-500 #3b82f6 */
+    --badge-level-2: 197 71% 40%;   /* cyan-600 #0891b2 (existing brand-blue) */
+    --badge-level-3: 142 76% 36%;   /* green-600 #16a34a (existing brand-green) */
+    --badge-level-4: 48 96% 53%;    /* yellow-500 #eab308 */
+    --badge-level-5: 20 91% 48%;    /* orange-600 #ea580c */
+    --badge-level-6: 258 90% 66%;   /* purple-600 #9333ea (existing brand-purple) */
   }
  
   .dark {
@@ -89,6 +97,14 @@
   .bg-brand-pink { background-color: hsl(var(--creator-pink)); }
   .bg-brand-pink-light { background-color: hsl(var(--creator-pink) / 0.1); }
   .bg-brand-pink-dark { background-color: hsl(var(--creator-pink) / 0.2); }
+
+  /* Badge Level Progression Utilities */
+  .bg-badge-level-1 { background-color: hsl(var(--badge-level-1)); }
+  .bg-badge-level-2 { background-color: hsl(var(--badge-level-2)); }
+  .bg-badge-level-3 { background-color: hsl(var(--badge-level-3)); }
+  .bg-badge-level-4 { background-color: hsl(var(--badge-level-4)); }
+  .bg-badge-level-5 { background-color: hsl(var(--badge-level-5)); }
+  .bg-badge-level-6 { background-color: hsl(var(--badge-level-6)); }
   
   /* Semantic state colors - using existing brand colors where possible */
   .text-success { color: hsl(var(--creator-green)); }

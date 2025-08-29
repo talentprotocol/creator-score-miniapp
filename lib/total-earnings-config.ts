@@ -1,11 +1,13 @@
-// Configuration for which credentials count toward "Total Earnings" calculation
-// Separates creator earnings from collector earnings and portfolio metrics
+// Configuration for credential categorization in badge calculations
+// Separates creator earnings, collector earnings, collector counts, and portfolio metrics
 
 export interface TotalEarningsConfig {
   // Credentials that count as creator earnings (from creating content)
   creatorEarnings: string[];
   // Credentials that count as collector/curator earnings (from collecting/referring)
   collectorEarnings: string[];
+  // Credentials that represent collector counts (for Total Collectors badge)
+  collectorCounts: string[];
   // Credentials that are portfolio metrics (don't count as earnings)
   portfolioMetrics: string[];
 }
@@ -32,6 +34,15 @@ export const TOTAL_EARNINGS_CONFIG: TotalEarningsConfig = {
     "mirror_referral_rewards", // Earned by referring collectors, not creating
     "zora_referral_rewards", // Zora referral rewards
     // Add other collector earnings credentials as they're discovered
+  ],
+
+  // These credentials represent collector counts (for Total Collectors badge)
+  collectorCounts: [
+    "coop_records_holders",
+    "mirror_unique_collectors",
+    "opensea_nft_total_owners",
+    "paragraph_unique_collectors",
+    "zora_unique_holders",
   ],
 
   // These are portfolio/activity metrics, not earnings (using slugs)
@@ -107,8 +118,31 @@ export function getCollectorEarningsCredentials(): string[] {
 }
 
 /**
+ * Get all collector count credential slugs (for Total Collectors badge)
+ */
+export function getCollectorCountCredentials(): string[] {
+  return TOTAL_EARNINGS_CONFIG.collectorCounts;
+}
+
+/**
  * Get all portfolio metric credential slugs
  */
 export function getPortfolioMetricCredentials(): string[] {
   return TOTAL_EARNINGS_CONFIG.portfolioMetrics;
+}
+
+// Platform display name mappings for collector count credentials
+export const PLATFORM_NAME_MAPPINGS: Record<string, string> = {
+  coop_records_holders: "Coop Records",
+  mirror_unique_collectors: "Mirror",
+  opensea_nft_total_owners: "OpenSea",
+  paragraph_unique_collectors: "Paragraph",
+  zora_unique_holders: "Zora",
+};
+
+/**
+ * Get the display name for a credential slug
+ */
+export function getPlatformDisplayName(credentialSlug: string): string {
+  return PLATFORM_NAME_MAPPINGS[credentialSlug] || credentialSlug;
 }

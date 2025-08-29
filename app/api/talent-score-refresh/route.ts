@@ -24,13 +24,7 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Refresh token balance (server-side)
     try {
-      const apiKey = process.env.TALENT_API_KEY;
-      if (apiKey) {
-        await getTokenBalanceForProfileManual(
-          String(talent_protocol_id),
-          apiKey,
-        );
-      }
+      await getTokenBalanceForProfileManual(String(talent_protocol_id));
     } catch (tokenError) {
       console.warn(`⚠️ [API] Token balance refresh failed:`, tokenError);
       // Don't fail the entire operation if token refresh fails
