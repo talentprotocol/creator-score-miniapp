@@ -263,12 +263,13 @@ export default function BadgesPage() {
           <div className="text-right">
             <Typography size="xs" color="muted">
               Last updated:{" "}
-              {new Date(badgesData.lastCalculatedAt)
-                .toLocaleDateString("en-GB", {
-                  day: "2-digit",
+              {new Date(badgesData.lastCalculatedAt).toLocaleDateString(
+                "en-US",
+                {
                   month: "short",
-                })
-                .replace(/ /g, ".")}
+                  day: "numeric",
+                },
+              )}
             </Typography>
           </div>
         )}

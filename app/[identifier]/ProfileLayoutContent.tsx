@@ -18,7 +18,12 @@ import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import { Callout } from "@/components/common/Callout";
 import { Share, RotateCcw, Loader2, AtSign } from "lucide-react";
-import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
+import {
+  ProfileProvider,
+  useProfileContext,
+  type ServerProfileData,
+  type ProfileData,
+} from "@/contexts/ProfileContext";
 import { ShareModal } from "@/components/modals/ShareModal";
 import { ShareContentGenerators } from "@/lib/sharing";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -27,33 +32,12 @@ import { useEffect } from "react";
 
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 
-interface ProfileData {
-  creatorScore: number | undefined;
-  lastCalculatedAt: string | null;
-  calculating: boolean;
-  socialAccounts: unknown[];
-  totalEarnings: number | undefined;
-  rank: number | null;
-  posts: unknown[];
-  yearlyData: { year: number; months: number[]; total: number }[];
-  credentials: unknown[];
-  earningsBreakdown: { totalEarnings: number; segments: unknown[] };
-  collectorsBreakdown: {
-    totalCollectors: number;
-    segments: Array<{
-      name: string;
-      value: number;
-      percentage: number;
-    }>;
-  };
-}
-
 interface ProfileLayoutContentProps {
   talentUUID: string;
   identifier: string;
   children: React.ReactNode;
-  profile: unknown | null; // Profile from server-side
-  profileData: ProfileData; // All profile data from server-side
+  profile: ProfileData | null; // Profile from server-side
+  profileData: ServerProfileData; // All profile data from server-side
 }
 
 function ProfileLayoutContentInner({
@@ -87,15 +71,13 @@ function ProfileLayoutContentInner({
   const earningsLoading = false;
 
   // Calculate total followers
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const totalFollowers = calculateTotalFollowers(socialAccounts as any);
+  const totalFollowers = calculateTotalFollowers(socialAccounts);
 
   // Check if user has score
   const hasNoScore = !creatorScore || creatorScore === 0;
 
   // Use profile actions hook for buttons and user logic
   const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isOwnProfile,
     isCalculatingOrRefreshing,
     isInCooldown,
@@ -166,8 +148,7 @@ function ProfileLayoutContentInner({
   const profileShareData = React.useMemo(() => {
     // Get creator type from credentials
     const categoryData = profileData?.credentials
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        processCreatorCategories(profileData.credentials as any)
+      ? processCreatorCategories(profileData.credentials)
       : null;
 
     return {
@@ -247,8 +228,7 @@ function ProfileLayoutContentInner({
           displayName={profile.display_name || undefined}
           profileImage={profile.image_url || undefined}
           bio={profile.bio || undefined}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          socialAccounts={socialAccounts as any}
+          socialAccounts={socialAccounts}
           talentUUID={talentUUID}
           isOwnProfile={!!isOwnProfile}
           hasCreatorScore={!hasNoScore}
@@ -378,8 +358,7 @@ export function ProfileLayoutContent({
 }: ProfileLayoutContentProps) {
   return (
     <ProfileProvider
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      profile={profile as any}
+      profile={profile}
       talentUUID={talentUUID}
       identifier={identifier}
       profileData={profileData}

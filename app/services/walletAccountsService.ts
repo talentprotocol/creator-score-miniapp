@@ -6,39 +6,24 @@ import type {
 
 /**
  * Fetches wallet accounts for a given Talent Protocol ID and groups them by verification source
+ * This service is called from server-side API routes only
  */
 export async function getWalletAccountsForTalentId(
   talentId: string | number,
 ): Promise<GroupedWalletAccounts> {
   try {
-    let data: WalletAccountsResponse;
+    // Server-side: call Talent API directly
+    const { talentApiClient } = await import("@/lib/talent-api-client");
 
-    if (typeof window !== "undefined") {
-      // Client-side: use API route
-      const baseUrl = "";
-      const response = await fetch(
-        `${baseUrl}/api/talent-accounts?id=${talentId}`,
-      );
+    const response = await talentApiClient.getAccounts({
+      id: String(talentId),
+    });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      data = await response.json();
-    } else {
-      // Server-side: call Talent API directly
-      const { talentApiClient } = await import("@/lib/talent-api-client");
-
-      const response = await talentApiClient.getAccounts({
-        id: String(talentId),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Talent API error: ${response.status}`);
-      }
-
-      data = await response.json();
+    if (!response.ok) {
+      throw new Error(`Talent API error: ${response.status}`);
     }
+
+    const data: WalletAccountsResponse = await response.json();
 
     // Filter only wallet accounts and group by verification source
     const walletAccounts = data.accounts.filter(

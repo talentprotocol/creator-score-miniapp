@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
+import { validateIdentifier } from "@/lib/validation";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
@@ -32,6 +33,14 @@ export async function generateMetadata({
   params: { identifier: string };
   searchParams?: { share?: string };
 }): Promise<Metadata> {
+  // Validate identifier format to prevent injection attacks
+  if (!validateIdentifier(params.identifier)) {
+    return {
+      title: "Creator Not Found - Creator Score",
+      description: "This creator could not be found.",
+    };
+  }
+
   if (RESERVED_WORDS.includes(params.identifier)) {
     return {
       title: "Creator Not Found - Creator Score",

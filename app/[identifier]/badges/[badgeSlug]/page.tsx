@@ -1,7 +1,7 @@
 import { getTalentUserService } from "@/app/services/userService";
 import { getBadgeDetail } from "@/app/services/badgesService";
 import { redirect } from "next/navigation";
-import { validateTalentUUID } from "@/lib/validation";
+import { validateIdentifier } from "@/lib/validation";
 
 interface PublicBadgePageProps {
   params: {
@@ -20,15 +20,7 @@ export default async function PublicBadgePage({
     }
 
     // Validate identifier format to prevent injection attacks
-    // Allow Farcaster handles (1-32 chars, lowercase, alphanumeric, may include . or -)
-    // Allow wallet addresses (0x + 40 hex chars)
-    // Allow Talent UUIDs (standard UUID v4 format)
-    const isValidIdentifier = 
-      /^[a-z0-9][a-z0-9\-\.]{0,31}$/.test(params.identifier) || // Farcaster handle
-      /^0x[a-fA-F0-9]{40}$/.test(params.identifier) || // Wallet address
-      validateTalentUUID(params.identifier); // Talent UUID
-
-    if (!isValidIdentifier) {
+    if (!validateIdentifier(params.identifier)) {
       redirect("/");
     }
 

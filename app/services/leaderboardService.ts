@@ -9,6 +9,14 @@ import {
 import { talentApiClient } from "@/lib/talent-api-client";
 import { OptoutService } from "./optoutService";
 
+// Batch update cooldown to prevent excessive database writes
+const batchUpdateCooldown = {
+  timestamp: 0,
+  readonly: false,
+};
+
+const BATCH_UPDATE_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
   boostedCreatorsCount?: number;
@@ -189,14 +197,23 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   const boostedCreatorsCount = ranked.filter((entry) => entry.isBoosted).length;
 
   // Update stored rewards for opted-out users after leaderboard calculation
-  try {
-    await updateOptedOutRewards(ranked);
-  } catch (error) {
-    console.error(
-      "[LeaderboardService] Failed to update rewards storage:",
-      error,
-    );
-    // Don't fail leaderboard if rewards update fails - it's a background operation
+  // Use cooldown to prevent excessive database writes
+  const now = Date.now();
+  if (now - batchUpdateCooldown.timestamp > BATCH_UPDATE_COOLDOWN_MS) {
+    try {
+      await updateOptedOutRewards(ranked);
+      batchUpdateCooldown.timestamp = now;
+      console.log("[LeaderboardService] Batch update completed, cooldown reset");
+    } catch (error) {
+      console.error(
+        "[LeaderboardService] Failed to update rewards storage:",
+        error,
+      );
+      // Don't fail leaderboard if rewards update fails - it's a background operation
+    }
+  } else {
+    const remainingCooldown = Math.ceil((BATCH_UPDATE_COOLDOWN_MS - (now - batchUpdateCooldown.timestamp)) / 1000 / 60);
+    console.log(`[LeaderboardService] Batch update skipped, cooldown active (${remainingCooldown} minutes remaining)`);
   }
 
   return {
