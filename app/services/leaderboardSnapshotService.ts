@@ -180,5 +180,62 @@ export class LeaderboardSnapshotService {
     }
   }
 
+  /**
+   * Get leaderboard data from snapshot (for use in useLeaderboardData hook)
+   * Returns data in the same format as the live API for seamless integration
+   */
+  static async getLeaderboardDataFromSnapshot(): Promise<{
+    entries: LeaderboardEntry[];
+    boostedCreatorsCount: number;
+    lastUpdated: string | null;
+    nextUpdate: string | null;
+  } | null> {
+    try {
+      console.log(`[LeaderboardSnapshotService] Getting leaderboard data from snapshot`);
+
+      // Get all snapshot entries
+      const snapshots = await this.getSnapshot();
+      if (!snapshots || snapshots.length === 0) {
+        console.log(`[LeaderboardSnapshotService] No snapshot data found`);
+        return null;
+      }
+
+      // Get metadata for timestamps
+      const metadata = await this.getSnapshotMetadata();
+      if (!metadata) {
+        console.log(`[LeaderboardSnapshotService] No snapshot metadata found`);
+        return null;
+      }
+
+      // Transform snapshot data to LeaderboardEntry format
+      // Note: We only have talent_uuid, rank, rewards_amount from snapshot
+      // Other fields will need to be fetched from Talent API or left as defaults
+      const entries: LeaderboardEntry[] = snapshots.map((snapshot) => ({
+        id: snapshot.talent_uuid,
+        talent_protocol_id: snapshot.talent_uuid,
+        name: "", // Will be filled by Talent API fallback
+        pfp: "", // Will be filled by Talent API fallback
+        score: 0, // Will be filled by Talent API fallback
+        rank: snapshot.rank,
+        baseReward: snapshot.rewards_amount,
+        boostedReward: snapshot.rewards_amount, // Assume no boost in snapshot
+        isBoosted: false, // Assume no boost in snapshot
+        isOptedOut: false, // Will be filled by database query
+      }));
+
+      console.log(`[LeaderboardSnapshotService] Transformed ${entries.length} snapshot entries`);
+
+      return {
+        entries,
+        boostedCreatorsCount: 0, // Will be calculated from entries
+        lastUpdated: metadata.created_at,
+        nextUpdate: null, // No updates after snapshot
+      };
+    } catch (error) {
+      console.error("Unexpected error getting leaderboard data from snapshot:", error);
+      return null;
+    }
+  }
+
 
 }

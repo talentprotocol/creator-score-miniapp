@@ -5,6 +5,13 @@ import type { LeaderboardEntry } from "@/app/services/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
+import { LeaderboardSnapshotService } from "@/app/services/leaderboardSnapshotService";
+import { ROUND_ENDS_AT } from "@/lib/constants";
+
+// Helper function to check if we're after the round end date
+const isAfterRoundEnd = (): boolean => {
+  return new Date() > ROUND_ENDS_AT;
+};
 
 export interface UseLeaderboardOptimizedReturn {
   entries: LeaderboardEntry[];
@@ -74,6 +81,41 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
       setLoading(true);
       setError(null);
 
+      // Check if we're after the round end date and should use snapshot data
+      if (isAfterRoundEnd()) {
+        console.log("[Leaderboard] After round end date, checking for snapshot data");
+        
+        const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
+        if (snapshotExists) {
+          console.log("[Leaderboard] Snapshot exists, using snapshot data");
+          
+          const snapshotData = await LeaderboardSnapshotService.getLeaderboardDataFromSnapshot();
+          if (snapshotData) {
+            // Filter out entries with rank > 200 only
+            const filteredEntries = filterValidEntries(snapshotData.entries);
+
+            setEntries(filteredEntries);
+            setBoostedCreatorsCount(snapshotData.boostedCreatorsCount);
+            setLastUpdated(snapshotData.lastUpdated);
+            setNextUpdate(snapshotData.nextUpdate);
+
+            // Cache the snapshot data
+            setCachedData(cacheKey, {
+              entries: filteredEntries,
+              boostedCreatorsCount: snapshotData.boostedCreatorsCount,
+              lastUpdated: snapshotData.lastUpdated,
+              nextUpdate: snapshotData.nextUpdate,
+            });
+
+            setLoading(false);
+            return;
+          }
+        }
+        
+        console.log("[Leaderboard] No snapshot data available, falling back to live API");
+      }
+
+      // Fall back to live API data (existing logic)
       const response = await fetch(`/api/leaderboard/basic`, {
         method: "GET",
         headers: {
