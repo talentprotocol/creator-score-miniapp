@@ -2,16 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { LeaderboardEntry } from "@/app/services/types";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
-import { LeaderboardSnapshotService } from "@/app/services/leaderboardSnapshotService";
-import { ROUND_ENDS_AT } from "@/lib/constants";
-
-// Helper function to check if we're after the round end date
-const isAfterRoundEnd = (): boolean => {
-  return new Date() > ROUND_ENDS_AT;
-};
 
 export interface UseLeaderboardOptimizedReturn {
   entries: LeaderboardEntry[];
@@ -56,66 +46,10 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
 
   // Load basic data immediately
   const loadBasicData = useCallback(async () => {
-    // Check cache first
-    const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
-    const cachedData = getCachedData<{
-      entries: LeaderboardEntry[];
-      boostedCreatorsCount: number;
-      lastUpdated: string | null;
-      nextUpdate: string | null;
-    }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
-
-    if (cachedData) {
-      // Filter out entries with rank > 200 only
-      const filteredEntries = filterValidEntries(cachedData.entries);
-
-      setEntries(filteredEntries);
-      setBoostedCreatorsCount(cachedData.boostedCreatorsCount);
-      setLastUpdated(cachedData.lastUpdated);
-      setNextUpdate(cachedData.nextUpdate);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      // Check if we're after the round end date and should use snapshot data
-      if (isAfterRoundEnd()) {
-        console.log("[Leaderboard] After round end date, checking for snapshot data");
-        
-        const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
-        if (snapshotExists) {
-          console.log("[Leaderboard] Snapshot exists, using snapshot data");
-          
-          const snapshotData = await LeaderboardSnapshotService.getLeaderboardDataFromSnapshot();
-          if (snapshotData) {
-            // Filter out entries with rank > 200 only
-            const filteredEntries = filterValidEntries(snapshotData.entries);
-
-            setEntries(filteredEntries);
-            setBoostedCreatorsCount(snapshotData.boostedCreatorsCount);
-            setLastUpdated(snapshotData.lastUpdated);
-            setNextUpdate(snapshotData.nextUpdate);
-
-            // Cache the snapshot data
-            setCachedData(cacheKey, {
-              entries: filteredEntries,
-              boostedCreatorsCount: snapshotData.boostedCreatorsCount,
-              lastUpdated: snapshotData.lastUpdated,
-              nextUpdate: snapshotData.nextUpdate,
-            });
-
-            setLoading(false);
-            return;
-          }
-        }
-        
-        console.log("[Leaderboard] No snapshot data available, falling back to live API");
-      }
-
-      // Fall back to live API data (existing logic)
       const response = await fetch(`/api/leaderboard/basic`, {
         method: "GET",
         headers: {
@@ -136,14 +70,6 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
       setBoostedCreatorsCount(data.boostedCreatorsCount);
       setLastUpdated(data.lastUpdated);
       setNextUpdate(data.nextUpdate);
-
-      // Cache the filtered data
-      setCachedData(cacheKey, {
-        entries: filteredEntries,
-        boostedCreatorsCount: data.boostedCreatorsCount,
-        lastUpdated: data.lastUpdated,
-        nextUpdate: data.nextUpdate,
-      });
     } catch (err) {
       console.error(`Failed to load leaderboard data:`, err);
       setError(
@@ -156,15 +82,6 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
-      try {
-        if (forceFresh && typeof window !== "undefined") {
-          console.log(
-            "[Leaderboard] Force fresh refetch: clearing localStorage cache key",
-            CACHE_KEYS.LEADERBOARD_BASIC,
-          );
-          localStorage.removeItem(CACHE_KEYS.LEADERBOARD_BASIC);
-        }
-      } catch {}
       loadBasicData();
     },
     [loadBasicData],
@@ -175,41 +92,13 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
       if (!talentUuid) return;
       // Update in-memory state
       setEntries((prev) => {
-        const updated = prev.map((e) =>
+        const updated = prev.map((e: LeaderboardEntry) =>
           String(e.talent_protocol_id) === String(talentUuid)
             ? { ...e, isOptedOut }
             : e,
         );
         return updated;
       });
-
-      // Update localStorage cache if present
-      try {
-        const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
-        const cached = getCachedData<{
-          entries: LeaderboardEntry[];
-          boostedCreatorsCount: number;
-          lastUpdated: string | null;
-          nextUpdate: string | null;
-        }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
-        if (cached) {
-          const updatedCached = {
-            ...cached,
-            entries: cached.entries.map((e) =>
-              String(e.talent_protocol_id) === String(talentUuid)
-                ? { ...e, isOptedOut }
-                : e,
-            ),
-          };
-          console.log(
-            "[Leaderboard] Updated local cache entry opt-out status for",
-            talentUuid,
-            "=",
-            isOptedOut,
-          );
-          setCachedData(cacheKey, updatedCached);
-        }
-      } catch {}
     },
     [],
   );

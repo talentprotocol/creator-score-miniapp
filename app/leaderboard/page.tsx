@@ -48,7 +48,7 @@ import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
-import { RewardsDecisionModalHandler } from "@/components/modals/RewardsDecisionModalHandler";
+import { RewardsDecisionModalHandler } from "@/components/common/RewardsDecisionModalHandler";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -769,11 +769,10 @@ function LeaderboardContent() {
         {/* Rewards Decision Modal Handler */}
         <RewardsDecisionModalHandler
           userRank={userTop200Entry?.rank}
-          userEarnings={
+          userRewards={
             userTop200Entry?.boostedReward || userTop200Entry?.baseReward
           }
-          hasVerifiedWallets={true} // TODO: Implement wallet verification check
-          optedOutPercentage={undefined} // TODO: Calculate from database
+          isTop200={!!userTop200Entry}
         />
       </Section>
     </PageContainer>

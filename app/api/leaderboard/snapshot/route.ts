@@ -55,12 +55,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // API key authentication
-    const apiKey = request.headers.get('x-api-key');
-    if (apiKey !== process.env.SNAPSHOT_API_KEY) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    const apiKey = request.headers.get("x-api-key");
+    if (apiKey !== process.env.SNAPSHOT_ADMIN_API_KEY) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -126,5 +123,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

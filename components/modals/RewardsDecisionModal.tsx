@@ -21,27 +21,43 @@ import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
 import { ACTIVE_SPONSORS } from "@/lib/constants";
 import { useRouter } from "next/navigation";
-import { WalletSelectionStep } from "./WalletSelectionStep";
+import { WalletSelectionStep } from "@/components/modals/WalletSelectionStep";
 
 interface RewardsDecisionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userRank?: number;
-  userEarnings?: number;
-  hasVerifiedWallets?: boolean;
+  userRewards?: number;
   optedOutPercentage?: number;
+  wallets?: Array<{
+    address: string;
+    label: string;
+    type: "farcaster-primary" | "farcaster-verified" | "talent-verified";
+  }>;
+  isLoading?: boolean;
+  talentUuid?: string;
 }
 
 function RewardsDecisionContent({
   userRank,
-  userEarnings,
-  hasVerifiedWallets,
+  userRewards,
   optedOutPercentage,
+  wallets = [],
+  isLoading = false,
+  talentUuid,
+  onOpenChange,
 }: {
   userRank?: number;
-  userEarnings?: number;
-  hasVerifiedWallets?: boolean;
+  userRewards?: number;
   optedOutPercentage?: number;
+  wallets?: Array<{
+    address: string;
+    label: string;
+    type: "farcaster-primary" | "farcaster-verified" | "talent-verified";
+  }>;
+  isLoading?: boolean;
+  talentUuid?: string;
+  onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = React.useState(1);
@@ -70,12 +86,35 @@ function RewardsDecisionContent({
     if (!selectedWallet) return;
 
     setIsSubmitting(true);
-    // TODO: Implement decision saving with selected wallet
-    // For now, just close the modal
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/user-preferences/optout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          talent_uuid: talentUuid,
+          decision: "opted_in",
+          confirm_decision: true,
+          primary_wallet_address: selectedWallet,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Close modal on success
+        onOpenChange(false);
+      } else {
+        console.error("Failed to save decision:", result.error);
+        // TODO: Show error message to user
+      }
+    } catch (error) {
+      console.error("Error saving decision:", error);
+      // TODO: Show error message to user
+    } finally {
       setIsSubmitting(false);
-      // Close modal logic will be handled by parent
-    }, 1000);
+    }
   };
 
   const handleWalletSelect = (address: string) => {
@@ -96,71 +135,75 @@ function RewardsDecisionContent({
   if (currentStep === 1) {
     return (
       <div className="space-y-6">
-        {/* Congratulations Message */}
-        <div className="space-y-3">
-          <Typography size="base" weight="medium">
-            Congratulations for being a top 200 onchain creator!
-          </Typography>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
 
-          {userRank && userEarnings ? (
-            <Typography size="sm" color="muted">
-              You ranked #{userRank} and earned {userEarnings} USDC.
-            </Typography>
-          ) : (
-            <Typography size="sm" color="muted">
-              You ranked in the top 200 and earned USDC rewards.
-            </Typography>
-          )}
-        </div>
+        {/* Content */}
+        {!isLoading && (
+          <>
+            {/* Congratulations Message */}
+            <div className="space-y-3">
+              <Typography size="base" weight="medium">
+                Congratulations for being a top 200 onchain creator!
+              </Typography>
 
-        {/* Sponsor Recognition */}
-        <div className="space-y-3">
-          <Typography size="sm" color="muted">
-            Rewards are sponsored by {sponsorNames}.
-          </Typography>
-        </div>
+              {userRank && userRewards ? (
+                <Typography size="sm" color="muted">
+                  You ranked #{userRank} and earned {userRewards} USDC.
+                </Typography>
+              ) : (
+                <Typography size="sm" color="muted">
+                  You ranked in the top 200 and earned USDC rewards.
+                </Typography>
+              )}
+            </div>
 
-        {/* Explanation */}
-        <div className="space-y-3">
-          <Typography size="sm" color="muted">
-            You can opt-in to receive your rewards on Sep 17th or pay them
-            forward to onchain creators* and earn a special badge.
-          </Typography>
+            {/* Sponsor Recognition */}
+            <div className="space-y-3">
+              <Typography size="sm" color="muted">
+                Rewards are sponsored by {sponsorNames}.
+              </Typography>
+            </div>
 
-          {optedOutPercentage !== undefined && (
-            <Typography size="sm" color="muted">
-              {optedOutPercentage}% of creators are already paying forward.
-            </Typography>
-          )}
-        </div>
+            {/* Explanation */}
+            <div className="space-y-3">
+              <Typography size="sm" color="muted">
+                You can opt-in to receive your rewards on Sep 17th or pay them
+                forward to onchain creators* and earn a special badge.
+              </Typography>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <Button
-            variant="brand-purple"
-            onClick={handleKeepRewardsClick}
-            disabled={!hasVerifiedWallets}
-            className="flex-1"
-          >
-            <Coins className="h-4 w-4 mr-2" />
-            Keep My Rewards
-          </Button>
+              {optedOutPercentage !== undefined && (
+                <Typography size="sm" color="muted">
+                  {optedOutPercentage}% of creators are already paying forward.
+                </Typography>
+              )}
+            </div>
 
-          <Button
-            variant="brand-green"
-            onClick={handlePayItForwardClick}
-            className="flex-1"
-          >
-            <HandHeart className="h-4 w-4 mr-2" />
-            Pay It Forward
-          </Button>
-        </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="brand-purple"
+                onClick={handleKeepRewardsClick}
+                className="flex-1"
+              >
+                <Coins className="h-4 w-4 mr-2" />
+                Keep My Rewards
+              </Button>
 
-        {/* No Verified Wallets Message */}
-        {!hasVerifiedWallets && (
-          <Typography size="sm" color="muted" className="text-center">
-            Verify one wallet address on Talent Protocol.
-          </Typography>
+              <Button
+                variant="brand-green"
+                onClick={handlePayItForwardClick}
+                className="flex-1"
+              >
+                <HandHeart className="h-4 w-4 mr-2" />
+                Pay It Forward
+              </Button>
+            </div>
+          </>
         )}
       </div>
     );
@@ -177,18 +220,7 @@ function RewardsDecisionContent({
         </Typography>
 
         <WalletSelectionStep
-          wallets={[
-            {
-              address: "0x1234567890abcdef1234567890abcdef12345678",
-              label: "Farcaster Primary",
-              type: "farcaster-primary",
-            },
-            {
-              address: "0xabcdef1234567890abcdef1234567890abcdef12",
-              label: "Talent Verified",
-              type: "talent-verified",
-            },
-          ]}
+          wallets={wallets}
           selectedWallet={selectedWallet}
           onWalletSelect={handleWalletSelect}
           onCopyAddress={handleCopyAddress}
@@ -225,9 +257,11 @@ export function RewardsDecisionModal({
   open,
   onOpenChange,
   userRank,
-  userEarnings,
-  hasVerifiedWallets = true,
+  userRewards,
   optedOutPercentage,
+  wallets,
+  isLoading,
+  talentUuid,
 }: RewardsDecisionModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -243,9 +277,12 @@ export function RewardsDecisionModal({
           </DialogHeader>
           <RewardsDecisionContent
             userRank={userRank}
-            userEarnings={userEarnings}
-            hasVerifiedWallets={hasVerifiedWallets}
+            userRewards={userRewards}
             optedOutPercentage={optedOutPercentage}
+            wallets={wallets}
+            isLoading={isLoading}
+            talentUuid={talentUuid}
+            onOpenChange={onOpenChange}
           />
         </DialogContent>
       </Dialog>
@@ -264,9 +301,12 @@ export function RewardsDecisionModal({
         <div className="px-4 pb-8">
           <RewardsDecisionContent
             userRank={userRank}
-            userEarnings={userEarnings}
-            hasVerifiedWallets={hasVerifiedWallets}
+            userRewards={userRewards}
             optedOutPercentage={optedOutPercentage}
+            wallets={wallets}
+            isLoading={isLoading}
+            talentUuid={talentUuid}
+            onOpenChange={onOpenChange}
           />
         </div>
       </DrawerContent>

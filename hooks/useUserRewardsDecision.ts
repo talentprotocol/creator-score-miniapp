@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { LeaderboardEntry } from "@/app/services/types";
 import type { RewardsDecision } from "@/lib/types/user-preferences";
+import { ROUND_ENDS_AT } from "@/lib/constants";
 
 export interface UseUserRewardsDecisionReturn {
   data: {
@@ -37,9 +38,8 @@ export function useUserRewardsDecision(
   // Check if we should use cached leaderboard data
   const isInTop200 = Boolean(userTop200Entry);
 
-  // TODO: Add snapshot logic when LeaderboardSnapshotService is implemented
-  // const shouldUseSnapshot = LeaderboardSnapshotService.shouldUseSnapshot();
-  const shouldUseSnapshot = false; // Placeholder for testing
+  // Check if we're after the round end date
+  const isAfterRoundEnd = new Date() > ROUND_ENDS_AT;
 
   // Priority order:
   // 1. Snapshot data (after ROUND_ENDS_AT) - most accurate
@@ -52,7 +52,7 @@ export function useUserRewardsDecision(
     }
 
     // If we have cached data and shouldn't use snapshot, use it
-    if (isInTop200 && !shouldUseSnapshot) {
+    if (isInTop200 && !isAfterRoundEnd) {
       return;
     }
 
@@ -91,15 +91,28 @@ export function useUserRewardsDecision(
     };
 
     fetchRewardsDecision();
-  }, [talentUuid, isInTop200, shouldUseSnapshot]);
+  }, [talentUuid, isInTop200, isAfterRoundEnd]);
 
   // Determine the best data source
   let rewardsDecision: RewardsDecision;
 
-  if (shouldUseSnapshot) {
-    // TODO: After ROUND_ENDS_AT: Use snapshot data (most accurate)
-    // This will be implemented when LeaderboardSnapshotService is ready
-    rewardsDecision = separateRewardsDecision || null;
+  if (isAfterRoundEnd) {
+    // After ROUND_ENDS_AT: Use snapshot data (most accurate)
+    // The leaderboard data will already be using snapshot data
+    // So we can rely on the userTop200Entry.isOptedOut status
+    if (isInTop200 && userTop200Entry) {
+      const top200OptOutStatus = userTop200Entry.isOptedOut;
+      if (top200OptOutStatus === true) {
+        rewardsDecision = "opted_out";
+      } else {
+        // User hasn't opted out, but we don't know if they've opted in
+        // Fall back to database data
+        rewardsDecision = separateRewardsDecision || null;
+      }
+    } else {
+      // Non-top-200 users: Use database data
+      rewardsDecision = separateRewardsDecision || null;
+    }
   } else if (isInTop200 && userTop200Entry) {
     // Before ROUND_ENDS_AT: Use cached leaderboard data (fastest)
     // Note: This only knows about opted-out users, not opted-in users
@@ -128,7 +141,7 @@ export function useUserRewardsDecision(
       hasMadeDecision,
       rewardsDecision,
     },
-    loading: loading && !(isInTop200 && !shouldUseSnapshot), // Don't show loading for cached data
+    loading: loading && !(isInTop200 && !isAfterRoundEnd), // Don't show loading for cached data
     error,
   };
 }

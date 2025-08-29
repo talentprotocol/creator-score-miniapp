@@ -1,5 +1,9 @@
 import type { LeaderboardEntry } from "./types";
-import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
+import {
+  BOOST_CONFIG,
+  PROJECT_ACCOUNTS_TO_EXCLUDE,
+  ROUND_ENDS_AT,
+} from "@/lib/constants";
 import { unstable_cache } from "next/cache";
 import {
   CACHE_KEYS,
@@ -8,6 +12,12 @@ import {
 } from "@/lib/cache-keys";
 import { talentApiClient } from "@/lib/talent-api-client";
 import { OptoutService } from "./optoutService";
+import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
+
+// Helper function to check if we're after the round end date
+const isAfterRoundEnd = (): boolean => {
+  return new Date() > ROUND_ENDS_AT;
+};
 
 // Batch update cooldown to prevent excessive database writes
 const batchUpdateCooldown = {
@@ -162,6 +172,8 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       talent_protocol_id: profile.id,
       isBoosted,
       isOptedOut,
+      baseReward: 0, // Will be calculated later
+      boostedReward: 0, // Will be calculated later
     };
   });
 
@@ -195,6 +207,50 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
   // Count boosted creators
   const boostedCreatorsCount = ranked.filter((entry) => entry.isBoosted).length;
+
+  // After deadline, replace rank and rewards with snapshot data if available
+  if (isAfterRoundEnd()) {
+    try {
+      const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
+      if (snapshotExists) {
+        console.log(
+          "[LeaderboardService] After deadline, using snapshot data for rank/rewards",
+        );
+
+        const snapshots = await LeaderboardSnapshotService.getSnapshot();
+        if (snapshots && snapshots.length > 0) {
+          // Create a map for quick lookup
+          const snapshotMap = new Map(
+            snapshots.map((snapshot) => [snapshot.talent_uuid, snapshot]),
+          );
+
+          // Replace rank and rewards_amount with snapshot data
+          ranked.forEach((entry) => {
+            const snapshot = snapshotMap.get(entry.talent_protocol_id);
+            if (snapshot) {
+              entry.rank = snapshot.rank;
+              entry.baseReward = snapshot.rewards_amount;
+              entry.boostedReward = snapshot.rewards_amount;
+            }
+          });
+
+          console.log(
+            `[LeaderboardService] Updated ${snapshots.length} entries with snapshot data`,
+          );
+        }
+      } else {
+        console.log(
+          "[LeaderboardService] After deadline but no snapshot exists, using live data",
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[LeaderboardService] Error applying snapshot data:",
+        error,
+      );
+      // Continue with live data if snapshot fails
+    }
+  }
 
   // Update stored rewards for opted-out users after leaderboard calculation
   // Use cooldown to prevent excessive database writes
