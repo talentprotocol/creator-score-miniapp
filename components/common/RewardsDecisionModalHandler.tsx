@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useAutoModal } from "@/hooks/useAutoModal";
 import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
+import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
 
 interface RewardsDecisionModalHandlerProps {
@@ -17,12 +17,13 @@ export function RewardsDecisionModalHandler({
   userRewards,
   isTop200 = false,
 }: RewardsDecisionModalHandlerProps) {
-  const { isOpen, onOpenChange } = useAutoModal({
-    databaseField: "rewards_decision",
-    autoOpen: true, // Enable auto-opening based on database field
-  });
-
   const { talentUuid } = useFidToTalentUuid();
+  const { data: rewardsDecisionData, loading: decisionLoading } =
+    useUserRewardsDecision(talentUuid);
+
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [hasCheckedDecision, setHasCheckedDecision] = React.useState(false);
+
   const { walletData, loading: walletsLoading } = useProfileWalletAccounts(
     talentUuid || undefined,
   );
@@ -74,11 +75,38 @@ export function RewardsDecisionModalHandler({
     calculatePercentage();
   }, [talentUuid]);
 
-  // Only show modal if user is in top 200 and useAutoModal says to show it
-  const shouldShowModal = isTop200 && isOpen;
+  // Check if modal should be shown - only show if user is in top 200 and hasn't made a decision
+  React.useEffect(() => {
+    if (!isTop200 || !talentUuid || decisionLoading || hasCheckedDecision) {
+      return;
+    }
+
+    // If user has already made a decision, don't show modal
+    if (rewardsDecisionData.hasMadeDecision) {
+      setHasCheckedDecision(true);
+      return;
+    }
+
+    // Show modal for top 200 users who haven't made a decision
+    setIsModalOpen(true);
+    setHasCheckedDecision(true);
+  }, [
+    isTop200,
+    talentUuid,
+    decisionLoading,
+    rewardsDecisionData.hasMadeDecision,
+    hasCheckedDecision,
+  ]);
+
+  // Handle modal close - don't update database, just close the modal
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      setIsModalOpen(false);
+    }
+  };
 
   // Don't render if not in top 200 or modal shouldn't be shown
-  if (!shouldShowModal) {
+  if (!isTop200 || !isModalOpen) {
     return null;
   }
 
@@ -108,8 +136,8 @@ export function RewardsDecisionModalHandler({
 
   return (
     <RewardsDecisionModal
-      open={isOpen}
-      onOpenChange={onOpenChange}
+      open={isModalOpen}
+      onOpenChange={handleModalClose}
       userRank={userRank}
       userRewards={userRewards}
       optedOutPercentage={optedOutPercentage}

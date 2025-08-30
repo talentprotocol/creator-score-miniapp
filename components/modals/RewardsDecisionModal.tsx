@@ -268,7 +268,7 @@ export function RewardsDecisionModal({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent disableOutsideClick disableEscapeKey>
           <DialogHeader>
             <DialogTitle>Creator Score Rewards</DialogTitle>
             <DialogDescription>

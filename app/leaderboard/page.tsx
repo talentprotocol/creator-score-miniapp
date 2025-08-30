@@ -115,10 +115,10 @@ function LeaderboardContent() {
       ? top200Entries.find((e) => e.talent_protocol_id === userTalentUuid)
       : null;
 
-  // Get opt-out status for all users (top 200 and non-top 200)
+  // Get rewards decision status for all users (top 200 and non-top 200)
   const {
     data: { isOptedOut },
-  } = useUserRewardsDecision(userTalentUuid, userTop200Entry || undefined);
+  } = useUserRewardsDecision(userTalentUuid);
 
   // Server-persisted callout preferences
   const {

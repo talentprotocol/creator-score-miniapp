@@ -76,6 +76,18 @@ export async function POST(
       );
     }
 
+    // Validate rewards_decision field
+    if (rewards_decision !== undefined && rewards_decision !== null) {
+      if (rewards_decision !== "opted_in" && rewards_decision !== "opted_out") {
+        return NextResponse.json(
+          {
+            error: `Invalid rewards_decision value: ${rewards_decision}. Must be "opted_in", "opted_out", or null`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     // Allow null to clear the category, or skip validation if only updating wallet address
     if (creator_category !== null && creator_category !== undefined) {
       if (!validateCreatorCategory(creator_category as string)) {
