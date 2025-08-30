@@ -4,7 +4,6 @@ import * as React from "react";
 import { useAutoModal } from "@/hooks/useAutoModal";
 import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import { supabase } from "@/lib/supabase-client";
 import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
 
 interface RewardsDecisionModalHandlerProps {
@@ -59,22 +58,13 @@ export function RewardsDecisionModalHandler({
 
     async function calculatePercentage() {
       try {
-        const { data: totalUsers } = await supabase
-          .from("user_preferences")
-          .select("rewards_decision")
-          .not("rewards_decision", "is", null);
-
-        const { data: optedOutUsers } = await supabase
-          .from("user_preferences")
-          .select("rewards_decision")
-          .eq("rewards_decision", "opted_out");
-
-        const total = totalUsers?.length || 0;
-        const optedOut = optedOutUsers?.length || 0;
-        const percentage =
-          total > 0 ? Math.round((optedOut / total) * 100) : 58;
-
-        setOptedOutPercentage(percentage);
+        const response = await fetch(
+          "/api/user-preferences/opted-out-percentage",
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setOptedOutPercentage(data.percentage);
+        }
       } catch (error) {
         console.error("Error calculating opted-out percentage:", error);
         // Keep default 58% if calculation fails
