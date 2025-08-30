@@ -2,14 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useFidToTalentUuid } from "./useUserResolution";
 
 export interface AutoModalConfig {
-  storageKey: string;
-  databaseField?: string; // Field name in user_preferences table
+  databaseField: string; // Field name in user_preferences table
   checkDate?: Date; // Optional date check (e.g., ROUND_ENDS_AT)
   autoOpen?: boolean;
 }
 
 export function useAutoModal(config: AutoModalConfig) {
-  const { storageKey, databaseField, checkDate, autoOpen = false } = config;
+  const { databaseField, checkDate, autoOpen = false } = config;
   const [hasSeenModal, setHasSeenModal] = useState(true); // Default to true to prevent flash
   const { talentUuid } = useFidToTalentUuid();
 
@@ -36,7 +35,7 @@ export function useAutoModal(config: AutoModalConfig) {
       // For non-authenticated users or missing config, don't show modal
       setHasSeenModal(true);
     }
-  }, [talentUuid, autoOpen, storageKey, databaseField, checkDate]);
+  }, [talentUuid, autoOpen, databaseField, checkDate]);
 
   const checkUserPreferences = async () => {
     try {
@@ -44,7 +43,7 @@ export function useAutoModal(config: AutoModalConfig) {
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) throw new Error(`Failed to load prefs: ${res.status}`);
       const json = await res.json();
-      const hasSeen = json[databaseField!] ?? false;
+      const hasSeen = json[databaseField] ?? false;
       setHasSeenModal(hasSeen);
     } catch (e) {
       console.error("API call failed:", e);
@@ -74,7 +73,7 @@ export function useAutoModal(config: AutoModalConfig) {
         body: JSON.stringify({
           talent_uuid: talentUuid,
           creator_category: null,
-          [databaseField!]: true,
+          [databaseField]: true,
         }),
       });
       if (!res.ok) {
