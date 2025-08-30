@@ -19,7 +19,7 @@ interface MyRewardsProps {
   isLoading?: boolean;
   rank?: number;
   pointsToTop200?: number;
-  onHowToEarnClick?: () => void;
+  onInfoClick?: () => void;
   onBoostInfoClick?: () => void;
   onOptOutBadgeClick?: () => void;
   tokenBalance?: number | null;
@@ -37,7 +37,7 @@ export function MyRewards({
   isLoading = false,
   rank,
   pointsToTop200,
-  onHowToEarnClick,
+  onInfoClick,
   onBoostInfoClick,
   onOptOutBadgeClick,
   tokenBalance,
@@ -65,14 +65,14 @@ export function MyRewards({
             <p className="text-sm font-medium text-primary">
               {isTop200 ? "Creator Score Rewards" : "Creator Score"}
             </p>
-            {onHowToEarnClick && (
+            {onInfoClick && (
               <Button
                 variant="ghost"
-                onClick={onHowToEarnClick}
+                onClick={onInfoClick}
                 className="h-5 w-5 px-2 text-muted-foreground hover:text-primary"
               >
                 <Icon icon={InfoIcon} size="sm" color="muted" />
-                <span className="sr-only">How to earn</span>
+                <span className="sr-only">Rewards information</span>
               </Button>
             )}
           </div>

@@ -23,8 +23,7 @@ import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import {
   ACTIVE_SPONSORS,
   TOTAL_SPONSORS_POOL,
-  ROUND_ENDS_AT,
-  BOOST_CONFIG,
+  DEADLINE,
   LEVEL_RANGES,
   PERK_DRAW_DEADLINE_UTC,
 } from "@/lib/constants";
@@ -33,7 +32,7 @@ import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Trophy, Award } from "lucide-react";
+import { HandHeart, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 import { Rocket } from "lucide-react";
@@ -48,6 +47,7 @@ import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 import { RewardsDecisionModalHandler } from "@/components/common/RewardsDecisionModalHandler";
+import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -74,6 +74,7 @@ function LeaderboardContent() {
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
   const [rewardBoostsOpen, setRewardBoostsOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [rewardsInfoOpen, setRewardsInfoOpen] = useState(false);
   // const posthog = usePostHog();
 
   // Use optimized leaderboard hook for all data
@@ -116,7 +117,7 @@ function LeaderboardContent() {
 
   // Get opt-out status for all users (top 200 and non-top 200)
   const {
-    data: { isOptedOut },
+    data: { isOptedOut, hasMadeDecision },
   } = useUserRewardsDecision(userTalentUuid);
 
   // Server-persisted callout preferences
@@ -126,9 +127,7 @@ function LeaderboardContent() {
   } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Countdown state
-  const [countdown, setCountdown] = useState(() =>
-    getCountdownParts(ROUND_ENDS_AT),
-  );
+  const [countdown, setCountdown] = useState(() => getCountdownParts(DEADLINE));
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -138,7 +137,7 @@ function LeaderboardContent() {
   // Live countdown effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setCountdown(getCountdownParts(ROUND_ENDS_AT));
+      setCountdown(getCountdownParts(DEADLINE));
     }, 60000); // update every minute
     return () => clearInterval(interval);
   }, []);
@@ -198,7 +197,7 @@ function LeaderboardContent() {
             isLoading={loadingStats || (top200Loading && !userTop200Entry)}
             rank={userTop200Entry?.rank}
             pointsToTop200={pointsToTop200}
-            onHowToEarnClick={() => setHowToEarnOpen(true)}
+            onInfoClick={() => setRewardsInfoOpen(true)}
             onBoostInfoClick={() => setRewardBoostsOpen(true)}
             tokenBalance={tokenBalance}
             tokenLoading={tokenLoading}
@@ -236,19 +235,20 @@ function LeaderboardContent() {
               }>;
 
               // HOW TO EARN REWARDS (blue) – first position, permanently dismissible
-              items.push({
-                id: "how_to_earn",
-                variant: "brand-blue",
-                icon: <Trophy className="h-4 w-4" />,
-                title: "How to Earn Rewards",
-                description: "Get paid USDC for creating content.",
-                onClick: () => setHowToEarnOpen(true),
-                permanentHideKey: "how_to_earn_callout_hidden",
-                onClose: () => {
-                  // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                  // The actual dismissal logic is handled by CalloutCarousel, not here
-                },
-              });
+              // HIDDEN: Removed per user request
+              // items.push({
+              //   id: "how_to_earn",
+              //   variant: "brand-blue",
+              //   icon: <Trophy className="h-4 w-4" />,
+              //   title: "How to Earn Rewards",
+              //   description: "Get paid USDC for creating content.",
+              //   onClick: () => setHowToEarnOpen(true),
+              //   permanentHideKey: "how_to_earn_callout_hidden",
+              //   onClose: () => {
+              //     // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+              //     // The actual dismissal logic is handled by CalloutCarousel, not here
+              //   },
+              // });
 
               // BADGES ANNOUNCEMENT (pink) – new feature announcement, first priority
               items.push({
@@ -268,31 +268,32 @@ function LeaderboardContent() {
               });
 
               // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
-              const base = {
-                id: "boost",
-                variant: "brand-purple" as const,
-                icon: <Rocket className="h-4 w-4" />,
-                title: "10% Rewards Boost",
-                description: <>Hold 100+ $TALENT to earn a boost.</>,
-              };
-              if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
-                items.push({
-                  ...base,
-                  permanentHideKey: "boost_callout_hidden",
-                  onClick: () => setRewardBoostsOpen(true),
-                  onClose: () => {
-                    // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                    // The actual dismissal logic is handled by CalloutCarousel, not here
-                  },
-                });
-              } else {
-                items.push({
-                  ...base,
-                  onClick: !isLoggedIn
-                    ? () => setLoginModalOpen(true)
-                    : () => setRewardBoostsOpen(true),
-                });
-              }
+              // HIDDEN: Removed per user request
+              // const base = {
+              //   id: "boost",
+              //   variant: "brand-purple" as const,
+              //   icon: <Rocket className="h-4 w-4" />,
+              //   title: "10% Rewards Boost",
+              //   description: <>Hold 100+ $TALENT to earn a boost.</>,
+              // };
+              // if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
+              //   items.push({
+              //     ...base,
+              //     permanentHideKey: "boost_callout_hidden",
+              //     onClick: () => setRewardBoostsOpen(true),
+              //     onClose: () => {
+              //       // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
+              //       // The actual dismissal logic is handled by CalloutCarousel, not here
+              //     },
+              //   });
+              // } else {
+              //   items.push({
+              //     ...base,
+              //     onClick: !isLoggedIn
+              //       ? () => setLoginModalOpen(true)
+              //       : () => setRewardBoostsOpen(true),
+              //   });
+              // }
 
               // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
               items.push({
@@ -407,6 +408,23 @@ function LeaderboardContent() {
       <FarcasterAccessModal
         open={loginModalOpen}
         onOpenChange={setLoginModalOpen}
+      />
+
+      {/* Rewards Info Modal */}
+      <RewardsDecisionModal
+        open={rewardsInfoOpen}
+        onOpenChange={setRewardsInfoOpen}
+        userRank={userTop200Entry?.rank}
+        userRewards={
+          userTop200Entry?.boostedReward || userTop200Entry?.baseReward
+        }
+        optedOutPercentage={58} // TODO: Fetch this dynamically
+        wallets={[]} // TODO: Fetch wallets if needed
+        isLoading={false}
+        talentUuid={userTalentUuid || undefined}
+        isInTop200={!!userTop200Entry}
+        hasMadeDecision={hasMadeDecision}
+        isOptedOut={isOptedOut}
       />
 
       {/* Full width tabs - outside PageContainer constraints */}
