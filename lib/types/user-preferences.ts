@@ -39,7 +39,7 @@ export interface UserPreferencesResponse {
 
 export interface UserPreferencesUpdateRequest {
   talent_uuid: string;
-  creator_category: CreatorCategory | null;
+  creator_category?: CreatorCategory | null;
   // Atomic ops for callout preferences (all optional)
   add_dismissed_id?: string;
   add_permanently_hidden_id?: string;

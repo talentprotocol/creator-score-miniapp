@@ -7,8 +7,6 @@ import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
-// Temporarily disabled: Welcome modal intentionally removed. Re-enable by uncommenting the next line.
-// import { WelcomeModalHandler } from "@/components/common/WelcomeModalHandler";
 import { HowToEarnModalHandler } from "@/components/common/HowToEarnModalHandler";
 import {
   getPageMetadata,
@@ -110,8 +108,6 @@ export default function RootLayout({
                 </main>
               </SwipeWrapper>
               <BottomNav />
-              {/* Temporarily disabled: Welcome modal intentionally removed. Re-enable by uncommenting the next line. */}
-              {/* <WelcomeModalHandler /> */}
               <HowToEarnModalHandler />
             </ErrorBoundary>
           </Providers>

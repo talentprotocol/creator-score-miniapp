@@ -121,11 +121,6 @@ Currently, creators who opt out of rewards have their money automatically redist
 - `hooks/useLeaderboardOptimized.ts` - Removed client-side caching and snapshot logic ✅
 - `app/services/types.ts` - Updated with simplified snapshot types ✅
 
-### Files Deleted:
-- `hooks/useUserWallets.ts` - Replaced by existing `useProfileWalletAccounts` hook ✅
-- `hooks/useOptedOutPercentage.ts` - Replaced by inline Supabase query ✅
-- `app/api/user-preferences/opted-out-percentage/route.ts` - Replaced by inline Supabase query ✅
-
 
 ### Database Changes:
 - **ADD** to `user_preferences` table:
@@ -191,7 +186,7 @@ Currently, creators who opt out of rewards have their money automatically redist
    - ✅ **Wallet Prioritization**: Farcaster primary → Farcaster verified → Talent verified
    - ✅ **Decision Saving**: POST to `/api/user-preferences/optout` with proper data
    - ✅ **Modal Persistence**: Checks `rewards_decision` field to determine if user has made decision
-   - ✅ **Dynamic Content**: Real-time opted-out percentage calculation from database
+   - ✅ **Dynamic Content**: Real-time opted-out percentage calculation via API route
    - ✅ **Error Handling**: Proper error handling and loading states
 3. **Code Quality**:
    - ✅ **Reused Existing Code**: Used `useProfileWalletAccounts` instead of creating `useUserWallets`
@@ -243,7 +238,7 @@ Currently, creators who opt out of rewards have their money automatically redist
 
 #### **Architecture Improvements:**
 - **Reused Existing Code**: Used `useProfileWalletAccounts` instead of creating `useUserWallets`
-- **Simplified Data Fetching**: Inline Supabase query for opted-out percentage instead of new API route
+- **Simplified Data Fetching**: API route for opted-out percentage calculation instead of client-side Supabase queries
 - **Proper File Structure**: Business logic in `common/`, UI components in `modals/`
 
 #### **User Experience:**

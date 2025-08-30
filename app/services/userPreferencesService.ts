@@ -102,10 +102,11 @@ export async function updateUserPreferencesAtomic(
     decision_made_at: undefined as string | undefined,
   };
 
-  // Add decision_made_at timestamp when rewards_decision changes
+  // Add decision_made_at timestamp when rewards_decision changes to a non-NULL value
   if (
     req.rewards_decision !== undefined &&
-    req.rewards_decision !== current.rewards_decision
+    req.rewards_decision !== current.rewards_decision &&
+    req.rewards_decision !== null
   ) {
     payload.decision_made_at = new Date().toISOString();
   }
@@ -114,7 +115,7 @@ export async function updateUserPreferencesAtomic(
     .from("user_preferences")
     .upsert(payload, { onConflict: "talent_uuid" })
     .select(
-      "creator_category, callout_prefs, rewards_decision, future_pool_contribution, primary_wallet_address, how_to_earn_modal_seen, updated_at",
+      "creator_category, callout_prefs, rewards_decision, future_pool_contribution, primary_wallet_address, how_to_earn_modal_seen, updated_at, decision_made_at",
     )
     .single();
 
@@ -143,5 +144,6 @@ export async function updateUserPreferencesAtomic(
     primary_wallet_address: data.primary_wallet_address,
     how_to_earn_modal_seen: data.how_to_earn_modal_seen,
     updated_at: data.updated_at,
+    decision_made_at: data.decision_made_at,
   };
 }

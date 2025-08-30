@@ -7,7 +7,7 @@ import { getSocialAccountsForTalentId } from "./socialAccountsService";
 import { getCachedUserTokenBalance } from "./tokenBalanceService";
 import { getCredentialsForTalentId } from "./credentialsService";
 import { getDataPointsSum } from "./dataPointsService";
-import { OptoutService } from "./optoutService";
+import { supabase } from "@/lib/supabase-client";
 
 import {
   getBadgeContent,
@@ -294,7 +294,13 @@ async function computePayItForwardBadges(
   if (!content) return [];
 
   // Check if user has opted out of rewards (Pay It Forward action)
-  const isOptedOut = await OptoutService.isOptedOut(talentUuid);
+  const { data: prefs } = await supabase
+    .from("user_preferences")
+    .select("rewards_decision")
+    .eq("talent_uuid", talentUuid)
+    .single();
+
+  const isOptedOut = prefs?.rewards_decision === "opted_out";
 
   if (!isOptedOut) {
     // User hasn't opted out, so they should get a locked badge (level 0)

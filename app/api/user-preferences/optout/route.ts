@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { CACHE_KEYS } from "@/lib/cache-keys";
-import { OptoutService } from "@/app/services/optoutService";
+import { updateUserPreferencesAtomic } from "@/app/services/userPreferencesService";
 import { validateTalentUUID } from "@/lib/validation";
 
 /**
@@ -81,32 +81,37 @@ export async function POST(req: NextRequest): Promise<
       );
     }
 
-    // Process decision request
-    let result;
-    if (decision === "opted_out") {
-      result = await OptoutService.optOut(talent_uuid);
-    } else {
-      result = await OptoutService.optIn(talent_uuid);
-    }
+    // Process decision request using userPreferencesService
+    try {
+      const result = await updateUserPreferencesAtomic({
+        talent_uuid,
+        rewards_decision: decision as "opted_in" | "opted_out",
+      });
 
-    if (!result.success) {
+      // Predictable server cache refresh for leaderboard data (optional, safe no-op if tags unused)
+      try {
+        // Only revalidate basic leaderboard dependencies; Top 200 doesn't change on decision
+        revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
+        console.log(
+          "[Rewards Decision API] Revalidated tag:",
+          CACHE_KEYS.LEADERBOARD_BASIC,
+        );
+      } catch {}
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          rewards_decision: result.rewards_decision,
+          decision_made_at: result.decision_made_at,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: "Failed to update rewards decision" },
         { status: 400 },
       );
     }
-
-    // Predictable server cache refresh for leaderboard data (optional, safe no-op if tags unused)
-    try {
-      // Only revalidate basic leaderboard dependencies; Top 200 doesn't change on decision
-      revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
-      console.log(
-        "[Rewards Decision API] Revalidated tag:",
-        CACHE_KEYS.LEADERBOARD_BASIC,
-      );
-    } catch {}
-
-    return NextResponse.json(result);
   } catch (error) {
     console.error("Error processing rewards decision request:", error);
     return NextResponse.json(
@@ -166,13 +171,24 @@ export async function GET(req: NextRequest): Promise<
       );
     }
 
-    // Check rewards decision status
-    const decision = await OptoutService.getRewardsDecision(talent_uuid);
+    // Check rewards decision status using userPreferencesService
+    try {
+      const { getUserPreferencesByTalentUuid } = await import(
+        "@/app/services/userPreferencesService"
+      );
+      const prefs = await getUserPreferencesByTalentUuid(talent_uuid);
 
-    return NextResponse.json({
-      success: true,
-      data: { rewards_decision: decision },
-    });
+      return NextResponse.json({
+        success: true,
+        data: { rewards_decision: prefs.rewards_decision },
+      });
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      return NextResponse.json(
+        { success: false, error: "Failed to fetch rewards decision" },
+        { status: 500 },
+      );
+    }
   } catch (error) {
     console.error("Error checking rewards decision status:", error);
     return NextResponse.json(

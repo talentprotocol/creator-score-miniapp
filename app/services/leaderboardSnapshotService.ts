@@ -39,7 +39,7 @@ export class LeaderboardSnapshotService {
       const { data, error } = await this.supabase
         .from("leaderboard_snapshots")
         .insert(snapshots)
-        .select("id")
+        .select("talent_uuid")
         .limit(1);
 
       if (error) {
@@ -50,7 +50,7 @@ export class LeaderboardSnapshotService {
         };
       }
 
-      const snapshotId = data?.[0]?.id;
+      const snapshotId = data?.[0]?.talent_uuid;
       console.log(
         `Created leaderboard snapshot with ${snapshots.length} entries`,
       );

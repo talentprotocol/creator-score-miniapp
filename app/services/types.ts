@@ -114,7 +114,6 @@ export type LeaderboardEntry = {
 
 // Leaderboard snapshot types for frozen data storage
 export interface LeaderboardSnapshot {
-  id: string;
   talent_uuid: string;
   rank: number;
   rewards_amount: number;

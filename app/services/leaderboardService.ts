@@ -11,8 +11,8 @@ import {
   CACHE_DURATION_10_MINUTES,
 } from "@/lib/cache-keys";
 import { talentApiClient } from "@/lib/talent-api-client";
-import { OptoutService } from "./optoutService";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
+import { supabase } from "@/lib/supabase-client";
 
 // Helper function to check if we're after the round end date
 const isAfterRoundEnd = (): boolean => {
@@ -148,7 +148,17 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   // Fetch opt-out status for all users
   let optedOutUserIds: string[] = [];
   try {
-    optedOutUserIds = await OptoutService.getAllOptedOutUsers();
+    const { data, error } = await supabase
+      .from("user_preferences")
+      .select("talent_uuid")
+      .eq("rewards_decision", "opted_out");
+
+    if (error) {
+      console.error("Error fetching opted-out users:", error);
+      optedOutUserIds = [];
+    } else {
+      optedOutUserIds = data?.map((row) => row.talent_uuid) ?? [];
+    }
   } catch {
     optedOutUserIds = [];
   }

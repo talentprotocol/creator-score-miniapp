@@ -6,7 +6,6 @@ import { ROUND_ENDS_AT } from "@/lib/constants";
 
 export function HowToEarnModalHandler() {
   const { isOpen, onOpenChange, hasSeenModal } = useAutoModal({
-    storageKey: "how-to-earn-modal-seen",
     databaseField: "how_to_earn_modal_seen",
     checkDate: ROUND_ENDS_AT,
     autoOpen: true,
