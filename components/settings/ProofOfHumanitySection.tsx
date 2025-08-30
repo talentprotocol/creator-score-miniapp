@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
-import type { HumanityCredential } from "@/app/services/types";
+import type { HumanityCredential } from "@/lib/types";
 
 interface ProofOfHumanitySectionProps {
   credentials: HumanityCredential[] | null;

@@ -6,10 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { truncateAddress, openExternalUrl } from "@/lib/utils";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
-import type {
-  ConnectedAccount,
-  AccountManagementAction,
-} from "@/app/services/types";
+import type { ConnectedAccount, AccountManagementAction } from "@/lib/types";
 
 interface ConnectedWalletsSectionProps {
   accounts: ConnectedAccount[];

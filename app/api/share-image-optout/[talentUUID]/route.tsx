@@ -15,9 +15,9 @@ import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsServi
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
+
 import { getTop200LeaderboardEntries } from "@/app/services/leaderboardService";
-import type { LeaderboardEntry } from "@/app/services/types";
+import type { LeaderboardEntry } from "@/lib/types/leaderboard";
 
 export async function GET(
   req: NextRequest,
@@ -125,13 +125,9 @@ export async function GET(
     );
 
     const currentRewards = userLeaderboardEntry
-      ? RewardsCalculationService.calculateUserReward(
-          userLeaderboardEntry.score,
-          userLeaderboardEntry.rank,
-          userLeaderboardEntry.isBoosted || false,
-          false, // not opted out yet for display
-          leaderboardData,
-        )
+      ? (userLeaderboardEntry.boostedReward || 0) >= 1
+        ? `$${(userLeaderboardEntry.boostedReward || 0).toFixed(0)}`
+        : `$${(userLeaderboardEntry.boostedReward || 0).toFixed(2)}`
       : "N/A";
 
     // Prepare data for image generation

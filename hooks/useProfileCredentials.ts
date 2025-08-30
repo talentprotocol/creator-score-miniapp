@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { IssuerCredentialGroup } from "@/app/services/types";
+import type { IssuerCredentialGroup } from "@/lib/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { CACHE_KEYS } from "@/lib/cache-keys";

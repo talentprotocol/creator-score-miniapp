@@ -3,7 +3,7 @@
 import { SegmentedBar } from "@/components/common/SegmentedBar";
 import { calculateTotalFollowers, formatRewardValue } from "@/lib/utils";
 import { useProfileContext } from "@/contexts/ProfileContext";
-import type { SocialAccount } from "@/app/services/types";
+import type { SocialAccount } from "@/lib/types";
 
 // Platform URL mapping for earnings platforms
 const getPlatformUrl = (

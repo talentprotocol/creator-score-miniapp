@@ -1,5 +1,5 @@
 // Removed unused imports - LEVEL_RANGES and getLevelFromScore not needed for Creator Score
-import { CreatorScore, SCORER_SLUGS } from "./types";
+import { CreatorScore, SCORER_SLUGS } from "@/lib/types";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 import { dlog, dtimer } from "@/lib/debug";

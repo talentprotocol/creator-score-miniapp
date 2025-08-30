@@ -1,4 +1,4 @@
-import { SocialAccount, TalentSocialAccount } from "./types";
+import { SocialAccount, TalentSocialAccount } from "@/lib/types";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 

@@ -98,7 +98,9 @@ export function useCreatorCategory(talentUUID: string) {
         ...algorithmicData,
         primaryCategory: {
           name: userCategory,
-          emoji: CREATOR_CATEGORIES[userCategory],
+          emoji: CREATOR_CATEGORIES[
+            userCategory as keyof typeof CREATOR_CATEGORIES
+          ] as string,
           points: algorithmicData.primaryCategory?.points || 0,
           maxPoints: algorithmicData.primaryCategory?.maxPoints || 0,
           completionPercentage:

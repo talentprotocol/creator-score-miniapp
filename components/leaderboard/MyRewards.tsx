@@ -22,7 +22,6 @@ interface MyRewardsProps {
   tokenBalance?: number | null;
   tokenLoading?: boolean;
   isBoosted?: boolean; // New prop for boost status
-  boostAmountUsd?: string | null; // Exact boost amount (formatted with $)
   activeCreatorsTotal?: number | null;
   isOptedOut?: boolean; // New prop for opt-out status
 }

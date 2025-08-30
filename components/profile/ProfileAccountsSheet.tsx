@@ -17,7 +17,7 @@ import {
   formatCompactNumber,
   openExternalUrl,
 } from "@/lib/utils";
-import type { SocialAccount } from "@/app/services/types";
+import type { SocialAccount } from "@/lib/types";
 import {
   Twitter,
   Linkedin,

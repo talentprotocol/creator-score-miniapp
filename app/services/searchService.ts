@@ -1,4 +1,4 @@
-import { SearchResult } from "./types";
+import { SearchResult } from "@/lib/types";
 
 // Type for Talent API profile response structure
 interface TalentApiProfile {

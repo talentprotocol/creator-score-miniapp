@@ -1,25 +1,68 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { LeaderboardEntry } from "@/app/services/types";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
+import type {
+  LeaderboardEntry,
+  LeaderboardData,
+} from "@/lib/types/leaderboard";
 
-export interface UseLeaderboardOptimizedReturn {
+interface UseLeaderboardDataReturn {
   entries: LeaderboardEntry[];
   loading: boolean;
   rewardsLoading: boolean;
   error: string | null;
-  boostedCreatorsCount?: number;
-  lastUpdated?: string | null;
-  nextUpdate?: string | null;
-  activeCreatorsTotal?: number | null;
+  lastUpdated: string | null;
+  nextUpdate: string | null;
+  activeCreatorsTotal: number | null;
   refetch: (forceFresh?: boolean) => void;
   updateUserOptOutStatus: (talentUuid: string, isOptedOut: boolean) => void;
 }
 
-export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
+/**
+ * CLIENT-SIDE ONLY: Fetches leaderboard data via API route (follows coding principles)
+ */
+async function getLeaderboardBasic(): Promise<LeaderboardData> {
+  try {
+    const response = await fetch(`/api/leaderboard/basic`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("[useLeaderboardOptimized] Client-side fetch failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * CLIENT-SIDE ONLY: Fetches active creators count via API route (follows coding principles)
+ */
+async function getActiveCreatorsCount(): Promise<{ total: number }> {
+  try {
+    const response = await fetch("/api/leaderboard/active-creators-count");
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "[useLeaderboardOptimized] Active creators count fetch failed:",
+      error,
+    );
+    throw error;
+  }
+}
+
+export function useLeaderboardData(): UseLeaderboardDataReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
@@ -27,9 +70,6 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
   const [activeCreatorsTotal, setActiveCreatorsTotal] = useState<number | null>(
     null,
   );
-  const [boostedCreatorsCount, setBoostedCreatorsCount] = useState<
-    number | undefined
-  >(undefined);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
@@ -49,59 +89,18 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
 
   // Load basic data immediately
   const loadBasicData = useCallback(async () => {
-    // Check cache first
-    const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
-    const cachedData = getCachedData<{
-      entries: LeaderboardEntry[];
-      boostedCreatorsCount: number;
-      lastUpdated: string | null;
-      nextUpdate: string | null;
-    }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
-
-    if (cachedData) {
-      // Filter out entries with rank > 200 only
-      const filteredEntries = filterValidEntries(cachedData.entries);
-
-      setEntries(filteredEntries);
-      setBoostedCreatorsCount(cachedData.boostedCreatorsCount);
-      setLastUpdated(cachedData.lastUpdated);
-      setNextUpdate(cachedData.nextUpdate);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/leaderboard/basic`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await getLeaderboardBasic();
 
       // Filter out entries with rank > 200 only
       const filteredEntries = filterValidEntries(data.entries);
 
       setEntries(filteredEntries);
-      setBoostedCreatorsCount(data.boostedCreatorsCount);
-      setLastUpdated(data.lastUpdated);
-      setNextUpdate(data.nextUpdate);
-
-      // Cache the filtered data
-      setCachedData(cacheKey, {
-        entries: filteredEntries,
-        boostedCreatorsCount: data.boostedCreatorsCount,
-        lastUpdated: data.lastUpdated,
-        nextUpdate: data.nextUpdate,
-      });
+      setLastUpdated(data.lastUpdated ?? null);
+      setNextUpdate(data.nextUpdate ?? null);
     } catch (err) {
       console.error(`Failed to load leaderboard data:`, err);
       setError(
@@ -110,19 +109,10 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filterValidEntries]);
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
-      try {
-        if (forceFresh && typeof window !== "undefined") {
-          console.log(
-            "[Leaderboard] Force fresh refetch: clearing localStorage cache key",
-            CACHE_KEYS.LEADERBOARD_BASIC,
-          );
-          localStorage.removeItem(CACHE_KEYS.LEADERBOARD_BASIC);
-        }
-      } catch {}
       loadBasicData();
     },
     [loadBasicData],
@@ -133,41 +123,13 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
       if (!talentUuid) return;
       // Update in-memory state
       setEntries((prev) => {
-        const updated = prev.map((e) =>
+        const updated = prev.map((e: LeaderboardEntry) =>
           String(e.talent_protocol_id) === String(talentUuid)
             ? { ...e, isOptedOut }
             : e,
         );
         return updated;
       });
-
-      // Update localStorage cache if present
-      try {
-        const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
-        const cached = getCachedData<{
-          entries: LeaderboardEntry[];
-          boostedCreatorsCount: number;
-          lastUpdated: string | null;
-          nextUpdate: string | null;
-        }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
-        if (cached) {
-          const updatedCached = {
-            ...cached,
-            entries: cached.entries.map((e) =>
-              String(e.talent_protocol_id) === String(talentUuid)
-                ? { ...e, isOptedOut }
-                : e,
-            ),
-          };
-          console.log(
-            "[Leaderboard] Updated local cache entry opt-out status for",
-            talentUuid,
-            "=",
-            isOptedOut,
-          );
-          setCachedData(cacheKey, updatedCached);
-        }
-      } catch {}
     },
     [],
   );
@@ -182,10 +144,8 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/leaderboard/active-creators-count");
-        if (!res.ok) throw new Error("Failed to fetch count");
-        const json = await res.json();
-        if (!cancelled) setActiveCreatorsTotal(json.total ?? null);
+        const data = await getActiveCreatorsCount();
+        if (!cancelled) setActiveCreatorsTotal(data.total ?? null);
       } catch {
         if (!cancelled) setActiveCreatorsTotal(null);
       }
@@ -200,7 +160,6 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     loading,
     rewardsLoading,
     error,
-    boostedCreatorsCount,
     lastUpdated,
     nextUpdate,
     activeCreatorsTotal,

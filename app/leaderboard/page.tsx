@@ -45,8 +45,9 @@ import { Typography } from "@/components/ui/typography";
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
-import { useOptOutStatus } from "@/hooks/useOptOutStatus";
+
+import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
+import { RewardsDecisionModalHandler } from "@/components/common/RewardsDecisionModalHandler";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -114,10 +115,9 @@ function LeaderboardContent() {
       : null;
 
   // Get opt-out status for all users (top 200 and non-top 200)
-  const { isOptedOut } = useOptOutStatus(
-    userTalentUuid,
-    userTop200Entry || undefined,
-  );
+  const {
+    data: { isOptedOut },
+  } = useUserRewardsDecision(userTalentUuid);
 
   // Server-persisted callout preferences
   const {
@@ -162,38 +162,11 @@ function LeaderboardContent() {
   //   return TOTAL_SPONSORS_POOL / totalBoostedScores;
   // }
 
-  function getUsdcRewards(
-    score: number,
-    rank?: number,
-    isBoosted?: boolean,
-  ): string {
-    // Use the centralized rewards calculation service
-    return RewardsCalculationService.calculateUserReward(
-      score,
-      rank || 0,
-      isBoosted || false,
-      false, // isOptedOut - will be updated when we integrate opt-out status
-      top200Entries,
-    );
-  }
-
-  function getBoostAmountUsd(
-    score: number,
-    rank?: number,
-    isBoosted?: boolean,
-  ): string | null {
-    if (!rank || rank > 200 || !isBoosted) return null;
-
-    // Use the centralized service to get the multiplier
-    const summary = RewardsCalculationService.getRewardsSummary(top200Entries);
-    if (summary.multiplier === 0) return null;
-
-    const base = score * summary.multiplier;
-    const boosted = score * 1.1 * summary.multiplier;
-    const boost = boosted - base;
-
-    if (boost <= 0) return null;
-    return boost >= 1 ? `$${boost.toFixed(0)}` : `$${boost.toFixed(2)}`;
+  function getUsdcRewards(): string {
+    const snapshotReward = userTop200Entry?.boostedReward || 0;
+    return snapshotReward >= 1
+      ? `$${snapshotReward.toFixed(0)}`
+      : `$${snapshotReward.toFixed(2)}`;
   }
 
   // Handle tab changes with PostHog tracking
@@ -218,15 +191,7 @@ function LeaderboardContent() {
         {/* My Rewards Hero - Show only when we have authenticated user context */}
         {(user || unifiedName) && (
           <MyRewards
-            rewards={
-              creatorScore
-                ? getUsdcRewards(
-                    creatorScore,
-                    userTop200Entry?.rank,
-                    userTop200Entry?.isBoosted,
-                  )
-                : "$0"
-            }
+            rewards={creatorScore ? getUsdcRewards() : "$0"}
             score={creatorScore}
             avatarUrl={avatarUrl}
             name={name!}
@@ -238,11 +203,6 @@ function LeaderboardContent() {
             tokenBalance={tokenBalance}
             tokenLoading={tokenLoading}
             isBoosted={userTop200Entry?.isBoosted}
-            boostAmountUsd={getBoostAmountUsd(
-              userTop200Entry?.score ?? creatorScore,
-              userTop200Entry?.rank,
-              userTop200Entry?.isBoosted,
-            )}
             activeCreatorsTotal={activeCreatorsTotal}
             isOptedOut={isOptedOut}
             onOptOutBadgeClick={() =>
@@ -411,24 +371,10 @@ function LeaderboardContent() {
       <RewardBoostsModal
         open={rewardBoostsOpen}
         onOpenChange={setRewardBoostsOpen}
-        rewardUsd={getUsdcRewards(
-          userTop200Entry?.score ?? creatorScore,
-          userTop200Entry?.rank,
-          false,
-        )}
+        rewardUsd={getUsdcRewards()}
         tokenBalance={tokenBalance}
-        boostUsd={
-          getBoostAmountUsd(
-            userTop200Entry?.score ?? creatorScore,
-            userTop200Entry?.rank,
-            true,
-          ) ?? "$0"
-        }
-        totalUsd={getUsdcRewards(
-          userTop200Entry?.score ?? creatorScore,
-          userTop200Entry?.rank,
-          userTop200Entry?.isBoosted,
-        )}
+        boostUsd="$0"
+        totalUsd={getUsdcRewards()}
         rank={userTop200Entry?.rank}
         score={userTop200Entry?.score ?? creatorScore}
       />
@@ -547,11 +493,10 @@ function LeaderboardContent() {
                     name: user.name,
                     avatarUrl: user.pfp,
                     rank: user.rank,
-                    primaryMetric: getUsdcRewards(
-                      user.score,
-                      user.rank,
-                      isBoosted,
-                    ),
+                    primaryMetric:
+                      (user.boostedReward || 0) >= 1
+                        ? `$${(user.boostedReward || 0).toFixed(0)}`
+                        : `$${(user.boostedReward || 0).toFixed(2)}`,
                     secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
                     primaryMetricVariant: isOptedOut
                       ? "muted"
@@ -629,13 +574,7 @@ function LeaderboardContent() {
                   name: name || "",
                   avatarUrl: avatarUrl,
                   rank: userTop200Entry?.rank,
-                  primaryMetric: creatorScore
-                    ? getUsdcRewards(
-                        userTop200Entry?.score ?? creatorScore,
-                        userTop200Entry?.rank,
-                        pinnedIsBoosted,
-                      )
-                    : undefined,
+                  primaryMetric: creatorScore ? getUsdcRewards() : undefined,
                   primaryMetricLoading:
                     loadingStats ||
                     (top200Loading && !userTop200Entry) ||
@@ -764,6 +703,15 @@ function LeaderboardContent() {
             </Callout>
           </div>
         )}
+
+        {/* Rewards Decision Modal Handler */}
+        <RewardsDecisionModalHandler
+          userRank={userTop200Entry?.rank}
+          userRewards={
+            userTop200Entry?.boostedReward || userTop200Entry?.baseReward
+          }
+          isTop200={!!userTop200Entry}
+        />
       </Section>
     </PageContainer>
   );

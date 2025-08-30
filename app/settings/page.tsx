@@ -24,15 +24,12 @@ import {
   Settings,
   CheckCircle,
   XCircle,
-  Share,
   HandHeart,
   Coins,
   Loader2,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
-import { useAutoModal } from "@/hooks/useAutoModal";
-import { ShareCreatorScoreModal } from "@/components/modals/ShareCreatorScoreModal";
 import { usePostHog } from "posthog-js/react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -47,10 +44,6 @@ function SettingsContent() {
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
-  const { isOpen, onOpenChange, openForTesting } = useAutoModal({
-    storageKey: "share-creator-score-seen",
-    autoOpen: false,
-  });
   const searchParams = useSearchParams();
 
   // Talent swap state
@@ -319,20 +312,6 @@ function SettingsContent() {
           </div>
         )}
 
-        {/* Test Share Score Modal - Development Only */}
-        {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
-          <div className="mt-2">
-            <ButtonFullWidth
-              variant="destructive"
-              icon={<Share className="h-4 w-4" />}
-              align="left"
-              onClick={openForTesting}
-            >
-              Test Share Score Modal
-            </ButtonFullWidth>
-          </div>
-        )}
-
         {/* Footer */}
         <div className="mt-8 pt-6 border-t border-muted text-center space-y-1">
           <p className="text-xs text-muted-foreground">{getVersionDisplay()}</p>
@@ -363,9 +342,6 @@ function SettingsContent() {
           </p>
         </div>
       </Section>
-
-      {/* Share Score Modal */}
-      <ShareCreatorScoreModal open={isOpen} onOpenChange={onOpenChange} />
     </PageContainer>
   );
 }

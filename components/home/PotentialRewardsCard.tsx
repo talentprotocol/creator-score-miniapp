@@ -9,7 +9,6 @@ import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { RewardsCalculationProgress } from "@/components/common/RewardsCalculationProgress";
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 
 interface PotentialRewardsCardProps {
   score: number | null;
@@ -44,8 +43,8 @@ export function PotentialRewardsCard({
       : 0;
 
   // Calculate rewards
-  const currentRewards = getUsdcRewards(score || 0, userTop200Entry?.rank);
-  const potentialRewards = getUsdcRewards(pointsNeededForTop200);
+  const currentRewards = getUsdcRewards();
+  const potentialRewards = getUsdcRewards();
 
   // Show progress indicator while loading top 200 data
   if (top200Loading && top200Entries.length === 0) {
@@ -75,15 +74,14 @@ export function PotentialRewardsCard({
   }
 
   // Helper to calculate USDC rewards using top 200 scores
-  function getUsdcRewards(score: number, rank?: number): string {
-    // Use the centralized rewards calculation service
-    return RewardsCalculationService.calculateUserReward(
-      score,
-      rank || 0,
-      false, // isBoosted - this component doesn't have boost info
-      false, // isOptedOut - will be updated when we integrate opt-out status
-      top200Entries,
-    );
+  function getUsdcRewards(): string {
+    // Use snapshot reward if available, otherwise show $0
+    const snapshotReward = userTop200Entry?.boostedReward || 0;
+
+    // Format as currency
+    return snapshotReward >= 1
+      ? `$${snapshotReward.toFixed(0)}`
+      : `$${snapshotReward.toFixed(2)}`;
   }
 
   const rewards = score ? currentRewards : potentialRewards;

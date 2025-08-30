@@ -33,6 +33,10 @@ app-name/
 │   └── [feature]/            # Feature components
 ├── hooks/                    # Custom React hooks
 ├── lib/                      # Utilities & config
+│   ├── types/                # TypeScript type definitions
+│   │   ├── index.ts          # Re-exports for convenient imports
+│   │   ├── profiles.ts       # Profile, wallet, settings types
+│   └── [other-utils]/        # Other utilities
 ├── public/                   # Static assets
 └── docs/                     # Documentation
 ```
@@ -43,17 +47,22 @@ app-name/
 - **Functions/Hooks**: camelCase (`useUserProfile`)
 - **Services**: `[Domain]Service` (`UserService`)
 - **Hooks**: `use[Feature]Data` (`useProfileData`)
+- **Type Files**: kebab-case (`social-accounts.ts`, `user-preferences.ts`)
+- **Type Interfaces**: PascalCase (`UserProfile`, `SocialAccount`)
 
 ## Architecture Patterns
 - **Service Layer**: Business logic in `/app/services/`
 - **Hook Pattern**: Data fetching in `/hooks/api/`
 - **Component Pattern**: Pure UI in `/components/[feature]/`
+- **Type Organization**: Domain-specific types in `/lib/types/[domain].ts`
 - **Import Order**: React → Third-party → Internal → Relative
 
 ## Configuration
 - Environment: `lib/config/env.ts`
 - Features: `lib/config/features.ts`
 - Constants: `lib/config/constants.ts`
+
+
 
 ## Key Decisions
 - Services: Server-side only (`/app/services/`)

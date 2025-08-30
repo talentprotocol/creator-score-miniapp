@@ -1,4 +1,4 @@
-import { Post, PostsResponse } from "./types";
+import { Post, PostsResponse } from "@/lib/types";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_30_MINUTES } from "@/lib/cache-keys";
 

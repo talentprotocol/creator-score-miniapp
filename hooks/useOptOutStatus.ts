@@ -1,31 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { LeaderboardEntry } from "@/app/services/types";
+import type { LeaderboardEntry } from "@/lib/types/leaderboard";
+import type { RewardsDecision } from "@/lib/types/user-preferences";
 
-export interface UseOptOutStatusReturn {
-  isOptedOut: boolean;
+export interface UseUserRewardsDecisionReturn {
+  data: {
+    isOptedOut: boolean;
+    isOptedIn: boolean;
+    hasMadeDecision: boolean;
+    rewardsDecision: RewardsDecision;
+  };
   loading: boolean;
   error: string | null;
 }
 
 /**
- * Hook to check opt-out status for any user (top 200 or not)
+ * Hook to check rewards decision status for any user (top 200 or not)
  *
  * For top 200 users: Uses cached leaderboard data (fast)
  * For non-top-200 users: Makes API call to get database status
  *
  * @param talentUuid - User's Talent Protocol UUID
  * @param userTop200Entry - User's entry from leaderboard (if in top 200)
- * @returns Opt-out status, loading state, and error state
+ * @returns Rewards decision status, loading state, and error state
  */
-export function useOptOutStatus(
+export function useUserRewardsDecision(
   talentUuid: string | null,
   userTop200Entry?: LeaderboardEntry,
-): UseOptOutStatusReturn {
-  const [separateOptOutStatus, setSeparateOptOutStatus] = useState<
-    boolean | null
-  >(null);
+): UseUserRewardsDecisionReturn {
+  const [separateRewardsDecision, setSeparateRewardsDecision] =
+    useState<RewardsDecision | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,14 +42,14 @@ export function useOptOutStatus(
   useEffect(() => {
     if (!talentUuid || isInTop200) {
       // Clear any previous separate status when switching to top 200 user
-      if (isInTop200 && separateOptOutStatus !== null) {
-        setSeparateOptOutStatus(null);
+      if (isInTop200 && separateRewardsDecision !== null) {
+        setSeparateRewardsDecision(null);
         setError(null);
       }
       return;
     }
 
-    const fetchOptOutStatus = async () => {
+    const fetchRewardsDecision = async () => {
       setLoading(true);
       setError(null);
 
@@ -55,36 +60,49 @@ export function useOptOutStatus(
 
         if (!response.ok) {
           throw new Error(
-            `HTTP ${response.status}: Failed to fetch opt-out status`,
+            `HTTP ${response.status}: Failed to fetch rewards decision status`,
           );
         }
 
         const data = await response.json();
 
         if (!data.success) {
-          throw new Error(data.error || "Failed to get opt-out status");
+          throw new Error(
+            data.error || "Failed to get rewards decision status",
+          );
         }
 
-        setSeparateOptOutStatus(data.data?.rewards_optout || false);
+        setSeparateRewardsDecision(data.data?.rewards_decision || null);
       } catch (err) {
-        console.error("Error fetching opt-out status:", err);
+        console.error("Error fetching rewards decision status:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
-        setSeparateOptOutStatus(false); // Default to not opted out on error
+        setSeparateRewardsDecision(null); // Default to no decision on error
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOptOutStatus();
+    fetchRewardsDecision();
   }, [talentUuid, isInTop200]);
 
   // Return combined status based on data source
-  const isOptedOut = isInTop200
+  const rewardsDecision: RewardsDecision = isInTop200
     ? top200OptOutStatus
-    : separateOptOutStatus || false;
+      ? "opted_out"
+      : "opted_in"
+    : separateRewardsDecision || null;
+
+  const isOptedOut = rewardsDecision === "opted_out";
+  const isOptedIn = rewardsDecision === "opted_in";
+  const hasMadeDecision = rewardsDecision !== null;
 
   return {
-    isOptedOut,
+    data: {
+      isOptedOut,
+      isOptedIn,
+      hasMadeDecision,
+      rewardsDecision,
+    },
     loading: loading && !isInTop200, // Only show loading for non-top-200 users
     error,
   };

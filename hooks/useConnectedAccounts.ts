@@ -4,7 +4,7 @@ import type {
   UserSettings,
   AccountManagementAction,
   HumanityCredential,
-} from "@/app/services/types";
+} from "@/lib/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 

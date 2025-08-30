@@ -1,10 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from "react";
-import type {
-  SocialAccount,
-  IssuerCredentialGroup,
-} from "@/app/services/types";
+import type { SocialAccount, IssuerCredentialGroup } from "@/lib/types";
 
 // Profile data interface matching the server-side resolver
 export interface ProfileData {

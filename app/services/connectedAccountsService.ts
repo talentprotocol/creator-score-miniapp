@@ -6,7 +6,7 @@ import type {
   AccountManagementAction,
   HumanityCredentialsResponse,
   ProfileResponse,
-} from "./types";
+} from "@/lib/types";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 
