@@ -31,7 +31,6 @@ import {
 
 import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
-import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { HandHeart, Trophy, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +40,7 @@ import posthog from "posthog-js";
 import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Typography } from "@/components/ui/typography";
+
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
