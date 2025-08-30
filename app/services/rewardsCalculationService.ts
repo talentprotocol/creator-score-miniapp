@@ -160,8 +160,8 @@ export class RewardsCalculationService {
 
       const updates = optedOutContributions.map((item) => ({
         talent_uuid: item.talentUuid,
-        future_pool_contribution: item.contribution,
-        updated_at: new Date().toISOString(),
+        future_pool_contribution: Math.round(item.contribution), // Round to match UI display
+        // updated_at is automatically set by database trigger
       }));
 
       const { error } = await supabase
