@@ -11,7 +11,10 @@ export async function GET() {
 
     if (totalError) {
       console.error("Error fetching total users:", totalError);
-      return NextResponse.json({ percentage: 58 }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to fetch total users", details: totalError.message },
+        { status: 500 },
+      );
     }
 
     // Get opted-out users
@@ -22,16 +25,28 @@ export async function GET() {
 
     if (optedOutError) {
       console.error("Error fetching opted-out users:", optedOutError);
-      return NextResponse.json({ percentage: 58 }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "Failed to fetch opted-out users",
+          details: optedOutError.message,
+        },
+        { status: 500 },
+      );
     }
 
     const total = totalUsers?.length || 0;
     const optedOut = optedOutUsers?.length || 0;
-    const percentage = total > 0 ? Math.round((optedOut / total) * 100) : 58;
+    const percentage = total > 0 ? Math.round((optedOut / total) * 100) : 0;
 
     return NextResponse.json({ percentage });
   } catch (error) {
     console.error("Error calculating opted-out percentage:", error);
-    return NextResponse.json({ percentage: 58 }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
   }
 }
