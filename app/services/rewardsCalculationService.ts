@@ -200,11 +200,13 @@ export class RewardsCalculationService {
 
     // Calculate active pool (total pool minus opted-out portion)
     const totalBoostedScores = totalEligibleScores + totalOptedOutScores;
-    const activePool = totalBoostedScores > 0 
-      ? (totalEligibleScores / totalBoostedScores) * TOTAL_SPONSORS_POOL
-      : 0;
+    const activePool =
+      totalBoostedScores > 0
+        ? (totalEligibleScores / totalBoostedScores) * TOTAL_SPONSORS_POOL
+        : 0;
 
-    const multiplier = totalEligibleScores > 0 ? activePool / totalEligibleScores : 0;
+    const multiplier =
+      totalEligibleScores > 0 ? activePool / totalEligibleScores : 0;
 
     return {
       totalPool: TOTAL_SPONSORS_POOL,
