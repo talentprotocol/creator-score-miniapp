@@ -194,8 +194,17 @@ export class RewardsCalculationService {
       .filter((c) => !c.isOptedOut)
       .reduce((sum, c) => sum + c.boostedScore, 0);
 
-    const multiplier =
-      totalEligibleScores > 0 ? TOTAL_SPONSORS_POOL / totalEligibleScores : 0;
+    const totalOptedOutScores = calculations
+      .filter((c) => c.isOptedOut)
+      .reduce((sum, c) => sum + c.boostedScore, 0);
+
+    // Calculate active pool (total pool minus opted-out portion)
+    const totalBoostedScores = totalEligibleScores + totalOptedOutScores;
+    const activePool = totalBoostedScores > 0 
+      ? (totalEligibleScores / totalBoostedScores) * TOTAL_SPONSORS_POOL
+      : 0;
+
+    const multiplier = totalEligibleScores > 0 ? activePool / totalEligibleScores : 0;
 
     return {
       totalPool: TOTAL_SPONSORS_POOL,
