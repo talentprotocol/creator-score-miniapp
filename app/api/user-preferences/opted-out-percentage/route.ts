@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase-client";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get total users with rewards decision
     const { data: totalUsers, error: totalError } = await supabase
