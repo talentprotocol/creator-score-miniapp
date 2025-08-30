@@ -12,6 +12,7 @@ export type LeaderboardEntry = {
   talent_protocol_id: string | number;
   isBoosted?: boolean;
   isOptedOut?: boolean;
+  isUndecided?: boolean;
   baseReward?: number;
   boostedReward?: number;
 };

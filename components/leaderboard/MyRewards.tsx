@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 import { BOOST_CONFIG } from "@/lib/constants";
 import posthog from "posthog-js";
 
+// Feature flag to control boost functionality/visibility
+const BOOST_FEATURE_ENABLED = false;
+
 interface MyRewardsProps {
   rewards: string;
   score: number;
@@ -123,7 +126,7 @@ export function MyRewards({
                         </span>
                       </div>
                     )
-                  ) : isBoosted ? (
+                  ) : BOOST_FEATURE_ENABLED && isBoosted ? (
                     <button
                       type="button"
                       className={cn(
@@ -144,7 +147,7 @@ export function MyRewards({
                         BOOSTED
                       </span>
                     </button>
-                  ) : (
+                  ) : BOOST_FEATURE_ENABLED ? (
                     <button
                       type="button"
                       className={cn(
@@ -162,33 +165,35 @@ export function MyRewards({
                     >
                       <Rocket className="h-3 w-3 text-muted-foreground" />
                     </button>
-                  ))}
+                  ) : null)}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {tokenLoading ? (
-                  "Loading token balance..."
-                ) : isBoosted ? (
-                  <>
-                    You’re receiving a{" "}
-                    <span className="font-semibold">10%</span> boost!
-                  </>
-                ) : tokenBalance !== null &&
-                  tokenBalance !== undefined &&
-                  tokenBalance >= BOOST_CONFIG.TOKEN_THRESHOLD ? (
-                  <>
-                    You’re eligible for a{" "}
-                    <span className="font-semibold">10%</span> boost.
-                  </>
-                ) : (
-                  <>
-                    Hold{" "}
-                    <span className="font-semibold">
-                      {BOOST_CONFIG.TOKEN_THRESHOLD}+ $TALENT
-                    </span>{" "}
-                    for a boost!
-                  </>
-                )}
-              </p>
+              {BOOST_FEATURE_ENABLED && (
+                <p className="text-xs text-muted-foreground">
+                  {tokenLoading ? (
+                    "Loading token balance..."
+                  ) : isBoosted ? (
+                    <>
+                      You&apos;re receiving a{" "}
+                      <span className="font-semibold">10%</span> boost!
+                    </>
+                  ) : tokenBalance !== null &&
+                    tokenBalance !== undefined &&
+                    tokenBalance >= BOOST_CONFIG.TOKEN_THRESHOLD ? (
+                    <>
+                      You&apos;re eligible for a{" "}
+                      <span className="font-semibold">10%</span> boost.
+                    </>
+                  ) : (
+                    <>
+                      Hold{" "}
+                      <span className="font-semibold">
+                        {BOOST_CONFIG.TOKEN_THRESHOLD}+ $TALENT
+                      </span>{" "}
+                      for a boost!
+                    </>
+                  )}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 {isTop200 ? (
                   <>

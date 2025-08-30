@@ -482,11 +482,16 @@ function LeaderboardContent() {
                   primaryMetricLoading?: boolean;
                   secondaryMetric?: string;
                   badge?: React.ReactNode;
-                  primaryMetricVariant?: "default" | "brand-purple" | "muted";
+                  primaryMetricVariant?:
+                    | "default"
+                    | "brand-purple"
+                    | "brand-green"
+                    | "muted";
                   isOptedOut?: boolean;
                 }> = top200Entries.map((user) => {
                   const isBoosted = user.isBoosted;
                   const isOptedOut = user.isOptedOut;
+                  const isUndecided = user.isUndecided;
 
                   return {
                     id: user.id,
@@ -498,11 +503,13 @@ function LeaderboardContent() {
                         ? `$${(user.boostedReward || 0).toFixed(0)}`
                         : `$${(user.boostedReward || 0).toFixed(2)}`,
                     secondaryMetric: `Creator Score: ${user.score.toLocaleString()}`,
-                    primaryMetricVariant: isOptedOut
+                    primaryMetricVariant: isUndecided
                       ? "muted"
-                      : isBoosted
-                        ? "brand-purple"
-                        : "default",
+                      : isOptedOut
+                        ? "brand-green"
+                        : isBoosted
+                          ? "brand-purple"
+                          : "default",
                     isOptedOut: isOptedOut,
                     badge: isOptedOut ? (
                       isLoggedIn ? (
@@ -555,6 +562,7 @@ function LeaderboardContent() {
 
                 const pinnedIsBoosted = userTop200Entry?.isBoosted ?? false;
                 const pinnedIsOptedOut = userTop200Entry?.isOptedOut ?? false;
+                const pinnedIsUndecided = userTop200Entry?.isUndecided ?? false;
                 const pinnedId = userTop200Entry?.id || (userTalentUuid ?? "");
                 if (!pinnedId) return baseItems;
 
@@ -567,7 +575,11 @@ function LeaderboardContent() {
                   primaryMetricLoading?: boolean;
                   secondaryMetric?: string;
                   badge?: React.ReactNode;
-                  primaryMetricVariant?: "default" | "brand-purple" | "muted";
+                  primaryMetricVariant?:
+                    | "default"
+                    | "brand-purple"
+                    | "brand-green"
+                    | "muted";
                   isOptedOut?: boolean;
                 } = {
                   id: pinnedId,
@@ -582,11 +594,13 @@ function LeaderboardContent() {
                   secondaryMetric: `Creator Score: ${(
                     userTop200Entry?.score ?? creatorScore
                   ).toLocaleString()}`,
-                  primaryMetricVariant: pinnedIsOptedOut
+                  primaryMetricVariant: pinnedIsUndecided
                     ? "muted"
-                    : pinnedIsBoosted
-                      ? "brand-purple"
-                      : "default",
+                    : pinnedIsOptedOut
+                      ? "brand-green"
+                      : pinnedIsBoosted
+                        ? "brand-purple"
+                        : "default",
                   isOptedOut: pinnedIsOptedOut,
                   badge: pinnedIsOptedOut ? (
                     isLoggedIn ? (

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
-import { CACHE_KEYS } from "@/lib/cache-keys";
 import { updateUserPreferencesAtomic } from "@/app/services/userPreferencesService";
 import { validateTalentUUID } from "@/lib/validation";
 
@@ -50,7 +48,8 @@ export async function POST(req: NextRequest): Promise<
   }>
 > {
   try {
-    const { talent_uuid, decision, confirm_decision } = await req.json();
+    const { talent_uuid, decision, confirm_decision, primary_wallet_address } =
+      await req.json();
 
     // Validate required fields
     if (!talent_uuid) {
@@ -86,17 +85,8 @@ export async function POST(req: NextRequest): Promise<
       const result = await updateUserPreferencesAtomic({
         talent_uuid,
         rewards_decision: decision as "opted_in" | "opted_out",
+        primary_wallet_address,
       });
-
-      // Predictable server cache refresh for leaderboard data (optional, safe no-op if tags unused)
-      try {
-        // Only revalidate basic leaderboard dependencies; Top 200 doesn't change on decision
-        revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
-        console.log(
-          "[Rewards Decision API] Revalidated tag:",
-          CACHE_KEYS.LEADERBOARD_BASIC,
-        );
-      } catch {}
 
       return NextResponse.json({
         success: true,
@@ -180,7 +170,10 @@ export async function GET(req: NextRequest): Promise<
 
       return NextResponse.json({
         success: true,
-        data: { rewards_decision: prefs.rewards_decision },
+        data: {
+          rewards_decision: prefs.rewards_decision,
+          primary_wallet_address: prefs.primary_wallet_address,
+        },
       });
     } catch (error) {
       console.error("Error fetching user preferences:", error);

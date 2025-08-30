@@ -120,20 +120,29 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
   // Fetch opt-out status for all users (for display styling)
   let optedOutUserIds: string[] = [];
+  let undecidedUserIds: string[] = [];
   try {
     const { data, error } = await supabase
       .from("user_preferences")
-      .select("talent_uuid")
-      .eq("rewards_decision", "opted_out");
+      .select("talent_uuid, rewards_decision");
 
     if (error) {
-      console.error("Error fetching opted-out users:", error);
+      console.error("Error fetching user preferences:", error);
       optedOutUserIds = [];
+      undecidedUserIds = [];
     } else {
-      optedOutUserIds = data?.map((row) => row.talent_uuid) ?? [];
+      optedOutUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === "opted_out")
+          .map((row) => row.talent_uuid) ?? [];
+      undecidedUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === null)
+          .map((row) => row.talent_uuid) ?? [];
     }
   } catch {
     optedOutUserIds = [];
+    undecidedUserIds = [];
   }
 
   // Map to basic entries with opt-out status (boost logic removed for now)
@@ -145,6 +154,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
     const isOptedOut = optedOutUserIds.includes(profile.id);
+    const isUndecided = undecidedUserIds.includes(profile.id);
 
     return {
       name: profile.display_name || profile.name || "Unknown",
@@ -154,6 +164,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       talent_protocol_id: profile.id,
       isBoosted: false, // Boost logic removed for now - will be restored for token holder leaderboard
       isOptedOut,
+      isUndecided,
       baseReward: 0, // Will be set from snapshot
       boostedReward: 0, // Will be set from snapshot
       rank: 0, // Will be set from snapshot

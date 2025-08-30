@@ -28,12 +28,55 @@ export class LeaderboardSnapshotService {
         };
       }
 
+      // Fetch actual rewards amounts for opted-out users from database
+      const optedOutRewards = new Map<string, number>();
+      try {
+        const { data: optedOutData, error: optedOutError } = await this.supabase
+          .from("user_preferences")
+          .select("talent_uuid, rewards_amount")
+          .eq("rewards_decision", "opted_out")
+          .not("rewards_amount", "is", null);
+
+        if (optedOutError) {
+          console.error(
+            "Error fetching opted-out rewards for snapshot:",
+            optedOutError,
+          );
+        } else if (optedOutData) {
+          optedOutData.forEach((row) => {
+            if (row.rewards_amount !== null) {
+              optedOutRewards.set(row.talent_uuid, row.rewards_amount);
+            }
+          });
+          console.log(
+            `[LeaderboardSnapshotService] Fetched ${optedOutRewards.size} opted-out rewards for snapshot`,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[LeaderboardSnapshotService] Error fetching opted-out rewards for snapshot:",
+          error,
+        );
+      }
+
       // Transform leaderboard entries to snapshot format (only essential data)
-      const snapshots = entries.map((entry) => ({
-        talent_uuid: entry.id,
-        rank: entry.rank,
-        rewards_amount: entry.boostedReward || entry.baseReward || 0,
-      }));
+      const snapshots = entries.map((entry) => {
+        let rewardsAmount = entry.boostedReward || entry.baseReward || 0;
+
+        // For opted-out users, use their actual donation amount from database
+        if (entry.isOptedOut) {
+          const actualReward = optedOutRewards.get(entry.id);
+          if (actualReward !== undefined) {
+            rewardsAmount = actualReward;
+          }
+        }
+
+        return {
+          talent_uuid: entry.id,
+          rank: entry.rank,
+          rewards_amount: rewardsAmount,
+        };
+      });
 
       // Insert all snapshots in a single transaction
       const { data, error } = await this.supabase

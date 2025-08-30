@@ -14,7 +14,7 @@ export interface CreatorItem {
   primaryMetricLoading?: boolean; // New prop for partial loading
   secondaryMetric?: string; // e.g., "Creator Score: 5,230"
   badge?: React.ReactNode; // Optional badge (e.g., rocket for boosted users)
-  primaryMetricVariant?: "default" | "brand-purple" | "muted"; // New prop for styling variants
+  primaryMetricVariant?: "default" | "brand-purple" | "brand-green" | "muted"; // New prop for styling variants
   isOptedOut?: boolean; // New prop for opt-out styling
 }
 
@@ -35,13 +35,6 @@ export function CreatorList({
   pinnedIndex,
   className,
 }: CreatorListProps) {
-  // Variant styles for primary metric
-  const variantStyles = {
-    default: "text-sm font-medium",
-    "brand-purple": "text-sm font-medium text-brand-purple",
-    muted: "text-sm font-medium text-muted-foreground",
-  } as const;
-
   if (loading && items.length === 0) {
     return (
       <div className={cn("space-y-3", className)}>
@@ -124,11 +117,15 @@ export function CreatorList({
                       ) : (
                         <span
                           className={cn(
-                            variantStyles[
-                              item.primaryMetricVariant || "default"
-                            ],
-                            // Add opt-out styling when applicable
-                            item.isOptedOut && "text-brand-green line-through",
+                            "text-sm font-medium",
+                            item.primaryMetricVariant === "brand-purple" &&
+                              "text-brand-purple",
+                            item.primaryMetricVariant === "brand-green" &&
+                              "text-brand-green",
+                            item.primaryMetricVariant === "muted" &&
+                              "text-muted-foreground",
+                            // Add strikethrough for opted-out users
+                            item.isOptedOut && "line-through",
                           )}
                         >
                           {item.primaryMetric}

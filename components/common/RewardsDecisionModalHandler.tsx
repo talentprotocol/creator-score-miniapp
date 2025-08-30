@@ -22,7 +22,6 @@ export function RewardsDecisionModalHandler({
     useUserRewardsDecision(talentUuid);
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [hasCheckedDecision, setHasCheckedDecision] = React.useState(false);
 
   const { walletData, loading: walletsLoading } = useProfileWalletAccounts(
     talentUuid || undefined,
@@ -77,25 +76,22 @@ export function RewardsDecisionModalHandler({
 
   // Check if modal should be shown - only show if user is in top 200 and hasn't made a decision
   React.useEffect(() => {
-    if (!isTop200 || !talentUuid || decisionLoading || hasCheckedDecision) {
+    if (!isTop200 || !talentUuid || decisionLoading) {
       return;
     }
 
     // If user has already made a decision, don't show modal
     if (rewardsDecisionData.hasMadeDecision) {
-      setHasCheckedDecision(true);
       return;
     }
 
     // Show modal for top 200 users who haven't made a decision
     setIsModalOpen(true);
-    setHasCheckedDecision(true);
   }, [
     isTop200,
     talentUuid,
     decisionLoading,
     rewardsDecisionData.hasMadeDecision,
-    hasCheckedDecision,
   ]);
 
   // Handle modal close - don't update database, just close the modal
