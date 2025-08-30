@@ -31,7 +31,6 @@ import {
 
 import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
-import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { HandHeart, Trophy, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +40,7 @@ import posthog from "posthog-js";
 import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Typography } from "@/components/ui/typography";
+
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
@@ -398,7 +397,7 @@ function LeaderboardContent() {
             value={`$${formatCompactNumber(TOTAL_SPONSORS_POOL)}`}
           />
           <StatCard
-            title="Rewards Distribution"
+            title="TOP200 Snapshot"
             value={`${countdown.days}d ${countdown.hours}h`}
           />
         </div>
@@ -470,7 +469,7 @@ function LeaderboardContent() {
             tabs={[
               {
                 id: "creators",
-                label: "Top 200",
+                label: "TOP200",
               },
               {
                 id: "sponsors",
@@ -740,29 +739,6 @@ function LeaderboardContent() {
               }}
             />
           </>
-        )}
-
-        {/* Sponsor Callout */}
-        {activeTab === "sponsors" && (
-          <div className="mt-4">
-            <Callout variant="brand-purple">
-              <Typography
-                size="xs"
-                color="default"
-                className="text-brand-purple"
-              >
-                Want to join as a sponsor? Reach out to {""}
-                <button
-                  className="underline hover:no-underline"
-                  onClick={() =>
-                    openExternalUrl("https://farcaster.xyz/juampi", context)
-                  }
-                >
-                  @juampi
-                </button>
-              </Typography>
-            </Callout>
-          </div>
         )}
       </Section>
     </PageContainer>

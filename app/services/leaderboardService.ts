@@ -253,37 +253,16 @@ async function updateOptedOutRewards(
     const { RewardsCalculationService } = await import(
       "./rewardsCalculationService"
     );
-    const { RewardsStorageService } = await import("./rewardsStorageService");
 
-    // Calculate rewards for each opted-out user
-    const rewardsToStore = optedOutUsers.map((user) => {
-      const rewardAmount = RewardsCalculationService.calculateUserReward(
-        user.score,
-        user.rank,
-        user.isBoosted || false,
-        false, // Calculate as if not opted out to get the donation amount
-        entries,
-      );
-
-      // Extract numeric value from formatted string (e.g., "$138" -> 138)
-      const numericAmount =
-        parseFloat(rewardAmount.replace(/[^0-9.-]/g, "")) || 0;
-
-      return {
-        talentUuid: String(user.talent_protocol_id),
-        amount: numericAmount,
-      };
-    });
-
-    // Batch update all opted-out user rewards
-    await RewardsStorageService.batchUpdateOptedOutRewards(rewardsToStore);
+    // Store opted-out users' future pool contributions
+    await RewardsCalculationService.storeOptedOutContributions(entries);
 
     console.log(
-      `[LeaderboardService] Updated rewards storage for ${rewardsToStore.length} opted-out users`,
+      `[LeaderboardService] Updated future pool contributions for ${optedOutUsers.length} opted-out users`,
     );
   } catch (error) {
     console.error(
-      "[LeaderboardService] Error updating opted-out rewards:",
+      "[LeaderboardService] Error updating opted-out contributions:",
       error,
     );
     throw error; // Re-throw to be caught by caller
