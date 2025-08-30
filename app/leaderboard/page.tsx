@@ -469,7 +469,7 @@ function LeaderboardContent() {
             tabs={[
               {
                 id: "creators",
-                label: "Top 200",
+                label: "TOP200",
               },
               {
                 id: "sponsors",
