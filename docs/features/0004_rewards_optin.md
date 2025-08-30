@@ -1,0 +1,57 @@
+# Rewards Distribution Opt-in System
+
+## Context
+Creators who opt out of rewards currently have their money redistributed to remaining creators. We need a system where opted-out money goes to a separate future rewards pool, with an explicit opt-in/opt-out flow for top 200 creators before September 15th.
+
+## Timeline
+- **ROUND_ENDS_AT**: August 31st, 2025 (leaderboard freezes)
+- **Decision Deadline**: September 15th, 2025, 11:59 PM UTC (default opt-out)
+- **Distribution**: September 17th, 2025 (manual distribution)
+
+## Decision Rules
+- **Opt-out is IRREVERSIBLE**: Once opted-out, cannot change to opt-in
+- **Opt-in is REVERSIBLE**: Can change to opt-out until deadline
+- **Default**: All undecided users default to opt-out after deadline
+
+## Implementation Status
+
+### ✅ Phase 1: Separate Pool Logic - COMPLETE
+- Database migration: Added `rewards_decision`, `decision_made_at`, `future_pool_contribution`, `primary_wallet_address` fields
+- Updated rewards calculation to use separate pools
+- Migration completed: 2,108 total users, 180 with decisions (all opted-out)
+
+### ✅ Phase 2: Opt-in/Opt-out Flow - COMPLETE
+- **UI Components**: `RewardsDecisionModal` (two-step flow), `RewardsDecisionModalHandler`, `WalletSelectionStep`
+- **API Layer**: `/api/user-preferences/optout`, `/api/user-preferences/opted-out-percentage`, `/api/leaderboard/snapshot`
+- **Admin Interface**: `/admin/snapshot` page for manual snapshot creation
+- **Integration**: Modal shows to top 200 users on leaderboard page
+- **Wallet Logic**: Farcaster primary → Farcaster verified → Talent verified
+
+### ✅ Phase 3: Testing - COMPLETE
+- All API endpoints tested and working
+- Integration testing completed
+- Production build successful
+
+## Current State
+- **Total Users**: 2,108 in database
+- **Users with Decisions**: 180 (8.5%)
+- **Opted-out Rate**: (dynamically calculated)
+- **Modal Status**: Fully functional and tested
+- **Production Ready**: Yes
+
+## Pending Tasks
+1. **August 31st**: Create leaderboard snapshot manually via `/admin/snapshot`
+2. **September 15th**: Manually process undecided users (default to opt-out) via database query
+3. **September 17th**: Manual rewards distribution
+4. **Post-distribution**: Remove legacy `rewards_optout` field
+
+## Key Files
+- **New**: `components/modals/RewardsDecisionModal.tsx`, `components/common/RewardsDecisionModalHandler.tsx`
+- **Modified**: `hooks/useUserRewardsDecision.ts` (simplified to always fetch from database), `app/leaderboard/page.tsx`
+- **API**: `/api/user-preferences/optout`, `/api/leaderboard/snapshot`, `/api/admin/snapshot/trigger`
+
+## Business Logic
+- Modal shows only to top 200 users without decisions
+- Always fetches from database (no complex caching)
+- Opt-out users get "PAID FORWARD" badge, boosted users get "BOOSTED" badge
+- Separate pool system: opted-out rewards go to `future_rewards_pool`
