@@ -398,7 +398,7 @@ function LeaderboardContent() {
             value={`$${formatCompactNumber(TOTAL_SPONSORS_POOL)}`}
           />
           <StatCard
-            title="Rewards Distribution"
+            title="TOP200 Snapshot"
             value={`${countdown.days}d ${countdown.hours}h`}
           />
         </div>
@@ -740,29 +740,6 @@ function LeaderboardContent() {
               }}
             />
           </>
-        )}
-
-        {/* Sponsor Callout */}
-        {activeTab === "sponsors" && (
-          <div className="mt-4">
-            <Callout variant="brand-purple">
-              <Typography
-                size="xs"
-                color="default"
-                className="text-brand-purple"
-              >
-                Want to join as a sponsor? Reach out to {""}
-                <button
-                  className="underline hover:no-underline"
-                  onClick={() =>
-                    openExternalUrl("https://farcaster.xyz/juampi", context)
-                  }
-                >
-                  @juampi
-                </button>
-              </Typography>
-            </Callout>
-          </div>
         )}
       </Section>
     </PageContainer>

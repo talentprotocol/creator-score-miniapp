@@ -112,6 +112,13 @@ export type LeaderboardEntry = {
   boostedReward?: number;
 };
 
+export type LeaderboardSnapshot = {
+  talent_uuid: string;
+  rank: number;
+  rewards_amount: number;
+  created_at?: string;
+};
+
 // Wallet account types for Talent Protocol API
 export interface WalletAccount {
   identifier: string; // wallet address
