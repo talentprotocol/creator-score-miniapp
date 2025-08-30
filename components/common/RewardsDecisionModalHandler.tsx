@@ -17,10 +17,9 @@ export function RewardsDecisionModalHandler({
   userRewards,
   isTop200 = false,
 }: RewardsDecisionModalHandlerProps) {
-  const { onOpenChange } = useAutoModal({
-    storageKey: "rewards-decision",
+  const { isOpen, onOpenChange } = useAutoModal({
     databaseField: "rewards_decision",
-    autoOpen: false, // Don't auto-open for now
+    autoOpen: true, // Enable auto-opening based on database field
   });
 
   const { talentUuid } = useFidToTalentUuid();
@@ -75,43 +74,10 @@ export function RewardsDecisionModalHandler({
     calculatePercentage();
   }, [talentUuid]);
 
-  // Check if user has already made a decision
-  const [hasMadeDecision, setHasMadeDecision] = React.useState<boolean | null>(
-    null,
-  );
-  const [decisionLoading, setDecisionLoading] = React.useState(false);
+  // Only show modal if user is in top 200 and useAutoModal says to show it
+  const shouldShowModal = isTop200 && isOpen;
 
-  React.useEffect(() => {
-    if (!talentUuid) return;
-
-    async function checkDecision() {
-      setDecisionLoading(true);
-      try {
-        const response = await fetch(
-          `/api/user-preferences/optout?talent_uuid=${talentUuid}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            const decision = data.data?.rewards_decision;
-            setHasMadeDecision(decision !== null && decision !== undefined);
-          }
-        }
-      } catch (error) {
-        console.error("Error checking decision status:", error);
-      } finally {
-        setDecisionLoading(false);
-      }
-    }
-
-    checkDecision();
-  }, [talentUuid]);
-
-  // Only show modal if user is in top 200 and hasn't made a decision
-  const shouldShowModal = isTop200 && !hasMadeDecision;
-  const modalOpen = shouldShowModal;
-
-  // Don't render if not in top 200
+  // Don't render if not in top 200 or modal shouldn't be shown
   if (!shouldShowModal) {
     return null;
   }
@@ -142,13 +108,13 @@ export function RewardsDecisionModalHandler({
 
   return (
     <RewardsDecisionModal
-      open={modalOpen}
+      open={isOpen}
       onOpenChange={onOpenChange}
       userRank={userRank}
       userRewards={userRewards}
       optedOutPercentage={optedOutPercentage}
       wallets={wallets}
-      isLoading={walletsLoading || profileLoading || decisionLoading}
+      isLoading={walletsLoading || profileLoading}
       talentUuid={talentUuid || undefined}
     />
   );
