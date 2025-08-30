@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { LeaderboardSnapshotService } from "@/app/services/leaderboardSnapshotService";
 
 /**
@@ -40,83 +40,6 @@ export async function GET() {
     return NextResponse.json(response);
   } catch (error) {
     console.error("Error in snapshot GET endpoint:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
-
-/**
- * POST /api/leaderboard/snapshot
- * Create a new leaderboard snapshot
- * This should be called manually to freeze the leaderboard
- */
-export async function POST(request: NextRequest) {
-  try {
-    // API key authentication
-    const apiKey = request.headers.get("x-api-key");
-    if (apiKey !== process.env.SNAPSHOT_ADMIN_API_KEY) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { entries } = body;
-
-    // Validate required fields
-    if (!entries || !Array.isArray(entries) || entries.length === 0) {
-      return NextResponse.json(
-        { error: "Entries array is required and must not be empty" },
-        { status: 400 },
-      );
-    }
-
-    // Validate entries structure
-    const requiredFields = ["rank", "id"];
-    const isValidEntry = (entry: Record<string, unknown>) => {
-      return requiredFields.every((field) => entry.hasOwnProperty(field));
-    };
-
-    if (!entries.every(isValidEntry)) {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid entry structure. Required fields: " +
-            requiredFields.join(", "),
-        },
-        { status: 400 },
-      );
-    }
-
-    // Check if snapshot already exists
-    console.log(`[API] Checking if snapshot exists`);
-    const exists = await LeaderboardSnapshotService.snapshotExists();
-    console.log(`[API] Snapshot exists check result: ${exists}`);
-    if (exists) {
-      return NextResponse.json(
-        { error: "Snapshot already exists" },
-        { status: 409 },
-      );
-    }
-
-    // Create snapshot
-    const result = await LeaderboardSnapshotService.createSnapshot(entries);
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error || "Failed to create snapshot" },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      snapshot_id: result.snapshotId,
-      entries_count: entries.length,
-      message: `Successfully created snapshot with ${entries.length} entries`,
-    });
-  } catch (error) {
-    console.error("Error in snapshot POST endpoint:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
