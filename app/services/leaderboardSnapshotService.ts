@@ -1,12 +1,12 @@
 import { supabase } from "@/lib/supabase-client";
-import type { LeaderboardEntry, LeaderboardSnapshot } from "./types";
+import type { LeaderboardEntry, LeaderboardSnapshot } from "@/lib/types";
 
 export class LeaderboardSnapshotService {
   private static supabase = supabase;
 
   /**
    * Create a new leaderboard snapshot from current leaderboard data
-   * This should be called at ROUND_ENDS_AT to freeze the leaderboard
+   * This should be called manually to freeze the leaderboard
    */
   static async createSnapshot(
     entries: LeaderboardEntry[],

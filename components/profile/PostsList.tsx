@@ -3,7 +3,7 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
 import { formatPostDate } from "@/lib/utils";
-import type { Post } from "@/app/services/types";
+import type { Post } from "@/lib/types";
 
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();

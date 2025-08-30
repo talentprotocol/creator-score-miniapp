@@ -1,22 +1,68 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { LeaderboardEntry } from "@/app/services/types";
+import type {
+  LeaderboardEntry,
+  LeaderboardData,
+} from "@/lib/types/leaderboard";
 
-export interface UseLeaderboardOptimizedReturn {
+interface UseLeaderboardDataReturn {
   entries: LeaderboardEntry[];
   loading: boolean;
   rewardsLoading: boolean;
   error: string | null;
-  boostedCreatorsCount?: number;
-  lastUpdated?: string | null;
-  nextUpdate?: string | null;
-  activeCreatorsTotal?: number | null;
+  lastUpdated: string | null;
+  nextUpdate: string | null;
+  activeCreatorsTotal: number | null;
   refetch: (forceFresh?: boolean) => void;
   updateUserOptOutStatus: (talentUuid: string, isOptedOut: boolean) => void;
 }
 
-export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
+/**
+ * CLIENT-SIDE ONLY: Fetches leaderboard data via API route (follows coding principles)
+ */
+async function getLeaderboardBasic(): Promise<LeaderboardData> {
+  try {
+    const response = await fetch(`/api/leaderboard/basic`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("[useLeaderboardOptimized] Client-side fetch failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * CLIENT-SIDE ONLY: Fetches active creators count via API route (follows coding principles)
+ */
+async function getActiveCreatorsCount(): Promise<{ total: number }> {
+  try {
+    const response = await fetch("/api/leaderboard/active-creators-count");
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "[useLeaderboardOptimized] Active creators count fetch failed:",
+      error,
+    );
+    throw error;
+  }
+}
+
+export function useLeaderboardData(): UseLeaderboardDataReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
@@ -24,9 +70,6 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
   const [activeCreatorsTotal, setActiveCreatorsTotal] = useState<number | null>(
     null,
   );
-  const [boostedCreatorsCount, setBoostedCreatorsCount] = useState<
-    number | undefined
-  >(undefined);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
@@ -50,26 +93,14 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/leaderboard/basic`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await getLeaderboardBasic();
 
       // Filter out entries with rank > 200 only
       const filteredEntries = filterValidEntries(data.entries);
 
       setEntries(filteredEntries);
-      setBoostedCreatorsCount(data.boostedCreatorsCount);
-      setLastUpdated(data.lastUpdated);
-      setNextUpdate(data.nextUpdate);
+      setLastUpdated(data.lastUpdated ?? null);
+      setNextUpdate(data.nextUpdate ?? null);
     } catch (err) {
       console.error(`Failed to load leaderboard data:`, err);
       setError(
@@ -78,7 +109,7 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filterValidEntries]);
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
@@ -113,10 +144,8 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/leaderboard/active-creators-count");
-        if (!res.ok) throw new Error("Failed to fetch count");
-        const json = await res.json();
-        if (!cancelled) setActiveCreatorsTotal(json.total ?? null);
+        const data = await getActiveCreatorsCount();
+        if (!cancelled) setActiveCreatorsTotal(data.total ?? null);
       } catch {
         if (!cancelled) setActiveCreatorsTotal(null);
       }
@@ -131,7 +160,6 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     loading,
     rewardsLoading,
     error,
-    boostedCreatorsCount,
     lastUpdated,
     nextUpdate,
     activeCreatorsTotal,

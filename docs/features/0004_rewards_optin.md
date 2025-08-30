@@ -107,6 +107,7 @@ Currently, creators who opt out of rewards have their money automatically redist
 - `app/api/leaderboard/snapshot/route.ts` - API endpoint for snapshot operations ✅
 - `app/api/admin/snapshot/trigger/route.ts` - Admin endpoint for manual snapshot creation ✅
 - `app/admin/snapshot/page.tsx` - Admin page for snapshot creation ✅
+- `app/api/user-preferences/opted-out-percentage/route.ts` - API endpoint for calculating opted-out percentage ✅
 
 ### Files Modified:
 - `lib/constants.ts` - Add new constants for rewards distribution dates and pool separation ✅
@@ -170,6 +171,7 @@ Currently, creators who opt out of rewards have their money automatically redist
 3. **API Layer**:
    - `/api/leaderboard/snapshot` - Snapshot operations endpoint
    - `/api/admin/snapshot/trigger` - Manual snapshot creation with API key auth
+- `/api/user-preferences/opted-out-percentage` - Real-time percentage calculation
 4. **Admin Interface**: `/admin/snapshot` page for manual snapshot creation
 5. **Data Source Switch**: Leaderboard automatically uses snapshot data after `ROUND_ENDS_AT`
 6. **Integration**: All components connected and working
@@ -207,6 +209,7 @@ Currently, creators who opt out of rewards have their money automatically redist
 | **`/api/leaderboard/basic`** | ✅ PASS | Returns top 200 with opted-out status |
 | **`/api/farcaster-wallets`** | ✅ PASS | Returns verified wallet addresses |
 | **`/api/connected-accounts`** | ✅ PASS | Returns wallet and social accounts |
+| **`/api/user-preferences/opted-out-percentage`** | ✅ PASS | Returns real-time percentage |
 
 #### ✅ Integration Testing:
 - ✅ **Complete Flow**: Decision check → Wallet fetching → Decision saving → Data persistence

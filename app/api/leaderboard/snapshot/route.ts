@@ -50,7 +50,7 @@ export async function GET() {
 /**
  * POST /api/leaderboard/snapshot
  * Create a new leaderboard snapshot
- * This should be called at ROUND_ENDS_AT to freeze the leaderboard
+ * This should be called manually to freeze the leaderboard
  */
 export async function POST(request: NextRequest) {
   try {

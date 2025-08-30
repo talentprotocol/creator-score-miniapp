@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreatorList, type CreatorItem } from "@/components/common/CreatorList";
-import type { SearchResult } from "@/app/services/types";
+import type { SearchResult } from "@/lib/types";
 import { Loader2, Search } from "lucide-react";
 
 interface SearchResultsProps {

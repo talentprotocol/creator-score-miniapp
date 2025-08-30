@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 import { TalentApiClient } from "@/lib/talent-api-client";
-import type { UnifiedUserProfile } from "./types";
+import type { UnifiedUserProfile } from "@/lib/types";
 
 // Initialize the centralized API client
 const talentApiClient = new TalentApiClient();

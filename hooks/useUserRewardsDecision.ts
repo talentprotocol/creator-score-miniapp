@@ -17,9 +17,6 @@ export interface UseUserRewardsDecisionReturn {
 /**
  * Hook to check rewards decision status for any user
  *
- * Simple database query to user_preferences.rewards_decision field
- * Used to determine if RewardsDecisionModal should be shown
- *
  * @param talentUuid - User's Talent Protocol UUID
  * @returns Rewards decision status, loading state, and error state
  */

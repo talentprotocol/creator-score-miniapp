@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { LeaderboardEntry } from "@/app/services/types";
+import type { LeaderboardEntry } from "@/lib/types/leaderboard";
 import type { RewardsDecision } from "@/lib/types/user-preferences";
 
 export interface UseUserRewardsDecisionReturn {

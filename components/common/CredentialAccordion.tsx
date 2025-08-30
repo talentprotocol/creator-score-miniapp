@@ -8,7 +8,7 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { cn, formatReadableValue } from "@/lib/utils";
-import { type IssuerCredentialGroup } from "@/app/services/types";
+import { type IssuerCredentialGroup } from "@/lib/types";
 
 type CredentialIssuer = IssuerCredentialGroup;
 

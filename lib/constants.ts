@@ -233,7 +233,7 @@ export const TOTAL_SPONSORS_POOL = ACTIVE_SPONSORS.reduce(
   0,
 );
 
-export const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 29, 23, 59, 59)); // August is month 7 (0-indexed)
+export const ROUND_ENDS_AT = new Date(Date.UTC(2025, 7, 31, 23, 59, 59)); // August is month 7 (0-indexed)
 
 // Rewards distribution timeline
 export const REWARDS_CONFIG = {

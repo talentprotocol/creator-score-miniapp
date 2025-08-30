@@ -5,7 +5,6 @@ import { HandHeart, Share2 } from "lucide-react";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { ConfettiButton } from "@/components/ui/confetti";
 import { ShareModal } from "@/components/modals/ShareModal";
@@ -70,13 +69,9 @@ export function PayItForwardSection() {
 
   // Calculate current rewards for display
   const currentRewards = userTop200Entry
-    ? RewardsCalculationService.calculateUserReward(
-        userTop200Entry.score,
-        userTop200Entry.rank,
-        userTop200Entry.isBoosted || false,
-        false, // not opted out yet for display
-        top200Entries,
-      )
+    ? (userTop200Entry.boostedReward || 0) >= 1
+      ? `$${(userTop200Entry.boostedReward || 0).toFixed(0)}`
+      : `$${(userTop200Entry.boostedReward || 0).toFixed(2)}`
     : "$0";
 
   // If already opted out (from previous session), ensure the opt-out callout is hidden

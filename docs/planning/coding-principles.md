@@ -124,6 +124,10 @@ External APIs → API Clients → Services → API Routes → Hooks → Pure UI 
 - **Architecture Separation**: Server components use direct API calls, client components use hooks with caching
 - **Development Mode**: Environment-based authentication bypass for rapid development
 
+### Type Organization
+
+- **Types**: All TypeScript types organized in `lib/types/` by domain, with `index.ts` for convenient imports
+
 ### Tech Stack & Performance
 
 - **Framework**: Next.js 14 (App Router), React 18+, shadcn/ui, Tailwind CSS
@@ -158,3 +162,4 @@ External APIs → API Clients → Services → API Routes → Hooks → Pure UI 
 - **Service**: A module that handles domain-specific business logic and data transformations.
 - **Hook**: A custom React hook that encapsulates data fetching, caching, and business logic.
 - **Component**: A pure UI component that receives data via props and handles only presentation logic.
+- **Type Definition**: A TypeScript interface or type that defines the structure of data used across the application, organized by domain in `lib/types/`.

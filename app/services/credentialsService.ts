@@ -1,4 +1,4 @@
-import { Credential, IssuerCredentialGroup, SCORER_SLUGS } from "./types";
+import { Credential, IssuerCredentialGroup, SCORER_SLUGS } from "@/lib/types";
 
 /**
  * Fetches credentials for a Talent Protocol ID from the API

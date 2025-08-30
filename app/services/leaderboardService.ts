@@ -1,4 +1,4 @@
-import type { LeaderboardEntry } from "./types";
+import type { LeaderboardEntry } from "@/lib/types";
 import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
 import {
@@ -10,17 +10,8 @@ import { talentApiClient } from "@/lib/talent-api-client";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
 import { supabase } from "@/lib/supabase-client";
 
-// Batch update cooldown to prevent excessive database writes
-const batchUpdateCooldown = {
-  timestamp: 0,
-  readonly: false,
-};
-
-const BATCH_UPDATE_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
-
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
-  boostedCreatorsCount?: number;
   lastUpdated?: string | null;
   nextUpdate?: string | null;
 }
@@ -71,7 +62,6 @@ export async function fetchTop200Entries(): Promise<Profile[]> {
         const queryString = [
           `query=${encodeURIComponent(JSON.stringify(data.query))}`,
           `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
-          `page=${page}`,
           `per_page=${batchSize}`,
           `view=scores_minimal`,
         ].join("&");
@@ -128,15 +118,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
   );
 
-  // Fetch boosted profiles for integration
-  let boostedProfileIds: string[] = [];
-  try {
-    boostedProfileIds = await getBoostedProfilesData();
-  } catch {
-    boostedProfileIds = [];
-  }
-
-  // Fetch opt-out status for all users
+  // Fetch opt-out status for all users (for display styling)
   let optedOutUserIds: string[] = [];
   try {
     const { data, error } = await supabase
@@ -154,7 +136,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     optedOutUserIds = [];
   }
 
-  // Map to basic entries (no rewards) with boosted and opt-out status
+  // Map to basic entries with opt-out status (boost logic removed for now)
   const mapped = filteredProfiles.map((profile: Profile) => {
     const creatorScores = Array.isArray(profile.scores)
       ? profile.scores
@@ -162,7 +144,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
           .map((s) => s.points ?? 0)
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
-    const isBoosted = boostedProfileIds.includes(profile.id);
     const isOptedOut = optedOutUserIds.includes(profile.id);
 
     return {
@@ -171,43 +152,13 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       score,
       id: profile.id,
       talent_protocol_id: profile.id,
-      isBoosted,
+      isBoosted: false, // Boost logic removed for now - will be restored for token holder leaderboard
       isOptedOut,
-      baseReward: 0, // Will be calculated later
-      boostedReward: 0, // Will be calculated later
+      baseReward: 0, // Will be set from snapshot
+      boostedReward: 0, // Will be set from snapshot
+      rank: 0, // Will be set from snapshot
     };
   });
-
-  // Sort by boosted score (rewards ordering) and assign ranks
-  mapped.sort((a, b) => {
-    const boostedA = a.isBoosted ? a.score * 1.1 : a.score;
-    const boostedB = b.isBoosted ? b.score * 1.1 : b.score;
-    return boostedB - boostedA;
-  });
-
-  let lastBoostedScore: number | null = null;
-  let lastRank = 0;
-  let ties = 0;
-  const ranked = mapped.map((entry, idx) => {
-    const currentBoostedScore = entry.isBoosted
-      ? entry.score * 1.1
-      : entry.score;
-    let rank;
-    if (currentBoostedScore === lastBoostedScore) {
-      rank = lastRank;
-      ties++;
-    } else {
-      rank = idx + 1;
-      if (ties > 0) rank = lastRank + ties;
-      lastBoostedScore = currentBoostedScore;
-      lastRank = rank;
-      ties = 1;
-    }
-    return { ...entry, rank };
-  });
-
-  // Count boosted creators
-  const boostedCreatorsCount = ranked.filter((entry) => entry.isBoosted).length;
 
   // Apply snapshot data if available
   try {
@@ -223,12 +174,17 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
         );
 
         // Replace rank and rewards_amount with snapshot data
-        ranked.forEach((entry) => {
+        mapped.forEach((entry) => {
           const snapshot = snapshotMap.get(entry.talent_protocol_id);
           if (snapshot) {
             entry.rank = snapshot.rank;
             entry.baseReward = snapshot.rewards_amount;
             entry.boostedReward = snapshot.rewards_amount;
+          } else {
+            // Show "N/A" if snapshot data not available
+            entry.rank = 0;
+            entry.baseReward = 0;
+            entry.boostedReward = 0;
           }
         });
 
@@ -237,105 +193,27 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
         );
       }
     } else {
-      console.log("[LeaderboardService] No snapshot exists, using live data");
+      console.log("[LeaderboardService] No snapshot exists, showing N/A");
+      // Set all entries to N/A when no snapshot exists
+      mapped.forEach((entry) => {
+        entry.rank = 0;
+        entry.baseReward = 0;
+        entry.boostedReward = 0;
+      });
     }
   } catch (error) {
     console.error("[LeaderboardService] Error applying snapshot data:", error);
-    // Continue with live data if snapshot fails
-  }
-
-  // Update stored rewards for opted-out users after leaderboard calculation
-  // Use cooldown to prevent excessive database writes
-  const now = Date.now();
-  if (now - batchUpdateCooldown.timestamp > BATCH_UPDATE_COOLDOWN_MS) {
-    try {
-      await updateOptedOutRewards(ranked);
-      batchUpdateCooldown.timestamp = now;
-      console.log(
-        "[LeaderboardService] Batch update completed, cooldown reset",
-      );
-    } catch (error) {
-      console.error(
-        "[LeaderboardService] Failed to update rewards storage:",
-        error,
-      );
-      // Don't fail leaderboard if rewards update fails - it's a background operation
-    }
-  } else {
-    const remainingCooldown = Math.ceil(
-      (BATCH_UPDATE_COOLDOWN_MS - (now - batchUpdateCooldown.timestamp)) /
-        1000 /
-        60,
-    );
-    console.log(
-      `[LeaderboardService] Batch update skipped, cooldown active (${remainingCooldown} minutes remaining)`,
-    );
+    // Set all entries to N/A on error
+    mapped.forEach((entry) => {
+      entry.rank = 0;
+      entry.baseReward = 0;
+      entry.boostedReward = 0;
+    });
   }
 
   return {
-    entries: ranked,
-    boostedCreatorsCount,
+    entries: mapped,
   };
-}
-
-/**
- * Update stored rewards for all opted-out users in top 200
- * This function is called automatically when leaderboard data is recalculated
- * @param entries - Ranked leaderboard entries
- */
-async function updateOptedOutRewards(
-  entries: LeaderboardEntry[],
-): Promise<void> {
-  // Find opted-out users in top 200
-  const optedOutUsers = entries
-    .filter((entry) => entry.isOptedOut && entry.rank <= 200)
-    .slice(0, 200); // Ensure only top 200
-
-  if (optedOutUsers.length === 0) {
-    console.log("[LeaderboardService] No opted-out users in top 200 to update");
-    return;
-  }
-
-  try {
-    // Import services dynamically to avoid circular dependencies
-    const { RewardsCalculationService } = await import(
-      "./rewardsCalculationService"
-    );
-    const { RewardsStorageService } = await import("./rewardsStorageService");
-
-    // Calculate rewards for each opted-out user
-    const rewardsToStore = optedOutUsers.map((user) => {
-      const rewardAmount = RewardsCalculationService.calculateUserReward(
-        user.score,
-        user.rank,
-        user.isBoosted || false,
-        false, // Calculate as if not opted out to get the donation amount
-        entries,
-      );
-
-      // Extract numeric value from formatted string (e.g., "$138" -> 138)
-      const numericAmount =
-        parseFloat(rewardAmount.replace(/[^0-9.-]/g, "")) || 0;
-
-      return {
-        talentUuid: String(user.talent_protocol_id),
-        amount: numericAmount,
-      };
-    });
-
-    // Batch update all opted-out user rewards
-    await RewardsStorageService.batchUpdateOptedOutRewards(rewardsToStore);
-
-    console.log(
-      `[LeaderboardService] Updated rewards storage for ${rewardsToStore.length} opted-out users`,
-    );
-  } catch (error) {
-    console.error(
-      "[LeaderboardService] Error updating opted-out rewards:",
-      error,
-    );
-    throw error; // Re-throw to be caught by caller
-  }
 }
 
 /**

@@ -2,7 +2,7 @@ import type {
   WalletAccount,
   GroupedWalletAccounts,
   WalletAccountsResponse,
-} from "./types";
+} from "@/lib/types";
 
 /**
  * Fetches wallet accounts for a given Talent Protocol ID and groups them by verification source

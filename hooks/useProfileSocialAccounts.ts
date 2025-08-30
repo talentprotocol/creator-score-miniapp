@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { SocialAccount, TalentSocialAccount } from "@/app/services/types";
+import type { SocialAccount, TalentSocialAccount } from "@/lib/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 

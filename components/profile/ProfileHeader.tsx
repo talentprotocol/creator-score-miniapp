@@ -14,7 +14,7 @@ import {
   CREATOR_CATEGORIES,
 } from "@/lib/credentialUtils";
 import { CategorySelectionModal } from "./CategorySelectionModal";
-import type { SocialAccount } from "@/app/services/types";
+import type { SocialAccount } from "@/lib/types";
 import type { CreatorCategoryType } from "@/lib/credentialUtils";
 import { usePostHog } from "posthog-js/react";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { SearchResult } from "@/app/services/types";
+import type { SearchResult } from "@/lib/types";
 import { searchProfiles, getTopCreators } from "@/app/services/searchService";
 
 export function useSearch(loadSearch: boolean) {
