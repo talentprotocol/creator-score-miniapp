@@ -133,28 +133,49 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   let optedInUserIds: string[] = [];
   let undecidedUserIds: string[] = [];
   try {
-    const { data, error } = await supabase
-      .from("user_preferences")
-      .select("talent_uuid, rewards_decision")
-      .limit(10000); // Fetch all records (well above the current 2351 total)
+    // Fetch all user preferences using pagination to overcome Supabase's 1000 record limit
+    let allUserPreferences: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    if (error) {
-      console.error("Error fetching user preferences:", error);
-    } else {
-      console.log(`[LeaderboardService] Raw user preferences data count:`, data?.length || 0);
-      optedOutUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_out")
-          .map((row) => row.talent_uuid) ?? [];
-      optedInUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_in")
-          .map((row) => row.talent_uuid) ?? [];
-      undecidedUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === null)
-          .map((row) => row.talent_uuid) ?? [];
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .select("talent_uuid, rewards_decision")
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        console.error("Error fetching user preferences:", error);
+        break;
+      }
+
+      if (data && data.length > 0) {
+        allUserPreferences.push(...data);
+        from += pageSize;
+        hasMore = data.length === pageSize; // If we got less than pageSize, we've reached the end
+      } else {
+        hasMore = false;
+      }
     }
+
+    console.log(
+      `[LeaderboardService] Raw user preferences data count:`,
+      allUserPreferences.length,
+    );
+
+    optedOutUserIds =
+      allUserPreferences
+        .filter((row) => row.rewards_decision === "opted_out")
+        .map((row) => row.talent_uuid) ?? [];
+    optedInUserIds =
+      allUserPreferences
+        .filter((row) => row.rewards_decision === "opted_in")
+        .map((row) => row.talent_uuid) ?? [];
+    undecidedUserIds =
+      allUserPreferences
+        .filter((row) => row.rewards_decision === null)
+        .map((row) => row.talent_uuid) ?? [];
   } catch (error) {
     console.error("Error fetching user preferences:", error);
     // Continue with empty arrays
