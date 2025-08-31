@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { RewardsDecision } from "@/lib/types/user-preferences";
+import { rewardsDecisionEvents } from "@/lib/events/rewardsDecisionEvents";
 
 export interface UseUserRewardsDecisionReturn {
   data: {
@@ -32,7 +33,6 @@ export function useUserRewardsDecision(
       return;
     }
 
-    console.log("useUserRewardsDecision - fetching for talentUuid:", talentUuid);
     setLoading(true);
     setError(null);
 
@@ -55,7 +55,6 @@ export function useUserRewardsDecision(
         );
       }
 
-      console.log("useUserRewardsDecision - received data:", data.data?.rewards_decision);
       setRewardsDecision(data.data?.rewards_decision || null);
     } catch (err) {
       console.error("Error fetching rewards decision status:", err);
@@ -71,8 +70,20 @@ export function useUserRewardsDecision(
   }, [fetchRewardsDecision, refreshTrigger]);
 
   const refetch = useCallback(() => {
+    console.log("useUserRewardsDecision - refetch called for talentUuid:", talentUuid);
     setRefreshTrigger(prev => prev + 1);
-  }, []);
+    // Emit global event to notify other instances
+    rewardsDecisionEvents.emit();
+  }, [talentUuid]);
+
+  // Subscribe to global events
+  useEffect(() => {
+    const unsubscribe = rewardsDecisionEvents.subscribe(() => {
+      console.log("useUserRewardsDecision - received global refresh event for talentUuid:", talentUuid);
+      setRefreshTrigger(prev => prev + 1);
+    });
+    return unsubscribe;
+  }, [talentUuid]);
 
   return {
     data: {
