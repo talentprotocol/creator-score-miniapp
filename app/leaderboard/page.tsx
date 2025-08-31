@@ -397,7 +397,7 @@ function LeaderboardContent() {
             value={`$${formatCompactNumber(TOTAL_SPONSORS_POOL)}`}
           />
           <StatCard
-            title="TOP200 Snapshot"
+            title="TOP200 Snapshot in..."
             value={`${countdown.days}d ${countdown.hours}h`}
           />
         </div>
