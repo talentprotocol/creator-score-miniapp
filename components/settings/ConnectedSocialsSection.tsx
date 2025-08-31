@@ -14,10 +14,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
-import type {
-  ConnectedAccount,
-  AccountManagementAction,
-} from "@/app/services/types";
+import type { ConnectedAccount, AccountManagementAction } from "@/lib/types";
 import { usePostHog } from "posthog-js/react";
 
 interface ConnectedSocialsSectionProps {

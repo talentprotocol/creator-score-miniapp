@@ -7,11 +7,7 @@ import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import {
-  CreatorScoreCard,
-  PotentialRewardsCard,
-  RewardsBoostsCard,
-} from "@/components/home";
+import { CreatorScoreCard, RewardsBoostsCard } from "@/components/home";
 import { TopListCard } from "@/components/common/TopListCard";
 import { ACTIVE_SPONSORS } from "@/lib/constants";
 import { PageContainer } from "@/components/common/PageContainer";
@@ -32,10 +28,6 @@ export default function HomePage() {
         <div className="space-y-4">
           <ErrorBoundary>
             <CreatorScoreCard score={creatorScore} loading={scoreLoading} />
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <PotentialRewardsCard score={creatorScore} loading={scoreLoading} />
           </ErrorBoundary>
 
           <ErrorBoundary>

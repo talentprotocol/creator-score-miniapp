@@ -13,6 +13,15 @@ Creators who opt out of rewards currently have their money redistributed to rema
 - **Opt-in is REVERSIBLE**: Can change to opt-out until deadline
 - **Default**: All undecided users default to opt-out after deadline
 
+## Rewards Styling Logic
+The leaderboard displays rewards amounts with different styling based on user decision status:
+
+- **Undecided users**: Gray text (`text-muted-foreground`) - Users who haven't made a decision yet OR have `rewards_decision = null`
+- **Opted-in users**: Blue text (`text-brand-blue`) + "OPTED IN" badge (HandCoins icon) - Users who explicitly opted in (`rewards_decision = 'opted_in'`)
+- **Opted-out users**: Green text (`text-brand-green`) + strikethrough + "PAID FORWARD" badge (HandHeart icon) - Users who opted out (`rewards_decision = 'opted_out'`)
+
+**Note**: Users without a record in `user_preferences` table OR with `rewards_decision = null` are considered "undecided" and should show gray text.
+
 ## Implementation Status
 
 ### ✅ Phase 1: Separate Pool Logic - COMPLETE
@@ -32,11 +41,19 @@ Creators who opt out of rewards currently have their money redistributed to rema
 - Integration testing completed
 - Production build successful
 
+### ✅ Phase 4: Code Simplification - COMPLETE
+- **Simplified Data Flow**: Consolidated to single `rewardsDecision` value instead of multiple boolean flags
+- **Removed Duplicate Logic**: Eliminated `useOptOutStatus.ts` hook, consolidated to `useUserRewardsDecision.ts`
+- **Cleaner Interface**: Modal now receives `rewardsDecision` directly instead of `hasMadeDecision` and `isOptedOut`
+- **Better Maintainability**: Single source of truth for decision logic
+
 ## Current State
 - **Total Users**: 2,108 in database
 - **Users with Decisions**: 180 (8.5%)
-- **Opted-out Rate**: (dynamically calculated)
+- **Opted-out Rate**: 100% (dynamically calculated via API, no hardcoded values)
 - **Modal Status**: Fully functional and tested
+- **Wallet Integration**: Complete (fetches verified wallets for rewards distribution)
+- **Cache Strategy**: User preferences are fetched directly from database (no caching) for accuracy
 - **Production Ready**: Yes
 
 ## Pending Tasks
@@ -46,9 +63,10 @@ Creators who opt out of rewards currently have their money redistributed to rema
 4. **Post-distribution**: Remove legacy `rewards_optout` field
 
 ## Key Files
-- **New**: `components/modals/RewardsDecisionModal.tsx`, `components/common/RewardsDecisionModalHandler.tsx`
-- **Modified**: `hooks/useUserRewardsDecision.ts` (simplified to always fetch from database), `app/leaderboard/page.tsx`
-- **API**: `/api/user-preferences/optout`, `/api/leaderboard/snapshot`, `/api/admin/snapshot/trigger`
+- **New**: `components/modals/RewardsDecisionModal.tsx`, `components/common/RewardsDecisionModalHandler.tsx`, `hooks/useOptedOutPercentage.ts`
+- **Modified**: `hooks/useUserRewardsDecision.ts` (simplified to return single `rewardsDecision` value), `app/leaderboard/page.tsx` (uses simplified interface)
+- **Removed**: `hooks/useOptOutStatus.ts` (consolidated into `useUserRewardsDecision.ts`)
+- **API**: `/api/user-preferences/optout`, `/api/user-preferences/opted-out-percentage`, `/api/leaderboard/snapshot`, `/api/admin/snapshot/trigger`
 
 ## Business Logic
 - Modal shows only to top 200 users without decisions

@@ -1,35 +1,55 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { LeaderboardEntry } from "@/app/services/types";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
+import type {
+  LeaderboardEntry,
+  LeaderboardData,
+} from "@/lib/types/leaderboard";
 
-export interface UseLeaderboardOptimizedReturn {
+interface UseLeaderboardDataReturn {
   entries: LeaderboardEntry[];
   loading: boolean;
   rewardsLoading: boolean;
   error: string | null;
-  boostedCreatorsCount?: number;
-  lastUpdated?: string | null;
-  nextUpdate?: string | null;
-  activeCreatorsTotal?: number | null;
+  lastUpdated: string | null;
+  nextUpdate: string | null;
   refetch: (forceFresh?: boolean) => void;
   updateUserOptOutStatus: (talentUuid: string, isOptedOut: boolean) => void;
 }
 
-export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
+/**
+ * CLIENT-SIDE ONLY: Fetches leaderboard data via API route (follows coding principles)
+ */
+async function getLeaderboardBasic(): Promise<LeaderboardData> {
+  try {
+    // Add cache-busting timestamp to prevent browser caching
+    const timestamp = Date.now();
+    const response = await fetch(`/api/leaderboard/basic?t=${timestamp}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("[useLeaderboardOptimized] Client-side fetch failed:", error);
+    throw error;
+  }
+}
+
+export function useLeaderboardData(): UseLeaderboardDataReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeCreatorsTotal, setActiveCreatorsTotal] = useState<number | null>(
-    null,
-  );
-  const [boostedCreatorsCount, setBoostedCreatorsCount] = useState<
-    number | undefined
-  >(undefined);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
@@ -38,9 +58,10 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     (rawEntries: LeaderboardEntry[]): LeaderboardEntry[] => {
       return rawEntries.filter((entry) => {
         // Skip entries with rank > 200
-        if (!entry.rank || entry.rank > 200) return false;
+        if (entry.rank && entry.rank > 200) return false;
 
         // Don't filter out opted-out users - they should show their donated amount
+        // Don't filter out entries with rank -1 (no rank available) - they should show "-"
         return true;
       });
     },
@@ -49,59 +70,18 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
 
   // Load basic data immediately
   const loadBasicData = useCallback(async () => {
-    // Check cache first
-    const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
-    const cachedData = getCachedData<{
-      entries: LeaderboardEntry[];
-      boostedCreatorsCount: number;
-      lastUpdated: string | null;
-      nextUpdate: string | null;
-    }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
-
-    if (cachedData) {
-      // Filter out entries with rank > 200 only
-      const filteredEntries = filterValidEntries(cachedData.entries);
-
-      setEntries(filteredEntries);
-      setBoostedCreatorsCount(cachedData.boostedCreatorsCount);
-      setLastUpdated(cachedData.lastUpdated);
-      setNextUpdate(cachedData.nextUpdate);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/leaderboard/basic`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await getLeaderboardBasic();
 
       // Filter out entries with rank > 200 only
       const filteredEntries = filterValidEntries(data.entries);
 
       setEntries(filteredEntries);
-      setBoostedCreatorsCount(data.boostedCreatorsCount);
-      setLastUpdated(data.lastUpdated);
-      setNextUpdate(data.nextUpdate);
-
-      // Cache the filtered data
-      setCachedData(cacheKey, {
-        entries: filteredEntries,
-        boostedCreatorsCount: data.boostedCreatorsCount,
-        lastUpdated: data.lastUpdated,
-        nextUpdate: data.nextUpdate,
-      });
+      setLastUpdated(data.lastUpdated ?? null);
+      setNextUpdate(data.nextUpdate ?? null);
     } catch (err) {
       console.error(`Failed to load leaderboard data:`, err);
       setError(
@@ -110,19 +90,11 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filterValidEntries]);
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
-      try {
-        if (forceFresh && typeof window !== "undefined") {
-          console.log(
-            "[Leaderboard] Force fresh refetch: clearing localStorage cache key",
-            CACHE_KEYS.LEADERBOARD_BASIC,
-          );
-          localStorage.removeItem(CACHE_KEYS.LEADERBOARD_BASIC);
-        }
-      } catch {}
+      // Always force fresh data when refetching
       loadBasicData();
     },
     [loadBasicData],
@@ -133,77 +105,36 @@ export function useLeaderboardData(): UseLeaderboardOptimizedReturn {
       if (!talentUuid) return;
       // Update in-memory state
       setEntries((prev) => {
-        const updated = prev.map((e) =>
+        const updated = prev.map((e: LeaderboardEntry) =>
           String(e.talent_protocol_id) === String(talentUuid)
             ? { ...e, isOptedOut }
             : e,
         );
         return updated;
       });
-
-      // Update localStorage cache if present
-      try {
-        const cacheKey = CACHE_KEYS.LEADERBOARD_BASIC;
-        const cached = getCachedData<{
-          entries: LeaderboardEntry[];
-          boostedCreatorsCount: number;
-          lastUpdated: string | null;
-          nextUpdate: string | null;
-        }>(cacheKey, CACHE_DURATIONS.LEADERBOARD_DATA);
-        if (cached) {
-          const updatedCached = {
-            ...cached,
-            entries: cached.entries.map((e) =>
-              String(e.talent_protocol_id) === String(talentUuid)
-                ? { ...e, isOptedOut }
-                : e,
-            ),
-          };
-          console.log(
-            "[Leaderboard] Updated local cache entry opt-out status for",
-            talentUuid,
-            "=",
-            isOptedOut,
-          );
-          setCachedData(cacheKey, updatedCached);
-        }
-      } catch {}
     },
     [],
   );
 
-  // Load basic data on mount
+  // Load basic data on mount and refresh every 30 seconds to ensure fresh data
   useEffect(() => {
     loadBasicData();
-  }, [loadBasicData]);
 
-  // Fetch total active creators (Creator Score > 0) once
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/leaderboard/active-creators-count");
-        if (!res.ok) throw new Error("Failed to fetch count");
-        const json = await res.json();
-        if (!cancelled) setActiveCreatorsTotal(json.total ?? null);
-      } catch {
-        if (!cancelled) setActiveCreatorsTotal(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    // Set up interval to refresh data every 30 seconds
+    const interval = setInterval(() => {
+      loadBasicData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [loadBasicData]);
 
   return {
     entries,
     loading,
     rewardsLoading,
     error,
-    boostedCreatorsCount,
     lastUpdated,
     nextUpdate,
-    activeCreatorsTotal,
     refetch,
     updateUserOptOutStatus,
   };

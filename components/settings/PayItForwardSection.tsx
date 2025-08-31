@@ -4,8 +4,7 @@ import { Typography } from "@/components/ui/typography";
 import { HandHeart, Share2 } from "lucide-react";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
-import { useOptOutStatus } from "@/hooks/useOptOutStatus";
-import { RewardsCalculationService } from "@/app/services/rewardsCalculationService";
+
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { ConfettiButton } from "@/components/ui/confetti";
 import { ShareModal } from "@/components/modals/ShareModal";
@@ -14,6 +13,7 @@ import { ShareContentGenerators } from "@/lib/sharing";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
 import { detectClient } from "@/lib/utils";
+import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 
 /**
  * PayItForwardSection Component
@@ -58,11 +58,11 @@ export function PayItForwardSection() {
     (entry) => entry.talent_protocol_id === talentUuid,
   );
 
-  // Use combined opt-out status check for both top-200 and non-top-200 users
-  const { isOptedOut: isAlreadyOptedOut } = useOptOutStatus(
-    talentUuid,
-    userTop200Entry,
-  );
+  // Use rewards decision status
+  const {
+    data: { rewardsDecision },
+  } = useUserRewardsDecision(talentUuid);
+  const isAlreadyOptedOut = rewardsDecision === "opted_out";
   const hasPaidForward = success || isAlreadyOptedOut;
 
   // Show share button for already opted out users (from previous sessions) or after confetti completes
@@ -70,13 +70,9 @@ export function PayItForwardSection() {
 
   // Calculate current rewards for display
   const currentRewards = userTop200Entry
-    ? RewardsCalculationService.calculateUserReward(
-        userTop200Entry.score,
-        userTop200Entry.rank,
-        userTop200Entry.isBoosted || false,
-        false, // not opted out yet for display
-        top200Entries,
-      )
+    ? (userTop200Entry.boostedReward || 0) >= 1
+      ? `$${(userTop200Entry.boostedReward || 0).toFixed(0)}`
+      : `$${(userTop200Entry.boostedReward || 0).toFixed(2)}`
     : "$0";
 
   // If already opted out (from previous session), ensure the opt-out callout is hidden
@@ -122,7 +118,8 @@ export function PayItForwardSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           talent_uuid: talentUuid,
-          confirm_optout: true,
+          decision: "opted_out",
+          confirm_decision: true,
         }),
       });
 
@@ -291,18 +288,6 @@ export function PayItForwardSection() {
                   ? "Failed: Please Try Again"
                   : "Confirm and Pay It Forward"}
             </ButtonFullWidth>
-          )}
-
-          {/* TEMP: Test Confetti */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="mt-4">
-              <ConfettiButton
-                variant="ghost"
-                className="w-full border border-dashed border-gray-300"
-              >
-                🎉 Test Confetti (Dev Only)
-              </ConfettiButton>
-            </div>
           )}
         </div>
       </div>

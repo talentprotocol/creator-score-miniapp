@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
-import { CACHE_KEYS } from "@/lib/cache-keys";
-import { OptoutService } from "@/app/services/optoutService";
+import { updateUserPreferencesAtomic } from "@/app/services/userPreferencesService";
 import { validateTalentUUID } from "@/lib/validation";
 
 /**
  * POST /api/user-preferences/optout
  *
- * Allows creators to opt out of receiving rewards (Pay It Forward feature).
- * Their rewards are redistributed proportionally among remaining eligible creators.
+ * Allows creators to opt in or opt out of receiving rewards.
+ * Opt-out users' rewards go to a separate future pool instead of being redistributed.
  *
- * This endpoint processes the opt-out request and immediately updates the user's
+ * This endpoint processes the rewards decision request and immediately updates the user's
  * preferences. The decision is irreversible and cannot be undone.
  *
  * @param req.body.talent_uuid - User's Talent Protocol UUID (required)
- * @param req.body.confirm_optout - Must be true to confirm the irreversible decision (required)
- * @returns Success/error response with updated opt-out status
+ * @param req.body.decision - Must be 'opted_in' or 'opted_out' (required)
+ * @param req.body.confirm_decision - Must be true to confirm the irreversible decision (required)
+ * @returns Success/error response with updated rewards decision status
  *
  * @example
  * ```typescript
@@ -24,19 +23,21 @@ import { validateTalentUUID } from "@/lib/validation";
  *   headers: { "Content-Type": "application/json" },
  *   body: JSON.stringify({
  *     talent_uuid: "user-uuid-here",
- *     confirm_optout: true
+ *     decision: "opted_out",
+ *     confirm_decision: true
  *   })
  * });
  *
  * const result = await response.json();
  * if (result.success) {
- *   console.log("Successfully opted out");
+ *   // Successfully opted out
  * }
  * ```
  *
  * @throws {400} Missing or invalid talent_uuid
- * @throws {400} Missing confirm_optout confirmation
- * @throws {400} Opt-out processing failed
+ * @throws {400} Missing or invalid decision
+ * @throws {400} Missing confirm_decision confirmation
+ * @throws {400} Decision processing failed
  * @throws {500} Internal server error
  */
 export async function POST(req: NextRequest): Promise<
@@ -47,7 +48,8 @@ export async function POST(req: NextRequest): Promise<
   }>
 > {
   try {
-    const { talent_uuid, confirm_optout } = await req.json();
+    const { talent_uuid, decision, confirm_decision, primary_wallet_address } =
+      await req.json();
 
     // Validate required fields
     if (!talent_uuid) {
@@ -64,36 +66,44 @@ export async function POST(req: NextRequest): Promise<
       );
     }
 
-    if (confirm_optout !== true) {
+    if (!decision || !["opted_in", "opted_out"].includes(decision)) {
       return NextResponse.json(
-        { success: false, error: "Must confirm opt-out decision" },
+        { success: false, error: "Decision must be 'opted_in' or 'opted_out'" },
         { status: 400 },
       );
     }
 
-    // Process opt-out request
-    const result = await OptoutService.optOut(talent_uuid);
-
-    if (!result.success) {
+    if (confirm_decision !== true) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: "Must confirm decision" },
         { status: 400 },
       );
     }
 
-    // Predictable server cache refresh for leaderboard data (optional, safe no-op if tags unused)
+    // Process decision request using userPreferencesService
     try {
-      // Only revalidate basic leaderboard dependencies; Top 200 doesn't change on opt-out
-      revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
-      console.log(
-        "[OptOut API] Revalidated tag:",
-        CACHE_KEYS.LEADERBOARD_BASIC,
-      );
-    } catch {}
+      const result = await updateUserPreferencesAtomic({
+        talent_uuid,
+        rewards_decision: decision as "opted_in" | "opted_out",
+        primary_wallet_address,
+      });
 
-    return NextResponse.json(result);
+      return NextResponse.json({
+        success: true,
+        data: {
+          rewards_decision: result.rewards_decision,
+          decision_made_at: result.decision_made_at,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      return NextResponse.json(
+        { success: false, error: "Failed to update rewards decision" },
+        { status: 400 },
+      );
+    }
   } catch (error) {
-    console.error("Error processing opt-out request:", error);
+    console.error("Error processing rewards decision request:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 },
@@ -104,21 +114,21 @@ export async function POST(req: NextRequest): Promise<
 /**
  * GET /api/user-preferences/optout?talent_uuid=<uuid>
  *
- * Check if a user has opted out of rewards.
+ * Check a user's current rewards decision status.
  *
- * This endpoint is used to query the current opt-out status of a user,
+ * This endpoint is used to query the current rewards decision status of a user,
  * typically for UI state management and leaderboard display.
  *
  * @param req.searchParams.talent_uuid - User's Talent Protocol UUID (required)
- * @returns Current opt-out status
+ * @returns Current rewards decision status
  *
  * @example
  * ```typescript
  * const response = await fetch("/api/user-preferences/optout?talent_uuid=user-uuid-here");
  * const result = await response.json();
  * if (result.success) {
- *   const isOptedOut = result.data?.rewards_optout;
- *   console.log("User opted out:", isOptedOut);
+ *   const decision = result.data?.rewards_decision;
+ *   // User decision retrieved
  * }
  * ```
  *
@@ -151,15 +161,29 @@ export async function GET(req: NextRequest): Promise<
       );
     }
 
-    // Check opt-out status
-    const isOptedOut = await OptoutService.isOptedOut(talent_uuid);
+    // Check rewards decision status using userPreferencesService
+    try {
+      const { getUserPreferencesByTalentUuid } = await import(
+        "@/app/services/userPreferencesService"
+      );
+      const prefs = await getUserPreferencesByTalentUuid(talent_uuid);
 
-    return NextResponse.json({
-      success: true,
-      data: { rewards_optout: isOptedOut },
-    });
+      return NextResponse.json({
+        success: true,
+        data: {
+          rewards_decision: prefs.rewards_decision,
+          primary_wallet_address: prefs.primary_wallet_address,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      return NextResponse.json(
+        { success: false, error: "Failed to fetch rewards decision" },
+        { status: 500 },
+      );
+    }
   } catch (error) {
-    console.error("Error checking opt-out status:", error);
+    console.error("Error checking rewards decision status:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 },

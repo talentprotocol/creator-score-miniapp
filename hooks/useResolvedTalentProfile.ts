@@ -5,7 +5,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { resolveFidToTalentUuid } from "@/lib/user-resolver";
-import type { UnifiedUserProfile } from "@/app/services/types";
+import type { UnifiedUserProfile } from "@/lib/types";
 
 type HookReturn = Omit<UnifiedUserProfile, "error"> & {
   error: string | null;

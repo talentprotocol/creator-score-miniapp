@@ -14,7 +14,7 @@ import {
   CREATOR_CATEGORIES,
 } from "@/lib/credentialUtils";
 import { CategorySelectionModal } from "./CategorySelectionModal";
-import type { SocialAccount } from "@/app/services/types";
+import type { SocialAccount } from "@/lib/types";
 import type { CreatorCategoryType } from "@/lib/credentialUtils";
 import { usePostHog } from "posthog-js/react";
 
@@ -74,9 +74,10 @@ export function ProfileHeader({
     if (!categoryName) return null;
 
     return {
-      name: categoryName,
-      emoji:
-        CREATOR_CATEGORIES[categoryName as keyof typeof CREATOR_CATEGORIES],
+      name: categoryName as CreatorCategoryType,
+      emoji: CREATOR_CATEGORIES[
+        categoryName as keyof typeof CREATOR_CATEGORIES
+      ] as string,
     };
   }, [
     isOwnProfile,

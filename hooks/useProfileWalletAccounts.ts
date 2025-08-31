@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import type { GroupedWalletAccounts } from "@/app/services/types";
+import type { GroupedWalletAccounts } from "@/lib/types";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfileWalletAccounts(talentUUID: string | undefined) {

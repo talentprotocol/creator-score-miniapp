@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clearUserCache } from "@/lib/cache-keys";
+import { revalidateTag } from "next/cache";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 /**
  * POST /api/clear-cache
@@ -21,9 +23,14 @@ export async function POST(req: NextRequest) {
     // Clear both server-side and client-side cache for this user
     await clearUserCache(talent_uuid);
 
+    // Clear leaderboard cache (user preferences are no longer cached)
+    revalidateTag(CACHE_KEYS.LEADERBOARD);
+    revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
+    revalidateTag(CACHE_KEYS.LEADERBOARD_TOP_200);
+
     return NextResponse.json({
       success: true,
-      message: `Cache cleared for user ${talent_uuid}`,
+      message: `Cache cleared for user ${talent_uuid} and leaderboard`,
     });
   } catch (error) {
     console.error("Error clearing cache:", error);

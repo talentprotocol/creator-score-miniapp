@@ -1,25 +1,12 @@
-import type { LeaderboardEntry } from "./types";
-import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
+import type { LeaderboardEntry } from "@/lib/types";
+import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_1_HOUR,
-  CACHE_DURATION_10_MINUTES,
-} from "@/lib/cache-keys";
-import { talentApiClient } from "@/lib/talent-api-client";
-import { OptoutService } from "./optoutService";
-
-// Batch update cooldown to prevent excessive database writes
-const batchUpdateCooldown = {
-  timestamp: 0,
-  readonly: false,
-};
-
-const BATCH_UPDATE_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
+import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
+import { supabase } from "@/lib/supabase-client";
 
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
-  boostedCreatorsCount?: number;
   lastUpdated?: string | null;
   nextUpdate?: string | null;
 }
@@ -34,6 +21,180 @@ type Profile = {
     points?: number;
   }>;
 };
+
+/**
+ * NEW IMPLEMENTATION: Get leaderboard entries using snapshot UUIDs
+ * This approach queries Talent API for specific UUIDs from our frozen snapshot
+ * instead of getting current top 200 by Creator Score
+ */
+export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse> {
+  const apiKey = process.env.TALENT_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing Talent API key");
+  }
+
+  // Step 1: Get snapshot data (frozen ranks and rewards)
+  const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
+  if (!snapshotExists) {
+    return { entries: [] };
+  }
+
+  const snapshots = await LeaderboardSnapshotService.getSnapshot();
+  if (!snapshots || snapshots.length === 0) {
+    return { entries: [] };
+  }
+
+  // Step 2: Extract UUIDs from snapshot
+  const snapshotUUIDs = snapshots.map((s) => s.talent_uuid);
+
+  // Step 3: Query Talent API for specific profiles by UUID
+  const profiles = await unstable_cache(
+    async () => {
+      const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
+      const batchSize = 50; // Process in smaller batches
+      const allProfiles: Profile[] = [];
+
+      // Process UUIDs in batches
+      for (let i = 0; i < snapshotUUIDs.length; i += batchSize) {
+        const batch = snapshotUUIDs.slice(i, i + batchSize);
+
+        const data = {
+          query: {
+            profileIds: batch,
+            exactMatch: true,
+          },
+          sort: {
+            id: { order: "desc" },
+          },
+          per_page: batchSize,
+          view: "scores_minimal",
+        };
+
+        const queryString = [
+          `query=${encodeURIComponent(JSON.stringify(data.query))}`,
+          `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
+          `per_page=${batchSize}`,
+          `view=scores_minimal`,
+        ].join("&");
+
+        const res = await fetch(`${baseUrl}?${queryString}`, {
+          headers: {
+            Accept: "application/json",
+            "X-API-KEY": apiKey,
+          },
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(
+            `Failed to fetch batch ${Math.floor(i / batchSize) + 1}: ${errorText}`,
+          );
+        }
+
+        const json = await res.json();
+        const batchProfiles = json.profiles || [];
+        allProfiles.push(...batchProfiles);
+
+        // Rate limiting
+        if (i + batchSize < snapshotUUIDs.length) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      return allProfiles;
+    },
+    [CACHE_KEYS.LEADERBOARD + "-snapshot-profiles"],
+    {
+      revalidate: CACHE_DURATION_1_HOUR,
+      tags: [CACHE_KEYS.LEADERBOARD + "-snapshot-profiles"],
+    },
+  )();
+
+  // Step 4: Filter out project accounts
+  const filteredProfiles = profiles.filter(
+    (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
+  );
+
+  // Step 5: Fetch opt-out status for all users (no caching for accuracy)
+  let optedOutUserIds: string[] = [];
+  let optedInUserIds: string[] = [];
+  try {
+    // Fetch opted_out and opted_in users only - undecided is anyone not in these arrays
+    const { data: optedOutData, error: optedOutError } = await supabase
+      .from("user_preferences")
+      .select("talent_uuid, rewards_decision")
+      .eq("rewards_decision", "opted_out");
+
+    if (optedOutError) {
+      console.error("Error fetching opted_out users:", optedOutError);
+    }
+
+    const { data: optedInData, error: optedInError } = await supabase
+      .from("user_preferences")
+      .select("talent_uuid, rewards_decision")
+      .eq("rewards_decision", "opted_in");
+
+    if (optedInError) {
+      console.error("Error fetching opted_in users:", optedInError);
+    }
+
+    optedOutUserIds = optedOutData?.map((row) => row.talent_uuid) ?? [];
+    optedInUserIds = optedInData?.map((row) => row.talent_uuid) ?? [];
+    // undecidedUserIds remains empty - we'll calculate undecided status in the mapping logic
+  } catch (error) {
+    console.error("Error fetching user preferences:", error);
+    // Continue with empty arrays
+  }
+
+  // Step 6: Create snapshot map for quick lookup
+  const snapshotMap = new Map(
+    snapshots.map((snapshot) => [snapshot.talent_uuid, snapshot]),
+  );
+
+  // Step 7: Map profiles to leaderboard entries with snapshot data
+  const mapped = filteredProfiles.map((profile: Profile) => {
+    const creatorScores = Array.isArray(profile.scores)
+      ? profile.scores
+          .filter((s) => s.slug === "creator_score")
+          .map((s) => s.points ?? 0)
+      : [];
+    const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
+
+    const isOptedOut = optedOutUserIds.includes(profile.id);
+    const isOptedIn = optedInUserIds.includes(profile.id);
+    const isUndecided = !isOptedOut && !isOptedIn; // If not opted out and not opted in, then undecided
+
+    // Get snapshot data for this profile
+    const snapshot = snapshotMap.get(profile.id);
+
+    return {
+      name: profile.display_name || profile.name || "Unknown",
+      pfp: profile.image_url || undefined,
+      score,
+      id: profile.id,
+      talent_protocol_id: profile.id,
+      isBoosted: false,
+      isOptedOut,
+      isOptedIn,
+      isUndecided,
+      baseReward: snapshot?.rewards_amount || 0,
+      boostedReward: snapshot?.rewards_amount || 0,
+      rank: snapshot?.rank || -1, // Use snapshot rank, -1 if not found
+    };
+  });
+
+  // Step 8: Sort by snapshot rank to maintain frozen order
+  const sorted = mapped.sort((a, b) => {
+    if (a.rank === -1 && b.rank === -1) return 0;
+    if (a.rank === -1) return 1;
+    if (b.rank === -1) return -1;
+    return a.rank - b.rank;
+  });
+
+  return {
+    entries: sorted,
+  };
+}
 
 /**
  * Fetch top 200 entries from Talent Protocol API
@@ -70,7 +231,6 @@ export async function fetchTop200Entries(): Promise<Profile[]> {
         const queryString = [
           `query=${encodeURIComponent(JSON.stringify(data.query))}`,
           `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
-          `page=${page}`,
           `per_page=${batchSize}`,
           `view=scores_minimal`,
         ].join("&");
@@ -108,165 +268,6 @@ export async function fetchTop200Entries(): Promise<Profile[]> {
   )();
 
   return profiles;
-}
-
-/**
- * Get top 200 leaderboard entries with boosted profiles integration
- */
-export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse> {
-  const apiKey = process.env.TALENT_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing Talent API key");
-  }
-
-  // Fetch profiles
-  const profiles = await fetchTop200Entries();
-
-  // Filter out project accounts
-  const filteredProfiles = profiles.filter(
-    (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
-  );
-
-  // Fetch boosted profiles for integration
-  let boostedProfileIds: string[] = [];
-  try {
-    boostedProfileIds = await getBoostedProfilesData();
-  } catch {
-    boostedProfileIds = [];
-  }
-
-  // Fetch opt-out status for all users
-  let optedOutUserIds: string[] = [];
-  try {
-    optedOutUserIds = await OptoutService.getAllOptedOutUsers();
-  } catch {
-    optedOutUserIds = [];
-  }
-
-  // Map to basic entries (no rewards) with boosted and opt-out status
-  const mapped = filteredProfiles.map((profile: Profile) => {
-    const creatorScores = Array.isArray(profile.scores)
-      ? profile.scores
-          .filter((s) => s.slug === "creator_score")
-          .map((s) => s.points ?? 0)
-      : [];
-    const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
-    const isBoosted = boostedProfileIds.includes(profile.id);
-    const isOptedOut = optedOutUserIds.includes(profile.id);
-
-    return {
-      name: profile.display_name || profile.name || "Unknown",
-      pfp: profile.image_url || undefined,
-      score,
-      id: profile.id,
-      talent_protocol_id: profile.id,
-      isBoosted,
-      isOptedOut,
-    };
-  });
-
-  // Sort by boosted score (rewards ordering) and assign ranks
-  mapped.sort((a, b) => {
-    const boostedA = a.isBoosted ? a.score * 1.1 : a.score;
-    const boostedB = b.isBoosted ? b.score * 1.1 : b.score;
-    return boostedB - boostedA;
-  });
-
-  let lastBoostedScore: number | null = null;
-  let lastRank = 0;
-  let ties = 0;
-  const ranked = mapped.map((entry, idx) => {
-    const currentBoostedScore = entry.isBoosted
-      ? entry.score * 1.1
-      : entry.score;
-    let rank;
-    if (currentBoostedScore === lastBoostedScore) {
-      rank = lastRank;
-      ties++;
-    } else {
-      rank = idx + 1;
-      if (ties > 0) rank = lastRank + ties;
-      lastBoostedScore = currentBoostedScore;
-      lastRank = rank;
-      ties = 1;
-    }
-    return { ...entry, rank };
-  });
-
-  // Count boosted creators
-  const boostedCreatorsCount = ranked.filter((entry) => entry.isBoosted).length;
-
-  // Update stored rewards for opted-out users after leaderboard calculation
-  // Use cooldown to prevent excessive database writes
-  const now = Date.now();
-  if (now - batchUpdateCooldown.timestamp > BATCH_UPDATE_COOLDOWN_MS) {
-    try {
-      await updateOptedOutRewards(ranked);
-      batchUpdateCooldown.timestamp = now;
-      console.log(
-        "[LeaderboardService] Batch update completed, cooldown reset",
-      );
-    } catch (error) {
-      console.error(
-        "[LeaderboardService] Failed to update rewards storage:",
-        error,
-      );
-      // Don't fail leaderboard if rewards update fails - it's a background operation
-    }
-  } else {
-    const remainingCooldown = Math.ceil(
-      (BATCH_UPDATE_COOLDOWN_MS - (now - batchUpdateCooldown.timestamp)) /
-        1000 /
-        60,
-    );
-    console.log(
-      `[LeaderboardService] Batch update skipped, cooldown active (${remainingCooldown} minutes remaining)`,
-    );
-  }
-
-  return {
-    entries: ranked,
-    boostedCreatorsCount,
-  };
-}
-
-/**
- * Update stored rewards for all opted-out users in top 200
- * This function is called automatically when leaderboard data is recalculated
- * @param entries - Ranked leaderboard entries
- */
-async function updateOptedOutRewards(
-  entries: LeaderboardEntry[],
-): Promise<void> {
-  // Find opted-out users in top 200
-  const optedOutUsers = entries
-    .filter((entry) => entry.isOptedOut && entry.rank <= 200)
-    .slice(0, 200); // Ensure only top 200
-
-  if (optedOutUsers.length === 0) {
-    console.log("[LeaderboardService] No opted-out users in top 200 to update");
-    return;
-  }
-
-  try {
-    // Import services dynamically to avoid circular dependencies
-    const { RewardsCalculationService } = await import(
-      "./rewardsCalculationService"
-    );
-
-    // Store opted-out users' future pool contributions
-    await RewardsCalculationService.storeOptedOutContributions(entries);
-
-    console.log(
-      `[LeaderboardService] Updated future pool contributions for ${optedOutUsers.length} opted-out users`,
-    );
-  } catch (error) {
-    console.error(
-      "[LeaderboardService] Error updating opted-out contributions:",
-      error,
-    );
-    throw error; // Re-throw to be caught by caller
-  }
 }
 
 /**
@@ -341,7 +342,7 @@ async function getBoostedProfilesViaSearch(): Promise<string[]> {
       credentials: [
         {
           slug: "talent_protocol_talent_holder",
-          valueRange: { min: BOOST_CONFIG.TOKEN_THRESHOLD },
+          valueRange: { min: 100 }, // Changed to 100 for boosted profiles
         },
       ],
     },
@@ -362,7 +363,7 @@ async function getBoostedProfilesViaSearch(): Promise<string[]> {
       credentials: [
         {
           slug: "talent_vault",
-          valueRange: { min: BOOST_CONFIG.TOKEN_THRESHOLD },
+          valueRange: { min: 100 }, // Changed to 100 for boosted profiles
         },
       ],
     },
@@ -406,21 +407,6 @@ export async function getBoostedProfilesData(): Promise<string[]> {
 
   return boostedProfiles;
 }
-
-// Total number of creators with Creator Score > 0, via Talent API advanced search pagination
-export const getActiveCreatorsCount = unstable_cache(
-  async () => {
-    const res = await talentApiClient.getActiveCreatorsCount();
-    try {
-      const json = await res.json();
-      return typeof json.total === "number" ? json.total : 0;
-    } catch {
-      return 0;
-    }
-  },
-  [CACHE_KEYS.LEADERBOARD + "-active-creators-count"],
-  { revalidate: CACHE_DURATION_10_MINUTES * 6 },
-);
 
 /**
  * Get boosted profiles via API route - called by hooks

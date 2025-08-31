@@ -5,10 +5,7 @@ import { Mail, Trash2 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type {
-  UserSettings,
-  AccountManagementAction,
-} from "@/app/services/types";
+import type { UserSettings, AccountManagementAction } from "@/lib/types";
 
 interface AccountSettingsSectionProps {
   settings: UserSettings | null;
