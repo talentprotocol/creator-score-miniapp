@@ -432,7 +432,7 @@ function LeaderboardContent() {
             value={`$${formatCompactNumber(TOTAL_SPONSORS_POOL)}`}
           />
           <StatCard
-            title="Rewards Distribution"
+            title="Claim Rewards until:"
             value={`${countdown.days}d ${countdown.hours}h`}
           />
         </div>

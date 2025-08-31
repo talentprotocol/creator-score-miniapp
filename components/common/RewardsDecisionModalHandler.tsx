@@ -18,8 +18,11 @@ export function RewardsDecisionModalHandler({
   isTop200 = false,
 }: RewardsDecisionModalHandlerProps) {
   const { talentUuid } = useFidToTalentUuid();
-  const { data: rewardsDecisionData, loading: decisionLoading, refetch } =
-    useUserRewardsDecision(talentUuid);
+  const {
+    data: rewardsDecisionData,
+    loading: decisionLoading,
+    refetch,
+  } = useUserRewardsDecision(talentUuid);
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
