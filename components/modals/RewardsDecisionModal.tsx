@@ -152,7 +152,7 @@ function RewardsDecisionContent({
       } else {
         // TODO: Show error message to user
       }
-    } catch (_error) {
+    } catch {
       // TODO: Show error message to user
     } finally {
       setIsSubmitting(false);
@@ -168,7 +168,7 @@ function RewardsDecisionContent({
       await navigator.clipboard.writeText(address);
       setCopiedAddress(address);
       setTimeout(() => setCopiedAddress(undefined), 2000);
-    } catch (_error) {
+    } catch {
       // Failed to copy address
     }
   };

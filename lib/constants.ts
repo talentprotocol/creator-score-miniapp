@@ -89,6 +89,10 @@ export const PROJECT_ACCOUNTS_TO_EXCLUDE = [
   "1e8eec23-d32d-4f64-bdc4-4a46a0ff8fa4", // daylightenergy
   "b4405975-e209-4f3c-b5b4-7f83a1a652c3", // interface
   "a2609b4d-1b19-4d50-87b2-f415d85535a9", // doodles
+  "1a80750b-e221-459f-a69b-33de1f0a6fdf", // SUPERMARKET
+  "e917fec7-2278-4ee8-9274-d5a680abe098", // Reveel
+  "587afa70-4d48-44c5-8332-c651c04d4894", // Zerion
+  "77690046-ff9e-4077-be99-15c1e98b1624", // Daylight
 ];
 
 // Environment variable validation
