@@ -31,7 +31,6 @@ import {
 
 import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
-import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { HandHeart, Award, HandCoins } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +40,7 @@ import posthog from "posthog-js";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Typography } from "@/components/ui/typography";
+
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
@@ -525,7 +524,7 @@ function LeaderboardContent() {
             tabs={[
               {
                 id: "creators",
-                label: "Top 200",
+                label: "TOP200",
               },
               {
                 id: "sponsors",
@@ -781,29 +780,6 @@ function LeaderboardContent() {
               }}
             />
           </>
-        )}
-
-        {/* Sponsor Callout */}
-        {activeTab === "sponsors" && (
-          <div className="mt-4">
-            <Callout variant="brand-purple">
-              <Typography
-                size="xs"
-                color="default"
-                className="text-brand-purple"
-              >
-                Want to join as a sponsor? Reach out to {""}
-                <button
-                  className="underline hover:no-underline"
-                  onClick={() =>
-                    openExternalUrl("https://farcaster.xyz/juampi", context)
-                  }
-                >
-                  @juampi
-                </button>
-              </Typography>
-            </Callout>
-          </div>
         )}
 
         {/* Rewards Decision Modal Handler */}

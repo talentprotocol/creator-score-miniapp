@@ -1,5 +1,8 @@
 import { supabase } from "@/lib/supabase-client";
-import type { LeaderboardEntry, LeaderboardSnapshot } from "@/lib/types";
+import type {
+  LeaderboardEntry,
+  LeaderboardSnapshot,
+} from "@/app/services/types";
 
 export class LeaderboardSnapshotService {
   private static supabase = supabase;
@@ -16,67 +19,48 @@ export class LeaderboardSnapshotService {
         `[LeaderboardSnapshotService] Creating snapshot with ${entries.length} entries`,
       );
 
-      // Check if snapshot already exists
-      const snapshotExists = await this.snapshotExists();
-      if (snapshotExists) {
-        console.log(
-          `[LeaderboardSnapshotService] Snapshot already exists, aborting`,
-        );
+      // Delete existing snapshot first (overwrite logic)
+      console.log("[LeaderboardSnapshotService] Deleting existing snapshot");
+      const { error: deleteError } = await this.supabase
+        .from("leaderboard_snapshots")
+        .delete()
+        .gte("rank", 0);
+
+      if (deleteError) {
+        console.error("Error deleting existing snapshot:", deleteError);
         return {
           success: false,
-          error: `Snapshot already exists`,
+          error: `Failed to delete existing snapshot: ${deleteError.message}`,
         };
       }
 
-      // Fetch actual rewards amounts for opted-out users from database
-      const optedOutRewards = new Map<string, number>();
-      try {
-        const { data: optedOutData, error: optedOutError } = await this.supabase
-          .from("user_preferences")
-          .select("talent_uuid, rewards_amount")
-          .eq("rewards_decision", "opted_out")
-          .not("rewards_amount", "is", null);
+      // Import rewards calculation service dynamically to avoid circular dependencies
+      const { RewardsCalculationService } = await import(
+        "./rewardsCalculationService"
+      );
 
-        if (optedOutError) {
-          console.error(
-            "Error fetching opted-out rewards for snapshot:",
-            optedOutError,
-          );
-        } else if (optedOutData) {
-          optedOutData.forEach((row) => {
-            if (row.rewards_amount !== null) {
-              optedOutRewards.set(row.talent_uuid, row.rewards_amount);
-            }
-          });
-          console.log(
-            `[LeaderboardSnapshotService] Fetched ${optedOutRewards.size} opted-out rewards for snapshot`,
-          );
-        }
-      } catch (error) {
-        console.error(
-          "[LeaderboardSnapshotService] Error fetching opted-out rewards for snapshot:",
-          error,
-        );
-      }
+      // Transform leaderboard entries to snapshot format with calculated rewards
+      const snapshots = await Promise.all(
+        entries.map(async (entry) => {
+          const rewardAmount =
+            RewardsCalculationService.calculatePureUserReward(
+              entry.score,
+              entry.rank,
+              entry.isBoosted || false,
+              entries,
+            );
 
-      // Transform leaderboard entries to snapshot format (only essential data)
-      const snapshots = entries.map((entry) => {
-        let rewardsAmount = entry.boostedReward || entry.baseReward || 0;
+          // Extract numeric value from formatted string (e.g., "$138" -> 138)
+          const numericAmount =
+            parseFloat(rewardAmount.replace(/[^0-9.-]/g, "")) || 0;
 
-        // For opted-out users, use their actual donation amount from database
-        if (entry.isOptedOut) {
-          const actualReward = optedOutRewards.get(entry.id);
-          if (actualReward !== undefined) {
-            rewardsAmount = actualReward;
-          }
-        }
-
-        return {
-          talent_uuid: entry.id,
-          rank: entry.rank,
-          rewards_amount: rewardsAmount,
-        };
-      });
+          return {
+            talent_uuid: String(entry.talent_protocol_id),
+            rank: entry.rank,
+            rewards_amount: numericAmount,
+          };
+        }),
+      );
 
       // Insert all snapshots in a single transaction
       const { data, error } = await this.supabase
@@ -95,7 +79,7 @@ export class LeaderboardSnapshotService {
 
       const snapshotId = data?.[0]?.talent_uuid;
       console.log(
-        `Created leaderboard snapshot with ${snapshots.length} entries`,
+        `[LeaderboardSnapshotService] Created leaderboard snapshot with ${snapshots.length} entries`,
       );
 
       return {
