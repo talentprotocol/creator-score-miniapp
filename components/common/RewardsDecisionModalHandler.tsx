@@ -113,7 +113,7 @@ export function RewardsDecisionModalHandler({
     }, 2000); // Wait 2 seconds before refreshing data
   }, [refetch]);
 
-  // Don't render if not in top 200 or modal shouldn't be shown
+  // Don't render if not in top 200 or modal shouldn't be shown.
   if (!isTop200 || !isModalOpen) {
     return null;
   }
