@@ -39,6 +39,9 @@ export function MyRewards({
     data: { rewardsDecision },
   } = useUserRewardsDecision(talentUuid || null);
 
+  // Debug logging
+  console.log("MyRewards - rewardsDecision:", rewardsDecision, "talentUuid:", talentUuid);
+
   return (
     <div className="w-full bg-brand-purple-light rounded-lg">
       <div className="p-6 flex justify-between items-start gap-6">

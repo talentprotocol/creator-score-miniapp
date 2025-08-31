@@ -32,6 +32,7 @@ export function useUserRewardsDecision(
       return;
     }
 
+    console.log("useUserRewardsDecision - fetching for talentUuid:", talentUuid);
     setLoading(true);
     setError(null);
 
@@ -54,6 +55,7 @@ export function useUserRewardsDecision(
         );
       }
 
+      console.log("useUserRewardsDecision - received data:", data.data?.rewards_decision);
       setRewardsDecision(data.data?.rewards_decision || null);
     } catch (err) {
       console.error("Error fetching rewards decision status:", err);
