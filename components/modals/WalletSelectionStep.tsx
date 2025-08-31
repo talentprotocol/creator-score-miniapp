@@ -40,11 +40,11 @@ export function WalletSelectionStep({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <RadioGroup
         value={selectedWallet}
         onValueChange={onWalletSelect}
-        className="space-y-3"
+        className="space-y-1"
       >
         {wallets.map((wallet) => {
           const isPrimary = wallet.type === "farcaster-primary";
@@ -54,7 +54,7 @@ export function WalletSelectionStep({
             <div
               key={wallet.address}
               className={cn(
-                "flex items-center space-x-3 p-3 cursor-pointer transition-colors",
+                "flex items-center space-x-2 py-2 px-1 cursor-pointer transition-colors rounded",
                 selectedWallet === wallet.address
                   ? "bg-primary/5"
                   : "hover:bg-muted/50",
@@ -70,14 +70,14 @@ export function WalletSelectionStep({
               <div className="flex-1 cursor-pointer">
                 {/* Wallet Address with Inline Chips */}
                 <div className="flex items-center gap-2">
-                  <Typography size="sm" className="font-mono text-sm">
+                  <Typography size="sm" className="font-mono">
                     {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
                   </Typography>
 
                   {/* Source Chip */}
                   <span
                     className={cn(
-                      "px-2 py-1 rounded-full text-xs font-medium",
+                      "px-2 py-0.5 rounded-full text-xs font-medium",
                       isFarcaster
                         ? "bg-brand-purple-light text-brand-purple"
                         : "bg-brand-green-light text-brand-green",
@@ -88,7 +88,7 @@ export function WalletSelectionStep({
 
                   {/* Primary Chip */}
                   {isPrimary && (
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
                       Primary
                     </span>
                   )}
@@ -97,7 +97,7 @@ export function WalletSelectionStep({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 hover:bg-muted"
+                    className="h-5 w-5 p-0 hover:bg-muted"
                     onClick={(e) => {
                       e.stopPropagation();
                       onCopyAddress(wallet.address);
@@ -115,15 +115,6 @@ export function WalletSelectionStep({
           );
         })}
       </RadioGroup>
-
-      {/* Selection Info */}
-      {selectedWallet && (
-        <div className="p-3 bg-muted/50 rounded-lg">
-          <Typography size="sm" color="muted">
-            Selected: {selectedWallet.slice(0, 6)}...{selectedWallet.slice(-4)}
-          </Typography>
-        </div>
-      )}
     </div>
   );
 }
