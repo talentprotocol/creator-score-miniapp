@@ -222,12 +222,8 @@ function RewardsDecisionContent({
               <br />• Paying it forward to more creators
             </Typography>
 
-            <Typography size="sm" color="default">
-              {optedOutPercentage}% of top 200 creators paid it forward so far.
-            </Typography>
-
             <Typography size="sm" color="muted">
-              Rewards are sponsored by {sponsorNames}.
+              {optedOutPercentage}% of top 200 creators paid it forward so far.
             </Typography>
           </div>
 
@@ -291,7 +287,7 @@ function RewardsDecisionContent({
           {/* Decision Status */}
           <div className="space-y-3">
             {isOptedOut ? (
-              <Typography size="sm" color="default">
+              <Typography size="sm" color="muted">
                 You&apos;re part of the {optedOutPercentage}% of creators who
                 paid it forward.
               </Typography>
@@ -300,10 +296,6 @@ function RewardsDecisionContent({
                 You opted-in to receive USDC rewards on Sep 17th.
               </Typography>
             )}
-
-            <Typography size="sm" color="muted">
-              Rewards are sponsored by {sponsorNames}.
-            </Typography>
           </div>
 
           {/* Disabled Action Buttons */}

@@ -16,7 +16,17 @@ export async function GET() {
         score: result.entries[0].score
       } : null
     });
-    return NextResponse.json(result);
+    
+    // Return response with no-cache headers to prevent any caching
+    return new NextResponse(JSON.stringify(result), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (error) {
     console.error("Failed to fetch snapshot leaderboard data:", error);
     return NextResponse.json(

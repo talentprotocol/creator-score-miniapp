@@ -22,10 +22,15 @@ interface UseLeaderboardDataReturn {
  */
 async function getLeaderboardBasic(): Promise<LeaderboardData> {
   try {
-    const response = await fetch(`/api/leaderboard/basic`, {
+    // Add cache-busting timestamp to prevent browser caching
+    const timestamp = Date.now();
+    const response = await fetch(`/api/leaderboard/basic?t=${timestamp}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
       },
     });
 
@@ -89,6 +94,7 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
+      // Always force fresh data when refetching
       loadBasicData();
     },
     [loadBasicData],
@@ -110,9 +116,17 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
     [],
   );
 
-  // Load basic data on mount
+  // Load basic data on mount and refresh every 30 seconds to ensure fresh data
   useEffect(() => {
     loadBasicData();
+    
+    // Set up interval to refresh data every 30 seconds
+    const interval = setInterval(() => {
+      console.log("[useLeaderboardOptimized] Auto-refreshing leaderboard data");
+      loadBasicData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, [loadBasicData]);
 
   return {
