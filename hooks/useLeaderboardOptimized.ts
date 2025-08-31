@@ -122,7 +122,7 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
 
     // Set up interval to refresh data every 30 seconds
     const interval = setInterval(() => {
-      console.log("[useLeaderboardOptimized] Auto-refreshing leaderboard data");
+      
       loadBasicData();
     }, 30000); // 30 seconds
 

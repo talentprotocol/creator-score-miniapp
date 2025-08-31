@@ -152,10 +152,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       console.error("Error fetching opted_in users:", optedInError);
     }
 
-    console.log(
-      `[LeaderboardService] Raw user preferences data count:`,
-      (optedOutData?.length || 0) + (optedInData?.length || 0),
-    );
+
 
     optedOutUserIds = optedOutData?.map((row) => row.talent_uuid) ?? [];
     optedInUserIds = optedInData?.map((row) => row.talent_uuid) ?? [];
@@ -165,29 +162,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     // Continue with empty arrays
   }
 
-  // Debug: Log the counts for verification
-  console.log(`[LeaderboardService] User preferences summary:`, {
-    optedOut: optedOutUserIds.length,
-    optedIn: optedInUserIds.length,
-    undecided: undecidedUserIds.length,
-    total:
-      optedOutUserIds.length + optedInUserIds.length + undecidedUserIds.length,
-  });
 
-  // Debug: Check if the specific users are in the arrays
-  const debugUsers = [
-    "98934280-2b20-4bfe-8bb8-54a270fd2a8a",
-    "b56917e7-e37a-4d6c-a447-8bdc896163ba",
-    "2465b21f-0d6b-4a2a-9869-93aafa1ed8db",
-  ];
-
-  debugUsers.forEach((uuid) => {
-    console.log(`[LeaderboardService] Debug user ${uuid}:`, {
-      inOptedOut: optedOutUserIds.includes(uuid),
-      inOptedIn: optedInUserIds.includes(uuid),
-      inUndecided: undecidedUserIds.includes(uuid),
-    });
-  });
 
   // Step 6: Create snapshot map for quick lookup
   const snapshotMap = new Map(
@@ -210,24 +185,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     // Get snapshot data for this profile
     const snapshot = snapshotMap.get(profile.id);
 
-    // Debug: Log specific users mentioned in the issue
-    const debugUsers = [
-      "98934280-2b20-4bfe-8bb8-54a270fd2a8a",
-      "b56917e7-e37a-4d6c-a447-8bdc896163ba",
-      "2465b21f-0d6b-4a2a-9869-93aafa1ed8db",
-    ];
-    if (debugUsers.includes(profile.id)) {
-      console.log(
-        `[LeaderboardService] Final mapping for ${profile.id} (${profile.display_name || profile.name}):`,
-        {
-          isOptedOut,
-          isOptedIn,
-          isUndecided,
-          rank: snapshot?.rank || -1,
-          reward: snapshot?.rewards_amount || 0,
-        },
-      );
-    }
+
 
     return {
       name: profile.display_name || profile.name || "Unknown",
