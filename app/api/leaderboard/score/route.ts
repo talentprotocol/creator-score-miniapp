@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getTop200LeaderboardEntries } from "@/app/services/leaderboardService";
+import { getTop200LeaderboardEntries } from "@/app/services/scoreLeaderboardService";
 
 export const maxDuration = 60;
 
 export async function GET() {
   try {
-    console.log("[API] /api/leaderboard/basic called");
+    console.log("[API] /api/leaderboard/score called");
     const result = await getTop200LeaderboardEntries();
-    console.log("[API] Snapshot leaderboard result:", {
+    console.log("[API] Score leaderboard result:", {
       entryCount: result.entries.length,
       firstEntry: result.entries[0] ? {
         name: result.entries[0].name,
@@ -18,9 +18,9 @@ export async function GET() {
     });
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to fetch snapshot leaderboard data:", error);
+    console.error("Failed to fetch score leaderboard data:", error);
     return NextResponse.json(
-      { error: "Failed to fetch snapshot leaderboard data" },
+      { error: "Failed to fetch score leaderboard data" },
       { status: 500 },
     );
   }

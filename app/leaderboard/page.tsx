@@ -88,19 +88,21 @@ function LeaderboardContent() {
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
-    activeCreatorsTotal,
   } = useLeaderboardData();
 
   // Debug: Log leaderboard data in browser console
   React.useEffect(() => {
     if (top200Entries.length > 0) {
-      console.log("[Client] Leaderboard entries:", top200Entries.slice(0, 3).map(e => ({
-        name: e.name,
-        talent_protocol_id: e.talent_protocol_id,
-        rank: e.rank,
-        score: e.score,
-        boostedReward: e.boostedReward
-      })));
+      console.log(
+        "[Client] Leaderboard entries:",
+        top200Entries.slice(0, 3).map((e) => ({
+          name: e.name,
+          talent_protocol_id: e.talent_protocol_id,
+          rank: e.rank,
+          score: e.score,
+          boostedReward: e.boostedReward,
+        })),
+      );
     }
   }, [top200Entries]);
 
@@ -581,6 +583,7 @@ function LeaderboardContent() {
                   isOptedOut?: boolean;
                 }> = top200Entries.map((user) => {
                   const isOptedOut = user.isOptedOut;
+                  const isOptedIn = user.isOptedIn;
                   const isUndecided = user.isUndecided;
                   // Show "-" for rank -1 (no rank available)
                   const displayRank = user.rank === -1 ? undefined : user.rank;
@@ -599,7 +602,9 @@ function LeaderboardContent() {
                       ? "muted"
                       : isOptedOut
                         ? "brand-green"
-                        : "brand-blue",
+                        : isOptedIn
+                          ? "brand-blue"
+                          : "muted",
                     isOptedOut: isOptedOut,
                     badge: isOptedOut ? (
                       isLoggedIn ? (
@@ -624,7 +629,7 @@ function LeaderboardContent() {
                           <HandHeart className="h-3 w-3 text-brand-green" />
                         </div>
                       )
-                    ) : !isUndecided ? (
+                    ) : isOptedIn ? (
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue-light">
                         <HandCoins className="h-3 w-3 text-brand-blue" />
                       </div>
@@ -639,6 +644,7 @@ function LeaderboardContent() {
 
                 // Derive styling from rewardsDecision for pinned user
                 const pinnedIsOptedOut = rewardsDecision === "opted_out";
+                const pinnedIsOptedIn = rewardsDecision === "opted_in";
                 const pinnedIsUndecided = rewardsDecision === null;
                 const pinnedId = userTop200Entry?.id || (userTalentUuid ?? "");
                 if (!pinnedId) return baseItems;
@@ -676,7 +682,9 @@ function LeaderboardContent() {
                     ? "muted"
                     : pinnedIsOptedOut
                       ? "brand-green"
-                      : "brand-blue",
+                      : pinnedIsOptedIn
+                        ? "brand-blue"
+                        : "muted",
                   isOptedOut: pinnedIsOptedOut,
                   badge: pinnedIsOptedOut ? (
                     isLoggedIn ? (
@@ -701,7 +709,7 @@ function LeaderboardContent() {
                         <HandHeart className="h-3 w-3 text-brand-green" />
                       </div>
                     )
-                  ) : !pinnedIsUndecided ? (
+                  ) : pinnedIsOptedIn ? (
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue-light">
                       <HandCoins className="h-3 w-3 text-brand-blue" />
                     </div>

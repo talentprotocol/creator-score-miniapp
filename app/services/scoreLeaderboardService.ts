@@ -1,5 +1,5 @@
 import type { LeaderboardEntry } from "@/lib/types";
-import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
+import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
 import {
   CACHE_KEYS,
@@ -26,189 +26,6 @@ type Profile = {
     points?: number;
   }>;
 };
-
-/**
- * NEW IMPLEMENTATION: Get leaderboard entries using snapshot UUIDs
- * This approach queries Talent API for specific UUIDs from our frozen snapshot
- * instead of getting current top 200 by Creator Score
- */
-export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse> {
-  const apiKey = process.env.TALENT_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing Talent API key");
-  }
-
-  // Step 1: Get snapshot data (frozen ranks and rewards)
-  const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
-  if (!snapshotExists) {
-    console.log("[LeaderboardService] No snapshot exists, returning empty");
-    return { entries: [] };
-  }
-
-  const snapshots = await LeaderboardSnapshotService.getSnapshot();
-  if (!snapshots || snapshots.length === 0) {
-    console.log("[LeaderboardService] Snapshot is empty, returning empty");
-    return { entries: [] };
-  }
-
-  console.log(`[LeaderboardService] Found ${snapshots.length} snapshot entries`);
-
-  // Step 2: Extract UUIDs from snapshot
-  const snapshotUUIDs = snapshots.map(s => s.talent_uuid);
-  console.log(`[LeaderboardService] Querying Talent API for ${snapshotUUIDs.length} specific UUIDs`);
-
-  // Step 3: Query Talent API for specific profiles by UUID
-  const profiles = await unstable_cache(
-    async () => {
-      const baseUrl = "https://api.talentprotocol.com/search/advanced/profiles";
-      const batchSize = 50; // Process in smaller batches
-      const allProfiles: Profile[] = [];
-
-      // Process UUIDs in batches
-      for (let i = 0; i < snapshotUUIDs.length; i += batchSize) {
-        const batch = snapshotUUIDs.slice(i, i + batchSize);
-        
-        const data = {
-          query: {
-            profileIds: batch,
-            exactMatch: true
-          },
-          sort: {
-            id: { order: "desc" }
-          },
-          per_page: batchSize,
-          view: "scores_minimal"
-        };
-
-        const queryString = [
-          `query=${encodeURIComponent(JSON.stringify(data.query))}`,
-          `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
-          `per_page=${batchSize}`,
-          `view=scores_minimal`
-        ].join("&");
-
-        const res = await fetch(`${baseUrl}?${queryString}`, {
-          headers: {
-            Accept: "application/json",
-            "X-API-KEY": apiKey,
-          },
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`Failed to fetch batch ${Math.floor(i/batchSize) + 1}: ${errorText}`);
-        }
-
-        const json = await res.json();
-        const batchProfiles = json.profiles || [];
-        allProfiles.push(...batchProfiles);
-
-        // Rate limiting
-        if (i + batchSize < snapshotUUIDs.length) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-      }
-
-      return allProfiles;
-    },
-    [CACHE_KEYS.LEADERBOARD + "-snapshot-profiles"],
-    {
-      revalidate: CACHE_DURATION_1_HOUR,
-      tags: [CACHE_KEYS.LEADERBOARD + "-snapshot-profiles"],
-    },
-  )();
-
-  console.log(`[LeaderboardService] Retrieved ${profiles.length} profiles from Talent API`);
-
-  // Step 4: Filter out project accounts
-  const filteredProfiles = profiles.filter(
-    (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
-  );
-
-  // Step 5: Fetch opt-out status for all users
-  let optedOutUserIds: string[] = [];
-  let optedInUserIds: string[] = [];
-  let undecidedUserIds: string[] = [];
-  try {
-    const { data, error } = await supabase
-      .from("user_preferences")
-      .select("talent_uuid, rewards_decision");
-
-    if (error) {
-      console.error("Error fetching user preferences:", error);
-    } else {
-      optedOutUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_out")
-          .map((row) => row.talent_uuid) ?? [];
-      optedInUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_in")
-          .map((row) => row.talent_uuid) ?? [];
-      undecidedUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === null)
-          .map((row) => row.talent_uuid) ?? [];
-    }
-  } catch {
-    // Continue with empty arrays
-  }
-
-  // Step 6: Create snapshot map for quick lookup
-  const snapshotMap = new Map(
-    snapshots.map((snapshot) => [snapshot.talent_uuid, snapshot]),
-  );
-
-  // Step 7: Map profiles to leaderboard entries with snapshot data
-  const mapped = filteredProfiles.map((profile: Profile) => {
-    const creatorScores = Array.isArray(profile.scores)
-      ? profile.scores
-          .filter((s) => s.slug === "creator_score")
-          .map((s) => s.points ?? 0)
-      : [];
-    const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
-    
-    const isOptedOut = optedOutUserIds.includes(profile.id);
-    const isOptedIn = optedInUserIds.includes(profile.id);
-    const isUndecided =
-      undecidedUserIds.includes(profile.id) ||
-      (!optedOutUserIds.includes(profile.id) &&
-        !optedInUserIds.includes(profile.id) &&
-        !undecidedUserIds.includes(profile.id));
-
-    // Get snapshot data for this profile
-    const snapshot = snapshotMap.get(profile.id);
-    
-    return {
-      name: profile.display_name || profile.name || "Unknown",
-      pfp: profile.image_url || undefined,
-      score,
-      id: profile.id,
-      talent_protocol_id: profile.id,
-      isBoosted: false,
-      isOptedOut,
-      isOptedIn,
-      isUndecided,
-      baseReward: snapshot?.rewards_amount || 0,
-      boostedReward: snapshot?.rewards_amount || 0,
-      rank: snapshot?.rank || -1, // Use snapshot rank, -1 if not found
-    };
-  });
-
-  // Step 8: Sort by snapshot rank to maintain frozen order
-  const sorted = mapped.sort((a, b) => {
-    if (a.rank === -1 && b.rank === -1) return 0;
-    if (a.rank === -1) return 1;
-    if (b.rank === -1) return -1;
-    return a.rank - b.rank;
-  });
-
-  console.log(`[LeaderboardService] Returning ${sorted.length} entries sorted by snapshot rank`);
-
-  return {
-    entries: sorted,
-  };
-}
 
 /**
  * Fetch top 200 entries from Talent Protocol API
@@ -285,6 +102,182 @@ export async function fetchTop200Entries(): Promise<Profile[]> {
 }
 
 /**
+ * Get top 200 leaderboard entries with boosted profiles integration
+ */
+export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse> {
+  const apiKey = process.env.TALENT_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing Talent API key");
+  }
+
+  // Fetch profiles
+  const profiles = await fetchTop200Entries();
+
+  // Filter out project accounts
+  const filteredProfiles = profiles.filter(
+    (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
+  );
+
+  // Fetch opt-out status for all users (for display styling)
+  let optedOutUserIds: string[] = [];
+  let optedInUserIds: string[] = [];
+  let undecidedUserIds: string[] = [];
+  try {
+    const { data, error } = await supabase
+      .from("user_preferences")
+      .select("talent_uuid, rewards_decision");
+
+    if (error) {
+      console.error("Error fetching user preferences:", error);
+      optedOutUserIds = [];
+      optedInUserIds = [];
+      undecidedUserIds = [];
+    } else {
+      optedOutUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === "opted_out")
+          .map((row) => row.talent_uuid) ?? [];
+      optedInUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === "opted_in")
+          .map((row) => row.talent_uuid) ?? [];
+      undecidedUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === null)
+          .map((row) => row.talent_uuid) ?? [];
+    }
+  } catch {
+    optedOutUserIds = [];
+    optedInUserIds = [];
+    undecidedUserIds = [];
+  }
+
+  // Map to basic entries with opt-out status (boost logic removed for now)
+  const mapped = filteredProfiles.map((profile: Profile) => {
+    const creatorScores = Array.isArray(profile.scores)
+      ? profile.scores
+          .filter((s) => s.slug === "creator_score")
+          .map((s) => s.points ?? 0)
+      : [];
+    const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
+    const isOptedOut = optedOutUserIds.includes(profile.id);
+    const isOptedIn = optedInUserIds.includes(profile.id);
+    // Users with rewards_decision = null OR without a record in user_preferences are considered "undecided"
+    const isUndecided =
+      undecidedUserIds.includes(profile.id) ||
+      (!optedOutUserIds.includes(profile.id) &&
+        !optedInUserIds.includes(profile.id) &&
+        !undecidedUserIds.includes(profile.id));
+
+    return {
+      name: profile.display_name || profile.name || "Unknown",
+      pfp: profile.image_url || undefined,
+      score,
+      id: profile.id,
+      talent_protocol_id: profile.id,
+      isBoosted: false, // Boost logic removed for now - will be restored for token holder leaderboard
+      isOptedOut,
+      isOptedIn,
+      isUndecided,
+      baseReward: 0, // Will be set from snapshot
+      boostedReward: 0, // Will be set from snapshot
+      rank: 0, // Will be set from snapshot
+    };
+  });
+
+  // Apply snapshot data if available
+  try {
+    const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
+    if (snapshotExists) {
+      console.log("[ScoreLeaderboardService] Using snapshot data for rank/rewards");
+
+      const snapshots = await LeaderboardSnapshotService.getSnapshot();
+      if (snapshots && snapshots.length > 0) {
+        // Create a map for quick lookup
+        const snapshotMap = new Map(
+          snapshots.map((snapshot) => [snapshot.talent_uuid, snapshot]),
+        );
+
+        // Debug: Log first few snapshots and their UUIDs
+        console.log(
+          "[ScoreLeaderboardService] First 3 snapshots:",
+          snapshots
+            .slice(0, 3)
+            .map((s) => ({ talent_uuid: s.talent_uuid, rank: s.rank })),
+        );
+        console.log(
+          "[ScoreLeaderboardService] Snapshot map keys (first 5):",
+          Array.from(snapshotMap.keys()).slice(0, 5),
+        );
+
+        // Replace rank and rewards_amount with snapshot data
+        let matchedCount = 0;
+        let unmatchedCount = 0;
+        mapped.forEach((entry) => {
+          const snapshot = snapshotMap.get(entry.talent_protocol_id);
+          if (snapshot) {
+            entry.rank = snapshot.rank;
+            entry.baseReward = snapshot.rewards_amount;
+            entry.boostedReward = snapshot.rewards_amount;
+            matchedCount++;
+          } else {
+            // Debug: Log unmatched entries
+            if (unmatchedCount < 5) {
+              console.log("[ScoreLeaderboardService] Unmatched entry:", {
+                talent_protocol_id: entry.talent_protocol_id,
+                talent_protocol_id_type: typeof entry.talent_protocol_id,
+                talent_protocol_id_length: entry.talent_protocol_id?.length,
+                name: entry.name,
+                hasSnapshot: snapshotMap.has(entry.talent_protocol_id),
+                // Check if it exists with different UUID formats
+                hasSnapshotWithDashes: snapshotMap.has(
+                  entry.talent_protocol_id?.replace(/-/g, ""),
+                ),
+                hasSnapshotWithoutDashes: snapshotMap.has(
+                  entry.talent_protocol_id?.replace(
+                    /(.{8})(.{4})(.{4})(.{4})(.{12})/,
+                    "$1-$2-$3-$4-$5",
+                  ),
+                ),
+              });
+            }
+            unmatchedCount++;
+            // Show "-" instead of 0 when snapshot data not available
+            entry.rank = -1; // Use -1 to indicate "no rank available"
+            entry.baseReward = 0;
+            entry.boostedReward = 0;
+          }
+        });
+
+        console.log(
+          `[ScoreLeaderboardService] Updated ${matchedCount} entries with snapshot data, ${unmatchedCount} unmatched`,
+        );
+      }
+    } else {
+      console.log("[ScoreLeaderboardService] No snapshot exists, showing N/A");
+      // Set all entries to N/A when no snapshot exists
+      mapped.forEach((entry) => {
+        entry.rank = -1; // Use -1 to indicate "no rank available"
+        entry.baseReward = 0;
+        entry.boostedReward = 0;
+      });
+    }
+  } catch (error) {
+    console.error("[ScoreLeaderboardService] Error applying snapshot data:", error);
+    // Set all entries to N/A on error
+    mapped.forEach((entry) => {
+      entry.rank = -1; // Use -1 to indicate "no rank available"
+      entry.baseReward = 0;
+      entry.boostedReward = 0;
+    });
+  }
+
+  return {
+    entries: mapped,
+  };
+}
+
+/**
  * Internal helper to execute a single search query
  */
 async function executeSearchQuery(
@@ -356,7 +349,7 @@ async function getBoostedProfilesViaSearch(): Promise<string[]> {
       credentials: [
         {
           slug: "talent_protocol_talent_holder",
-          valueRange: { min: 100 }, // Changed to 100 for boosted profiles
+          valueRange: { min: BOOST_CONFIG.TOKEN_THRESHOLD },
         },
       ],
     },
@@ -377,7 +370,7 @@ async function getBoostedProfilesViaSearch(): Promise<string[]> {
       credentials: [
         {
           slug: "talent_vault",
-          valueRange: { min: 100 }, // Changed to 100 for boosted profiles
+          valueRange: { min: BOOST_CONFIG.TOKEN_THRESHOLD },
         },
       ],
     },
@@ -421,6 +414,21 @@ export async function getBoostedProfilesData(): Promise<string[]> {
 
   return boostedProfiles;
 }
+
+// Total number of creators with Creator Score > 0, via Talent API advanced search pagination
+export const getActiveCreatorsCount = unstable_cache(
+  async () => {
+    const res = await talentApiClient.getActiveCreatorsCount();
+    try {
+      const json = await res.json();
+      return typeof json.total === "number" ? json.total : 0;
+    } catch {
+      return 0;
+    }
+  },
+  [CACHE_KEYS.LEADERBOARD + "-active-creators-count"],
+  { revalidate: CACHE_DURATION_10_MINUTES * 6 },
+);
 
 /**
  * Get boosted profiles via API route - called by hooks

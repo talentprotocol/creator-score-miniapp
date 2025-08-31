@@ -110,7 +110,7 @@ export function MyRewards({
               <p className="text-xs text-muted-foreground">
                 {isTop200 ? (
                   <>
-                    You&apos;re a TOP200 Creator!
+                    You&apos;re a TOP200 creator!
                     <br />
                     Your Creator Score is {score.toLocaleString()}.
                   </>
