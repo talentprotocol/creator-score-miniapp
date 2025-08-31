@@ -36,25 +36,16 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   // Step 1: Get snapshot data (frozen ranks and rewards)
   const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
   if (!snapshotExists) {
-    console.log("[LeaderboardService] No snapshot exists, returning empty");
     return { entries: [] };
   }
 
   const snapshots = await LeaderboardSnapshotService.getSnapshot();
   if (!snapshots || snapshots.length === 0) {
-    console.log("[LeaderboardService] Snapshot is empty, returning empty");
     return { entries: [] };
   }
 
-  console.log(
-    `[LeaderboardService] Found ${snapshots.length} snapshot entries`,
-  );
-
   // Step 2: Extract UUIDs from snapshot
   const snapshotUUIDs = snapshots.map((s) => s.talent_uuid);
-  console.log(
-    `[LeaderboardService] Querying Talent API for ${snapshotUUIDs.length} specific UUIDs`,
-  );
 
   // Step 3: Query Talent API for specific profiles by UUID
   const profiles = await unstable_cache(
@@ -119,10 +110,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     },
   )();
 
-  console.log(
-    `[LeaderboardService] Retrieved ${profiles.length} profiles from Talent API`,
-  );
-
   // Step 4: Filter out project accounts
   const filteredProfiles = profiles.filter(
     (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
@@ -131,7 +118,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   // Step 5: Fetch opt-out status for all users (no caching for accuracy)
   let optedOutUserIds: string[] = [];
   let optedInUserIds: string[] = [];
-  const undecidedUserIds: string[] = []; // Never reassigned, so use const
   try {
     // Fetch opted_out and opted_in users only - undecided is anyone not in these arrays
     const { data: optedOutData, error: optedOutError } = await supabase
@@ -152,8 +138,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       console.error("Error fetching opted_in users:", optedInError);
     }
 
-
-
     optedOutUserIds = optedOutData?.map((row) => row.talent_uuid) ?? [];
     optedInUserIds = optedInData?.map((row) => row.talent_uuid) ?? [];
     // undecidedUserIds remains empty - we'll calculate undecided status in the mapping logic
@@ -161,8 +145,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     console.error("Error fetching user preferences:", error);
     // Continue with empty arrays
   }
-
-
 
   // Step 6: Create snapshot map for quick lookup
   const snapshotMap = new Map(
@@ -184,8 +166,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
     // Get snapshot data for this profile
     const snapshot = snapshotMap.get(profile.id);
-
-
 
     return {
       name: profile.display_name || profile.name || "Unknown",
@@ -210,10 +190,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     if (b.rank === -1) return -1;
     return a.rank - b.rank;
   });
-
-  console.log(
-    `[LeaderboardService] Returning ${sorted.length} entries sorted by snapshot rank`,
-  );
 
   return {
     entries: sorted,

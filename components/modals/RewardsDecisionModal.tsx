@@ -145,17 +145,14 @@ function RewardsDecisionContent({
       if (result.success) {
         // Show success state
         setIsSuccess(true);
-        console.log("Opt-in successful, showing success message");
         // Trigger refresh of rewards decision data immediately
         onOptInSuccess?.();
         // Auto-close after 3 seconds (increased from 2)
         setTimeout(() => onOpenChange(false), 3000);
       } else {
-        console.error("Failed to save decision:", result.error);
         // TODO: Show error message to user
       }
-    } catch (error) {
-      console.error("Error saving decision:", error);
+    } catch (_error) {
       // TODO: Show error message to user
     } finally {
       setIsSubmitting(false);
@@ -171,8 +168,8 @@ function RewardsDecisionContent({
       await navigator.clipboard.writeText(address);
       setCopiedAddress(address);
       setTimeout(() => setCopiedAddress(undefined), 2000);
-    } catch (error) {
-      console.error("Failed to copy address:", error);
+    } catch (_error) {
+      // Failed to copy address
     }
   };
 

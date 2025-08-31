@@ -60,8 +60,6 @@ export class LeaderboardSnapshotService {
    */
   static async snapshotExists(): Promise<boolean> {
     try {
-      console.log(`[LeaderboardSnapshotService] Checking if snapshot exists`);
-
       const { count, error } = await this.supabase
         .from("leaderboard_snapshots")
         .select("*", { count: "exact", head: true });
@@ -72,9 +70,6 @@ export class LeaderboardSnapshotService {
       }
 
       const exists = (count || 0) > 0;
-      console.log(
-        `[LeaderboardSnapshotService] Snapshot exists: ${exists} (count: ${count})`,
-      );
 
       return exists;
     } catch (error) {

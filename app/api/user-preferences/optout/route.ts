@@ -30,7 +30,7 @@ import { validateTalentUUID } from "@/lib/validation";
  *
  * const result = await response.json();
  * if (result.success) {
- *   console.log("Successfully opted out");
+ *   // Successfully opted out
  * }
  * ```
  *
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest): Promise<
  * const result = await response.json();
  * if (result.success) {
  *   const decision = result.data?.rewards_decision;
- *   console.log("User decision:", decision);
+ *   // User decision retrieved
  * }
  * ```
  *

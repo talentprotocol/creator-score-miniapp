@@ -122,7 +122,6 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
 
     // Set up interval to refresh data every 30 seconds
     const interval = setInterval(() => {
-      
       loadBasicData();
     }, 30000); // 30 seconds
 

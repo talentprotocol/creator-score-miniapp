@@ -141,9 +141,7 @@ export class RewardsStorageService {
         throw new Error("Failed to batch update rewards");
       }
 
-      console.log(
-        `[RewardsStorageService] Successfully updated rewards for ${rewards.length} users`,
-      );
+
     } catch (error) {
       console.error("Unexpected error in batchUpdateOptedOutRewards:", error);
       throw error;
