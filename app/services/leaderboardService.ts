@@ -135,11 +135,13 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   try {
     const { data, error } = await supabase
       .from("user_preferences")
-      .select("talent_uuid, rewards_decision");
+      .select("talent_uuid, rewards_decision")
+      .limit(10000); // Fetch all records (well above the current 2351 total)
 
     if (error) {
       console.error("Error fetching user preferences:", error);
     } else {
+      console.log(`[LeaderboardService] Raw user preferences data count:`, data?.length || 0);
       optedOutUserIds =
         data
           ?.filter((row) => row.rewards_decision === "opted_out")
@@ -173,8 +175,8 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     "b56917e7-e37a-4d6c-a447-8bdc896163ba",
     "2465b21f-0d6b-4a2a-9869-93aafa1ed8db",
   ];
-  
-  debugUsers.forEach(uuid => {
+
+  debugUsers.forEach((uuid) => {
     console.log(`[LeaderboardService] Debug user ${uuid}:`, {
       inOptedOut: optedOutUserIds.includes(uuid),
       inOptedIn: optedInUserIds.includes(uuid),
