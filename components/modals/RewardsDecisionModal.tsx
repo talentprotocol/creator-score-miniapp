@@ -188,11 +188,19 @@ function RewardsDecisionContent({
           {/* Rank and Rewards */}
           <div className="space-y-3">
             {userRank && userRewards ? (
-              <Typography size="base" weight="medium">
+              <Typography
+                size="base"
+                weight="medium"
+                className="text-brand-purple"
+              >
                 You ranked #{userRank} and earned ${userRewards} in rewards!
               </Typography>
             ) : (
-              <Typography size="base" weight="medium">
+              <Typography
+                size="base"
+                weight="medium"
+                className="text-brand-purple"
+              >
                 You ranked in the top 200 and earned USDC rewards!
               </Typography>
             )}
@@ -200,23 +208,19 @@ function RewardsDecisionContent({
 
           {/* Explanation */}
           <div className="space-y-3">
-            <Typography size="sm" color="muted">
+            <Typography size="sm" color="default">
               Choose between:
               <br />
               • Receiving your rewards on Sep 17th
               <br />• Paying it forward to more creators*
             </Typography>
 
-            <Typography size="sm" color="muted">
+            <Typography size="sm" color="default">
               {optedOutPercentage}% of top 200 creators paid it forward so far.
             </Typography>
 
             <Typography size="sm" color="muted">
               Rewards are sponsored by {sponsorNames}.
-            </Typography>
-
-            <Typography size="xs" color="muted">
-              *100% of funds going to onchain creators in Q4
             </Typography>
           </div>
 
@@ -251,15 +255,27 @@ function RewardsDecisionContent({
           {/* Rank and Rewards */}
           <div className="space-y-3">
             {userRank && userRank > 0 && userRewards ? (
-              <Typography size="base" weight="medium">
+              <Typography
+                size="base"
+                weight="medium"
+                className="text-brand-purple"
+              >
                 You ranked #{userRank} and earned ${userRewards} in rewards!
               </Typography>
             ) : userRank === -1 && userRewards ? (
-              <Typography size="base" weight="medium">
+              <Typography
+                size="base"
+                weight="medium"
+                className="text-brand-purple"
+              >
                 You ranked in the top 200 and earned ${userRewards} in rewards!
               </Typography>
             ) : (
-              <Typography size="base" weight="medium">
+              <Typography
+                size="base"
+                weight="medium"
+                className="text-brand-purple"
+              >
                 You ranked in the top 200 and earned USDC rewards!
               </Typography>
             )}
@@ -268,12 +284,12 @@ function RewardsDecisionContent({
           {/* Decision Status */}
           <div className="space-y-3">
             {isOptedOut ? (
-              <Typography size="sm" color="muted">
+              <Typography size="sm" color="default">
                 You&apos;re part of the {optedOutPercentage}% of creators who
                 paid it forward.
               </Typography>
             ) : (
-              <Typography size="sm" color="muted">
+              <Typography size="sm" color="default">
                 You opted-in to receive USDC rewards on Sep 17th.
               </Typography>
             )}
@@ -304,14 +320,14 @@ function RewardsDecisionContent({
       <>
         {/* Creator Score */}
         <div className="space-y-3">
-          <Typography size="base" weight="medium">
+          <Typography size="base" weight="medium" className="text-brand-purple">
             Your Creator Score is {userRewards || 0}.
           </Typography>
         </div>
 
         {/* Explanation */}
         <div className="space-y-3">
-          <Typography size="sm" color="muted">
+          <Typography size="sm" color="default">
             Unfortunately you didn&apos;t qualify for rewards this time.
           </Typography>
 

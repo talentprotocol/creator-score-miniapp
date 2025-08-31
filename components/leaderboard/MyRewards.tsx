@@ -71,6 +71,7 @@ export function MyRewards({
                     "text-3xl font-bold",
                     rewardsDecision === "opted_out" &&
                       "text-brand-green line-through",
+                    rewardsDecision === "opted_in" && "text-brand-blue",
                   )}
                 >
                   {rewards}

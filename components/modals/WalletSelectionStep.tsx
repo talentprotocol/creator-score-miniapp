@@ -46,55 +46,74 @@ export function WalletSelectionStep({
         onValueChange={onWalletSelect}
         className="space-y-3"
       >
-        {wallets.map((wallet) => (
-          <div
-            key={wallet.address}
-            className={cn(
-              "flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-colors",
-              selectedWallet === wallet.address
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-primary/30",
-            )}
-            onClick={() => onWalletSelect(wallet.address)}
-          >
-            <RadioGroupItem
-              value={wallet.address}
-              id={wallet.address}
-              className="flex-shrink-0"
-            />
+        {wallets.map((wallet) => {
+          const isPrimary = wallet.type === "farcaster-primary";
+          const isFarcaster = wallet.type.startsWith("farcaster");
 
-            <div className="flex-1 cursor-pointer space-y-1">
-              {/* Wallet Address */}
-              <div className="flex items-center gap-2">
-                <Typography size="sm" weight="medium" className="font-mono">
-                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                </Typography>
+          return (
+            <div
+              key={wallet.address}
+              className={cn(
+                "flex items-center space-x-3 p-3 cursor-pointer transition-colors",
+                selectedWallet === wallet.address
+                  ? "bg-primary/5"
+                  : "hover:bg-muted/50",
+              )}
+              onClick={() => onWalletSelect(wallet.address)}
+            >
+              <RadioGroupItem
+                value={wallet.address}
+                id={wallet.address}
+                className="flex-shrink-0"
+              />
 
-                {/* Copy Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 hover:bg-muted"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCopyAddress(wallet.address);
-                  }}
-                >
-                  {copiedAddress === wallet.address ? (
-                    <Check className="h-3 w-3 text-green-600" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
+              <div className="flex-1 cursor-pointer">
+                {/* Wallet Address with Inline Chips */}
+                <div className="flex items-center gap-2">
+                  <Typography size="sm" className="font-mono text-sm">
+                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                  </Typography>
+
+                  {/* Source Chip */}
+                  <span
+                    className={cn(
+                      "px-2 py-1 rounded-full text-xs font-medium",
+                      isFarcaster
+                        ? "bg-brand-purple-light text-brand-purple"
+                        : "bg-brand-green-light text-brand-green",
+                    )}
+                  >
+                    {isFarcaster ? "Farcaster" : "Talent"}
+                  </span>
+
+                  {/* Primary Chip */}
+                  {isPrimary && (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                      Primary
+                    </span>
                   )}
-                </Button>
-              </div>
 
-              {/* Wallet Label */}
-              <Typography size="xs" color="muted">
-                {wallet.label}
-              </Typography>
+                  {/* Copy Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-muted"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCopyAddress(wallet.address);
+                    }}
+                  >
+                    {copiedAddress === wallet.address ? (
+                      <Check className="h-3 w-3 text-green-600" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </RadioGroup>
 
       {/* Selection Info */}

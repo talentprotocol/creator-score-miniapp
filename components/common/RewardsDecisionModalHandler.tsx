@@ -76,11 +76,13 @@ export function RewardsDecisionModalHandler({
   // Check if modal should be shown - only show if user is in top 200 and hasn't made a decision
   React.useEffect(() => {
     if (!isTop200 || !talentUuid || decisionLoading) {
+      setIsModalOpen(false);
       return;
     }
 
     // If user has already made a decision, don't show modal
     if (rewardsDecisionData.rewardsDecision !== null) {
+      setIsModalOpen(false);
       return;
     }
 

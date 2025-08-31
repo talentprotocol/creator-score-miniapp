@@ -3,6 +3,8 @@ import {
   UserPreferencesResponse,
   UserPreferencesUpdateRequest,
 } from "@/lib/types/user-preferences";
+import { revalidateTag } from "next/cache";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 
 function emptyCalloutPrefs() {
   return {
@@ -120,6 +122,29 @@ export async function updateUserPreferencesAtomic(
     .single();
 
   if (error) throw error;
+
+  // Invalidate leaderboard cache when rewards decision changes
+  if (
+    req.rewards_decision !== undefined &&
+    req.rewards_decision !== current.rewards_decision
+  ) {
+    try {
+      // Clear leaderboard cache to ensure fresh data with updated decision status
+      revalidateTag(CACHE_KEYS.LEADERBOARD);
+      revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
+      revalidateTag(CACHE_KEYS.LEADERBOARD_TOP_200);
+      revalidateTag(CACHE_KEYS.LEADERBOARD + "-user-preferences");
+      console.log(
+        `[UserPreferencesService] Invalidated leaderboard cache for user ${talent_uuid} after rewards decision change`,
+      );
+    } catch (cacheError) {
+      console.error(
+        `[UserPreferencesService] Failed to invalidate leaderboard cache:`,
+        cacheError,
+      );
+      // Don't throw - cache invalidation failure shouldn't break the main operation
+    }
+  }
 
   return {
     creator_category: data.creator_category,
