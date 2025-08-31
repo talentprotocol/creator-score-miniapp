@@ -153,18 +153,19 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
           ?.filter((row) => row.rewards_decision === null)
           .map((row) => row.talent_uuid) ?? [];
     }
-      } catch (error) {
-      console.error("Error fetching user preferences:", error);
-      // Continue with empty arrays
-    }
+  } catch (error) {
+    console.error("Error fetching user preferences:", error);
+    // Continue with empty arrays
+  }
 
-    // Debug: Log the counts for verification
-    console.log(`[LeaderboardService] User preferences summary:`, {
-      optedOut: optedOutUserIds.length,
-      optedIn: optedInUserIds.length,
-      undecided: undecidedUserIds.length,
-      total: optedOutUserIds.length + optedInUserIds.length + undecidedUserIds.length,
-    });
+  // Debug: Log the counts for verification
+  console.log(`[LeaderboardService] User preferences summary:`, {
+    optedOut: optedOutUserIds.length,
+    optedIn: optedInUserIds.length,
+    undecided: undecidedUserIds.length,
+    total:
+      optedOutUserIds.length + optedInUserIds.length + undecidedUserIds.length,
+  });
 
   // Step 6: Create snapshot map for quick lookup
   const snapshotMap = new Map(
@@ -198,13 +199,16 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       "2465b21f-0d6b-4a2a-9869-93aafa1ed8db",
     ];
     if (debugUsers.includes(profile.id)) {
-      console.log(`[LeaderboardService] Final mapping for ${profile.id} (${profile.display_name || profile.name}):`, {
-        isOptedOut,
-        isOptedIn,
-        isUndecided,
-        rank: snapshot?.rank || -1,
-        reward: snapshot?.rewards_amount || 0,
-      });
+      console.log(
+        `[LeaderboardService] Final mapping for ${profile.id} (${profile.display_name || profile.name}):`,
+        {
+          isOptedOut,
+          isOptedIn,
+          isUndecided,
+          rank: snapshot?.rank || -1,
+          reward: snapshot?.rewards_amount || 0,
+        },
+      );
     }
 
     return {

@@ -117,8 +117,33 @@ function LeaderboardContent() {
           rank: e.rank,
           score: e.score,
           boostedReward: e.boostedReward,
+          isOptedOut: e.isOptedOut,
+          isOptedIn: e.isOptedIn,
+          isUndecided: e.isUndecided,
         })),
       );
+      
+      // Check specific users mentioned in the issue
+      const debugUsers = [
+        "98934280-2b20-4bfe-8bb8-54a270fd2a8a",
+        "b56917e7-e37a-4d6c-a447-8bdc896163ba", 
+        "2465b21f-0d6b-4a2a-9869-93aafa1ed8db",
+      ];
+      
+      debugUsers.forEach(uuid => {
+        const user = top200Entries.find(e => e.talent_protocol_id === uuid);
+        if (user) {
+          console.log(`[Client] Debug user ${uuid} (${user.name}):`, {
+            isOptedOut: user.isOptedOut,
+            isOptedIn: user.isOptedIn,
+            isUndecided: user.isUndecided,
+            reward: user.boostedReward,
+            rank: user.rank,
+          });
+        } else {
+          console.log(`[Client] Debug user ${uuid}: Not found in leaderboard`);
+        }
+      });
     }
   }, [top200Entries]);
 
