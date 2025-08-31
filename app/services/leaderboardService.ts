@@ -131,64 +131,35 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   // Step 5: Fetch opt-out status for all users (no caching for accuracy)
   let optedOutUserIds: string[] = [];
   let optedInUserIds: string[] = [];
-  let undecidedUserIds: string[] = [];
+  const undecidedUserIds: string[] = []; // Never reassigned, so use const
   try {
-    // Fetch all user preferences using multiple queries to overcome Supabase's 1000 record limit
-    let allUserPreferences: Array<{ talent_uuid: string; rewards_decision: string | null }> = [];
-    
-    // First query: get opted_out users
+    // Fetch opted_out and opted_in users only - undecided is anyone not in these arrays
     const { data: optedOutData, error: optedOutError } = await supabase
       .from("user_preferences")
       .select("talent_uuid, rewards_decision")
       .eq("rewards_decision", "opted_out");
-    
+
     if (optedOutError) {
       console.error("Error fetching opted_out users:", optedOutError);
-    } else if (optedOutData) {
-      allUserPreferences.push(...optedOutData);
     }
-    
-    // Second query: get opted_in users
+
     const { data: optedInData, error: optedInError } = await supabase
       .from("user_preferences")
       .select("talent_uuid, rewards_decision")
       .eq("rewards_decision", "opted_in");
-    
+
     if (optedInError) {
       console.error("Error fetching opted_in users:", optedInError);
-    } else if (optedInData) {
-      allUserPreferences.push(...optedInData);
-    }
-    
-    // Third query: get undecided users (null rewards_decision)
-    const { data: undecidedData, error: undecidedError } = await supabase
-      .from("user_preferences")
-      .select("talent_uuid, rewards_decision")
-      .is("rewards_decision", null);
-    
-    if (undecidedError) {
-      console.error("Error fetching undecided users:", undecidedError);
-    } else if (undecidedData) {
-      allUserPreferences.push(...undecidedData);
     }
 
     console.log(
       `[LeaderboardService] Raw user preferences data count:`,
-      allUserPreferences.length,
+      (optedOutData?.length || 0) + (optedInData?.length || 0),
     );
 
-    optedOutUserIds =
-      allUserPreferences
-        .filter((row) => row.rewards_decision === "opted_out")
-        .map((row) => row.talent_uuid) ?? [];
-    optedInUserIds =
-      allUserPreferences
-        .filter((row) => row.rewards_decision === "opted_in")
-        .map((row) => row.talent_uuid) ?? [];
-    undecidedUserIds =
-      allUserPreferences
-        .filter((row) => row.rewards_decision === null)
-        .map((row) => row.talent_uuid) ?? [];
+    optedOutUserIds = optedOutData?.map((row) => row.talent_uuid) ?? [];
+    optedInUserIds = optedInData?.map((row) => row.talent_uuid) ?? [];
+    // undecidedUserIds remains empty - we'll calculate undecided status in the mapping logic
   } catch (error) {
     console.error("Error fetching user preferences:", error);
     // Continue with empty arrays
@@ -234,7 +205,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
     const isOptedOut = optedOutUserIds.includes(profile.id);
     const isOptedIn = optedInUserIds.includes(profile.id);
-    const isUndecided = undecidedUserIds.includes(profile.id);
+    const isUndecided = !isOptedOut && !isOptedIn; // If not opted out and not opted in, then undecided
 
     // Get snapshot data for this profile
     const snapshot = snapshotMap.get(profile.id);
