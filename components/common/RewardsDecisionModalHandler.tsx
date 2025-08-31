@@ -80,7 +80,7 @@ export function RewardsDecisionModalHandler({
     }
 
     // If user has already made a decision, don't show modal
-    if (rewardsDecisionData.hasMadeDecision) {
+    if (rewardsDecisionData.rewardsDecision !== null) {
       return;
     }
 
@@ -90,7 +90,7 @@ export function RewardsDecisionModalHandler({
     isTop200,
     talentUuid,
     decisionLoading,
-    rewardsDecisionData.hasMadeDecision,
+    rewardsDecisionData.rewardsDecision,
   ]);
 
   // Handle modal close - don't update database, just close the modal
@@ -137,8 +137,10 @@ export function RewardsDecisionModalHandler({
       userRewards={userRewards}
       optedOutPercentage={optedOutPercentage}
       wallets={wallets}
-      isLoading={walletsLoading || profileLoading}
+      isLoading={decisionLoading || walletsLoading || profileLoading}
       talentUuid={talentUuid || undefined}
+      isInTop200={isTop200}
+      rewardsDecision={rewardsDecisionData.rewardsDecision}
     />
   );
 }

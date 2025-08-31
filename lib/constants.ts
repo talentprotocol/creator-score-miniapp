@@ -233,8 +233,6 @@ export const TOTAL_SPONSORS_POOL = ACTIVE_SPONSORS.reduce(
   0,
 );
 
-export const DEADLINE = new Date(Date.UTC(2025, 8, 15, 23, 59, 59)); // August is month 7 (0-indexed)
-
 // Rewards distribution timeline
 export const REWARDS_CONFIG = {
   DECISION_DEADLINE: new Date(Date.UTC(2025, 8, 15, 23, 59, 59)), // September 15th, 11:59 PM UTC

@@ -78,9 +78,10 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
     (rawEntries: LeaderboardEntry[]): LeaderboardEntry[] => {
       return rawEntries.filter((entry) => {
         // Skip entries with rank > 200
-        if (!entry.rank || entry.rank > 200) return false;
+        if (entry.rank && entry.rank > 200) return false;
 
         // Don't filter out opted-out users - they should show their donated amount
+        // Don't filter out entries with rank -1 (no rank available) - they should show "-"
         return true;
       });
     },

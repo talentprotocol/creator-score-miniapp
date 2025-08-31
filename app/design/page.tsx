@@ -27,7 +27,6 @@ import { PageContainer } from "@/components/common/PageContainer";
 import { StatCard } from "@/components/common/StatCard";
 import { SegmentedBar } from "@/components/common/SegmentedBar";
 import { CreatorScoreCard } from "@/components/home/CreatorScoreCard";
-import { PotentialRewardsCard } from "@/components/home/PotentialRewardsCard";
 import { RewardsBoostsCard } from "@/components/home/RewardsBoostsCard";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 
@@ -621,22 +620,6 @@ export default function DesignPage() {
                     </a>
                   </h3>
                   <CreatorScoreCard score={1250} />
-                </div>
-
-                {/* PotentialRewardsCard */}
-                <div>
-                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    PotentialRewardsCard
-                    <a
-                      href="https://github.com/talentprotocol/creator-score-miniapp/tree/main/components/home/PotentialRewardsCard.tsx"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-                    >
-                      components/home/PotentialRewardsCard.tsx
-                    </a>
-                  </h3>
-                  <PotentialRewardsCard score={1250} />
                 </div>
 
                 {/* TopCreatorsCard */}

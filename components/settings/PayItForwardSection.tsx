@@ -58,10 +58,11 @@ export function PayItForwardSection() {
     (entry) => entry.talent_protocol_id === talentUuid,
   );
 
-  // Use combined opt-out status check for both top-200 and non-top-200 users
+  // Use rewards decision status
   const {
-    data: { isOptedOut: isAlreadyOptedOut },
+    data: { rewardsDecision },
   } = useUserRewardsDecision(talentUuid);
+  const isAlreadyOptedOut = rewardsDecision === "opted_out";
   const hasPaidForward = success || isAlreadyOptedOut;
 
   // Show share button for already opted out users (from previous sessions) or after confetti completes

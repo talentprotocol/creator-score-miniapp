@@ -5,9 +5,6 @@ import type { RewardsDecision } from "@/lib/types/user-preferences";
 
 export interface UseUserRewardsDecisionReturn {
   data: {
-    isOptedOut: boolean;
-    isOptedIn: boolean;
-    hasMadeDecision: boolean;
     rewardsDecision: RewardsDecision;
   };
   loading: boolean;
@@ -69,15 +66,8 @@ export function useUserRewardsDecision(
     fetchRewardsDecision();
   }, [talentUuid]);
 
-  const isOptedOut = rewardsDecision === "opted_out";
-  const isOptedIn = rewardsDecision === "opted_in";
-  const hasMadeDecision = rewardsDecision !== null;
-
   return {
     data: {
-      isOptedOut,
-      isOptedIn,
-      hasMadeDecision,
       rewardsDecision,
     },
     loading,

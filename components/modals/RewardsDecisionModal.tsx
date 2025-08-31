@@ -22,6 +22,7 @@ import { Typography } from "@/components/ui/typography";
 import { ACTIVE_SPONSORS } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { WalletSelectionStep } from "@/components/modals/WalletSelectionStep";
+import type { RewardsDecision } from "@/lib/types/user-preferences";
 
 interface RewardsDecisionModalProps {
   open: boolean;
@@ -37,8 +38,7 @@ interface RewardsDecisionModalProps {
   isLoading?: boolean;
   talentUuid?: string;
   isInTop200?: boolean;
-  hasMadeDecision?: boolean;
-  isOptedOut?: boolean;
+  rewardsDecision?: RewardsDecision;
 }
 
 function RewardsDecisionContent({
@@ -49,8 +49,7 @@ function RewardsDecisionContent({
   isLoading = false,
   talentUuid,
   isInTop200 = false,
-  hasMadeDecision = false,
-  isOptedOut = false,
+  rewardsDecision = null,
   onOpenChange,
 }: {
   userRank?: number;
@@ -64,8 +63,7 @@ function RewardsDecisionContent({
   isLoading?: boolean;
   talentUuid?: string;
   isInTop200?: boolean;
-  hasMadeDecision?: boolean;
-  isOptedOut?: boolean;
+  rewardsDecision?: RewardsDecision;
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
@@ -78,6 +76,10 @@ function RewardsDecisionContent({
 
   // Sponsor names for display
   const sponsorNames = ACTIVE_SPONSORS.map((s) => s.name).join(", ");
+
+  // Derived state for cleaner logic
+  const hasMadeDecision = rewardsDecision !== null;
+  const isOptedOut = rewardsDecision === "opted_out";
 
   const handlePayItForwardClick = () => {
     router.push("/settings?section=pay-it-forward");
@@ -216,9 +218,13 @@ function RewardsDecisionContent({
         <>
           {/* Rank and Rewards */}
           <div className="space-y-3">
-            {userRank && userRewards ? (
+            {userRank && userRank > 0 && userRewards ? (
               <Typography size="base" weight="medium">
                 You ranked #{userRank} and earned ${userRewards}.
+              </Typography>
+            ) : userRank === -1 && userRewards ? (
+              <Typography size="base" weight="medium">
+                You ranked in the top 200 and earned ${userRewards}.
               </Typography>
             ) : (
               <Typography size="base" weight="medium">
@@ -361,8 +367,7 @@ export function RewardsDecisionModal({
   isLoading,
   talentUuid,
   isInTop200,
-  hasMadeDecision,
-  isOptedOut,
+  rewardsDecision,
 }: RewardsDecisionModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -384,8 +389,7 @@ export function RewardsDecisionModal({
             isLoading={isLoading}
             talentUuid={talentUuid}
             isInTop200={isInTop200}
-            hasMadeDecision={hasMadeDecision}
-            isOptedOut={isOptedOut}
+            rewardsDecision={rewardsDecision}
             onOpenChange={onOpenChange}
           />
         </DialogContent>
@@ -411,8 +415,7 @@ export function RewardsDecisionModal({
             isLoading={isLoading}
             talentUuid={talentUuid}
             isInTop200={isInTop200}
-            hasMadeDecision={hasMadeDecision}
-            isOptedOut={isOptedOut}
+            rewardsDecision={rewardsDecision}
             onOpenChange={onOpenChange}
           />
         </div>

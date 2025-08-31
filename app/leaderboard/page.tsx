@@ -19,6 +19,7 @@ import { MyRewards } from "@/components/leaderboard/MyRewards";
 import { StatCard } from "@/components/common/StatCard";
 import { HowToEarnModal } from "@/components/modals/HowToEarnModal";
 import { RewardBoostsModal } from "@/components/modals/RewardBoostsModal";
+
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import {
   ACTIVE_SPONSORS,
@@ -35,9 +36,9 @@ import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { HandHeart, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
-import { Rocket } from "lucide-react";
+// import { Rocket } from "lucide-react";
 import posthog from "posthog-js";
-import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
+
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Typography } from "@/components/ui/typography";
@@ -46,6 +47,7 @@ import { usePerkEntry } from "@/hooks/usePerkEntry";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
+import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import { RewardsDecisionModalHandler } from "@/components/common/RewardsDecisionModalHandler";
 import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
 import { useOptedOutPercentage } from "@/hooks/useOptedOutPercentage";
@@ -75,6 +77,7 @@ function LeaderboardContent() {
   const { talentUuid: userTalentUuid } = useFidToTalentUuid();
   const [howToEarnOpen, setHowToEarnOpen] = useState(false);
   const [rewardBoostsOpen, setRewardBoostsOpen] = useState(false);
+
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [rewardsInfoOpen, setRewardsInfoOpen] = useState(false);
   // const posthog = usePostHog();
@@ -85,7 +88,6 @@ function LeaderboardContent() {
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
-    activeCreatorsTotal,
   } = useLeaderboardData();
 
   // Use hooks for data fetching - both auth paths
@@ -107,19 +109,18 @@ function LeaderboardContent() {
     userTalentUuid,
   );
 
-  // Fetch user token balance
-  const { balance: tokenBalance, loading: tokenLoading } =
-    useUserTokenBalance(userTalentUuid);
-
   // Find user entry in top 200 data for accurate rewards
   const userTop200Entry =
     userTalentUuid && top200Entries.length > 0
       ? top200Entries.find((e) => e.talent_protocol_id === userTalentUuid)
       : null;
 
-  // Get opt-out status for all users (top 200 and non-top 200)
+  // Fetch user token balance
+  const { balance: tokenBalance } = useUserTokenBalance(userTalentUuid);
+
+  // Get rewards decision status for all users (top 200 and non-top 200)
   const {
-    data: { isOptedOut, hasMadeDecision },
+    data: { rewardsDecision },
   } = useUserRewardsDecision(userTalentUuid);
 
   // Fetch opted-out percentage dynamically
@@ -184,13 +185,6 @@ function LeaderboardContent() {
   }, []);
 
   // Get the 200th position score
-  const lastTop200Score = top200Entries[199]?.score ?? 0;
-
-  // Calculate points needed to reach top 200
-  const pointsToTop200 =
-    creatorScore && !userTop200Entry && lastTop200Score > 0
-      ? Math.max(0, lastTop200Score - creatorScore)
-      : 0;
 
   // Helper to calculate the reward multiplier based on total boosted scores
   // function calculateRewardMultiplier(): number {
@@ -203,6 +197,11 @@ function LeaderboardContent() {
   // }
 
   function getUsdcRewards(): string {
+    // If user is in top 200 but no reward data, show "N/A"
+    if (userTop200Entry && userTop200Entry.boostedReward === null) {
+      return "N/A";
+    }
+
     const snapshotReward = userTop200Entry?.boostedReward || 0;
     return snapshotReward >= 1
       ? `$${snapshotReward.toFixed(0)}`
@@ -261,14 +260,8 @@ function LeaderboardContent() {
             name={name!}
             isLoading={loadingStats || (top200Loading && !userTop200Entry)}
             rank={userTop200Entry?.rank}
-            pointsToTop200={pointsToTop200}
             onInfoClick={() => setRewardsInfoOpen(true)}
-            onBoostInfoClick={() => setRewardBoostsOpen(true)}
-            tokenBalance={tokenBalance}
-            tokenLoading={tokenLoading}
-            isBoosted={userTop200Entry?.isBoosted}
-            activeCreatorsTotal={activeCreatorsTotal}
-            isOptedOut={isOptedOut}
+            talentUuid={userTalentUuid}
             onOptOutBadgeClick={() =>
               router.push("/settings?section=pay-it-forward")
             }
@@ -332,7 +325,6 @@ function LeaderboardContent() {
                 },
               });
 
-              // REWARDS BOOST (purple) – visible to users with >= BOOST_CONFIG.TOKEN_THRESHOLD $TALENT
               // HIDDEN: Removed per user request
               // const base = {
               //   id: "boost",
@@ -341,7 +333,7 @@ function LeaderboardContent() {
               //   title: "10% Rewards Boost",
               //   description: <>Hold 100+ $TALENT to earn a boost.</>,
               // };
-              // if ((tokenBalance ?? 0) >= BOOST_CONFIG.TOKEN_THRESHOLD) {
+
               //   items.push({
               //     ...base,
               //     permanentHideKey: "boost_callout_hidden",
@@ -490,8 +482,7 @@ function LeaderboardContent() {
         }
         talentUuid={userTalentUuid || undefined}
         isInTop200={!!userTop200Entry}
-        hasMadeDecision={hasMadeDecision}
-        isOptedOut={isOptedOut}
+        rewardsDecision={rewardsDecision}
       />
 
       {/* Full width tabs - outside PageContainer constraints */}
@@ -571,18 +562,20 @@ function LeaderboardContent() {
                     | "default"
                     | "brand-purple"
                     | "brand-green"
+                    | "brand-blue"
                     | "muted";
                   isOptedOut?: boolean;
                 }> = top200Entries.map((user) => {
-                  const isBoosted = user.isBoosted;
                   const isOptedOut = user.isOptedOut;
                   const isUndecided = user.isUndecided;
+                  // Show "-" for rank -1 (no rank available)
+                  const displayRank = user.rank === -1 ? undefined : user.rank;
 
                   return {
                     id: user.id,
                     name: user.name,
                     avatarUrl: user.pfp,
-                    rank: user.rank,
+                    rank: displayRank,
                     primaryMetric:
                       (user.boostedReward || 0) >= 1
                         ? `$${(user.boostedReward || 0).toFixed(0)}`
@@ -592,9 +585,7 @@ function LeaderboardContent() {
                       ? "muted"
                       : isOptedOut
                         ? "brand-green"
-                        : isBoosted
-                          ? "brand-purple"
-                          : "default",
+                        : "brand-blue",
                     isOptedOut: isOptedOut,
                     badge: isOptedOut ? (
                       isLoggedIn ? (
@@ -619,23 +610,6 @@ function LeaderboardContent() {
                           <HandHeart className="h-3 w-3 text-brand-green" />
                         </div>
                       )
-                    ) : isBoosted ? (
-                      <button
-                        type="button"
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-light hover:bg-brand-purple-dark focus:outline-none focus:ring-2 focus:ring-brand-purple"
-                        aria-label="How to earn rewards boost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          try {
-                            posthog.capture("boost_badge_clicked", {
-                              location: "leaderboard_row",
-                            });
-                          } catch {}
-                          setHowToEarnOpen(true);
-                        }}
-                      >
-                        <Rocket className="h-3 w-3 text-brand-purple" />
-                      </button>
                     ) : undefined,
                   };
                 });
@@ -645,9 +619,9 @@ function LeaderboardContent() {
                   isLoggedIn && ENABLE_PINNED_LEADERBOARD_ENTRY;
                 if (!shouldShowPinned) return baseItems;
 
-                const pinnedIsBoosted = userTop200Entry?.isBoosted ?? false;
-                const pinnedIsOptedOut = userTop200Entry?.isOptedOut ?? false;
-                const pinnedIsUndecided = userTop200Entry?.isUndecided ?? false;
+                // Derive styling from rewardsDecision for pinned user
+                const pinnedIsOptedOut = rewardsDecision === "opted_out";
+                const pinnedIsUndecided = rewardsDecision === null;
                 const pinnedId = userTop200Entry?.id || (userTalentUuid ?? "");
                 if (!pinnedId) return baseItems;
 
@@ -664,6 +638,7 @@ function LeaderboardContent() {
                     | "default"
                     | "brand-purple"
                     | "brand-green"
+                    | "brand-blue"
                     | "muted";
                   isOptedOut?: boolean;
                 } = {
@@ -683,9 +658,7 @@ function LeaderboardContent() {
                     ? "muted"
                     : pinnedIsOptedOut
                       ? "brand-green"
-                      : pinnedIsBoosted
-                        ? "brand-purple"
-                        : "default",
+                      : "brand-blue",
                   isOptedOut: pinnedIsOptedOut,
                   badge: pinnedIsOptedOut ? (
                     isLoggedIn ? (
@@ -710,23 +683,6 @@ function LeaderboardContent() {
                         <HandHeart className="h-3 w-3 text-brand-green" />
                       </div>
                     )
-                  ) : pinnedIsBoosted ? (
-                    <button
-                      type="button"
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-light hover:bg-brand-purple-dark focus:outline-none focus:ring-2 focus:ring-brand-purple"
-                      aria-label="How to earn rewards boost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        try {
-                          posthog.capture("boost_badge_clicked", {
-                            location: "leaderboard_row",
-                          });
-                        } catch {}
-                        setHowToEarnOpen(true);
-                      }}
-                    >
-                      <Rocket className="h-3 w-3 text-brand-purple" />
-                    </button>
                   ) : undefined,
                 };
 

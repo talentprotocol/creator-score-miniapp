@@ -120,7 +120,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
   // Fetch opt-out status for all users (for display styling)
   let optedOutUserIds: string[] = [];
-  let undecidedUserIds: string[] = [];
+  let usersWithPreferences: string[] = [];
   try {
     const { data, error } = await supabase
       .from("user_preferences")
@@ -129,20 +129,17 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     if (error) {
       console.error("Error fetching user preferences:", error);
       optedOutUserIds = [];
-      undecidedUserIds = [];
+      usersWithPreferences = [];
     } else {
       optedOutUserIds =
         data
           ?.filter((row) => row.rewards_decision === "opted_out")
           .map((row) => row.talent_uuid) ?? [];
-      undecidedUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === null)
-          .map((row) => row.talent_uuid) ?? [];
+      usersWithPreferences = data?.map((row) => row.talent_uuid) ?? [];
     }
   } catch {
     optedOutUserIds = [];
-    undecidedUserIds = [];
+    usersWithPreferences = [];
   }
 
   // Map to basic entries with opt-out status (boost logic removed for now)
@@ -154,7 +151,8 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
     const isOptedOut = optedOutUserIds.includes(profile.id);
-    const isUndecided = undecidedUserIds.includes(profile.id);
+    // Users without a record in user_preferences are considered "undecided"
+    const isUndecided = !usersWithPreferences.includes(profile.id);
 
     return {
       name: profile.display_name || profile.name || "Unknown",
@@ -184,30 +182,66 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
           snapshots.map((snapshot) => [snapshot.talent_uuid, snapshot]),
         );
 
+        // Debug: Log first few snapshots and their UUIDs
+        console.log(
+          "[LeaderboardService] First 3 snapshots:",
+          snapshots
+            .slice(0, 3)
+            .map((s) => ({ talent_uuid: s.talent_uuid, rank: s.rank })),
+        );
+        console.log(
+          "[LeaderboardService] Snapshot map keys (first 5):",
+          Array.from(snapshotMap.keys()).slice(0, 5),
+        );
+
         // Replace rank and rewards_amount with snapshot data
+        let matchedCount = 0;
+        let unmatchedCount = 0;
         mapped.forEach((entry) => {
           const snapshot = snapshotMap.get(entry.talent_protocol_id);
           if (snapshot) {
             entry.rank = snapshot.rank;
             entry.baseReward = snapshot.rewards_amount;
             entry.boostedReward = snapshot.rewards_amount;
+            matchedCount++;
           } else {
-            // Show "N/A" if snapshot data not available
-            entry.rank = 0;
+            // Debug: Log unmatched entries
+            if (unmatchedCount < 5) {
+              console.log("[LeaderboardService] Unmatched entry:", {
+                talent_protocol_id: entry.talent_protocol_id,
+                talent_protocol_id_type: typeof entry.talent_protocol_id,
+                talent_protocol_id_length: entry.talent_protocol_id?.length,
+                name: entry.name,
+                hasSnapshot: snapshotMap.has(entry.talent_protocol_id),
+                // Check if it exists with different UUID formats
+                hasSnapshotWithDashes: snapshotMap.has(
+                  entry.talent_protocol_id?.replace(/-/g, ""),
+                ),
+                hasSnapshotWithoutDashes: snapshotMap.has(
+                  entry.talent_protocol_id?.replace(
+                    /(.{8})(.{4})(.{4})(.{4})(.{12})/,
+                    "$1-$2-$3-$4-$5",
+                  ),
+                ),
+              });
+            }
+            unmatchedCount++;
+            // Show "-" instead of 0 when snapshot data not available
+            entry.rank = -1; // Use -1 to indicate "no rank available"
             entry.baseReward = 0;
             entry.boostedReward = 0;
           }
         });
 
         console.log(
-          `[LeaderboardService] Updated ${snapshots.length} entries with snapshot data`,
+          `[LeaderboardService] Updated ${matchedCount} entries with snapshot data, ${unmatchedCount} unmatched`,
         );
       }
     } else {
       console.log("[LeaderboardService] No snapshot exists, showing N/A");
       // Set all entries to N/A when no snapshot exists
       mapped.forEach((entry) => {
-        entry.rank = 0;
+        entry.rank = -1; // Use -1 to indicate "no rank available"
         entry.baseReward = 0;
         entry.boostedReward = 0;
       });
@@ -216,7 +250,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     console.error("[LeaderboardService] Error applying snapshot data:", error);
     // Set all entries to N/A on error
     mapped.forEach((entry) => {
-      entry.rank = 0;
+      entry.rank = -1; // Use -1 to indicate "no rank available"
       entry.baseReward = 0;
       entry.boostedReward = 0;
     });

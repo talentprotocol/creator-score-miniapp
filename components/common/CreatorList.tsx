@@ -14,7 +14,12 @@ export interface CreatorItem {
   primaryMetricLoading?: boolean; // New prop for partial loading
   secondaryMetric?: string; // e.g., "Creator Score: 5,230"
   badge?: React.ReactNode; // Optional badge (e.g., rocket for boosted users)
-  primaryMetricVariant?: "default" | "brand-purple" | "brand-green" | "muted"; // New prop for styling variants
+  primaryMetricVariant?:
+    | "default"
+    | "brand-purple"
+    | "brand-green"
+    | "brand-blue"
+    | "muted"; // New prop for styling variants
   isOptedOut?: boolean; // New prop for opt-out styling
 }
 
@@ -122,6 +127,8 @@ export function CreatorList({
                               "text-brand-purple",
                             item.primaryMetricVariant === "brand-green" &&
                               "text-brand-green",
+                            item.primaryMetricVariant === "brand-blue" &&
+                              "text-brand-blue",
                             item.primaryMetricVariant === "muted" &&
                               "text-muted-foreground",
                             // Add strikethrough for opted-out users
