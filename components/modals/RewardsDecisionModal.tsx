@@ -145,10 +145,13 @@ function RewardsDecisionContent({
       if (result.success) {
         // Show success state
         setIsSuccess(true);
-        // Trigger refresh of rewards decision data
-        onOptInSuccess?.();
-        // Auto-close after 2 seconds
-        setTimeout(() => onOpenChange(false), 2000);
+        console.log("Opt-in successful, showing success message");
+        // Trigger refresh of rewards decision data after a delay
+        setTimeout(() => {
+          onOptInSuccess?.();
+        }, 1000);
+        // Auto-close after 3 seconds (increased from 2)
+        setTimeout(() => onOpenChange(false), 3000);
       } else {
         console.error("Failed to save decision:", result.error);
         // TODO: Show error message to user
@@ -206,6 +209,7 @@ function RewardsDecisionContent({
                 weight="medium"
                 className="text-brand-purple"
               >
+                <br />
                 You ranked in the top 200 and earned USDC rewards!
               </Typography>
             )}
@@ -214,7 +218,6 @@ function RewardsDecisionContent({
           {/* Explanation */}
           <div className="space-y-3">
             <Typography size="sm" color="default">
-              <br />
               Choose between:
               <br />
               • Receiving your rewards on Sep 17th
