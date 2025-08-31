@@ -44,6 +44,7 @@ interface RewardsDecisionModalProps {
   talentUuid?: string;
   isInTop200?: boolean;
   rewardsDecision?: RewardsDecision;
+  onOptInSuccess?: () => void;
 }
 
 function RewardsDecisionContent({
@@ -56,6 +57,7 @@ function RewardsDecisionContent({
   isInTop200 = false,
   rewardsDecision = null,
   onOpenChange,
+  onOptInSuccess,
 }: {
   userRank?: number;
   userRewards?: number;
@@ -70,6 +72,7 @@ function RewardsDecisionContent({
   isInTop200?: boolean;
   rewardsDecision?: RewardsDecision;
   onOpenChange: (open: boolean) => void;
+  onOptInSuccess?: () => void;
 }) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = React.useState(1);
@@ -142,6 +145,8 @@ function RewardsDecisionContent({
       if (result.success) {
         // Show success state
         setIsSuccess(true);
+        // Trigger refresh of rewards decision data
+        onOptInSuccess?.();
         // Auto-close after 2 seconds
         setTimeout(() => onOpenChange(false), 2000);
       } else {
@@ -209,10 +214,11 @@ function RewardsDecisionContent({
           {/* Explanation */}
           <div className="space-y-3">
             <Typography size="sm" color="default">
+              <br />
               Choose between:
               <br />
               • Receiving your rewards on Sep 17th
-              <br />• Paying it forward to more creators*
+              <br />• Paying it forward to more creators
             </Typography>
 
             <Typography size="sm" color="default">
@@ -447,6 +453,7 @@ export function RewardsDecisionModal({
   talentUuid,
   isInTop200,
   rewardsDecision,
+  onOptInSuccess,
 }: RewardsDecisionModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -467,6 +474,7 @@ export function RewardsDecisionModal({
             isInTop200={isInTop200}
             rewardsDecision={rewardsDecision}
             onOpenChange={onOpenChange}
+            onOptInSuccess={onOptInSuccess}
           />
         </DialogContent>
       </Dialog>
@@ -490,6 +498,7 @@ export function RewardsDecisionModal({
             isInTop200={isInTop200}
             rewardsDecision={rewardsDecision}
             onOpenChange={onOpenChange}
+            onOptInSuccess={onOptInSuccess}
           />
         </div>
       </DrawerContent>

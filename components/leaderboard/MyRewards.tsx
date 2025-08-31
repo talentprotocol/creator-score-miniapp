@@ -37,6 +37,7 @@ export function MyRewards({
   // Get rewards decision status
   const {
     data: { rewardsDecision },
+    refetch,
   } = useUserRewardsDecision(talentUuid || null);
 
   return (
