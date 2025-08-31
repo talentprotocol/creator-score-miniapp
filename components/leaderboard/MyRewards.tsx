@@ -7,7 +7,6 @@ import { PfpBorder } from "@/components/ui/pfp-border";
 import { cn } from "@/lib/utils";
 import posthog from "posthog-js";
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
-import React from "react";
 
 interface MyRewardsProps {
   rewards: string;
@@ -39,14 +38,6 @@ export function MyRewards({
   const {
     data: { rewardsDecision },
   } = useUserRewardsDecision(talentUuid || null);
-
-  // Debug logging
-  console.log("MyRewards - rewardsDecision:", rewardsDecision, "talentUuid:", talentUuid);
-
-  // Force re-render when rewardsDecision changes
-  React.useEffect(() => {
-    console.log("MyRewards - rewardsDecision changed to:", rewardsDecision);
-  }, [rewardsDecision]);
 
   return (
     <div className="w-full bg-brand-purple-light rounded-lg">

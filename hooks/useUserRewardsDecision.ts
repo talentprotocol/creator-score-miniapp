@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { RewardsDecision } from "@/lib/types/user-preferences";
-import { rewardsDecisionEvents } from "@/lib/events/rewardsDecisionEvents";
 
 export interface UseUserRewardsDecisionReturn {
   data: {
@@ -50,9 +49,7 @@ export function useUserRewardsDecision(
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(
-          data.error || "Failed to get rewards decision status",
-        );
+        throw new Error(data.error || "Failed to get rewards decision status");
       }
 
       setRewardsDecision(data.data?.rewards_decision || null);
@@ -70,20 +67,8 @@ export function useUserRewardsDecision(
   }, [fetchRewardsDecision, refreshTrigger]);
 
   const refetch = useCallback(() => {
-    console.log("useUserRewardsDecision - refetch called for talentUuid:", talentUuid);
-    setRefreshTrigger(prev => prev + 1);
-    // Emit global event to notify other instances
-    rewardsDecisionEvents.emit();
-  }, [talentUuid]);
-
-  // Subscribe to global events
-  useEffect(() => {
-    const unsubscribe = rewardsDecisionEvents.subscribe(() => {
-      console.log("useUserRewardsDecision - received global refresh event for talentUuid:", talentUuid);
-      setRefreshTrigger(prev => prev + 1);
-    });
-    return unsubscribe;
-  }, [talentUuid]);
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
 
   return {
     data: {

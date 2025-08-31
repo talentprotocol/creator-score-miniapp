@@ -88,7 +88,24 @@ function LeaderboardContent() {
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
+    refetch: refetchLeaderboard,
   } = useLeaderboardData();
+
+  // Get rewards decision status for current user (for refresh trigger)
+  const {
+    data: { rewardsDecision: currentUserRewardsDecision },
+  } = useUserRewardsDecision(userTalentUuid);
+
+  // Refresh leaderboard when rewards decision changes
+  React.useEffect(() => {
+    if (userTalentUuid && currentUserRewardsDecision !== undefined) {
+      console.log(
+        "[Leaderboard] Refreshing due to rewards decision change:",
+        currentUserRewardsDecision,
+      );
+      refetchLeaderboard();
+    }
+  }, [userTalentUuid, currentUserRewardsDecision, refetchLeaderboard]);
 
   // Debug: Log leaderboard data in browser console
   React.useEffect(() => {

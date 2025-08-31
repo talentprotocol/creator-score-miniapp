@@ -105,6 +105,14 @@ export function RewardsDecisionModalHandler({
     }
   };
 
+  // Custom refetch function that delays the refresh to allow success message to show
+  const handleOptInSuccess = React.useCallback(() => {
+    // Delay the refresh to allow success message to show
+    setTimeout(() => {
+      refetch();
+    }, 2000); // Wait 2 seconds before refreshing data
+  }, [refetch]);
+
   // Don't render if not in top 200 or modal shouldn't be shown
   if (!isTop200 || !isModalOpen) {
     return null;
@@ -146,7 +154,7 @@ export function RewardsDecisionModalHandler({
       talentUuid={talentUuid || undefined}
       isInTop200={isTop200}
       rewardsDecision={rewardsDecisionData.rewardsDecision}
-      onOptInSuccess={refetch}
+      onOptInSuccess={handleOptInSuccess}
     />
   );
 }

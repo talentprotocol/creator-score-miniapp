@@ -146,10 +146,8 @@ function RewardsDecisionContent({
         // Show success state
         setIsSuccess(true);
         console.log("Opt-in successful, showing success message");
-        // Trigger refresh of rewards decision data after a delay
-        setTimeout(() => {
-          onOptInSuccess?.();
-        }, 1000);
+        // Trigger refresh of rewards decision data immediately
+        onOptInSuccess?.();
         // Auto-close after 3 seconds (increased from 2)
         setTimeout(() => onOpenChange(false), 3000);
       } else {
