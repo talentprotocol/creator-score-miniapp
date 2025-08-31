@@ -42,13 +42,13 @@ export class LeaderboardSnapshotService {
       // Transform leaderboard entries to snapshot format with calculated rewards
       const snapshots = await Promise.all(
         entries.map(async (entry) => {
-          const rewardAmount = RewardsCalculationService.calculateUserReward(
-            entry.score,
-            entry.rank,
-            entry.isBoosted || false,
-            entry.isOptedOut || false,
-            entries,
-          );
+          const rewardAmount =
+            RewardsCalculationService.calculatePureUserReward(
+              entry.score,
+              entry.rank,
+              entry.isBoosted || false,
+              entries,
+            );
 
           // Extract numeric value from formatted string (e.g., "$138" -> 138)
           const numericAmount =

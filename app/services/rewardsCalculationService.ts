@@ -255,4 +255,47 @@ export class RewardsCalculationService {
       return `$${reward.toFixed(2)}`;
     }
   }
+
+  /**
+   * Calculate pure user reward without considering opt-out status
+   * This is used for snapshot creation to store what users actually earned
+   * @param score - User's base score
+   * @param rank - User's rank
+   * @param isBoosted - Whether user has boost (100+ TALENT tokens)
+   * @param entries - Top 200 entries for calculation context
+   * @returns Formatted reward string
+   */
+  static calculatePureUserReward(
+    score: number,
+    rank: number,
+    isBoosted: boolean,
+    entries: LeaderboardEntry[],
+  ): string {
+    // Only top 200 creators can earn rewards
+    if (!rank || rank > 200) return "$0";
+
+    // Calculate boosted score (only if user has 100+ TALENT tokens)
+    const boostedScore = isBoosted ? score * 1.1 : score;
+
+    // Calculate total boosted scores for all top 200 users (ignoring opt-out status)
+    const totalBoostedScores = entries.slice(0, 200).reduce((sum, entry) => {
+      const entryBoostedScore = entry.isBoosted
+        ? entry.score * 1.1
+        : entry.score;
+      return sum + entryBoostedScore;
+    }, 0);
+
+    if (totalBoostedScores === 0) return "$0";
+
+    // Calculate multiplier based on total pool and total boosted scores
+    const multiplier = TOTAL_SPONSORS_POOL / totalBoostedScores;
+    const reward = boostedScore * multiplier;
+
+    // Format as currency
+    if (reward >= 1) {
+      return `$${reward.toFixed(0)}`;
+    } else {
+      return `$${reward.toFixed(2)}`;
+    }
+  }
 }
