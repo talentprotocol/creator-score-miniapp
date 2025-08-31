@@ -33,7 +33,7 @@ import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Callout } from "@/components/common/Callout";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Award } from "lucide-react";
+import { HandHeart, Award, HandCoins } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { usePostHog } from "posthog-js/react";
 // import { Rocket } from "lucide-react";
@@ -88,7 +88,21 @@ function LeaderboardContent() {
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
+    activeCreatorsTotal,
   } = useLeaderboardData();
+
+  // Debug: Log leaderboard data in browser console
+  React.useEffect(() => {
+    if (top200Entries.length > 0) {
+      console.log("[Client] Leaderboard entries:", top200Entries.slice(0, 3).map(e => ({
+        name: e.name,
+        talent_protocol_id: e.talent_protocol_id,
+        rank: e.rank,
+        score: e.score,
+        boostedReward: e.boostedReward
+      })));
+    }
+  }, [top200Entries]);
 
   // Use hooks for data fetching - both auth paths
   const {
@@ -610,6 +624,10 @@ function LeaderboardContent() {
                           <HandHeart className="h-3 w-3 text-brand-green" />
                         </div>
                       )
+                    ) : !isUndecided ? (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue-light">
+                        <HandCoins className="h-3 w-3 text-brand-blue" />
+                      </div>
                     ) : undefined,
                   };
                 });
@@ -683,6 +701,10 @@ function LeaderboardContent() {
                         <HandHeart className="h-3 w-3 text-brand-green" />
                       </div>
                     )
+                  ) : !pinnedIsUndecided ? (
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue-light">
+                      <HandCoins className="h-3 w-3 text-brand-blue" />
+                    </div>
                   ) : undefined,
                 };
 

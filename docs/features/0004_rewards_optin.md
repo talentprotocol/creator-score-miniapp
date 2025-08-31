@@ -17,8 +17,8 @@ Creators who opt out of rewards currently have their money redistributed to rema
 The leaderboard displays rewards amounts with different styling based on user decision status:
 
 - **Undecided users**: Gray text (`text-muted-foreground`) - Users who haven't made a decision yet
-- **Opted-in users**: Blue text (`text-brand-blue`) - Users who explicitly opted in
-- **Opted-out users**: Green text (`text-brand-green`) + strikethrough + "PAID FORWARD" badge - Users who opted out
+- **Opted-in users**: Blue text (`text-brand-blue`) + "OPTED IN" badge (HandCoins icon) - Users who explicitly opted in
+- **Opted-out users**: Green text (`text-brand-green`) + strikethrough + "PAID FORWARD" badge (HandHeart icon) - Users who opted out
 
 **Note**: Users without a record in `user_preferences` table are considered "undecided" and should show gray text.
 
