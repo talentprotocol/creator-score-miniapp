@@ -53,6 +53,7 @@ The leaderboard displays rewards amounts with different styling based on user de
 - **Opted-out Rate**: 100% (dynamically calculated via API, no hardcoded values)
 - **Modal Status**: Fully functional and tested
 - **Wallet Integration**: Complete (fetches verified wallets for rewards distribution)
+- **Cache Strategy**: User preferences are fetched directly from database (no caching) for accuracy
 - **Production Ready**: Yes
 
 ## Pending Tasks

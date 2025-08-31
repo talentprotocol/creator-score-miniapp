@@ -601,6 +601,7 @@ function LeaderboardContent() {
                   const isOptedOut = user.isOptedOut;
                   const isOptedIn = user.isOptedIn;
                   const isUndecided = user.isUndecided;
+
                   // Show "-" for rank -1 (no rank available)
                   const displayRank = user.rank === -1 ? undefined : user.rank;
 

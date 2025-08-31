@@ -23,11 +23,10 @@ export async function POST(req: NextRequest) {
     // Clear both server-side and client-side cache for this user
     await clearUserCache(talent_uuid);
 
-    // Also clear leaderboard cache to ensure fresh data
+    // Clear leaderboard cache (user preferences are no longer cached)
     revalidateTag(CACHE_KEYS.LEADERBOARD);
     revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
     revalidateTag(CACHE_KEYS.LEADERBOARD_TOP_200);
-    revalidateTag(CACHE_KEYS.LEADERBOARD + "-user-preferences");
 
     return NextResponse.json({
       success: true,

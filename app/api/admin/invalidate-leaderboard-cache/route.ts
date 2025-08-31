@@ -19,11 +19,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Invalidate all leaderboard-related caches
+    // Invalidate leaderboard-related caches (user preferences are no longer cached)
     revalidateTag(CACHE_KEYS.LEADERBOARD);
     revalidateTag(CACHE_KEYS.LEADERBOARD_BASIC);
     revalidateTag(CACHE_KEYS.LEADERBOARD_TOP_200);
-    revalidateTag(CACHE_KEYS.LEADERBOARD + "-user-preferences");
     revalidateTag(CACHE_KEYS.LEADERBOARD + "-snapshot-profiles");
 
     console.log("[Admin] Manually invalidated all leaderboard caches");
@@ -35,7 +34,6 @@ export async function POST(req: NextRequest) {
         CACHE_KEYS.LEADERBOARD,
         CACHE_KEYS.LEADERBOARD_BASIC,
         CACHE_KEYS.LEADERBOARD_TOP_200,
-        CACHE_KEYS.LEADERBOARD + "-user-preferences",
         CACHE_KEYS.LEADERBOARD + "-snapshot-profiles",
       ],
     });

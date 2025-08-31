@@ -1,11 +1,7 @@
 import type { LeaderboardEntry } from "@/lib/types";
 import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_1_HOUR,
-  CACHE_DURATION_10_MINUTES,
-} from "@/lib/cache-keys";
+import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
 import { supabase } from "@/lib/supabase-client";
 
@@ -132,48 +128,33 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
   );
 
-  // Step 5: Fetch opt-out status for all users
+  // Step 5: Fetch opt-out status for all users (no caching for accuracy)
   let optedOutUserIds: string[] = [];
   let optedInUserIds: string[] = [];
   let undecidedUserIds: string[] = [];
   try {
-    const userPreferencesData = await unstable_cache(
-      async () => {
-        const { data, error } = await supabase
-          .from("user_preferences")
-          .select("talent_uuid, rewards_decision");
+    const { data, error } = await supabase
+      .from("user_preferences")
+      .select("talent_uuid, rewards_decision");
 
-        if (error) {
-          console.error("Error fetching user preferences:", error);
-          return { optedOut: [], optedIn: [], undecided: [] };
-        }
-
-        const optedOut =
-          data
-            ?.filter((row) => row.rewards_decision === "opted_out")
-            .map((row) => row.talent_uuid) ?? [];
-        const optedIn =
-          data
-            ?.filter((row) => row.rewards_decision === "opted_in")
-            .map((row) => row.talent_uuid) ?? [];
-        const undecided =
-          data
-            ?.filter((row) => row.rewards_decision === null)
-            .map((row) => row.talent_uuid) ?? [];
-
-        return { optedOut, optedIn, undecided };
-      },
-      [CACHE_KEYS.LEADERBOARD + "-user-preferences"],
-      {
-        revalidate: CACHE_DURATION_10_MINUTES, // Reduced from 1 hour for more frequent updates
-        tags: [CACHE_KEYS.LEADERBOARD + "-user-preferences"],
-      },
-    )();
-
-    optedOutUserIds = userPreferencesData.optedOut;
-    optedInUserIds = userPreferencesData.optedIn;
-    undecidedUserIds = userPreferencesData.undecided;
-  } catch {
+    if (error) {
+      console.error("Error fetching user preferences:", error);
+    } else {
+      optedOutUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === "opted_out")
+          .map((row) => row.talent_uuid) ?? [];
+      optedInUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === "opted_in")
+          .map((row) => row.talent_uuid) ?? [];
+      undecidedUserIds =
+        data
+          ?.filter((row) => row.rewards_decision === null)
+          .map((row) => row.talent_uuid) ?? [];
+    }
+  } catch (error) {
+    console.error("Error fetching user preferences:", error);
     // Continue with empty arrays
   }
 
