@@ -1,12 +1,7 @@
 import type { LeaderboardEntry } from "@/lib/types";
 import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_1_HOUR,
-  CACHE_DURATION_10_MINUTES,
-} from "@/lib/cache-keys";
-import { talentApiClient } from "@/lib/talent-api-client";
+import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
 import { supabase } from "@/lib/supabase-client";
 
@@ -189,7 +184,9 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   try {
     const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
     if (snapshotExists) {
-      console.log("[ScoreLeaderboardService] Using snapshot data for rank/rewards");
+      console.log(
+        "[ScoreLeaderboardService] Using snapshot data for rank/rewards",
+      );
 
       const snapshots = await LeaderboardSnapshotService.getSnapshot();
       if (snapshots && snapshots.length > 0) {
@@ -263,7 +260,10 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       });
     }
   } catch (error) {
-    console.error("[ScoreLeaderboardService] Error applying snapshot data:", error);
+    console.error(
+      "[ScoreLeaderboardService] Error applying snapshot data:",
+      error,
+    );
     // Set all entries to N/A on error
     mapped.forEach((entry) => {
       entry.rank = -1; // Use -1 to indicate "no rank available"
@@ -414,21 +414,6 @@ export async function getBoostedProfilesData(): Promise<string[]> {
 
   return boostedProfiles;
 }
-
-// Total number of creators with Creator Score > 0, via Talent API advanced search pagination
-export const getActiveCreatorsCount = unstable_cache(
-  async () => {
-    const res = await talentApiClient.getActiveCreatorsCount();
-    try {
-      const json = await res.json();
-      return typeof json.total === "number" ? json.total : 0;
-    } catch {
-      return 0;
-    }
-  },
-  [CACHE_KEYS.LEADERBOARD + "-active-creators-count"],
-  { revalidate: CACHE_DURATION_10_MINUTES * 6 },
-);
 
 /**
  * Get boosted profiles via API route - called by hooks

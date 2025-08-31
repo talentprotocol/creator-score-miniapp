@@ -13,7 +13,6 @@ interface UseLeaderboardDataReturn {
   error: string | null;
   lastUpdated: string | null;
   nextUpdate: string | null;
-  activeCreatorsTotal: number | null;
   refetch: (forceFresh?: boolean) => void;
   updateUserOptOutStatus: (talentUuid: string, isOptedOut: boolean) => void;
 }
@@ -41,35 +40,11 @@ async function getLeaderboardBasic(): Promise<LeaderboardData> {
   }
 }
 
-/**
- * CLIENT-SIDE ONLY: Fetches active creators count via API route (follows coding principles)
- */
-async function getActiveCreatorsCount(): Promise<{ total: number }> {
-  try {
-    const response = await fetch("/api/leaderboard/active-creators-count");
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(
-      "[useLeaderboardOptimized] Active creators count fetch failed:",
-      error,
-    );
-    throw error;
-  }
-}
-
 export function useLeaderboardData(): UseLeaderboardDataReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeCreatorsTotal, setActiveCreatorsTotal] = useState<number | null>(
-    null,
-  );
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
 
@@ -140,22 +115,6 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
     loadBasicData();
   }, [loadBasicData]);
 
-  // Fetch total active creators (Creator Score > 0) once
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await getActiveCreatorsCount();
-        if (!cancelled) setActiveCreatorsTotal(data.total ?? null);
-      } catch {
-        if (!cancelled) setActiveCreatorsTotal(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return {
     entries,
     loading,
@@ -163,7 +122,6 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
     error,
     lastUpdated,
     nextUpdate,
-    activeCreatorsTotal,
     refetch,
     updateUserOptOutStatus,
   };

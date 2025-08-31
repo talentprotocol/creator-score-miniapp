@@ -1,12 +1,7 @@
 import type { LeaderboardEntry } from "@/lib/types";
 import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_1_HOUR,
-  CACHE_DURATION_10_MINUTES,
-} from "@/lib/cache-keys";
-import { talentApiClient } from "@/lib/talent-api-client";
+import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
 import { supabase } from "@/lib/supabase-client";
 
@@ -51,11 +46,15 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     return { entries: [] };
   }
 
-  console.log(`[LeaderboardService] Found ${snapshots.length} snapshot entries`);
+  console.log(
+    `[LeaderboardService] Found ${snapshots.length} snapshot entries`,
+  );
 
   // Step 2: Extract UUIDs from snapshot
-  const snapshotUUIDs = snapshots.map(s => s.talent_uuid);
-  console.log(`[LeaderboardService] Querying Talent API for ${snapshotUUIDs.length} specific UUIDs`);
+  const snapshotUUIDs = snapshots.map((s) => s.talent_uuid);
+  console.log(
+    `[LeaderboardService] Querying Talent API for ${snapshotUUIDs.length} specific UUIDs`,
+  );
 
   // Step 3: Query Talent API for specific profiles by UUID
   const profiles = await unstable_cache(
@@ -67,24 +66,24 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       // Process UUIDs in batches
       for (let i = 0; i < snapshotUUIDs.length; i += batchSize) {
         const batch = snapshotUUIDs.slice(i, i + batchSize);
-        
+
         const data = {
           query: {
             profileIds: batch,
-            exactMatch: true
+            exactMatch: true,
           },
           sort: {
-            id: { order: "desc" }
+            id: { order: "desc" },
           },
           per_page: batchSize,
-          view: "scores_minimal"
+          view: "scores_minimal",
         };
 
         const queryString = [
           `query=${encodeURIComponent(JSON.stringify(data.query))}`,
           `sort=${encodeURIComponent(JSON.stringify(data.sort))}`,
           `per_page=${batchSize}`,
-          `view=scores_minimal`
+          `view=scores_minimal`,
         ].join("&");
 
         const res = await fetch(`${baseUrl}?${queryString}`, {
@@ -96,7 +95,9 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(`Failed to fetch batch ${Math.floor(i/batchSize) + 1}: ${errorText}`);
+          throw new Error(
+            `Failed to fetch batch ${Math.floor(i / batchSize) + 1}: ${errorText}`,
+          );
         }
 
         const json = await res.json();
@@ -118,7 +119,9 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     },
   )();
 
-  console.log(`[LeaderboardService] Retrieved ${profiles.length} profiles from Talent API`);
+  console.log(
+    `[LeaderboardService] Retrieved ${profiles.length} profiles from Talent API`,
+  );
 
   // Step 4: Filter out project accounts
   const filteredProfiles = profiles.filter(
@@ -167,7 +170,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
           .map((s) => s.points ?? 0)
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
-    
+
     const isOptedOut = optedOutUserIds.includes(profile.id);
     const isOptedIn = optedInUserIds.includes(profile.id);
     const isUndecided =
@@ -178,7 +181,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
     // Get snapshot data for this profile
     const snapshot = snapshotMap.get(profile.id);
-    
+
     return {
       name: profile.display_name || profile.name || "Unknown",
       pfp: profile.image_url || undefined,
@@ -203,7 +206,9 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     return a.rank - b.rank;
   });
 
-  console.log(`[LeaderboardService] Returning ${sorted.length} entries sorted by snapshot rank`);
+  console.log(
+    `[LeaderboardService] Returning ${sorted.length} entries sorted by snapshot rank`,
+  );
 
   return {
     entries: sorted,
