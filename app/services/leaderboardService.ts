@@ -133,33 +133,62 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
   let optedInUserIds: string[] = [];
   let undecidedUserIds: string[] = [];
   try {
-    // Fetch all user preferences using a single range query to get all records
-    const { data, error } = await supabase
+    // Fetch all user preferences using multiple queries to overcome Supabase's 1000 record limit
+    let allUserPreferences: Array<{ talent_uuid: string; rewards_decision: string | null }> = [];
+    
+    // First query: get opted_out users
+    const { data: optedOutData, error: optedOutError } = await supabase
       .from("user_preferences")
       .select("talent_uuid, rewards_decision")
-      .range(0, 9999); // Fetch up to 10,000 records (well above the current 2351 total)
-
-    if (error) {
-      console.error("Error fetching user preferences:", error);
-    } else {
-      console.log(
-        `[LeaderboardService] Raw user preferences data count:`,
-        data?.length || 0,
-      );
-
-      optedOutUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_out")
-          .map((row) => row.talent_uuid) ?? [];
-      optedInUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_in")
-          .map((row) => row.talent_uuid) ?? [];
-      undecidedUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === null)
-          .map((row) => row.talent_uuid) ?? [];
+      .eq("rewards_decision", "opted_out");
+    
+    if (optedOutError) {
+      console.error("Error fetching opted_out users:", optedOutError);
+    } else if (optedOutData) {
+      allUserPreferences.push(...optedOutData);
     }
+    
+    // Second query: get opted_in users
+    const { data: optedInData, error: optedInError } = await supabase
+      .from("user_preferences")
+      .select("talent_uuid, rewards_decision")
+      .eq("rewards_decision", "opted_in");
+    
+    if (optedInError) {
+      console.error("Error fetching opted_in users:", optedInError);
+    } else if (optedInData) {
+      allUserPreferences.push(...optedInData);
+    }
+    
+    // Third query: get undecided users (null rewards_decision)
+    const { data: undecidedData, error: undecidedError } = await supabase
+      .from("user_preferences")
+      .select("talent_uuid, rewards_decision")
+      .is("rewards_decision", null);
+    
+    if (undecidedError) {
+      console.error("Error fetching undecided users:", undecidedError);
+    } else if (undecidedData) {
+      allUserPreferences.push(...undecidedData);
+    }
+
+    console.log(
+      `[LeaderboardService] Raw user preferences data count:`,
+      allUserPreferences.length,
+    );
+
+    optedOutUserIds =
+      allUserPreferences
+        .filter((row) => row.rewards_decision === "opted_out")
+        .map((row) => row.talent_uuid) ?? [];
+    optedInUserIds =
+      allUserPreferences
+        .filter((row) => row.rewards_decision === "opted_in")
+        .map((row) => row.talent_uuid) ?? [];
+    undecidedUserIds =
+      allUserPreferences
+        .filter((row) => row.rewards_decision === null)
+        .map((row) => row.talent_uuid) ?? [];
   } catch (error) {
     console.error("Error fetching user preferences:", error);
     // Continue with empty arrays
