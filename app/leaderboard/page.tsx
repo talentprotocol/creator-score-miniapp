@@ -23,7 +23,7 @@ import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import {
   ACTIVE_SPONSORS,
   TOTAL_SPONSORS_POOL,
-  DEADLINE,
+  REWARDS_CONFIG,
   LEVEL_RANGES,
   PERK_DRAW_DEADLINE_UTC,
 } from "@/lib/constants";
@@ -48,6 +48,8 @@ import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 import { RewardsDecisionModalHandler } from "@/components/common/RewardsDecisionModalHandler";
 import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
+import { useOptedOutPercentage } from "@/hooks/useOptedOutPercentage";
+import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -120,6 +122,43 @@ function LeaderboardContent() {
     data: { isOptedOut, hasMadeDecision },
   } = useUserRewardsDecision(userTalentUuid);
 
+  // Fetch opted-out percentage dynamically
+  const { percentage: optedOutPercentage, loading: optedOutPercentageLoading } =
+    useOptedOutPercentage();
+
+  // Fetch wallet data for rewards distribution
+  const { walletData, loading: walletsLoading } = useProfileWalletAccounts(
+    userTalentUuid || undefined,
+  );
+
+  // Fetch profile data to get primary wallet address
+  const [profileData, setProfileData] = React.useState<{
+    farcaster_primary_wallet_address?: string;
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = React.useState(false);
+
+  // Fetch profile data for primary wallet address
+  React.useEffect(() => {
+    if (!userTalentUuid) return;
+
+    async function fetchProfile() {
+      setProfileLoading(true);
+      try {
+        const response = await fetch(`/api/talent-user?id=${userTalentUuid}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProfileData(data);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+
+    fetchProfile();
+  }, [userTalentUuid]);
+
   // Server-persisted callout preferences
   const {
     permanentlyHiddenIds: permanentlyHiddenCalloutIds,
@@ -127,7 +166,9 @@ function LeaderboardContent() {
   } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Countdown state
-  const [countdown, setCountdown] = useState(() => getCountdownParts(DEADLINE));
+  const [countdown, setCountdown] = useState(() =>
+    getCountdownParts(REWARDS_CONFIG.DECISION_DEADLINE),
+  );
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -137,7 +178,7 @@ function LeaderboardContent() {
   // Live countdown effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setCountdown(getCountdownParts(DEADLINE));
+      setCountdown(getCountdownParts(REWARDS_CONFIG.DECISION_DEADLINE));
     }, 60000); // update every minute
     return () => clearInterval(interval);
   }, []);
@@ -182,6 +223,30 @@ function LeaderboardContent() {
   }, []);
 
   const isLoggedIn = !!(user || unifiedName);
+
+  // Transform wallet data for the modal (same logic as RewardsDecisionModalHandler)
+  const wallets = walletData
+    ? [
+        // Farcaster verified wallets - mark primary address
+        ...walletData.farcasterVerified.map((wallet) => ({
+          address: wallet.identifier,
+          label:
+            wallet.identifier === profileData?.farcaster_primary_wallet_address
+              ? "Farcaster Primary"
+              : "Farcaster Verified",
+          type:
+            wallet.identifier === profileData?.farcaster_primary_wallet_address
+              ? ("farcaster-primary" as const)
+              : ("farcaster-verified" as const),
+        })),
+        // Talent verified wallets
+        ...walletData.talentVerified.map((wallet) => ({
+          address: wallet.identifier,
+          label: "Talent Verified",
+          type: "talent-verified" as const,
+        })),
+      ]
+    : [];
 
   return (
     <PageContainer>
@@ -418,9 +483,11 @@ function LeaderboardContent() {
         userRewards={
           userTop200Entry?.boostedReward || userTop200Entry?.baseReward
         }
-        optedOutPercentage={58} // TODO: Fetch this dynamically
-        wallets={[]} // TODO: Fetch wallets if needed
-        isLoading={false}
+        optedOutPercentage={optedOutPercentage}
+        wallets={wallets}
+        isLoading={
+          optedOutPercentageLoading || walletsLoading || profileLoading
+        }
         talentUuid={userTalentUuid || undefined}
         isInTop200={!!userTop200Entry}
         hasMadeDecision={hasMadeDecision}

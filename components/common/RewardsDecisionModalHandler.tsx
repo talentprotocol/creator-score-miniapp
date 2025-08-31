@@ -33,9 +33,8 @@ export function RewardsDecisionModalHandler({
   } | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(false);
 
-  // Calculate opted-out percentage
-  const [optedOutPercentage, setOptedOutPercentage] =
-    React.useState<number>(58);
+  // Fetch opted-out percentage dynamically
+  const [optedOutPercentage, setOptedOutPercentage] = React.useState<number>(0); // Start with 0, will be updated with real value
 
   React.useEffect(() => {
     if (!talentUuid) return;
@@ -66,7 +65,7 @@ export function RewardsDecisionModalHandler({
         }
       } catch (error) {
         console.error("Error calculating opted-out percentage:", error);
-        // Keep default 58% if calculation fails
+        // Keep default 0% if calculation fails
       }
     }
 

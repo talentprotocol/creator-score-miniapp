@@ -35,8 +35,9 @@ Creators who opt out of rewards currently have their money redistributed to rema
 ## Current State
 - **Total Users**: 2,108 in database
 - **Users with Decisions**: 180 (8.5%)
-- **Opted-out Rate**: (dynamically calculated)
+- **Opted-out Rate**: 100% (dynamically calculated via API, no hardcoded values)
 - **Modal Status**: Fully functional and tested
+- **Wallet Integration**: Complete (fetches verified wallets for rewards distribution)
 - **Production Ready**: Yes
 
 ## Pending Tasks
@@ -46,9 +47,9 @@ Creators who opt out of rewards currently have their money redistributed to rema
 4. **Post-distribution**: Remove legacy `rewards_optout` field
 
 ## Key Files
-- **New**: `components/modals/RewardsDecisionModal.tsx`, `components/common/RewardsDecisionModalHandler.tsx`
-- **Modified**: `hooks/useUserRewardsDecision.ts` (simplified to always fetch from database), `app/leaderboard/page.tsx`
-- **API**: `/api/user-preferences/optout`, `/api/leaderboard/snapshot`, `/api/admin/snapshot/trigger`
+- **New**: `components/modals/RewardsDecisionModal.tsx`, `components/common/RewardsDecisionModalHandler.tsx`, `hooks/useOptedOutPercentage.ts`
+- **Modified**: `hooks/useUserRewardsDecision.ts` (simplified to always fetch from database), `app/leaderboard/page.tsx` (dynamic opted-out percentage)
+- **API**: `/api/user-preferences/optout`, `/api/user-preferences/opted-out-percentage`, `/api/leaderboard/snapshot`, `/api/admin/snapshot/trigger`
 
 ## Business Logic
 - Modal shows only to top 200 users without decisions
