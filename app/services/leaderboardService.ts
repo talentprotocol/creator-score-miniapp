@@ -167,6 +167,21 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       optedOutUserIds.length + optedInUserIds.length + undecidedUserIds.length,
   });
 
+  // Debug: Check if the specific users are in the arrays
+  const debugUsers = [
+    "98934280-2b20-4bfe-8bb8-54a270fd2a8a",
+    "b56917e7-e37a-4d6c-a447-8bdc896163ba",
+    "2465b21f-0d6b-4a2a-9869-93aafa1ed8db",
+  ];
+  
+  debugUsers.forEach(uuid => {
+    console.log(`[LeaderboardService] Debug user ${uuid}:`, {
+      inOptedOut: optedOutUserIds.includes(uuid),
+      inOptedIn: optedInUserIds.includes(uuid),
+      inUndecided: undecidedUserIds.includes(uuid),
+    });
+  });
+
   // Step 6: Create snapshot map for quick lookup
   const snapshotMap = new Map(
     snapshots.map((snapshot) => [snapshot.talent_uuid, snapshot]),
@@ -183,11 +198,7 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
 
     const isOptedOut = optedOutUserIds.includes(profile.id);
     const isOptedIn = optedInUserIds.includes(profile.id);
-    const isUndecided =
-      undecidedUserIds.includes(profile.id) ||
-      (!optedOutUserIds.includes(profile.id) &&
-        !optedInUserIds.includes(profile.id) &&
-        !undecidedUserIds.includes(profile.id));
+    const isUndecided = undecidedUserIds.includes(profile.id);
 
     // Get snapshot data for this profile
     const snapshot = snapshotMap.get(profile.id);

@@ -130,38 +130,38 @@ function LeaderboardContent() {
         "2465b21f-0d6b-4a2a-9869-93aafa1ed8db",
       ];
 
-              debugUsers.forEach((uuid) => {
-          const user = top200Entries.find((e) => e.talent_protocol_id === uuid);
-          if (user) {
-            console.log(`[Client] Debug user ${uuid} (${user.name}):`, {
-              isOptedOut: user.isOptedOut,
-              isOptedIn: user.isOptedIn,
-              isUndecided: user.isUndecided,
-              reward: user.boostedReward,
-              rank: user.rank,
-            });
-            
-            // Log the styling logic
-            const isUndecided = user.isUndecided;
-            const isOptedOut = user.isOptedOut;
-            const isOptedIn = user.isOptedIn;
-            
-            console.log(`[Client] Styling logic for ${user.name}:`, {
-              isUndecided,
-              isOptedOut,
-              isOptedIn,
-              primaryMetricVariant: isUndecided
-                ? "muted"
-                : isOptedOut
-                  ? "brand-green"
-                  : isOptedIn
-                    ? "brand-blue"
-                    : "muted",
-            });
-          } else {
-            console.log(`[Client] Debug user ${uuid}: Not found in leaderboard`);
-          }
-        });
+      debugUsers.forEach((uuid) => {
+        const user = top200Entries.find((e) => e.talent_protocol_id === uuid);
+        if (user) {
+          console.log(`[Client] Debug user ${uuid} (${user.name}):`, {
+            isOptedOut: user.isOptedOut,
+            isOptedIn: user.isOptedIn,
+            isUndecided: user.isUndecided,
+            reward: user.boostedReward,
+            rank: user.rank,
+          });
+
+          // Log the styling logic
+          const isUndecided = user.isUndecided;
+          const isOptedOut = user.isOptedOut;
+          const isOptedIn = user.isOptedIn;
+
+          console.log(`[Client] Styling logic for ${user.name}:`, {
+            isUndecided,
+            isOptedOut,
+            isOptedIn,
+            primaryMetricVariant: isUndecided
+              ? "muted"
+              : isOptedOut
+                ? "brand-green"
+                : isOptedIn
+                  ? "brand-blue"
+                  : "muted",
+          });
+        } else {
+          console.log(`[Client] Debug user ${uuid}: Not found in leaderboard`);
+        }
+      });
     }
   }, [top200Entries]);
 

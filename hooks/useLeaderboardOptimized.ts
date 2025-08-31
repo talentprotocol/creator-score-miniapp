@@ -29,8 +29,8 @@ async function getLeaderboardBasic(): Promise<LeaderboardData> {
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0",
+        Pragma: "no-cache",
+        Expires: "0",
       },
     });
 
@@ -119,7 +119,7 @@ export function useLeaderboardData(): UseLeaderboardDataReturn {
   // Load basic data on mount and refresh every 30 seconds to ensure fresh data
   useEffect(() => {
     loadBasicData();
-    
+
     // Set up interval to refresh data every 30 seconds
     const interval = setInterval(() => {
       console.log("[useLeaderboardOptimized] Auto-refreshing leaderboard data");
