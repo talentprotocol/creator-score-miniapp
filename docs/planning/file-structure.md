@@ -1,10 +1,5 @@
 # File Structure Framework
 
-## Core Principles
-- Modular data flow: External APIs → Services → API Routes → Hooks → UI Components
-- Client-server separation: No direct service imports in client code
-- Pure UI components: Data via props only, no API calls
-
 ## Turborepo Structure
 ```
 turborepo/
@@ -61,7 +56,6 @@ app-name/
 - Environment: `lib/config/env.ts`
 - Features: `lib/config/features.ts`
 - Constants: `lib/config/constants.ts`
-
 
 
 ## Key Decisions

@@ -10,7 +10,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Icon } from "@/components/ui/icon";
-import { ChevronDown, ExternalLink, Copy } from "lucide-react";
+import { ChevronDown, Copy } from "lucide-react";
 import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
 import {
   truncateAddress,
@@ -179,15 +179,8 @@ function SocialAccountsList({
                 {account.displayName || account.source}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-muted-foreground text-right">
-                {followers !== "—" ? `${followers} followers` : "—"}
-              </div>
-              {account.profileUrl && (
-                <div className="text-gray-600 p-1">
-                  <Icon icon={ExternalLink} size="sm" color="muted" />
-                </div>
-              )}
+            <div className="text-xs text-muted-foreground text-right">
+              {followers !== "—" ? `${followers} followers` : "—"}
             </div>
           </div>
         );
@@ -289,9 +282,6 @@ function WalletAddressesList({
             <Icon icon={Copy} size="sm" color="muted" />
           )}
         </button>
-        <div className="text-gray-600 p-1">
-          <Icon icon={ExternalLink} size="sm" color="muted" />
-        </div>
       </div>
     </div>
   );

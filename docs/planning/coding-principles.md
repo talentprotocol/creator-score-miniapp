@@ -1,5 +1,9 @@
 # Creator Score App – Architecture & Core Principles
 
+## CORE PRINCIPLES
+- Modular data flow: External APIs → Services → API Routes → Hooks → UI Components
+- Client-server separation: No direct service imports in client code
+- Pure UI components: Data via props only, no API calls
 
 ## TECHNICAL ARCHITECTURE
 

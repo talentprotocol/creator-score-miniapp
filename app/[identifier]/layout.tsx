@@ -343,7 +343,7 @@ export default async function ProfileLayout({
       });
       redirect(redirectUrl);
     } else {
-      const redirectUrl = `/${canonical}/stats`;
+      const redirectUrl = `/${canonical}/badges`;
       dlog("ProfileLayout", "redirecting_to_canonical_default_tab", {
         from: currentPath,
         to: redirectUrl,

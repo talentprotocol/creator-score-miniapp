@@ -215,9 +215,7 @@ function LeaderboardContent() {
     }
 
     const snapshotReward = userTop200Entry?.boostedReward || 0;
-    return snapshotReward >= 1
-      ? `$${snapshotReward.toFixed(0)}`
-      : `$${snapshotReward.toFixed(2)}`;
+    return `$${Math.round(snapshotReward)}`;
   }
 
   // Handle tab changes with PostHog tracking
