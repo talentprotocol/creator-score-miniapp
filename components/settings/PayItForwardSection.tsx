@@ -41,7 +41,7 @@ export function PayItForwardSection() {
   const [confettiActive, setConfettiActive] = useState(false);
 
   // User context and data hooks
-  const { talentUuid } = useFidToTalentUuid();
+  const { talentUuid, handle } = useFidToTalentUuid();
   const {
     entries: top200Entries,
     refetch,
@@ -181,10 +181,10 @@ export function PayItForwardSection() {
   const shareContext = React.useMemo(
     () => ({
       talentUUID: talentUuid || "",
-      handle: talentUuid || "creator", // Use talentUuid directly as handle for URL-safe sharing
+      handle: handle || talentUuid || "creator", // Use handle from hook first, fallback to talentUuid
       appClient: client,
     }),
-    [talentUuid, client], // Remove displayName dependency
+    [talentUuid, handle, client], // Include handle dependency
   );
 
   const shareContent = React.useMemo(

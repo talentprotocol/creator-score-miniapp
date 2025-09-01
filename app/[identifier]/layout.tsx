@@ -207,6 +207,12 @@ export async function generateMetadata({
       ? `${displayName} Paid It Forward`
       : `${displayName} Creator Score Card`;
 
+    // Build canonical URL with query parameters for proper social media previews
+    const canonicalUrlWithParams =
+      searchParams && Object.keys(searchParams).length > 0
+        ? `${canonicalUrl}/${canonical}?${new URLSearchParams(searchParams).toString()}`
+        : `${canonicalUrl}/${canonical}`;
+
     return {
       title,
       description,
@@ -222,7 +228,7 @@ export async function generateMetadata({
           },
         ],
         type: "website",
-        url: `${canonicalUrl}/${canonical}`,
+        url: canonicalUrlWithParams,
       },
       twitter: {
         card: "summary_large_image",
