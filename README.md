@@ -12,28 +12,37 @@ A Farcaster MiniApp that shows creator scores, leaderboards, and rewards.
 - **Account association** - Allows users to add your frame to their account, enables notifications
 
 ### Core Functionality
+
 - Creator score display and ranking
 - Leaderboard with pagination
 - Reward calculations
 - Profile management
 
 ### Account Management
+
 - Wallet connection (Ethereum, Base, etc.)
 - Social account linking (Farcaster, Lens, etc.)
 - Credential management
 
 ### Rewards System
+
 - **Boost Multiplier** - 10% reward boost for users holding 100+ $TALENT tokens
 - **Pay It Forward** - Allow creators to donate their entire reward allocation to other creators
 - **Smart Redistribution** - Opted-out rewards are redistributed proportionally among remaining eligible creators
 
 ### Badge System
+
 - **Dynamic Achievement Badges** - 6-level progression system for creator milestones
 - **Multiple Categories** - Trophies (Creator Score, Streaks), Records (Earnings, Followers), Special (Platform badges)
 - **Progress Tracking** - Visual progress bars and artwork for earned/locked states
 - **Real-time Updates** - Badges automatically unlock based on user metrics
 
 ### Notifications
+
 - In-app notification system
 - Ready-to-use notification endpoints in `api/notify` and `api/webhook`
 - Notification client utilities in `lib/notification-client.ts`
+
+## Environment
+
+- `NEXT_PUBLIC_DEV_MODE=true` enables a development shortcut that bypasses full authentication with a hardcoded wallet for rapid UI iteration. Use only locally.
