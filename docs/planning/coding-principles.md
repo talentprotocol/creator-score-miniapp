@@ -1,17 +1,5 @@
 # Creator Score App – Architecture & Core Principles
 
-## PRODUCT PRINCIPLES
-
-- **Principle:** Optimize for fast, consistent building by "vibe coders" - reusability over customization.
-- **User Identification:** Users identified by canonical Talent UUID internally, accessible via Farcaster, GitHub, or wallet.
-- **Dual Authentication:** Automatic environment detection enables Farcaster authentication in MiniApps and Dynamic wallet authentication in browsers, with wallet addresses as public identifiers for reputation scoring.
-- **Shared Utilities:** All user lookups and profile loads go through a single resolver that abstracts identifier types into Talent UUID. Common logic extracted into shared services for maintainability and testability.
-- **Documentation:** All unique or opinionated decisions documented for clarity; best practices referenced but not over-explained.
-- **Talent API Data Usage:** Always ignore `points_calculation_logic` in Talent API responses and use only top-level credential fields (slug, points, readable_value, uom, max_score, etc.) for all logic and display.
-
-## DESIGN PRINCIPLES
-
-- Mobile-first and responsive. See `docs/planning/design-system.md` for typography, color, layout, and component patterns.
 
 ## TECHNICAL ARCHITECTURE
 
@@ -80,13 +68,12 @@ Use posthog to keep track of new features usage. Include event tracking on the a
 - **UI Components**: Pure functions receiving all data via props, no API calls
 - **Reusability**: Default to shadcn/ui, create custom components only for unique UX needs
 
-### Content Management Principles
-
-- **Content-Logic Separation**: Always separate content (copy, labels, descriptions) from business logic (computation, validation, data processing).
 
 ### User Resolution System
 
-- Use `Talent UUID` as the canonical user ID and resolve identifiers via `lib/user-resolver.ts`. Server Components call services; Client Components use hooks or Route Handlers.
+- Use `Talent UUID` as the canonical user ID and resolve identifiers (Farcaster, wallet, GitHub, ...) via `lib/user-resolver.ts`. 
+- Mini apps detect user context via Farcaster SDK and convert FID to Talent UUID, while browsers use wallet authentication to convert address into Talent UUID.
+
 
 ### Type Organization
 
@@ -104,9 +91,18 @@ Use posthog to keep track of new features usage. Include event tracking on the a
 
 - **Security**: Never expose secrets to the client; mask sensitive data in logs; verify webhook signatures
 - **Observability**: Structured logs with `{ provider, operation, requestId, status, durationMs }`; emit basic latency/error metrics
+- **Talent API Data Usage:** Always ignore `points_calculation_logic` in Talent API responses and use only top-level credential fields (slug, points, readable_value, uom, max_score, etc.) for all logic and display.
 
 ### Caching & Revalidation Model
 
 - Prefer `fetch` with `next: { revalidate, tags }` in Server Components; use tag-based invalidation after writes
 - Wrap heavy services with `unstable_cache` to share results across routes/renderings
 - Use `revalidateTag` in mutation Route Handlers to invalidate related reads
+
+### Design Principles
+
+- Mobile-first and responsive. See `docs/planning/design-system.md` for typography, color, layout, and component patterns.
+
+### Content Management Principles
+
+- **Content-Logic Separation**: Always separate content (copy, labels, descriptions) from business logic (computation, validation, data processing).
