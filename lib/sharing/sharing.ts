@@ -260,8 +260,8 @@ export class ShareContentGenerators {
   static optout(context: ShareContext): ShareContent {
     const { handle, talentUUID } = context;
 
-    // Generate URLs and content (use query parameter for Pay It Forward context)
-    const url = `${generateShareUrl(handle)}?share=optout`;
+    // Generate URLs and content (use dynamic route for Pay It Forward context)
+    const url = `${generateShareUrl(handle)}/share/optout`;
     const filename = sanitizeFilename(`${handle}-paid-forward.png`);
 
     // Use absolute URL for share image
