@@ -16,35 +16,35 @@ export function ProfileTabs({
 }: ProfileTabsProps) {
   const pathname = usePathname() || "";
 
-  // Determine active tab from URL pathname
+  // Determine active tab from URL pathname - badges is default
   const activeTab = pathname.endsWith("/posts")
-    ? "content"
+    ? "posts"
     : pathname.endsWith("/score")
-      ? "credentials"
-      : pathname.endsWith("/badges")
-        ? "badges"
-        : "score"; // default to stats tab
+      ? "score"
+      : pathname.endsWith("/stats")
+        ? "stats"
+        : "badges"; // default to badges tab
 
   const tabs = [
-    {
-      id: "score",
-      label: "Stats",
-      href: `/${identifier}/stats`,
-    },
-    {
-      id: "content",
-      label: "Posts",
-      href: `/${identifier}/posts`,
-    },
-    {
-      id: "credentials",
-      label: "Score",
-      href: `/${identifier}/score`,
-    },
     {
       id: "badges",
       label: "Badges",
       href: `/${identifier}/badges`,
+    },
+    {
+      id: "stats",
+      label: "Stats",
+      href: `/${identifier}/stats`,
+    },
+    {
+      id: "posts",
+      label: "Posts",
+      href: `/${identifier}/posts`,
+    },
+    {
+      id: "score",
+      label: "Score",
+      href: `/${identifier}/score`,
     },
   ];
 

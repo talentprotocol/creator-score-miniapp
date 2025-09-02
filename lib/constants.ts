@@ -93,6 +93,7 @@ export const PROJECT_ACCOUNTS_TO_EXCLUDE = [
   "e917fec7-2278-4ee8-9274-d5a680abe098", // Reveel
   "587afa70-4d48-44c5-8332-c651c04d4894", // Zerion
   "77690046-ff9e-4077-be99-15c1e98b1624", // Daylight
+  "b9db4924-4c8d-4434-bd5d-f8f517775ab9", // Zora
 ];
 
 // Environment variable validation

@@ -224,6 +224,7 @@ export class ShareContentGenerators {
       talentUUID,
       level: badge.currentLevel.toString(),
       title: badgeTitle,
+      levelLabel: badge.levelLabel, // Pass levelLabel for earnings display
     });
     const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
     const imageUrl = `${baseUrl}/api/share-image-badge/${badge.badgeSlug}?${badgeImageParams}`;
@@ -260,8 +261,8 @@ export class ShareContentGenerators {
   static optout(context: ShareContext): ShareContent {
     const { handle, talentUUID } = context;
 
-    // Generate URLs and content (use query parameter for Pay It Forward context)
-    const url = `${generateShareUrl(handle)}?share=optout`;
+    // Generate URLs and content (use dynamic route for Pay It Forward context)
+    const url = `${generateShareUrl(handle)}/share/optout`;
     const filename = sanitizeFilename(`${handle}-paid-forward.png`);
 
     // Use absolute URL for share image

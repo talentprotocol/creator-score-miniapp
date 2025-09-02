@@ -10,9 +10,7 @@ import { ConfettiButton } from "@/components/ui/confetti";
 import { ShareModal } from "@/components/modals/ShareModal";
 import { ShareContentGenerators } from "@/lib/sharing";
 
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { usePostHog } from "posthog-js/react";
-import { detectClient } from "@/lib/utils";
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 
 /**
@@ -41,17 +39,30 @@ export function PayItForwardSection() {
   const [confettiActive, setConfettiActive] = useState(false);
 
   // User context and data hooks
-  const { talentUuid } = useFidToTalentUuid();
+  const { talentUuid, handle } = useFidToTalentUuid();
   const {
     entries: top200Entries,
     refetch,
     updateUserOptOutStatus,
   } = useLeaderboardData();
 
-  // Note: We use talentUuid directly as handle for URL-safe sharing
-  const { context } = useMiniKit();
   const posthog = usePostHog();
-  const [client, setClient] = useState<string | null>(null);
+
+  // Simple fetch for fname from talent-user API (same as profile layout)
+  const [fname, setFname] = useState<string | null>(null);
+  useEffect(() => {
+    if (!talentUuid) {
+      setFname(null);
+      return;
+    }
+    fetch(`/api/talent-user?id=${talentUuid}`)
+      .then((response) => response.json())
+      .then((data) => setFname(data?.fname || null))
+      .catch(() => setFname(null));
+  }, [talentUuid]);
+
+  // Get the handle from fname first, then from the hook
+  const userHandle = fname || handle || talentUuid || "creator";
 
   // Find current user's leaderboard entry
   const userTop200Entry = top200Entries.find(
@@ -91,13 +102,6 @@ export function PayItForwardSection() {
     setConfettiActive(false);
     setShowShare(true);
   }, []);
-
-  // Detect client type for sharing
-  useEffect(() => {
-    detectClient(context).then((client) => {
-      setClient(client);
-    });
-  }, [context]);
 
   /**
    * Handles the opt-out submission process
@@ -181,10 +185,10 @@ export function PayItForwardSection() {
   const shareContext = React.useMemo(
     () => ({
       talentUUID: talentUuid || "",
-      handle: talentUuid || "creator", // Use talentUuid directly as handle for URL-safe sharing
-      appClient: client,
+      handle: userHandle || talentUuid || "creator", // Use userHandle from profile first, fallback to talentUuid
+      appClient: "browser", // Always browser context for PayItForwardSection
     }),
-    [talentUuid, client], // Remove displayName dependency
+    [talentUuid, userHandle], // Remove handle dependency since we use userHandle
   );
 
   const shareContent = React.useMemo(
@@ -300,7 +304,7 @@ export function PayItForwardSection() {
         context={shareContext}
         analytics={shareAnalytics}
         options={{
-          disableTwitter: client !== "browser",
+          disableTwitter: false, // Always allow Twitter sharing in browser context
         }}
       />
     </div>

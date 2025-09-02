@@ -5,7 +5,7 @@ export default async function PublicProfilePage({
 }: {
   params: { identifier: string };
 }) {
-  // Always redirect to stats tab by default
+  // Always redirect to badges tab by default
   // Layout already handles user resolution and canonical redirects
-  redirect(`/${params.identifier}/stats`);
+  redirect(`/${params.identifier}/badges`);
 }

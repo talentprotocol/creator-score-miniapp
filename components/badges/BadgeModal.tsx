@@ -73,6 +73,19 @@ export function BadgeModal({
   // Get MiniKit context for client detection
   const { context } = useMiniKit();
 
+  // Simple fetch for fname from talent-user API (same as PayItForwardSection)
+  const [fname, setFname] = useState<string | null>(null);
+  useEffect(() => {
+    if (!talentUUID) {
+      setFname(null);
+      return;
+    }
+    fetch(`/api/talent-user?id=${talentUUID}`)
+      .then((response) => response.json())
+      .then((data) => setFname(data?.fname || null))
+      .catch(() => setFname(null));
+  }, [talentUUID]);
+
   // Reset image error when badge changes
   useEffect(() => {
     setImageError(false);
@@ -395,9 +408,12 @@ export function BadgeModal({
   let shareContent, shareContext, shareAnalytics;
 
   if (canShare && talentUUID && handle) {
+    // Use resolved handle: fname first, then fallback to handle prop, then talentUUID
+    const resolvedHandle = fname || handle || talentUUID || "creator";
+
     shareContext = {
       talentUUID,
-      handle,
+      handle: resolvedHandle,
       appClient: client,
     };
 

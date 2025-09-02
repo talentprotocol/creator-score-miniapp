@@ -41,7 +41,7 @@ import {
 // Separate component that uses search params
 function SettingsContent() {
   const router = useRouter();
-  const { handleLogout, authenticated } = usePrivyAuth({});
+  const { handleLogout, authenticated, ready: privyReady } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const searchParams = useSearchParams();
@@ -71,12 +71,13 @@ function SettingsContent() {
   }, [humanityCredentials]);
 
   // Redirect unauthenticated users to leaderboard (following Badges page pattern)
+  // Only redirect if Privy is ready AND we're not loading AND we have no talentUuid
   useEffect(() => {
-    if (!loadingUserResolution && !talentUuid) {
+    if (privyReady && !loadingUserResolution && !talentUuid) {
       router.push("/leaderboard");
       return;
     }
-  }, [loadingUserResolution, talentUuid, router]);
+  }, [privyReady, loadingUserResolution, talentUuid, router]);
 
   // Show loading while resolving user
   if (loadingUserResolution) {
