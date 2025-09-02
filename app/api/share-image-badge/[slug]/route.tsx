@@ -11,6 +11,7 @@ export async function GET(
     const talentUUID = searchParams.get("talentUUID");
     const level = searchParams.get("level");
     const title = searchParams.get("title");
+    const levelLabel = searchParams.get("levelLabel"); // Get levelLabel for earnings display
 
     // Debug logging
     console.log("[Badge Share Image] Request params:", {
@@ -18,17 +19,22 @@ export async function GET(
       talentUUID,
       level,
       title,
+      levelLabel,
     });
 
     // Validate required parameters
-    if (!talentUUID || !level || !title) {
+    if (!talentUUID || !level || !title || !levelLabel) {
       console.error("[Badge Share Image] Missing parameters:", {
         talentUUID,
         level,
         title,
+        levelLabel,
       });
       return NextResponse.json(
-        { error: "Missing required parameters: talentUUID, level, title" },
+        {
+          error:
+            "Missing required parameters: talentUUID, level, title, levelLabel",
+        },
         { status: 400 },
       );
     }
@@ -133,7 +139,7 @@ export async function GET(
                 textAlign: "center",
               }}
             >
-              Level {badgeLevel}
+              {levelLabel} • Level {badgeLevel}
             </div>
           )}
         </div>
