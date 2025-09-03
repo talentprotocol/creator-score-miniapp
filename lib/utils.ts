@@ -575,6 +575,18 @@ export function msToSeconds(ms: number): number {
   return Math.floor(ms / 1000);
 }
 
+// Cache duration constants
+export const CACHE_DURATIONS = {
+  PROFILE_DATA: 0, // 5 minutes
+  SOCIAL_ACCOUNTS: 60 * 60 * 1000, // 1 hour
+  POSTS_DATA: 30 * 60 * 1000, // 30 minutes
+  CREDENTIALS_DATA: 30 * 60 * 1000, // 30 minutes
+  SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
+  EXPENSIVE_COMPUTATION: 30 * 60 * 1000, // 30 minutes for expensive computations
+  ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours
+  LEADERBOARD_DATA: 5 * 60 * 1000, // 5 minutes for leaderboard data
+} as const;
+
 export { resolveTalentUser } from "./user-resolver";
 
 /**

@@ -47,19 +47,17 @@ async function getConnectedAccountsForTalentId(
  * CLIENT-SIDE ONLY: Get user settings via API routes
  */
 async function getUserSettings(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _talentId: string | number,
+  talentId: string | number,
 ): Promise<UserSettings> {
   try {
-    // TODO: Implement actual API call to get user settings
-    // For now, return placeholder data
-    return {
-      email: null, // Will be fetched from Talent Protocol database
-      notifications: {
-        farcaster: true, // Default enabled
-        email: false, // Default disabled until email functionality is ready
-      },
-    };
+    const response = await fetch(`/api/user-settings?uuid=${talentId}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data: UserSettings = await response.json();
+    return data;
   } catch (error) {
     console.error(
       "[useConnectedAccounts] Error fetching user settings:",
@@ -208,6 +206,38 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
       return;
     }
 
+    const accountsCacheKey = `${CACHE_KEYS.CONNECTED_ACCOUNTS}_${talentUUID}`;
+    const settingsCacheKey = `${CACHE_KEYS.USER_SETTINGS}_${talentUUID}`;
+    const humanityCacheKey = `${CACHE_KEYS.HUMANITY_CREDENTIALS}_${talentUUID}`;
+
+    // Check cache first
+    const authJustIssued =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("tpAuthJustIssued") === "1";
+    const cachedAccounts = getCachedData<GroupedConnectedAccounts>(
+      accountsCacheKey,
+      CACHE_DURATIONS.PROFILE_DATA,
+    );
+    const cachedSettings = authJustIssued
+      ? null
+      : getCachedData<UserSettings>(
+          settingsCacheKey,
+          CACHE_DURATIONS.PROFILE_DATA,
+        );
+    const cachedHumanity = getCachedData<HumanityCredential[]>(
+      humanityCacheKey,
+      CACHE_DURATIONS.PROFILE_DATA,
+    );
+
+    if (cachedAccounts && cachedSettings && cachedHumanity) {
+      setAccounts(cachedAccounts);
+      setSettings(cachedSettings);
+      setHumanityCredentials(cachedHumanity);
+      setError(undefined);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(undefined);
 
@@ -232,6 +262,19 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
       setAccounts(accountsData);
       setSettings(settingsData);
       setHumanityCredentials(humanityData);
+
+      // Cache the results
+      setCachedData(accountsCacheKey, accountsData);
+      setCachedData(settingsCacheKey, settingsData);
+      setCachedData(humanityCacheKey, humanityData);
+
+      // If auth token was just issued, clear the flag and ensure old settings cache is dropped
+      if (authJustIssued && typeof window !== "undefined") {
+        sessionStorage.removeItem("tpAuthJustIssued");
+        // Remove any stale settings cache that may have been persisted elsewhere
+        localStorage.removeItem(settingsCacheKey);
+        localStorage.removeItem(`cache:${settingsCacheKey}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { usePostHog } from "posthog-js/react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -44,6 +45,7 @@ function SettingsContent() {
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const searchParams = useSearchParams();
+  const { token: tpToken, loading: tpLoading, stage: tpStage, ensureTalentAuthToken } = useTalentAuthToken();
 
   // Talent swap state
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
@@ -63,6 +65,7 @@ function SettingsContent() {
     loading,
     error,
     performAction,
+    refetch,
   } = useConnectedAccounts(talentUuid || undefined);
 
   // Check if any humanity credentials are verified (must be before early returns)
@@ -78,6 +81,60 @@ function SettingsContent() {
       setShowAuthModal(true);
     }
   }, [loadingUserResolution, talentUuid]);
+
+  // Ensure token on mount for authenticated users
+  useEffect(() => {
+    if (!authenticated) return;
+    void ensureTalentAuthToken();
+  }, [authenticated, ensureTalentAuthToken]);
+
+  // After token is available, refetch settings to get email (requires auth)
+  const lastRefreshedTokenRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!authenticated) return;
+    if (!tpToken) return;
+    if (lastRefreshedTokenRef.current === tpToken) return;
+    lastRefreshedTokenRef.current = tpToken;
+    void refetch();
+  }, [authenticated, tpToken, refetch]);
+
+  // Block settings until we have a Talent Protocol auth token
+  if (authenticated && (tpLoading || !tpToken)) {
+    return (
+      <PageContainer>
+        <Section variant="content">
+          <div className="space-y-3">
+            <h1 className="text-lg font-semibold">Sign to continue</h1>
+            <p className="text-sm text-muted-foreground">
+              {tpStage === "nonce" && "Preparing secure sign-in..."}
+              {tpStage === "sign" && "Waiting for wallet signature..."}
+              {tpStage === "exchange" && "Signing complete. Finalizing authentication..."}
+              {(tpStage === "idle" || !tpStage) &&
+                "Waiting for wallet signature before accessing your settings."}
+            </p>
+            <div className="mt-2">
+              <ButtonFullWidth
+                variant="muted"
+                icon={<Loader2 className="h-4 w-4" />}
+                align="left"
+                onClick={() => void ensureTalentAuthToken()}
+                showRightIcon={false}
+                disabled={tpLoading}
+              >
+                <span className="font-medium">
+                  {tpLoading
+                    ? tpStage === "exchange"
+                      ? "Finalizing..."
+                      : "Awaiting Signature..."
+                    : "Sign to Continue"}
+                </span>
+              </ButtonFullWidth>
+            </div>
+          </div>
+        </Section>
+      </PageContainer>
+    );
+  }
 
   // Show loading while resolving user
   if (loadingUserResolution) {

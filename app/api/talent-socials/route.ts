@@ -16,5 +16,5 @@ export async function GET(req: NextRequest) {
 
   const params = extractTalentProtocolParams(searchParams);
 
-  return client.getPosts(params);
+  return client.getSocials(params);
 }
