@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
-import { talentApiClient } from "@/lib/talent-api-client";
+import { TalentApiClient } from "@/lib/talent-api-client";
 import { extractTalentProtocolParams } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
+  const client = new TalentApiClient({ userAuthToken });
 
   // Handle uuid parameter by mapping it to talent_protocol_id
   const uuid = searchParams.get("uuid");
@@ -19,7 +21,7 @@ export async function GET(req: NextRequest) {
     params.scorer_slug = "creator_score";
   }
 
-  return talentApiClient.getScore(params);
+  return client.getScore(params);
 }
 
 // Keep POST endpoint for backward compatibility
@@ -33,6 +35,7 @@ export async function POST(req: NextRequest) {
     scorer_slug,
     account_source,
   };
-
-  return talentApiClient.getScore(params);
+  const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
+  const client = new TalentApiClient({ userAuthToken });
+  return client.getScore(params);
 }

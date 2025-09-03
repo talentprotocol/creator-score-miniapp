@@ -20,13 +20,16 @@ const TALENT_API_BASE = "https://api.talentprotocol.com";
 
 export interface TalentApiClientOptions {
   apiKey?: string;
+  userAuthToken?: string;
 }
 
 export class TalentApiClient {
   private apiKey: string;
+  private userAuthToken?: string;
 
   constructor(options: TalentApiClientOptions = {}) {
     this.apiKey = options.apiKey || process.env.TALENT_API_KEY || "";
+    this.userAuthToken = options.userAuthToken;
   }
 
   private validateApiKey(): string | null {
@@ -65,6 +68,15 @@ export class TalentApiClient {
     return urlParams;
   }
 
+  private createHeaders(): Record<string, string> {
+    const headers = createTalentApiHeaders(this.apiKey);
+    if (this.userAuthToken) {
+      // Pass through user auth token when available
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${this.userAuthToken}`;
+    }
+    return headers;
+  }
+
   private async makeRequest(
     endpoint: string,
     params: URLSearchParams,
@@ -72,7 +84,7 @@ export class TalentApiClient {
   ): Promise<any> {
     const requestTimer = dtimer("TalentAPI", `makeRequest_${endpoint}`);
     const url = buildApiUrl(`${TALENT_API_BASE}${endpoint}`, params);
-    const headers = createTalentApiHeaders(this.apiKey);
+    const headers = this.createHeaders();
 
     dlog("TalentAPI", "makeRequest_start", {
       endpoint,
@@ -84,10 +96,14 @@ export class TalentApiClient {
     try {
       const response = await fetch(url, {
         headers,
-        next: {
-          revalidate: 60,
-          tags: [url],
-        },
+        ...(this.userAuthToken
+          ? { cache: "no-store" }
+          : {
+              next: {
+                revalidate: 60,
+                tags: [url],
+              },
+            }),
       });
 
       const responseTimer = dtimer("TalentAPI", `response_${endpoint}`);
@@ -181,14 +197,17 @@ export class TalentApiClient {
     try {
       const urlParams = this.buildRequestParams(params);
       const url = buildApiUrl(`${TALENT_API_BASE}/score`, urlParams);
-      const headers = createTalentApiHeaders(this.apiKey);
+      const headers = this.createHeaders();
 
       dlog("TalentAPI", "getScore_request", {
         url: url.replace(process.env.TALENT_API_KEY || "", "[REDACTED]"),
         url_params: Object.fromEntries(urlParams.entries()),
       });
 
-      const response = await fetch(url, { headers });
+      const response = await fetch(url, {
+        headers,
+        ...(this.userAuthToken ? { cache: "no-store" } : {}),
+      });
 
       dlog("TalentAPI", "getScore_response", {
         status: response.status,
@@ -823,3 +842,83 @@ export class TalentApiClient {
 
 // Export a default instance
 export const talentApiClient = new TalentApiClient();
+
+// Auth helpers
+export async function createTalentAuthNonce(
+  address: string,
+  chainId?: number,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/auth/create_nonce`, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ address, chain_id: chainId }),
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(data.error || `HTTP ${resp.status}: ${resp.statusText}`);
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "create_nonce",
+      address,
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create auth nonce");
+  }
+}
+
+export async function createTalentAuthToken(params: {
+  address: string;
+  signature: string;
+  chain_id: number;
+}): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/auth/create_auth_token`, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(data.error || `HTTP ${resp.status}: ${resp.statusText}`);
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "create_auth_token",
+      params.address,
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create auth token");
+  }
+}
