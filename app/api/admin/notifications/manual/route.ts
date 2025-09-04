@@ -12,7 +12,7 @@ interface NeynarToken {
   updated_at?: string;
 }
 
-import { validateAdminTokenWithResponse } from "@/lib/admin-auth";
+import { validateAdminAuth } from "@/lib/admin-auth";
 
 type RequestBody = {
   title: string;
@@ -24,27 +24,13 @@ type RequestBody = {
   testingMode?: boolean; // when true, restrict to only FID 8446
 };
 
-function unauthorized(message = "Unauthorized") {
-  return NextResponse.json({ error: message }, { status: 401 });
-}
-
 function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
 }
 
 export async function POST(request: NextRequest) {
-  const authHeader =
-    request.headers.get("authorization") ||
-    request.headers.get("Authorization");
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return unauthorized("Missing Bearer token");
-  }
-
-  const token = authHeader.slice("Bearer ".length).trim();
-
-  // Validate admin token using environment variables
-  const authError = validateAdminTokenWithResponse(token);
+  // Validate admin authentication
+  const authError = await validateAdminAuth(request);
   if (authError) {
     return authError;
   }

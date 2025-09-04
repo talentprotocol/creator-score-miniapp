@@ -38,20 +38,29 @@ const AdminNotificationsPage: React.FC = () => {
   const [fetchingUsers, setFetchingUsers] = useState<boolean>(false);
   const [history, setHistory] = useState<NotificationHistory[]>([]);
   const [fetchingHistory, setFetchingHistory] = useState<boolean>(false);
+  const [apiToken, setApiToken] = useState<string>("");
 
   // Check if user is authenticated via either Farcaster or Privy
   const isAuthenticated = user || talentId;
 
-  // Remove the useEffect and persistToken function since they're no longer needed
+  // Get the appropriate auth token (API token takes priority, then UUID)
+  const getAuthToken = () => {
+    if (apiToken.trim()) {
+      return apiToken.trim();
+    }
+    return user?.fid || talentId;
+  };
+
+  // Check if we have any form of authentication
+  const hasAuth = apiToken.trim() || isAuthenticated;
 
   async function fetchNotificationUsers() {
     setFetchingUsers(true);
     try {
-      // Use the user's actual FID or talentId for authentication
-      const authToken = user?.fid || talentId;
+      const authToken = getAuthToken();
       if (!authToken) {
         setResult(
-          "❌ Not authenticated - please connect your wallet or Farcaster account",
+          "❌ Not authenticated - please enter API token or connect your wallet/Farcaster account",
         );
         return;
       }
@@ -79,11 +88,10 @@ const AdminNotificationsPage: React.FC = () => {
   async function fetchNotificationHistory() {
     setFetchingHistory(true);
     try {
-      // Use the user's actual FID or talentId for authentication
-      const authToken = user?.fid || talentId;
+      const authToken = getAuthToken();
       if (!authToken) {
         setResult(
-          "❌ Not authenticated - please connect your wallet or Farcaster account",
+          "❌ Not authenticated - please enter API token or connect your wallet/Farcaster account",
         );
         return;
       }
@@ -109,11 +117,10 @@ const AdminNotificationsPage: React.FC = () => {
     setLoading(true);
     setResult("");
     try {
-      // Use the user's actual FID or talentId for authentication
-      const authToken = user?.fid || talentId;
+      const authToken = getAuthToken();
       if (!authToken) {
         setResult(
-          "❌ Not authenticated - please connect your wallet or Farcaster account",
+          "❌ Not authenticated - please enter API token or connect your wallet/Farcaster account",
         );
         setLoading(false);
         return;
@@ -167,29 +174,56 @@ const AdminNotificationsPage: React.FC = () => {
       <div className="max-w-xl mx-auto w-full p-4 space-y-4">
         <h1 className="text-lg font-semibold">Manual Notifications</h1>
 
-        {/* Admin Status Section */}
+        {/* Admin Authentication Section */}
         <div className="space-y-2 p-3 border rounded-md bg-muted/50">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Admin Access</span>
-            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-              ✅ Active
+            <span className="text-sm font-medium">Admin Authentication</span>
+            <span
+              className={`text-xs px-2 py-1 rounded-full ${
+                hasAuth
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {hasAuth ? "✅ Authenticated" : "❌ Not Authenticated"}
             </span>
           </div>
+
+          {/* API Token Input */}
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground">
+              Admin API Token (for server-to-server auth)
+            </label>
+            <Input
+              type="password"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              placeholder="Enter your admin API token"
+              className="text-sm"
+            />
+            <div className="text-xs text-muted-foreground">
+              Leave empty to use UUID-based authentication
+            </div>
+          </div>
+
+          {/* Authentication Status */}
           <div className="text-xs text-muted-foreground">
-            {isAuthenticated ? (
+            {apiToken.trim() ? (
+              <span className="text-green-600">
+                ✅ Using API token authentication
+              </span>
+            ) : isAuthenticated ? (
               <>
-                Authenticated as FID: {user?.fid || talentId}
+                Authenticated as: {user?.fid || talentId}
                 <br />
-                <span className="text-green-600">
-                  ✅ Using UUID-based admin verification
+                <span className="text-blue-600">
+                  🔐 Using UUID-based admin verification
                 </span>
               </>
             ) : (
-              <>
-                <span className="text-orange-600">
-                  ⚠️ No Farcaster context - using UUID-based auth
-                </span>
-              </>
+              <span className="text-orange-600">
+                ⚠️ No authentication method available
+              </span>
             )}
           </div>
         </div>
@@ -204,7 +238,7 @@ const AdminNotificationsPage: React.FC = () => {
               size="sm"
               variant="ghost"
               onClick={fetchNotificationUsers}
-              disabled={fetchingUsers}
+              disabled={fetchingUsers || !hasAuth}
             >
               {fetchingUsers ? "Fetching..." : "Fetch Count"}
             </Button>
@@ -280,7 +314,7 @@ const AdminNotificationsPage: React.FC = () => {
           />
         </div>
         <div className="flex gap-2">
-          <Button disabled={loading} onClick={callApi}>
+          <Button disabled={loading || !hasAuth} onClick={callApi}>
             {loading ? "Running..." : dryRun ? "Dry run" : "Send"}
           </Button>
         </div>
@@ -317,7 +351,7 @@ const AdminNotificationsPage: React.FC = () => {
               size="sm"
               variant="ghost"
               onClick={fetchNotificationHistory}
-              disabled={fetchingHistory}
+              disabled={fetchingHistory || !hasAuth}
             >
               {fetchingHistory ? "Loading..." : "Refresh History"}
             </Button>

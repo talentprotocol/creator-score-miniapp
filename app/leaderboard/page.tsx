@@ -767,7 +767,12 @@ function LeaderboardContent() {
           userRewards={
             userTop200Entry?.boostedReward || userTop200Entry?.baseReward
           }
-          isTop200={!!userTop200Entry}
+          isTop200={
+            !!userTop200Entry &&
+            userTop200Entry.rank !== undefined &&
+            userTop200Entry.rank > 0 &&
+            userTop200Entry.rank <= 200
+          }
         />
       </Section>
     </PageContainer>

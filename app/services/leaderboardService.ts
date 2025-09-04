@@ -1,9 +1,10 @@
 import type { LeaderboardEntry } from "@/lib/types";
-import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
+import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
 import { supabase } from "@/lib/supabase-client";
+import { RewardsStorageService } from "./rewardsStorageService";
 
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
@@ -190,6 +191,29 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     if (b.rank === -1) return -1;
     return a.rank - b.rank;
   });
+
+  // Step 9: Update rewards storage for opted-out users
+  try {
+    const optedOutRewards = sorted
+      .filter((entry) => entry.isOptedOut && entry.boostedReward > 0)
+      .map((entry) => ({
+        talentUuid: entry.talent_protocol_id,
+        amount: entry.boostedReward,
+      }));
+
+    if (optedOutRewards.length > 0) {
+      console.log(
+        `[LeaderboardService] Updating rewards storage for ${optedOutRewards.length} opted-out users`,
+      );
+      await RewardsStorageService.batchUpdateOptedOutRewards(optedOutRewards);
+    }
+  } catch (error) {
+    console.error(
+      "[LeaderboardService] Error updating rewards storage:",
+      error,
+    );
+    // Don't fail the entire request if rewards storage update fails
+  }
 
   return {
     entries: sorted,

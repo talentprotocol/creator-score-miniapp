@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { CACHE_KEYS } from "@/lib/cache-keys";
+import { validateAdminAuth } from "@/lib/admin-auth";
 
 /**
  * POST /api/admin/invalidate-leaderboard-cache
@@ -10,13 +11,10 @@ import { CACHE_KEYS } from "@/lib/cache-keys";
  */
 export async function POST(req: NextRequest) {
   try {
-    // Check for admin authorization (you can add your own auth logic here)
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      );
+    // Validate admin authentication
+    const authError = await validateAdminAuth(req);
+    if (authError) {
+      return authError;
     }
 
     // Invalidate leaderboard-related caches (user preferences are no longer cached)

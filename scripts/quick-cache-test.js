@@ -24,10 +24,10 @@ async function testCacheInvalidation() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          talent_uuid: "550e8400-e29b-41d4-a716-446655440002",
+          talent_uuid: "1787b73a-1322-4a90-897e-689c57d38a6e",
           decision: "opted_out",
           confirm_decision: true,
-          primary_wallet_address: "0x1234567890123456789012345678901234567890",
+          primary_wallet_address: "0xe73f9c181b571cac2bf3173634d04a9921b7ffcf",
         }),
       },
     );
@@ -51,7 +51,7 @@ async function testCacheInvalidation() {
     console.log("\n4️⃣ Checking for test user in leaderboard...");
     const testUser = freshData.entries?.find(
       (entry) =>
-        entry.talent_protocol_id === "550e8400-e29b-41d4-a716-446655440002",
+        entry.talent_protocol_id === "1787b73a-1322-4a90-897e-689c57d38a6e",
     );
 
     if (testUser) {
