@@ -4,7 +4,6 @@ import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
 import { supabase } from "@/lib/supabase-client";
-import { RewardsStorageService } from "./rewardsStorageService";
 
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
@@ -250,31 +249,6 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
         console.log(
           `[ScoreLeaderboardService] Updated ${matchedCount} entries with snapshot data, ${unmatchedCount} unmatched`,
         );
-
-        // Update rewards storage for opted-out users
-        try {
-          const optedOutRewards = mapped
-            .filter((entry) => entry.isOptedOut && entry.boostedReward > 0)
-            .map((entry) => ({
-              talentUuid: entry.talent_protocol_id,
-              amount: entry.boostedReward,
-            }));
-
-          if (optedOutRewards.length > 0) {
-            console.log(
-              `[ScoreLeaderboardService] Updating rewards storage for ${optedOutRewards.length} opted-out users`,
-            );
-            await RewardsStorageService.batchUpdateOptedOutRewards(
-              optedOutRewards,
-            );
-          }
-        } catch (error) {
-          console.error(
-            "[ScoreLeaderboardService] Error updating rewards storage:",
-            error,
-          );
-          // Don't fail the entire request if rewards storage update fails
-        }
       }
     } else {
       console.log("[ScoreLeaderboardService] No snapshot exists, showing N/A");
