@@ -276,7 +276,7 @@ function RewardsDecisionContent({
                 weight="medium"
                 className="text-brand-purple"
               >
-                You ranked in the top 200 and earned USDC rewards!
+                You didn&apos;t qualify for rewards this time. Thanks for paying it forward!
               </Typography>
             )}
           </div>
