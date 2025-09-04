@@ -81,12 +81,6 @@ async function performAccountAction(
   action: AccountManagementAction,
 ): Promise<{ success: boolean; message: string }> {
   try {
-    // TODO: Implement actual API calls for account management
-    console.log("Performing account action:", action);
-
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     switch (action.action) {
       case "connect":
         return {
@@ -94,20 +88,57 @@ async function performAccountAction(
           message: `${action.account_type} account connection initiated`,
         };
       case "disconnect":
-        return {
-          success: true,
-          message: `${action.account_type} account disconnected`,
-        };
+        try {
+          if (
+            action.account_type === "github" ||
+            action.account_type === "twitter" ||
+            action.account_type === "linkedin"
+          ) {
+            const res = await fetch(`/api/connected-accounts`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ platform: action.account_type }),
+            });
+            if (!res.ok) {
+              const errText = await res.text();
+              throw new Error(errText || `HTTP ${res.status}`);
+            }
+          }
+          return {
+            success: true,
+            message: `${action.account_type} account disconnected`,
+          };
+        } catch (e) {
+          return {
+            success: false,
+            message:
+              e instanceof Error ? e.message : "Failed to disconnect account",
+          };
+        }
       case "set_primary":
         return {
           success: true,
           message: "Primary wallet updated",
         };
       case "update_email":
-        return {
-          success: true,
-          message: "Email updated successfully",
-        };
+        try {
+          const res = await fetch(`/api/user-settings`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: String(action.data?.email || "") }),
+          });
+          if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err || `HTTP ${res.status}`);
+          }
+          return { success: true, message: "Email updated successfully. Click on the link in the email to verify your email." };
+        } catch (e) {
+          return {
+            success: false,
+            message:
+              e instanceof Error ? e.message : "Failed to update email",
+          };
+        }
       case "delete_account":
         return {
           success: true,
@@ -294,7 +325,19 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
       const result = await performAccountAction(talentUUID, action);
 
       if (result.success) {
-        await fetchData();
+        // For email updates, avoid full page refetch; update local state and cache only
+        if (action.action === "update_email") {
+          const settingsCacheKey = `${CACHE_KEYS.USER_SETTINGS}_${talentUUID}`;
+          const updated: UserSettings = {
+            email: String(action.data?.email || ""),
+            notifications: settings?.notifications || { farcaster: false, email: false },
+          };
+
+          setSettings(updated);
+          setCachedData(settingsCacheKey, updated);
+        } else {
+          await fetchData();
+        }
       }
 
       return result;

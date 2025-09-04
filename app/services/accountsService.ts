@@ -148,20 +148,13 @@ async function getAccountsForTalentIdInternal(
 
     // Primary wallet info will be included in the response
 
-    // Process social accounts - use socials endpoint data directly (has follower counts)
-    const socialAccounts: SocialAccount[] = socialsData?.socials
-      ? socialsData.socials
-          .filter((s) => {
-            const src = s.source;
-            // Only exclude linkedin and duplicate ethereum accounts
-            return src !== "linkedin" && src !== "ethereum";
-          })
-          .map(mapSocialAccount)
-      : [];
-
-    // Process wallet accounts (from walletAccountsService logic)
-    const walletAccounts = accountsData.accounts.filter(
-      (account: WalletAccount) => account.source === "wallet",
+    // Group accounts by type for settings management
+    const socialAccounts = accountsData.accounts.filter(
+      (account: ConnectedAccount) =>
+        account.source === "github" ||
+        account.source === "twitter" ||
+        account.source === "linkedin" ||
+        account.source === "x_twitter",
     );
 
     const farcasterVerified = walletAccounts.filter(
@@ -204,7 +197,7 @@ export function getAccountsForTalentId(talentId: string | number) {
         `${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentId}`,
         CACHE_KEYS.CONNECTED_ACCOUNTS,
       ],
-      revalidate: CACHE_DURATION_5_MINUTES,
+      revalidate: 1, // Align with client-side cache duration
     },
   );
 }
