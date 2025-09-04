@@ -77,6 +77,7 @@ export interface GroupedConnectedAccounts {
 // Settings specific types
 export interface UserSettings {
   email: string | null;
+  emailConfirmed?: boolean | null;
   notifications: {
     farcaster: boolean;
     email: boolean;

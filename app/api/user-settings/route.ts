@@ -63,4 +63,29 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  try {
+    const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
+    const client = new TalentApiClient({ userAuthToken });
+
+    const body = await req.json();
+    const { email } = body || {};
+    if (!email || typeof email !== "string") {
+      return NextResponse.json(
+        { error: "Missing or invalid email" },
+        { status: 400 },
+      );
+    }
+
+    const resp = await client.updateUser({ email });
+    return resp;
+  } catch (error) {
+    console.error("Error in user-settings API route:", error);
+    return NextResponse.json(
+      { error: "Failed to update user settings" },
+      { status: 500 },
+    );
+  }
+}
+
 

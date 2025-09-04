@@ -35,9 +35,6 @@ const nextConfig = {
       "creatorscore.app",
     ],
   },
-  experimental: {
-    esmExternals: false,
-  },
   transpilePackages: ["@coinbase/wallet-sdk", "@coinbase/onchainkit"],
 
   async rewrites() {

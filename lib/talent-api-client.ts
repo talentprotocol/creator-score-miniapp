@@ -600,6 +600,53 @@ export class TalentApiClient {
     }
   }
 
+  /**
+   * Update current user (requires end-user Authorization token)
+   * Supported fields: email
+   */
+  async updateUser(data: { email?: string }): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/users`;
+      const resp = await fetch(url, {
+        method: "PUT",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const respData = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(
+          respData.error || `HTTP ${resp.status}: ${resp.statusText}`,
+        );
+      }
+
+      return NextResponse.json(respData, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "updateUser",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to update user");
+    }
+  }
+
   async getAccounts(params: TalentProtocolParams): Promise<NextResponse> {
     const errorMessage = validateTalentProtocolParams(params);
     if (errorMessage) {
