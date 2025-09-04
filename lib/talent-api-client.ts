@@ -682,6 +682,98 @@ export class TalentApiClient {
   }
 
   /**
+   * Connect a new wallet account to the current user (requires end-user Authorization token)
+   */
+  async connectWalletAccount(params: {
+    address: string;
+    signature: string;
+    chain_id: number;
+  }): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/accounts`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        // Pass through upstream status and error details for better UX
+        return NextResponse.json(data, { status: resp.status });
+      }
+
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "connectWalletAccount",
+        params.address,
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to connect wallet account");
+    }
+  }
+
+  /**
+   * Create a user-specific nonce for connecting a wallet (requires end-user Authorization token)
+   */
+  async createUserNonce(): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/user_nonces`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "createUserNonce",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to create user nonce");
+    }
+  }
+
+  /**
    * Get humanity credentials for a talent protocol user
    */
   async getHumanityCredentials(
@@ -1020,5 +1112,48 @@ export async function createTalentAuthToken(params: {
       error instanceof Error ? error.message : String(error),
     );
     return createServerErrorResponse("Failed to create auth token");
+  }
+}
+
+// User nonce helper (requires end-user Authorization token)
+export async function createUserNonceWithAuth(
+  userAuthToken: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/user_nonces`, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      return NextResponse.json(data, { status: resp.status });
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "create_user_nonce",
+      "self",
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create user nonce");
   }
 }

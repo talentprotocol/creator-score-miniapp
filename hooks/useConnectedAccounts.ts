@@ -7,6 +7,7 @@ import type {
 } from "@/lib/types";
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
+import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 
 /**
  * CLIENT-SIDE ONLY: Fetches connected accounts via API routes (follows coding principles)
@@ -219,6 +220,7 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
   >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
+  const { token: tpToken, ensureTalentAuthToken } = useTalentAuthToken();
 
   const fetchData = async () => {
     if (!talentUUID) {
@@ -302,6 +304,20 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
     }
   };
 
+  // Lightweight refresh: only refresh connected accounts without toggling global loading
+  const refetchAccountsOnly = async () => {
+    if (!talentUUID) return;
+    try {
+      const accountsData = await getConnectedAccountsForTalentId(talentUUID);
+      setAccounts(accountsData);
+      const accountsCacheKey = `${CACHE_KEYS.CONNECTED_ACCOUNTS}_${talentUUID}`;
+      setCachedData(accountsCacheKey, accountsData);
+    } catch (err) {
+      // Keep prior accounts if refresh fails; surface in console for debugging
+      console.error("[useConnectedAccounts] Failed to refresh accounts only:", err);
+    }
+  };
+
   // Account management actions
   const performAction = async (
     action: AccountManagementAction,
@@ -311,6 +327,104 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
     }
 
     try {
+      // Handle wallet connect inline to leverage wallet provider & auth token
+      if (action.action === "connect" && action.account_type === "wallet") {
+        try {
+          // Ensure we have a user auth token for write request
+          let token = tpToken;
+          if (!token) {
+            token = (await ensureTalentAuthToken()) || null;
+          }
+          if (!token) {
+            return { success: false, message: "Missing Talent auth token" };
+          }
+
+          // Request wallet account and chain
+          const eth = (window as any)?.ethereum;
+          if (!eth?.request) {
+            return { success: false, message: "No Ethereum provider found" };
+          }
+
+          // Prompt user to grant permissions (opens account selection UI on most wallets)
+          try {
+            await eth.request({
+              method: "wallet_requestPermissions",
+              params: [{ eth_accounts: {} }],
+            });
+          } catch {}
+
+          const accountsReq: string[] = await eth.request({ method: "eth_requestAccounts" });
+
+          // Prefer a newly connected address if possible
+          const existing = new Set(
+            (accounts?.wallet || []).map((w) => w.identifier.toLowerCase()),
+          );
+          const picked = accountsReq.find(
+            (a) => !existing.has(String(a).toLowerCase()),
+          ) || accountsReq?.[0];
+          const address = picked;
+          if (!address) {
+            return { success: false, message: "No wallet address selected" };
+          }
+          const chainHex: string = await eth.request({ method: "eth_chainId" });
+          const chain_id = parseInt(chainHex, 16) || 1;
+
+          // Get user-specific nonce from authenticated endpoint
+          const nonceResp = await fetch("/api/talent-auth/create-user-nonce", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-talent-auth-token": token,
+            },
+            body: JSON.stringify({}),
+          });
+          if (!nonceResp.ok) {
+            const t = await nonceResp.text();
+            throw new Error(t || `Failed to get nonce (${nonceResp.status})`);
+          }
+          const nonceData = await nonceResp.json();
+          const nonce: string | undefined = nonceData?.nonce;
+          if (!nonce) throw new Error("Missing nonce");
+
+          const message = `Connect with Talent Protocol\nnonce: ${nonce}`;
+          const signature: string = await eth.request({
+            method: "personal_sign",
+            params: [message, address],
+          });
+          if (!signature) throw new Error("Signing cancelled");
+
+          // Call our API to connect wallet (passes user token server-side)
+          const connectResp = await fetch(`/api/connected-accounts`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-talent-auth-token": token,
+            },
+            body: JSON.stringify({ address, signature, chain_id }),
+          });
+          if (!connectResp.ok) {
+            let msg = `HTTP ${connectResp.status}`;
+            try {
+              const errJson = await connectResp.json();
+              if (errJson?.error) msg = String(errJson.error);
+            } catch {
+              const errText = await connectResp.text();
+              if (errText) msg = errText;
+            }
+            throw new Error(msg);
+          }
+
+          // Refresh only accounts so UI doesn't show global loading and can display success notice
+          await refetchAccountsOnly();
+          return { success: true, message: "Wallet connected" };
+        } catch (e) {
+          return {
+            success: false,
+            message: e instanceof Error ? e.message : "Failed to connect wallet",
+          };
+        }
+      }
+
       const result = await performAccountAction(talentUUID, action);
 
       if (result.success) {

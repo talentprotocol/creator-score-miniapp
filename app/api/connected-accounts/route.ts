@@ -61,3 +61,35 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
+    const client = new TalentApiClient({ userAuthToken });
+
+    const body = await req.json();
+    const { address, signature, chain_id } = body || {};
+
+    if (!address || !signature || !chain_id) {
+      return NextResponse.json(
+        { error: "Missing required fields: address, signature, chain_id" },
+        { status: 400 },
+      );
+    }
+
+    const resp = await client.connectWalletAccount({ address, signature, chain_id });
+
+    // Revalidate connected accounts cache best-effort
+    try {
+      revalidateTag(CACHE_KEYS.CONNECTED_ACCOUNTS);
+    } catch {}
+
+    return resp;
+  } catch (error) {
+    console.error("Error in connected-accounts POST route:", error);
+    return NextResponse.json(
+      { error: "Failed to connect wallet account" },
+      { status: 500 },
+    );
+  }
+}
