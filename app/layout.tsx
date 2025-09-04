@@ -5,7 +5,6 @@ import "@coinbase/onchainkit/styles.css";
 import { Providers } from "./providers";
 import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
 // import { HowToEarnModalHandler } from "@/components/common/HowToEarnModalHandler";
 import {
@@ -100,16 +99,12 @@ export default function RootLayout({
         />
         <div className="relative flex flex-col w-full bg-background my-0 md:my-0 md:bg-white md:shadow-none md:rounded-none md:overflow-hidden">
           <Providers>
-            <ErrorBoundary>
-              <Header />
-              <SwipeWrapper className="flex-1 flex flex-col w-full relative overflow-y-auto">
-                <main className="flex-1 flex flex-col w-full relative">
-                  <ErrorBoundary>{children}</ErrorBoundary>
-                </main>
-              </SwipeWrapper>
-              <BottomNav />
-              {/* <HowToEarnModalHandler /> */}
-            </ErrorBoundary>
+            <Header />
+            <SwipeWrapper className="flex-1 flex flex-col w-full relative overflow-y-auto">
+              <main className="flex-1 flex flex-col w-full relative">{children}</main>
+            </SwipeWrapper>
+            <BottomNav />
+            {/* <HowToEarnModalHandler /> */}
           </Providers>
         </div>
       </body>
