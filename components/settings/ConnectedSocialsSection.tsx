@@ -16,6 +16,21 @@ import { Button } from "@/components/ui/button";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
 import type { ConnectedAccount, AccountManagementAction } from "@/lib/types";
 import { usePostHog } from "posthog-js/react";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 
 interface ConnectedSocialsSectionProps {
   accounts: ConnectedAccount[];
@@ -36,6 +51,13 @@ const socialPlatforms = [
     name: "GitHub",
     source: "github",
     icon: Github,
+    color: "text-foreground",
+    comingSoon: false,
+  },
+  {
+    name: "LinkedIn",
+    source: "linkedin",
+    icon: Linkedin,
     color: "text-foreground",
     comingSoon: false,
   },
@@ -73,21 +95,22 @@ const socialPlatforms = [
     icon: Heart,
     color: "text-foreground",
     comingSoon: true,
-  },
-  {
-    name: "LinkedIn",
-    source: "linkedin",
-    icon: Linkedin,
-    color: "text-foreground",
-    comingSoon: true,
-  },
+  }
 ];
 
 export function ConnectedSocialsSection({
   accounts,
+  onAction,
 }: ConnectedSocialsSectionProps) {
   const [modalOpen, setModalOpen] = React.useState(false);
   const posthog = usePostHog();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [selected, setSelected] = React.useState<{
+    name: string;
+    source: string;
+  } | null>(null);
 
   const handleConnect = (platform: string) => {
     // Track connect click
@@ -99,14 +122,16 @@ export function ConnectedSocialsSection({
     setModalOpen(true);
   };
 
-  const handleDisconnect = (platform: string) => {
+  const handleDisconnect = async (platform: string) => {
     // Track disconnect click
     posthog?.capture("settings_account_disconnect_clicked", {
       account_type: "social",
       platform,
       is_own_profile: true,
     });
-    setModalOpen(true);
+    const item = socialPlatforms.find((p) => p.source === platform);
+    setSelected({ name: item?.name || platform, source: platform });
+    setConfirmOpen(true);
   };
 
   const getConnectedAccount = (source: string) => {
@@ -169,6 +194,123 @@ export function ConnectedSocialsSection({
         onOpenChange={setModalOpen}
         accountType="social"
       />
+
+      {/* Confirm Disconnect Modal */}
+      {isDesktop ? (
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Disconnect {selected?.name}?</DialogTitle>
+              <DialogDescription>
+                Disconnecting may reduce your Creator Score and remove related
+                benefits. Are you sure you want to proceed?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="destructive"
+                className="w-full"
+                disabled={busy}
+                onClick={async () => {
+                  if (!selected) return;
+                  setBusy(true);
+                  try {
+                    const mapped =
+                      selected.source === "x_twitter"
+                        ? "twitter"
+                        : selected.source;
+                    posthog?.capture("settings_account_disconnect_confirmed", {
+                      account_type: "social",
+                      platform: mapped,
+                      is_own_profile: true,
+                    });
+                    await onAction({
+                      action: "disconnect",
+                      account_type: mapped as AccountManagementAction["account_type"],
+                    });
+                    setConfirmOpen(false);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? "Disconnecting..." : "Disconnect"}
+              </Button>
+              <Button
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                  posthog?.capture("settings_account_disconnect_cancelled", {
+                    account_type: "social",
+                    platform: selected?.source,
+                    is_own_profile: true,
+                  });
+                  setConfirmOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Drawer open={confirmOpen} onOpenChange={setConfirmOpen} modal={true}>
+          <DrawerContent className="max-w-sm mx-auto w-full p-4 rounded-t-2xl">
+            <DrawerHeader>
+              <DrawerTitle>Disconnect {selected?.name}?</DrawerTitle>
+              <DrawerDescription>
+                Disconnecting may reduce your Creator Score and remove related
+                benefits. Are you sure you want to proceed?
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="flex flex-col gap-2 mt-4">
+              <Button
+                variant="destructive"
+                className="w-full"
+                disabled={busy}
+                onClick={async () => {
+                  if (!selected) return;
+                  setBusy(true);
+                  try {
+                    const mapped =
+                      selected.source === "x_twitter"
+                        ? "twitter"
+                        : selected.source;
+                    posthog?.capture("settings_account_disconnect_confirmed", {
+                      account_type: "social",
+                      platform: mapped,
+                      is_own_profile: true,
+                    });
+                    await onAction({
+                      action: "disconnect",
+                      account_type: mapped as AccountManagementAction["account_type"],
+                    });
+                    setConfirmOpen(false);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? "Disconnecting..." : "Disconnect"}
+              </Button>
+              <Button
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                  posthog?.capture("settings_account_disconnect_cancelled", {
+                    account_type: "social",
+                    platform: selected?.source,
+                    is_own_profile: true,
+                  });
+                  setConfirmOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
     </div>
   );
 }

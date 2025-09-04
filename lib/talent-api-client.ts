@@ -726,6 +726,59 @@ export class TalentApiClient {
   }
 
   /**
+   * Disconnect social account (requires end-user Authorization token)
+   */
+  async disconnectAccount(platform: "github" | "twitter" | "linkedin"): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    const endpointMap: Record<string, string> = {
+      github: "/accounts/disconnect_github",
+      twitter: "/accounts/disconnect_twitter",
+      linkedin: "/accounts/disconnect_linkedin",
+    };
+
+    const path = endpointMap[platform];
+    if (!path) {
+      return createBadRequestResponse("Unsupported platform");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}${path}`;
+      const resp = await fetch(url, {
+        method: "PUT",
+        headers: this.createHeaders(),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(
+          data.error || `HTTP ${resp.status}: ${resp.statusText}`,
+        );
+      }
+
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "disconnectAccount",
+        platform,
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to disconnect account");
+    }
+  }
+
+  /**
    * Search for profiles by identity using the Talent Protocol search API
    */
   async searchProfiles(params: {

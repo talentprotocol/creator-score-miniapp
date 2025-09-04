@@ -77,10 +77,33 @@ async function performAccountAction(
           message: `${action.account_type} account connection initiated`,
         };
       case "disconnect":
-        return {
-          success: true,
-          message: `${action.account_type} account disconnected`,
-        };
+        try {
+          if (
+            action.account_type === "github" ||
+            action.account_type === "twitter" ||
+            action.account_type === "linkedin"
+          ) {
+            const res = await fetch(`/api/connected-accounts`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ platform: action.account_type }),
+            });
+            if (!res.ok) {
+              const errText = await res.text();
+              throw new Error(errText || `HTTP ${res.status}`);
+            }
+          }
+          return {
+            success: true,
+            message: `${action.account_type} account disconnected`,
+          };
+        } catch (e) {
+          return {
+            success: false,
+            message:
+              e instanceof Error ? e.message : "Failed to disconnect account",
+          };
+        }
       case "set_primary":
         return {
           success: true,
