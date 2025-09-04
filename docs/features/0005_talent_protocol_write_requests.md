@@ -106,9 +106,11 @@ Request body example:
 
 1. If a logged in user accesses the settings page and there's no talent protocol auth token the user should be prompted to sign the login message and the auth token should be stored. ✅ 
 2. Integrate Talent Protocol PUT /users request to allow a user to update the email. ✅ 
+3. Integrate Talent Protocol Disconnect account requests to allow a user to disconnect accounts. ✅
+4. When a user logins with privy we must ask for the talent protocol auth token and store it. ✅
 
 ## Pending Tasks
-3. Integrate Talent Protocol Disconnect account requests to allow a user to disconnect accounts. ✅
-4. Allow users to connect new wallets using Privy and Talent Protocol POST /accounts endpoint
-5. Allow users to connect twitter, tiktok and instagram using Privy
+
+5. Allow users to connect new wallets using Privy and Talent Protocol POST /accounts endpoint
+6. Allow users to connect twitter, tiktok and instagram using Privy
 

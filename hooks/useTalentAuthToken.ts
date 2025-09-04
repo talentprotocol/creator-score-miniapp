@@ -6,6 +6,9 @@ type EnsureOptions = {
   enabled?: boolean;
 };
 
+// Global in-flight promise to dedupe concurrent ensure calls across components
+let globalEnsurePromise: Promise<string | null> | null = null;
+
 export function useTalentAuthToken(options: EnsureOptions = {}) {
   const { enabled = true } = options;
   const requestingRef = useRef(false);
@@ -51,8 +54,10 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
   const ensureTalentAuthToken = useCallback(async () => {
     if (!enabled) return null;
     if (requestingRef.current) return token;
+    if (globalEnsurePromise) return globalEnsurePromise;
 
-    try {
+    const runner = (async () => {
+      try {
       setLoading(true);
       setError(null);
       setStage("idle");
@@ -62,6 +67,17 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
         setToken(existing);
         setExpiresAt(existingExp);
         return existing;
+      }
+
+      // Cross-component/session guard: avoid multiple parallel prompts
+      if (typeof window !== "undefined") {
+        try {
+          const inProgress = sessionStorage.getItem("tpAuthInProgress");
+          if (inProgress === "1") {
+            return token; // Another prompt is already running
+          }
+          sessionStorage.setItem("tpAuthInProgress", "1");
+        } catch {}
       }
 
       requestingRef.current = true;
@@ -137,13 +153,26 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
         }
       } catch {}
       return newToken;
-    } catch (e) {
+      } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       throw e;
-    } finally {
+      } finally {
       setLoading(false);
       requestingRef.current = false;
       setStage("idle");
+      try {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("tpAuthInProgress");
+        }
+      } catch {}
+      }
+    })();
+
+    globalEnsurePromise = runner;
+    try {
+      return await runner;
+    } finally {
+      globalEnsurePromise = null;
     }
   }, [enabled, isExpiringSoon, readFromStorage, saveToStorage]);
 
