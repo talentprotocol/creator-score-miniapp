@@ -37,7 +37,6 @@ import {
   DEFAULT_TALENT_SWAP_URL,
   SwapResult,
 } from "@/lib/talent-swap";
-import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 // Separate component that uses search params
 function SettingsContent() {
@@ -51,9 +50,6 @@ function SettingsContent() {
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
     state: "idle",
   });
-
-  // Show FarcasterAccessModal for unauthenticated users
-  const [showAuthModal, setShowAuthModal] = React.useState(false);
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
@@ -74,12 +70,14 @@ function SettingsContent() {
     );
   }, [humanityCredentials]);
 
-  // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
+  // Redirect unauthenticated users to leaderboard (following Badges page pattern)
+  // Only redirect if Privy is ready AND we're not loading AND we have no talentUuid
   useEffect(() => {
-    if (!loadingUserResolution && !talentUuid) {
-      setShowAuthModal(true);
+    if (privyReady && !loadingUserResolution && !talentUuid) {
+      router.push("/leaderboard");
+      return;
     }
-  }, [loadingUserResolution, talentUuid]);
+  }, [privyReady, loadingUserResolution, talentUuid, router]);
 
   // Show loading while resolving user
   if (loadingUserResolution) {
@@ -96,26 +94,9 @@ function SettingsContent() {
     );
   }
 
-  // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
+  // Redirect unauthenticated users (will redirect via useEffect)
   if (!talentUuid) {
-    return (
-      <>
-        <PageContainer>
-          <Section variant="content">
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
-              ))}
-            </div>
-          </Section>
-        </PageContainer>
-        <FarcasterAccessModal
-          open={showAuthModal}
-          onOpenChange={setShowAuthModal}
-          redirectPath="/settings"
-        />
-      </>
-    );
+    return null;
   }
 
   if (loading || !accounts || !settings || humanityCredentials === null) {
