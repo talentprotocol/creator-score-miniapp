@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateUserPreferencesAtomic } from "@/app/services/userPreferencesService";
 import { validateTalentUUID } from "@/lib/validation";
+import { validateUserAuth, validateOwnership } from "@/lib/auth-middleware";
 
 /**
  * POST /api/user-preferences/optout
@@ -48,6 +49,19 @@ export async function POST(req: NextRequest): Promise<
   }>
 > {
   try {
+    // STEP 1: Validate authentication first
+    const authResult = await validateUserAuth(req);
+
+    // If authResult is a NextResponse, it's an error response
+    if (authResult instanceof NextResponse) {
+      return authResult as NextResponse<{
+        success: boolean;
+        data?: Record<string, unknown>;
+        error?: string;
+      }>;
+    }
+
+    // STEP 2: Parse and validate request body
     const { talent_uuid, decision, confirm_decision, primary_wallet_address } =
       await req.json();
 
@@ -80,7 +94,18 @@ export async function POST(req: NextRequest): Promise<
       );
     }
 
-    // Process decision request using userPreferencesService
+    // STEP 3: Validate user ownership
+    if (!validateOwnership(authResult.talentUuid, talent_uuid)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You can only modify your own preferences",
+        },
+        { status: 403 },
+      );
+    }
+
+    // STEP 4: Process the decision (wallet verification removed - auth is sufficient)
     try {
       const result = await updateUserPreferencesAtomic({
         talent_uuid,
