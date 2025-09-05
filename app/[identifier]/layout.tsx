@@ -598,7 +598,7 @@ export default async function ProfileLayout({
 
   // Adjust for double-counting: subtract Mirror collectors from OpenSea
   const mirrorCollectors = platformCollectorCounts.get("Mirror") || 0;
-  const openseaCollectors = platformCollectorCounts.get("OpenSea") || 0;
+  const openseaCollectors = platformCollectorCounts.get("NFTs (includes Paragraph)") || 0;
 
   // Simple validation: ensure adjusted count doesn't go negative
   const adjustedOpenseaCollectors = Math.max(
@@ -606,12 +606,11 @@ export default async function ProfileLayout({
     openseaCollectors - mirrorCollectors,
   );
 
-  // Update the platform name and count
+  // Update the platform count with adjusted value
   platformCollectorCounts.set(
     "NFTs (includes Paragraph)",
     adjustedOpenseaCollectors,
   );
-  platformCollectorCounts.delete("OpenSea");
 
   // Calculate total collectors (now without double-counting)
   totalCollectors = Array.from(platformCollectorCounts.values()).reduce(
