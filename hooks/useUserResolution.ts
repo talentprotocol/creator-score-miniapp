@@ -65,8 +65,23 @@ export function useFidToTalentUuid() {
       }
 
       // Case 2: No Farcaster ID available, can't resolve via this method
+      // BUT wait for Privy to be ready first, as user might be authenticated via Privy
       if (!user?.fid) {
-        setTalentUuid(null);
+        // If Privy is not ready yet, keep loading to wait for it
+        if (!privyReady) {
+          setLoading(true);
+          return;
+        }
+
+        // Only set talentUuid to null if Privy is ready AND we have no talentId
+        if (!talentId) {
+          setTalentUuid(null);
+          setLoading(false);
+          return;
+        }
+
+        // If we have a talentId from Privy, use it
+        setTalentUuid(talentId);
         setLoading(false);
         return;
       }

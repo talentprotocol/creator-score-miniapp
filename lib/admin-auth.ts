@@ -2,7 +2,7 @@
  * Admin Authentication Utility
  *
  * Provides centralized admin authentication for admin-only API routes.
- * Supports both server-to-server (API token) and browser-based (Privy + UUID) authentication.
+ * Requires BOTH API token AND user identifier for two-factor security.
  * Follows the project's modular architecture pattern.
  */
 
@@ -107,7 +107,7 @@ export function validateAdminApiTokenWithResponse(token: string) {
 }
 
 /**
- * Validate admin authentication using either API token or UUID
+ * Validate admin authentication requiring BOTH API token AND user identifier
  * @param request - The incoming request
  * @returns NextResponse with error if invalid, null if valid
  */
@@ -128,18 +128,36 @@ export async function validateAdminAuth(request: Request) {
 
   const token = authHeader.slice("Bearer ".length).trim();
 
-  // First, try to validate as API token (server-to-server) - highest priority
+  // First, validate the API token
   const apiTokenError = validateAdminApiTokenWithResponse(token);
-  if (!apiTokenError) {
-    // API token is valid, no need for additional validation
-    return null;
+  if (apiTokenError) {
+    return apiTokenError;
   }
 
-  // If API token fails, try UUID-based validation as fallback
-  const uuidError = validateAdminTokenWithResponse(token);
-  if (uuidError) {
-    return uuidError;
+  // API token is valid, now check for user identifier in headers
+  const userIdentifier =
+    request.headers.get("x-user-id") || request.headers.get("X-User-Id");
+
+  if (!userIdentifier) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized - Missing user identifier" }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 
-  return null; // Authentication successful
+  // Validate that the user identifier is in the admin list
+  if (!validateAdminToken(userIdentifier)) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized - User not in admin list" }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  return null; // Both API token and user identifier are valid
 }
