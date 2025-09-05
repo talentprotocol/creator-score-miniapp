@@ -64,12 +64,51 @@ export async function validatePrivyAuth(
       walletAddress,
       isValid: true,
     };
-  } catch {
+  } catch (error) {
+    // Handle specific JWT verification errors
+    if (error instanceof jose.errors.JWTExpired) {
+      return {
+        talentUuid: null,
+        walletAddress: null,
+        isValid: false,
+        error: "Privy token has expired",
+      };
+    }
+
+    if (error instanceof jose.errors.JWTInvalid) {
+      return {
+        talentUuid: null,
+        walletAddress: null,
+        isValid: false,
+        error: "Invalid Privy token format",
+      };
+    }
+
+    if (error instanceof jose.errors.JWTClaimValidationFailed) {
+      return {
+        talentUuid: null,
+        walletAddress: null,
+        isValid: false,
+        error: "Privy token validation failed",
+      };
+    }
+
+    // Handle network errors when fetching JWKS
+    if (error instanceof Error && error.message.includes("fetch")) {
+      return {
+        talentUuid: null,
+        walletAddress: null,
+        isValid: false,
+        error: "Failed to verify Privy token (network error)",
+      };
+    }
+
+    // Generic fallback for other errors
     return {
       talentUuid: null,
       walletAddress: null,
       isValid: false,
-      error: "Invalid Privy token",
+      error: "Privy token verification failed",
     };
   }
 }
