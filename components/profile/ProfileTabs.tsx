@@ -27,6 +27,11 @@ export function ProfileTabs({
 
   const tabs = [
     {
+      id: "badges",
+      label: "Badges",
+      href: `/${identifier}/badges`,
+    },
+    {
       id: "stats",
       label: "Stats",
       href: `/${identifier}/stats`,
@@ -40,11 +45,6 @@ export function ProfileTabs({
       id: "score",
       label: "Score",
       href: `/${identifier}/score`,
-    },
-    {
-      id: "badges",
-      label: "Badges",
-      href: `/${identifier}/badges`,
     },
   ];
 
