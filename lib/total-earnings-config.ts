@@ -94,7 +94,7 @@ export function getCollectorCountCredentials(): string[] {
 export const PLATFORM_NAME_MAPPINGS: Record<string, string> = {
   coop_records_holders: "Coop Records",
   mirror_unique_collectors: "Mirror",
-  opensea_nft_total_owners: "OpenSea",
+  opensea_nft_total_owners: "NFTs (includes Paragraph)",
   paragraph_unique_collectors: "Paragraph",
   zora_unique_holders: "Zora",
 };

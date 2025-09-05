@@ -593,9 +593,31 @@ export default async function ProfileLayout({
       // Use helper function for platform name mapping
       const platformName = getPlatformDisplayName(point.slug || "");
       platformCollectorCounts.set(platformName, value);
-      totalCollectors += value;
     });
   });
+
+  // Adjust for double-counting: subtract Mirror collectors from OpenSea
+  const mirrorCollectors = platformCollectorCounts.get("Mirror") || 0;
+  const openseaCollectors = platformCollectorCounts.get("OpenSea") || 0;
+
+  // Simple validation: ensure adjusted count doesn't go negative
+  const adjustedOpenseaCollectors = Math.max(
+    0,
+    openseaCollectors - mirrorCollectors,
+  );
+
+  // Update the platform name and count
+  platformCollectorCounts.set(
+    "NFTs (includes Paragraph)",
+    adjustedOpenseaCollectors,
+  );
+  platformCollectorCounts.delete("OpenSea");
+
+  // Calculate total collectors (now without double-counting)
+  totalCollectors = Array.from(platformCollectorCounts.values()).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
 
   // Create collectors breakdown
   const sortedPlatforms = Array.from(platformCollectorCounts.entries()).sort(
