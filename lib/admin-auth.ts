@@ -7,22 +7,15 @@
  */
 
 /**
- * Get admin UUIDs from environment variables
+ * Get admin UUIDs (hardcoded for security)
  * @returns Array of admin UUIDs
- * @throws Error if ADMIN_UUIDS is not configured
  */
 export function getAdminUuids(): string[] {
-  const adminUuids = process.env.ADMIN_UUIDS;
-
-  if (!adminUuids) {
-    throw new Error("ADMIN_UUIDS environment variable is not configured");
-  }
-
-  // Split by comma to support multiple admin UUIDs
-  return adminUuids
-    .split(",")
-    .map((uuid) => uuid.trim())
-    .filter(Boolean);
+  // Hardcoded admin UUIDs - add more UUIDs to this array as needed
+  return [
+    "bd9d2b22-1b5b-43d3-b559-c53cbf1b7891", // Your Talent UUID
+    // Add more admin UUIDs here as needed
+  ];
 }
 
 /**

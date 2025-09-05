@@ -323,9 +323,7 @@ const AdminNotificationsPage: React.FC = () => {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm text-muted-foreground">
-              Title (≤ 32)
-            </label>
+            <label className="text-sm text-muted-foreground">Title</label>
             <span
               className={`text-xs ${title.length > 32 ? "text-red-600" : "text-muted-foreground"}`}
             >
@@ -348,9 +346,7 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm text-muted-foreground">
-              Body (≤ 128)
-            </label>
+            <label className="text-sm text-muted-foreground">Body</label>
             <span
               className={`text-xs ${body.length > 128 ? "text-red-600" : "text-muted-foreground"}`}
             >
