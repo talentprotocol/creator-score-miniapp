@@ -319,14 +319,16 @@ async function computePayItForwardBadges(
     return [badge];
   }
 
-  // User has opted out - get stored rewards amount from database
+  // User has opted out - get rewards amount from leaderboard snapshot
   try {
-    const { RewardsStorageService } = await import("./rewardsStorageService");
-    const storedRewards =
-      await RewardsStorageService.getStoredRewards(talentUuid);
+    const { data: snapshot } = await supabase
+      .from("leaderboard_snapshots")
+      .select("rewards_amount")
+      .eq("talent_uuid", talentUuid)
+      .single();
 
-    // Use stored donation amount (the amount they're donating by opting out)
-    const donationAmount = storedRewards?.rewards_amount || 0;
+    // Use snapshot rewards amount (the amount they're donating by opting out)
+    const donationAmount = snapshot?.rewards_amount || 0;
 
     const badge = createDynamicBadge(
       content,
@@ -336,11 +338,11 @@ async function computePayItForwardBadges(
     return [badge];
   } catch (error) {
     console.error(
-      "[computePayItForwardBadges] Error fetching stored rewards:",
+      "[computePayItForwardBadges] Error fetching snapshot rewards:",
       error,
     );
 
-    // Fallback: if database query fails, show 0 donation
+    // Fallback: if snapshot query fails, show 0 donation
     const badge = createDynamicBadge(content, 0, content.levelThresholds);
     return [badge];
   }

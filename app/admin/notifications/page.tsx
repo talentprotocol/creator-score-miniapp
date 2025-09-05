@@ -38,26 +38,66 @@ const AdminNotificationsPage: React.FC = () => {
   const [fetchingUsers, setFetchingUsers] = useState<boolean>(false);
   const [history, setHistory] = useState<NotificationHistory[]>([]);
   const [fetchingHistory, setFetchingHistory] = useState<boolean>(false);
+  const [apiToken, setApiToken] = useState<string>("");
 
   // Check if user is authenticated via either Farcaster or Privy
   const isAuthenticated = user || talentId;
 
-  // Remove the useEffect and persistToken function since they're no longer needed
+  // Check if we have both authentications (Privy + API token) - TWO FACTOR AUTH
+  const hasBothAuth = isAuthenticated && apiToken.trim();
+
+  // Get the user identifier for admin validation
+  const getUserIdentifier = () => {
+    return user?.fid?.toString() || talentId;
+  };
+
+  // Show access denied if not authenticated via Privy
+  if (!isAuthenticated) {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-xl mx-auto w-full p-4 space-y-4">
+          <h1 className="text-lg font-semibold">Admin Notifications</h1>
+          <div className="p-4 border rounded-md bg-red-50 border-red-200">
+            <div className="flex items-center space-x-2">
+              <span className="text-red-600">🔒</span>
+              <span className="text-red-800 font-medium">Access Denied</span>
+            </div>
+            <p className="text-red-700 text-sm mt-2">
+              You must be authenticated via Privy to access this admin page.
+            </p>
+            <p className="text-red-600 text-xs mt-1">
+              Please connect your wallet to continue.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   async function fetchNotificationUsers() {
     setFetchingUsers(true);
     try {
-      // Use the user's actual FID or talentId for authentication
-      const authToken = user?.fid || talentId;
+      const authToken = apiToken.trim();
       if (!authToken) {
         setResult(
-          "❌ Not authenticated - please connect your wallet or Farcaster account",
+          "❌ Admin API token required - please enter your admin API token to perform this action",
+        );
+        return;
+      }
+
+      const userIdentifier = getUserIdentifier();
+      if (!userIdentifier) {
+        setResult(
+          "❌ User identifier not available - please ensure you're properly authenticated",
         );
         return;
       }
 
       const res = await fetch("/api/admin/notifications/users", {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "X-User-Id": userIdentifier,
+        },
       });
       const data = await res.json();
       if (data.count !== undefined) {
@@ -79,17 +119,27 @@ const AdminNotificationsPage: React.FC = () => {
   async function fetchNotificationHistory() {
     setFetchingHistory(true);
     try {
-      // Use the user's actual FID or talentId for authentication
-      const authToken = user?.fid || talentId;
+      const authToken = apiToken.trim();
       if (!authToken) {
         setResult(
-          "❌ Not authenticated - please connect your wallet or Farcaster account",
+          "❌ Admin API token required - please enter your admin API token to perform this action",
+        );
+        return;
+      }
+
+      const userIdentifier = getUserIdentifier();
+      if (!userIdentifier) {
+        setResult(
+          "❌ User identifier not available - please ensure you're properly authenticated",
         );
         return;
       }
 
       const res = await fetch("/api/admin/notifications/history", {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "X-User-Id": userIdentifier,
+        },
       });
       const data = await res.json();
       if (data.history) {
@@ -109,11 +159,19 @@ const AdminNotificationsPage: React.FC = () => {
     setLoading(true);
     setResult("");
     try {
-      // Use the user's actual FID or talentId for authentication
-      const authToken = user?.fid || talentId;
+      const authToken = apiToken.trim();
       if (!authToken) {
         setResult(
-          "❌ Not authenticated - please connect your wallet or Farcaster account",
+          "❌ Admin API token required - please enter your admin API token to perform this action",
+        );
+        setLoading(false);
+        return;
+      }
+
+      const userIdentifier = getUserIdentifier();
+      if (!userIdentifier) {
+        setResult(
+          "❌ User identifier not available - please ensure you're properly authenticated",
         );
         setLoading(false);
         return;
@@ -139,6 +197,7 @@ const AdminNotificationsPage: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
+          "X-User-Id": userIdentifier,
         },
         body: JSON.stringify({
           title,
@@ -167,29 +226,75 @@ const AdminNotificationsPage: React.FC = () => {
       <div className="max-w-xl mx-auto w-full p-4 space-y-4">
         <h1 className="text-lg font-semibold">Manual Notifications</h1>
 
-        {/* Admin Status Section */}
+        {/* Admin Authentication Section */}
         <div className="space-y-2 p-3 border rounded-md bg-muted/50">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Admin Access</span>
-            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-              ✅ Active
+            <span className="text-sm font-medium">
+              Two-Factor Authentication
+            </span>
+            <span
+              className={`text-xs px-2 py-1 rounded-full ${
+                hasBothAuth
+                  ? "bg-green-100 text-green-800"
+                  : "bg-orange-100 text-orange-800"
+              }`}
+            >
+              {hasBothAuth
+                ? "✅ Fully Authenticated"
+                : "⚠️ Partially Authenticated"}
             </span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {isAuthenticated ? (
-              <>
-                Authenticated as FID: {user?.fid || talentId}
-                <br />
-                <span className="text-green-600">
-                  ✅ Using UUID-based admin verification
-                </span>
-              </>
-            ) : (
-              <>
+
+          {/* Privy Authentication Status */}
+          <div className="space-y-2 p-2 bg-green-50 border border-green-200 rounded">
+            <div className="flex items-center space-x-2">
+              <span className="text-green-600">🔐</span>
+              <span className="text-sm font-medium text-green-800">
+                Privy Authentication
+              </span>
+              <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                ✅ Active
+              </span>
+            </div>
+            <div className="text-xs text-green-700">
+              Authenticated as: {user?.fid || talentId}
+            </div>
+          </div>
+
+          {/* API Token Input */}
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground">
+              Admin API Token (required for admin actions)
+            </label>
+            <Input
+              type="password"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              placeholder="Enter your admin API token"
+              className="text-sm"
+            />
+            <div className="text-xs text-muted-foreground">
+              {apiToken.trim() ? (
+                <span className="text-green-600">✅ API token provided</span>
+              ) : (
                 <span className="text-orange-600">
-                  ⚠️ No Farcaster context - using UUID-based auth
+                  ⚠️ API token required for admin actions
                 </span>
-              </>
+              )}
+            </div>
+          </div>
+
+          {/* Authentication Summary */}
+          <div className="text-xs text-muted-foreground">
+            {hasBothAuth ? (
+              <span className="text-green-600">
+                ✅ Both authentications complete - you can perform admin actions
+              </span>
+            ) : (
+              <span className="text-orange-600">
+                ⚠️ Privy authentication complete, but API token required for
+                admin actions
+              </span>
             )}
           </div>
         </div>
@@ -204,7 +309,7 @@ const AdminNotificationsPage: React.FC = () => {
               size="sm"
               variant="ghost"
               onClick={fetchNotificationUsers}
-              disabled={fetchingUsers}
+              disabled={fetchingUsers || !hasBothAuth}
             >
               {fetchingUsers ? "Fetching..." : "Fetch Count"}
             </Button>
@@ -217,22 +322,51 @@ const AdminNotificationsPage: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">Title (≤ 32)</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-muted-foreground">Title</label>
+            <span
+              className={`text-xs ${title.length > 32 ? "text-red-600" : "text-muted-foreground"}`}
+            >
+              {title.length}/32
+            </span>
+          </div>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter notification title (max 32 characters)"
+            className={
+              title.length > 32 ? "border-red-500 focus:border-red-500" : ""
+            }
           />
+          {title.length > 32 && (
+            <p className="text-xs text-red-600">
+              ⚠️ Title exceeds 32 character limit
+            </p>
+          )}
         </div>
         <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">Body (≤ 128)</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-muted-foreground">Body</label>
+            <span
+              className={`text-xs ${body.length > 128 ? "text-red-600" : "text-muted-foreground"}`}
+            >
+              {body.length}/128
+            </span>
+          </div>
           <textarea
-            className="w-full rounded-md border border-input bg-background px-3 py-3 text-sm"
+            className={`w-full rounded-md border border-input bg-background px-3 py-3 text-sm ${
+              body.length > 128 ? "border-red-500 focus:border-red-500" : ""
+            }`}
             rows={3}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Enter notification message (max 128 characters)"
           />
+          {body.length > 128 && (
+            <p className="text-xs text-red-600">
+              ⚠️ Body exceeds 128 character limit
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Target URL</label>
@@ -280,7 +414,12 @@ const AdminNotificationsPage: React.FC = () => {
           />
         </div>
         <div className="flex gap-2">
-          <Button disabled={loading} onClick={callApi}>
+          <Button
+            disabled={
+              loading || !hasBothAuth || title.length > 32 || body.length > 128
+            }
+            onClick={callApi}
+          >
             {loading ? "Running..." : dryRun ? "Dry run" : "Send"}
           </Button>
         </div>
@@ -317,7 +456,7 @@ const AdminNotificationsPage: React.FC = () => {
               size="sm"
               variant="ghost"
               onClick={fetchNotificationHistory}
-              disabled={fetchingHistory}
+              disabled={fetchingHistory || !hasBothAuth}
             >
               {fetchingHistory ? "Loading..." : "Refresh History"}
             </Button>

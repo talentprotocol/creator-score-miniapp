@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateUserPreferencesAtomic } from "@/app/services/userPreferencesService";
 import { validateTalentUUID } from "@/lib/validation";
+import { verifyWalletOwnership } from "@/lib/wallet-verification";
 
 /**
  * POST /api/user-preferences/optout
@@ -78,6 +79,24 @@ export async function POST(req: NextRequest): Promise<
         { success: false, error: "Must confirm decision" },
         { status: 400 },
       );
+    }
+
+    // Verify wallet ownership if a wallet address is provided
+    if (primary_wallet_address) {
+      const isWalletOwned = await verifyWalletOwnership(
+        talent_uuid,
+        primary_wallet_address,
+      );
+
+      if (!isWalletOwned) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Wallet address not verified for this user",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     // Process decision request using userPreferencesService

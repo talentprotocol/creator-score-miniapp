@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateAdminTokenWithResponse } from "@/lib/admin-auth";
+import { validateAdminAuth } from "@/lib/admin-auth";
 
 export async function GET(request: NextRequest) {
-  const authHeader =
-    request.headers.get("authorization") ||
-    request.headers.get("Authorization");
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const token = authHeader.slice("Bearer ".length).trim();
-
-  // Validate admin token using environment variables
-  const authError = validateAdminTokenWithResponse(token);
+  // Validate admin authentication
+  const authError = await validateAdminAuth(request);
   if (authError) {
     return authError;
   }
