@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { truncateAddress, openExternalUrl } from "@/lib/utils";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
 import type { ConnectedAccount, AccountManagementAction } from "@/lib/types";
+//
 
 interface ConnectedWalletsSectionProps {
   accounts: ConnectedAccount[];
@@ -24,6 +25,10 @@ export function ConnectedWalletsSection({
     null,
   );
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [notice, setNotice] = React.useState<
+    { type: "error" | "success"; message: string } | null
+  >(null);
 
   const handleSetPrimary = async (account: ConnectedAccount) => {
     // For Farcaster-verified wallets, always open Farcaster settings
@@ -47,8 +52,29 @@ export function ConnectedWalletsSection({
     }
   };
 
-  const handleConnectWallet = () => {
-    setModalOpen(true);
+  const handleConnectWallet = async () => {
+    if (busy) return;
+    setNotice(null);
+    setBusy(true);
+    try {
+      const result = await onAction({ action: "connect", account_type: "wallet" });
+      if (!result.success) {
+        // Log detailed error, show generic message to user
+        console.error("Connect wallet failed:", result.message);
+        setNotice({ type: "error", message: "Couldn't connect wallet. Please try again." });
+      } else {
+        setNotice({ type: "success", message: "Wallet connected" });
+      }
+    } catch (e) {
+      console.error("Connect wallet error:", e);
+      setNotice({ type: "error", message: "Couldn't connect wallet. Please try again." });
+    } finally {
+      setBusy(false);
+      // Auto-dismiss success after a short delay; keep errors visible
+      setTimeout(() => {
+        setNotice((cur) => (cur?.type === "success" ? null : cur));
+      }, 5000);
+    }
   };
 
   if (accounts.length === 0) {
@@ -60,13 +86,25 @@ export function ConnectedWalletsSection({
 
         {/* Add Wallet Button */}
         <Button
-          onClick={() => setModalOpen(true)}
+          onClick={handleConnectWallet}
           className="w-full"
           variant="brand-purple"
+          disabled={busy}
         >
           <WalletMinimal className="w-4 h-4 mr-2" />
-          Connect New Wallet
+          {busy ? "Connecting..." : "Connect New Wallet"}
         </Button>
+
+        {notice?.type === "error" && (
+          <p className="text-sm text-red-600">
+            {notice.message}
+          </p>
+        )}
+        {notice?.type === "success" && (
+          <p className="text-sm text-green-600">
+            {notice.message}
+          </p>
+        )}
 
         <AccountManagementModal
           open={modalOpen}
@@ -84,10 +122,22 @@ export function ConnectedWalletsSection({
         onClick={handleConnectWallet}
         className="w-full"
         variant="brand-purple"
+        disabled={busy}
       >
         <WalletMinimal className="w-4 h-4 mr-2" />
-        Connect New Wallet
+        {busy ? "Connecting..." : "Connect New Wallet"}
       </Button>
+
+      {notice?.type === "error" && (
+        <p className="text-sm text-red-600">
+          {notice.message}
+        </p>
+      )}
+      {notice?.type === "success" && (
+        <p className="text-sm text-green-600">
+          {notice.message}
+        </p>
+      )}
 
       {/* Wallet List */}
       <div className="space-y-3">
@@ -147,6 +197,7 @@ export function ConnectedWalletsSection({
         })}
       </div>
 
+      {/* Keep modal available if needed for future external management; currently unused */}
       <AccountManagementModal
         open={modalOpen}
         onOpenChange={setModalOpen}

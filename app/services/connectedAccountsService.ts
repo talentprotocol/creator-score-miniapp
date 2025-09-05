@@ -49,6 +49,7 @@ async function getConnectedAccountsForTalentIdInternal(
       (account: ConnectedAccount) =>
         account.source === "github" ||
         account.source === "twitter" ||
+        account.source === "linkedin" ||
         account.source === "x_twitter",
     );
 
@@ -88,7 +89,7 @@ export function getConnectedAccountsForTalentId(talentId: string | number) {
         `${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentId}`,
         CACHE_KEYS.CONNECTED_ACCOUNTS,
       ],
-      revalidate: CACHE_DURATION_5_MINUTES, // Align with client-side cache duration
+      revalidate: 1, // Align with client-side cache duration
     },
   );
 }

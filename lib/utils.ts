@@ -532,7 +532,7 @@ export function msToSeconds(ms: number): number {
 
 // Cache duration constants
 export const CACHE_DURATIONS = {
-  PROFILE_DATA: 5 * 60 * 1000, // 5 minutes
+  PROFILE_DATA: 0, // 5 minutes
   SOCIAL_ACCOUNTS: 60 * 60 * 1000, // 1 hour
   POSTS_DATA: 30 * 60 * 1000, // 30 minutes
   CREDENTIALS_DATA: 30 * 60 * 1000, // 30 minutes

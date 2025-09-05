@@ -4,6 +4,7 @@ import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
+import { useTalentAuthToken } from "./useTalentAuthToken";
 
 const getInitialTalentUserId = () => {
   if (typeof window !== "undefined") {
@@ -90,6 +91,7 @@ export const usePrivyAuth = ({
   const router = useRouter();
   const [fetchingTalentUser, setFetchingTalentUser] = useState(false);
   const { ready, authenticated, user: privyUser, logout } = usePrivy();
+  const { ensureTalentAuthToken, clearToken } = useTalentAuthToken();
 
   const { login } = useLogin({
     onComplete: () => {
@@ -101,6 +103,12 @@ export const usePrivyAuth = ({
 
   // Use global state instead of local state
   const talentUserId = useGlobalTalentUserId();
+
+  // Mirror settings behavior globally: once authenticated, ensure TP auth token
+  useEffect(() => {
+    if (!authenticated) return;
+    void ensureTalentAuthToken();
+  }, [authenticated, ensureTalentAuthToken]);
 
   const handleLogin = () => {
     if (typeof window !== "undefined") {
@@ -114,6 +122,13 @@ export const usePrivyAuth = ({
       await logout();
       if (typeof window !== "undefined") {
         localStorage.removeItem("talentUserId");
+        // Clear Talent Protocol auth data
+        try {
+          clearToken();
+        } catch {}
+        try {
+          sessionStorage.removeItem("tpAuthJustIssued");
+        } catch {}
       }
       setGlobalTalentUserId(null);
       router.push("/leaderboard");

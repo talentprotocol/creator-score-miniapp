@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
-import { talentApiClient } from "@/lib/talent-api-client";
+import { TalentApiClient } from "@/lib/talent-api-client";
 import { extractTalentProtocolParams } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
+  const client = new TalentApiClient({ userAuthToken });
 
   // Handle uuid parameter by mapping it to talent_protocol_id
   const uuid = searchParams.get("uuid");
@@ -14,5 +16,5 @@ export async function GET(req: NextRequest) {
 
   const params = extractTalentProtocolParams(searchParams);
 
-  return talentApiClient.getSocials(params);
+  return client.getSocials(params);
 }

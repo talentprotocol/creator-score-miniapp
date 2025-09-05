@@ -77,6 +77,7 @@ export interface GroupedConnectedAccounts {
 // Settings specific types
 export interface UserSettings {
   email: string | null;
+  emailConfirmed?: boolean | null;
   notifications: {
     farcaster: boolean;
     email: boolean;
@@ -90,7 +91,7 @@ export interface AccountManagementAction {
     | "set_primary"
     | "update_email"
     | "delete_account";
-  account_type?: "github" | "twitter" | "wallet";
+  account_type?: "github" | "twitter" | "linkedin" | "wallet";
   identifier?: string;
   data?: Record<string, unknown>;
 }
