@@ -601,13 +601,15 @@ export default async function ProfileLayout({
   // Business logic: adjust for double-counting using slugs
   const mirrorCollectors =
     rawCollectorData.get("mirror_unique_collectors") || 0;
+  const paragraphCollectors =
+    rawCollectorData.get("paragraph_unique_collectors") || 0;
   const openseaCollectors =
     rawCollectorData.get("opensea_nft_total_owners") || 0;
 
-  // Calculate adjusted OpenSea count (subtract Mirror to avoid double-counting)
+  // Calculate adjusted NFTs count (subtract both Mirror and Paragraph to avoid double-counting)
   const adjustedOpenseaCollectors = Math.max(
     0,
-    openseaCollectors - mirrorCollectors,
+    openseaCollectors - mirrorCollectors - paragraphCollectors,
   );
 
   // Second pass: populate UI-friendly map with adjusted values
@@ -615,10 +617,13 @@ export default async function ProfileLayout({
     const platformName = getPlatformDisplayName(slug);
 
     if (slug === "opensea_nft_total_owners") {
-      // Use adjusted value for OpenSea (OpenSea minus Mirror collectors)
+      // Use adjusted value for NFTs (OpenSea minus Mirror minus Paragraph collectors)
       platformCollectorCounts.set(platformName, adjustedOpenseaCollectors);
     } else if (slug === "mirror_unique_collectors") {
       // Include Mirror collectors separately
+      platformCollectorCounts.set(platformName, value);
+    } else if (slug === "paragraph_unique_collectors") {
+      // Include Paragraph collectors separately
       platformCollectorCounts.set(platformName, value);
     } else {
       // Use original value for other platforms
