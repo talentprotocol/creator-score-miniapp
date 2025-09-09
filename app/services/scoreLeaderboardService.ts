@@ -1,15 +1,9 @@
-import type { LeaderboardEntry } from "@/lib/types";
+import type { LeaderboardResponse } from "@/lib/types";
 import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
 import { supabase } from "@/lib/supabase-client";
-
-export interface LeaderboardResponse {
-  entries: LeaderboardEntry[];
-  lastUpdated?: string | null;
-  nextUpdate?: string | null;
-}
 
 type Profile = {
   id: string;
