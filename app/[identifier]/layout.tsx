@@ -349,7 +349,7 @@ export default async function ProfileLayout({
       });
       redirect(redirectUrl);
     } else {
-      const redirectUrl = `/${canonical}/badges`;
+      const redirectUrl = `/${canonical}/stats`;
       dlog("ProfileLayout", "redirecting_to_canonical_default_tab", {
         from: currentPath,
         to: redirectUrl,
@@ -593,9 +593,8 @@ export default async function ProfileLayout({
 
       if (isNaN(value)) return;
 
-      // Use helper function for platform name mapping
-      const platformName = getPlatformDisplayName(point.slug || "");
-      platformCollectorCounts.set(platformName, value);
+      // Store raw data by slug
+      rawCollectorData.set(point.slug || "", value);
     });
   });
 
@@ -616,8 +615,11 @@ export default async function ProfileLayout({
     const platformName = getPlatformDisplayName(slug);
 
     if (slug === "opensea_nft_total_owners") {
-      // Use adjusted value for OpenSea
+      // Use adjusted value for OpenSea (OpenSea minus Mirror collectors)
       platformCollectorCounts.set(platformName, adjustedOpenseaCollectors);
+    } else if (slug === "mirror_unique_collectors") {
+      // Include Mirror collectors separately
+      platformCollectorCounts.set(platformName, value);
     } else {
       // Use original value for other platforms
       platformCollectorCounts.set(platformName, value);
