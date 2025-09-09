@@ -20,9 +20,7 @@ import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Settings2, RotateCcw, Loader2 } from "lucide-react";
 import { getAllBadgeSections } from "@/lib/badge-content";
-import {
-  calculateCooldownMinutes,
-} from "@/lib/cooldown-utils";
+import { calculateCooldownMinutes } from "@/lib/cooldown-utils";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 /**
