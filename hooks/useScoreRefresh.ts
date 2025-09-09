@@ -62,6 +62,22 @@ export function useScoreRefresh(
       // Clear user's credential cache before triggering refresh
       clearUserCredentialsCache(talentUUID);
 
+      // Also clear badge caches (same as badges page)
+      try {
+        await fetch("/api/badges/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            talentUUID: talentUUID,
+            badgeSlug: "all",
+            cacheKeys: ["USER_BADGES", "USER_CREATOR_SCORE"],
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to clear badge caches:", error);
+        // Don't fail the entire operation if badge cache clearing fails
+      }
+
       const result = await triggerScoreCalculation(talentUUID);
 
       if (result.success) {
