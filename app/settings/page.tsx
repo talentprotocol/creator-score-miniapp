@@ -9,6 +9,7 @@ import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsS
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
 import { PayItForwardSection } from "@/components/settings/PayItForwardSection";
 import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
+import { ConnectedEmailsSection } from "@/components/settings/ConnectedEmailsSection";
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { getVersionDisplay } from "@/lib/version";
@@ -26,6 +27,7 @@ import {
   HandHeart,
   Coins,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
@@ -57,6 +59,11 @@ function SettingsContent() {
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
+
+  // Track open accordion sections (must be declared before any early returns)
+  const [openSections, setOpenSections] = React.useState<string[]>(
+    autoExpandSection ? [autoExpandSection] : [],
+  );
 
   const {
     accounts,
@@ -274,10 +281,14 @@ function SettingsContent() {
 
       {/* Content section */}
       <Section variant="content">
+        {/** Track which sections are open to enable lazy-loading behavior */}
         <SectionAccordion
           type="multiple"
           variant="gray"
           defaultExpanded={autoExpandSection ? [autoExpandSection] : []}
+          onExpandedChange={(openIds) => {
+            setOpenSections(openIds);
+          }}
           sections={[
             {
               id: "connected-socials",
@@ -298,6 +309,16 @@ function SettingsContent() {
                 <ConnectedWalletsSection
                   accounts={walletAccounts || []}
                   onAction={performAction}
+                />
+              ),
+            },
+            {
+              id: "connected-emails",
+              title: "Connected Emails",
+              icon: <Mail className="h-4 w-4" />,
+              content: (
+                <ConnectedEmailsSection
+                  expanded={openSections?.includes("connected-emails") || false}
                 />
               ),
             },
@@ -324,10 +345,7 @@ function SettingsContent() {
               title: "Account Settings",
               icon: <Settings className="h-4 w-4" />,
               content: (
-                <AccountSettingsSection
-                  settings={settings}
-                  onAction={performAction}
-                />
+                <AccountSettingsSection />
               ),
             },
           ]}

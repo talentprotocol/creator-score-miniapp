@@ -1039,6 +1039,276 @@ export async function createTalentAuthNonce(
   }
 }
 
+// Email accounts (requires end-user Authorization token)
+export async function getEmailAccountsWithAuth(
+  userAuthToken: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/email_accounts`, {
+      method: "GET",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+      },
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      return NextResponse.json(data, { status: resp.status });
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "getEmailAccounts",
+      "self",
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to fetch email accounts");
+  }
+}
+
+// Resend email verification (requires end-user Authorization token)
+export async function resendEmailVerificationWithAuth(
+  userAuthToken: string,
+  emailAccountId: number | string,
+  redirectToUrl?: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+
+  if (!emailAccountId && emailAccountId !== 0) {
+    return createBadRequestResponse("Missing email account id");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts/${encodeURIComponent(String(emailAccountId))}/resend_verification`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+        "Content-Type": "application/json",
+      },
+      body: redirectToUrl ? JSON.stringify({ redirect_to_url: redirectToUrl }) : undefined,
+    });
+
+    // Some APIs return 204 No Content on success
+    if (resp.status === 204) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    // Fallback for non-JSON responses
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "resendEmailVerification",
+      String(emailAccountId),
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to resend email verification");
+  }
+}
+
+// Create/connect a new email account (requires end-user Authorization token)
+export async function createEmailAccountWithAuth(
+  userAuthToken: string,
+  emailAddress: string,
+  redirectToUrl?: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+  if (!emailAddress || typeof emailAddress !== "string") {
+    return createBadRequestResponse("Missing or invalid email address");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        redirectToUrl ? { email: emailAddress, redirect_to_url: redirectToUrl } : { email: emailAddress },
+      ),
+    });
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    // Fallback for non-JSON responses
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "createEmailAccount",
+      emailAddress,
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create email account");
+  }
+}
+
+// Make an email account primary (requires end-user Authorization token)
+export async function makePrimaryEmailAccountWithAuth(
+  userAuthToken: string,
+  emailAccountId: number | string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+  if (emailAccountId === undefined || emailAccountId === null) {
+    return createBadRequestResponse("Missing email account id");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts/${encodeURIComponent(String(emailAccountId))}/make_primary`;
+    const resp = await fetch(url, {
+      method: "PUT",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+      },
+    });
+
+    if (resp.status === 204) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "makePrimaryEmailAccount",
+      String(emailAccountId),
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to set primary email account");
+  }
+}
+
+// Disconnect/remove an email account (requires end-user Authorization token)
+export async function disconnectEmailAccountWithAuth(
+  userAuthToken: string,
+  emailAccountId: number | string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+  if (emailAccountId === undefined || emailAccountId === null) {
+    return createBadRequestResponse("Missing email account id");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts/${encodeURIComponent(String(emailAccountId))}/disconnect`;
+    const resp = await fetch(url, {
+      method: "PUT",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+      },
+    });
+
+    if (resp.status === 204) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "disconnectEmailAccount",
+      String(emailAccountId),
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to disconnect email account");
+  }
+}
+
 export async function createTalentAuthToken(params: {
   address: string;
   signature: string;

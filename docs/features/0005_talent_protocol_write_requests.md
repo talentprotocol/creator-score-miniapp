@@ -108,9 +108,10 @@ Request body example:
 2. Integrate Talent Protocol PUT /users request to allow a user to update the email. ✅ 
 3. Integrate Talent Protocol Disconnect account requests to allow a user to disconnect accounts. ✅
 4. When a user logins with privy we must ask for the talent protocol auth token and store it. ✅
+5. Allow users to connect new wallets using Privy and Talent Protocol POST /accounts endpoint ✅
+6. Integrate GET /email_accounts endpoint from Talent Protocol to get all emails connected by the user. It requires talent auth token and should only be called when the user expands the connected emails dropdown (we need to create it) ✅
 
 ## Pending Tasks
 
-5. Allow users to connect new wallets using Privy and Talent Protocol POST /accounts endpoint
-6. Allow users to connect twitter, tiktok and instagram using Privy
+7. Allow users to connect twitter, tiktok and instagram using Privy
 

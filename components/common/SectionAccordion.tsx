@@ -23,6 +23,7 @@ interface SectionAccordionProps {
   sections: AccordionSection[];
   className?: string;
   defaultExpanded?: string[]; // New prop for auto-expanding sections
+  onExpandedChange?: (openIds: string[]) => void;
 }
 
 export function SectionAccordion({
@@ -31,17 +32,26 @@ export function SectionAccordion({
   sections,
   className,
   defaultExpanded = [],
+  onExpandedChange,
 }: SectionAccordionProps) {
   const variantStyles = {
     gray: "bg-muted rounded-xl border-0 shadow-none",
     white: "bg-card rounded-xl border shadow-none",
   };
 
-  // Handle defaultValue based on type
+  // Uncontrolled accordion; report open changes upward
   const accordionProps =
     type === "multiple"
-      ? { type, defaultValue: defaultExpanded }
-      : { type, defaultValue: defaultExpanded[0] || undefined };
+      ? {
+          type,
+          defaultValue: defaultExpanded,
+          onValueChange: (v: string[]) => onExpandedChange?.(v),
+        }
+      : {
+          type,
+          defaultValue: defaultExpanded[0] || undefined,
+          onValueChange: (v: string) => onExpandedChange?.(v ? [v] : []),
+        };
 
   return (
     <Accordion
