@@ -22,7 +22,6 @@ import { Settings2, RotateCcw, Loader2 } from "lucide-react";
 import { getAllBadgeSections } from "@/lib/badge-content";
 import {
   calculateCooldownMinutes,
-  getRefreshButtonText,
 } from "@/lib/cooldown-utils";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
@@ -97,6 +96,9 @@ export default function BadgesPage() {
 
     // Call original refresh score (now includes badge cache clearing)
     await originalRefreshScore();
+
+    // Refetch badges data to get updated lastCalculatedAt
+    await refetch();
   };
 
   /** Get available sections for filter */
@@ -232,10 +234,9 @@ export default function BadgesPage() {
               ) : (
                 <>
                   <RotateCcw className="w-4 h-4 mr-2" />
-                  {getRefreshButtonText(
-                    badgesData?.lastCalculatedAt || null,
-                    cooldownMinutes,
-                  )}
+                  {cooldownMinutes !== null && cooldownMinutes > 0
+                    ? `Refresh in ${cooldownMinutes}min`
+                    : "Refresh Badges"}
                 </>
               )}
             </Button>
@@ -252,22 +253,6 @@ export default function BadgesPage() {
             )}
           </div>
         </div>
-
-        {/* Last Updated Date */}
-        {badgesData.lastCalculatedAt && (
-          <div className="text-right">
-            <Typography size="xs" color="muted">
-              Last updated:{" "}
-              {new Date(badgesData.lastCalculatedAt).toLocaleDateString(
-                "en-US",
-                {
-                  month: "short",
-                  day: "numeric",
-                },
-              )}
-            </Typography>
-          </div>
-        )}
       </Section>
 
       {/* Conditional rendering: sections vs flat grid */}
