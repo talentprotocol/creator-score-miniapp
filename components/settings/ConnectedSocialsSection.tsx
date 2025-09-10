@@ -8,6 +8,7 @@ import { AccountManagementModal } from "@/components/modals/AccountManagementMod
 import type { ConnectedAccount, AccountManagementAction } from "@/lib/types";
 import { usePostHog } from "posthog-js/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import {
   Dialog,
   DialogContent,
@@ -68,13 +69,47 @@ export function ConnectedSocialsSection({
     source: string;
   } | null>(null);
 
-  const handleConnect = (platform: string) => {
+  const { token: tpToken, ensureTalentAuthToken } = useTalentAuthToken();
+
+  const handleConnect = async (platform: string) => {
     // Track connect click
     posthog?.capture("settings_account_connect_clicked", {
       account_type: "social",
       platform,
       is_own_profile: true,
     });
+    // Redirect-based connect flow for supported platforms
+    const supported = new Set(["x_twitter", "github", "linkedin"]);
+    if (supported.has(platform)) {
+      try {
+        let t = tpToken;
+        if (!t) t = (await ensureTalentAuthToken()) || null;
+        if (!t) {
+          // Fallback UX if token is missing
+          // eslint-disable-next-line no-alert
+          alert("Wallet signature required to connect account");
+          return;
+        }
+        const mapped = platform === "x_twitter" ? "twitter" : platform;
+        const loginBase = "https://login.talentprotocol.com";
+        // Build redirect URL to current settings page with success message
+        let redirectUrl = "/settings";
+        try {
+          if (typeof window !== "undefined") {
+            const current = new URL(window.location.href);
+            current.pathname = "/settings";
+            const human = (socialPlatforms.find((p) => p.source === platform)?.name || mapped).replace("X (Twitter)", "Twitter");
+            const msg = `${human} account connected successfully!`;
+            current.searchParams.set("success_message", msg);
+            redirectUrl = current.toString();
+          }
+        } catch {}
+        const url = `${loginBase}/${mapped}/connect?auth_token=${encodeURIComponent(t)}&redirect_url=${encodeURIComponent(redirectUrl)}`;
+        window.location.href = url;
+        return;
+      } catch {}
+    }
+    // Default modal flow for unsupported/coming soon platforms
     setModalOpen(true);
   };
 

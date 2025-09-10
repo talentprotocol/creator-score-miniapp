@@ -482,6 +482,12 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
 
           setSettings(updated);
           setCachedData(settingsCacheKey, updated);
+        } else if (
+          action.action === "disconnect" &&
+          (action.account_type === "github" || action.account_type === "twitter" || action.account_type === "linkedin")
+        ) {
+          // Only refetch connected accounts (no global loading) for social disconnects
+          await refetchAccountsOnly();
         } else {
           await fetchData();
         }

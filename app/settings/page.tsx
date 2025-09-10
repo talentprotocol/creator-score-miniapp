@@ -35,7 +35,8 @@ import { openExternalUrl, isFarcasterMiniAppSync } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { usePostHog } from "posthog-js/react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 import {
   handleGetTalent,
   DEFAULT_TALENT_SWAP_URL,
@@ -45,10 +46,12 @@ import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 // Separate component that uses search params
 function SettingsContent() {
+  const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const searchParams = useSearchParams();
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const { token: tpToken, loading: tpLoading, stage: tpStage, error: tpError, ensureTalentAuthToken } = useTalentAuthToken();
   const isMiniApp = isFarcasterMiniAppSync();
 
@@ -62,6 +65,43 @@ function SettingsContent() {
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
+
+  // Read success message from URL (e.g., success_message=Email%20verified)
+  React.useEffect(() => {
+    const anyParams = !!searchParams?.toString();
+    const msg = searchParams?.get("success_message");
+    if (msg) setSuccessMessage(msg);
+    // Strip ALL query params on load for a clean URL
+    if (anyParams) {
+      try {
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          router.replace(url.pathname);
+        }
+      } catch {}
+    }
+  }, [searchParams, router]);
+
+  // If redirected after successful connection, bypass client caches and refetch fresh data
+  // (placed after hooks that define refetch)
+
+  const dismissSuccessMessage = React.useCallback(() => {
+    setSuccessMessage(null);
+    try {
+      if (typeof window === "undefined") return;
+      const url = new URL(window.location.href);
+      router.replace(url.pathname);
+    } catch {}
+  }, [router]);
+
+  // Auto-dismiss success message after 5 seconds
+  React.useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => {
+      dismissSuccessMessage();
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [successMessage, dismissSuccessMessage]);
 
   // Track open accordion sections (must be declared before any early returns)
   const [openSections, setOpenSections] = React.useState<string[]>(
@@ -108,11 +148,38 @@ function SettingsContent() {
     void refetch();
   }, [authenticated, tpToken, refetch]);
 
+  // If redirected after successful connection, bypass client caches and refetch fresh data
+  React.useEffect(() => {
+    if (!successMessage || !talentUuid) return;
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("tpAuthJustIssued", "1");
+        const keys = [
+          `${CACHE_KEYS.CONNECTED_ACCOUNTS}_${talentUuid}`,
+          `${CACHE_KEYS.USER_SETTINGS}_${talentUuid}`,
+          `${CACHE_KEYS.HUMANITY_CREDENTIALS}_${talentUuid}`,
+          `${CACHE_KEYS.PROFILE_SOCIAL_ACCOUNTS}_${talentUuid}`,
+          `${CACHE_KEYS.PROFILE_WALLET_ACCOUNTS}_${talentUuid}`,
+        ];
+        keys.forEach((k) => {
+          localStorage.removeItem(k);
+          localStorage.removeItem(`cache:${k}`);
+        });
+      }
+    } catch {}
+    void refetch();
+  }, [successMessage, talentUuid, refetch]);
+
   // Block settings until we have a Talent Protocol auth token
   if ((authenticated || isMiniApp) && (tpLoading || !tpToken)) {
     return (
       <PageContainer>
         <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
           <div className="space-y-3">
             <h1 className="text-lg font-semibold">Wallet signature required</h1>
             <p className="text-sm text-muted-foreground">
@@ -170,6 +237,11 @@ function SettingsContent() {
     return (
       <PageContainer>
         <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
@@ -186,6 +258,11 @@ function SettingsContent() {
       <>
         <PageContainer>
           <Section variant="content">
+            {successMessage && (
+              <div className="mb-3">
+                <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+              </div>
+            )}
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div
@@ -209,6 +286,11 @@ function SettingsContent() {
     return (
       <PageContainer>
         <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
@@ -223,6 +305,11 @@ function SettingsContent() {
     return (
       <PageContainer>
         <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
           <Callout>
             <strong>Error loading settings:</strong> {error}
           </Callout>
@@ -303,6 +390,11 @@ function SettingsContent() {
 
       {/* Content section */}
       <Section variant="content">
+        {successMessage && (
+          <div className="mb-3">
+            <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+          </div>
+        )}
         {/** Track which sections are open to enable lazy-loading behavior */}
         <SectionAccordion
           type="multiple"

@@ -11,7 +11,7 @@ import { useBackButton } from "@/hooks/useBackButton";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
-export function Header() {
+function HeaderInner() {
   const pathname = usePathname();
   const router = useRouter();
   const { navItems, settingsItem, talentUuid } = useUserNavigation();
@@ -30,7 +30,6 @@ export function Header() {
     e: React.MouseEvent,
   ) => {
     setClickedIcon(item.href);
-    // If user tries to access Profile, Settings, or Badges without user context or talentId, show modal
     if (
       !talentUuid &&
       !talentId &&
@@ -43,10 +42,8 @@ export function Header() {
       setShowModal(true);
       return;
     }
-    // Otherwise, navigate normally (Link component handles it)
   };
 
-  // Reset clicked state after navigation
   React.useEffect(() => {
     setClickedIcon(null);
   }, [pathname]);
@@ -55,7 +52,6 @@ export function Header() {
     <>
       <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="w-full flex items-center h-14">
-          {/* Left: Back button or title */}
           <div className="flex-1 flex items-center md:justify-end">
             <div className="px-4 md:max-w-xl md:w-full md:mx-auto">
               {shouldShowBackButton ? (
@@ -89,8 +85,6 @@ export function Header() {
               )}
             </div>
           </div>
-
-          {/* Center: Desktop nav */}
 
           <nav
             className="flex items-center gap-2 justify-center flex-1"
@@ -153,7 +147,6 @@ export function Header() {
             }
           `}</style>
 
-          {/* Right: Settings */}
           <div className="flex-1 flex items-center justify-end">
             <div className="px-4 md:max-w-xl md:w-full md:mx-auto md:flex md:justify-end">
               <Link
@@ -188,4 +181,29 @@ export function Header() {
       />
     </>
   );
+}
+
+export function Header() {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="w-full flex items-center h-14">
+          <div className="flex-1 flex items-center md:justify-end">
+            <div className="px-4 md:max-w-xl md:w-full md:mx-auto">
+              <div className="h-9 w-24 relative" />
+            </div>
+          </div>
+          <div className="flex-1" />
+          <div className="flex-1" />
+        </div>
+      </header>
+    );
+  }
+
+  return <HeaderInner />;
 }
