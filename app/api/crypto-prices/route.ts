@@ -17,12 +17,8 @@ export const revalidate = 3600; // 1 hour server cache
 export async function GET() {
   try {
     const [ethResponse, polResponse] = await Promise.all([
-      fetch("https://api.coinbase.com/v2/prices/ETH-USD/spot", {
-        next: { revalidate: 3600 }, // 1 hour cache
-      }),
-      fetch("https://api.coinbase.com/v2/prices/MATIC-USD/spot", {
-        next: { revalidate: 3600 }, // 1 hour cache
-      }),
+      fetch("https://api.coinbase.com/v2/prices/ETH-USD/spot"),
+      fetch("https://api.coinbase.com/v2/prices/MATIC-USD/spot"),
     ]);
 
     if (!ethResponse.ok || !polResponse.ok) {
@@ -54,9 +50,9 @@ export async function GET() {
   } catch (error) {
     console.error("[crypto-prices] Fetch failed:", error);
 
-    // Return fallback prices
+    // Return more realistic fallback prices
     return NextResponse.json(
-      { ethPrice: 3000, polPrice: 1 },
+      { ethPrice: 4300, polPrice: 0.3 },
       {
         headers: {
           "Cache-Control": "public, max-age=300, stale-while-revalidate=600", // Shorter cache for fallbacks
