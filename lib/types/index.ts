@@ -50,3 +50,15 @@ export type {
   UserPreferences,
   UserPreferencesResponse,
 } from "./user-preferences";
+
+// Reward types
+export type { StoredRewardsData, TokenBalanceData } from "./rewards";
+
+// Leaderboard types
+export type { LeaderboardResponse } from "./leaderboard";
+
+// Perk types
+export type { PerkEntryStatus } from "./perks";
+
+// Wallet types
+export type { UserWalletAddresses } from "./wallet";

@@ -7,6 +7,10 @@ import {
   formatCompactNumber,
   formatNumberWithSuffix,
 } from "@/lib/utils";
+import {
+  calculateCooldownMinutes,
+  getRefreshButtonText,
+} from "@/lib/cooldown-utils";
 
 interface UseProfileActionsProps {
   talentUUID: string;
@@ -32,26 +36,11 @@ export function useProfileActions({
   const { talentUuid: currentUserTalentUuid } = useFidToTalentUuid();
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
 
-  // Cooldown detection and countdown logic
+  // Cooldown detection and countdown logic using shared utility
   useEffect(() => {
     const calculateCooldownTime = () => {
-      if (!lastCalculatedAt) {
-        setCooldownMinutes(null);
-        return;
-      }
-
-      const lastRefreshTime = new Date(lastCalculatedAt).getTime();
-      const currentTime = new Date().getTime();
-      const oneHourInMs = 60 * 60 * 1000; // 1 hour in milliseconds
-      const cooldownEndTime = lastRefreshTime + oneHourInMs;
-
-      if (currentTime < cooldownEndTime) {
-        const remainingMs = cooldownEndTime - currentTime;
-        const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
-        setCooldownMinutes(remainingMinutes);
-      } else {
-        setCooldownMinutes(null);
-      }
+      const minutes = calculateCooldownMinutes(lastCalculatedAt || null);
+      setCooldownMinutes(minutes);
     };
 
     // Calculate immediately
@@ -99,11 +88,10 @@ export function useProfileActions({
 
   const isCalculatingOrRefreshing = calculating || isRefreshing;
 
-  const buttonText = hasNeverCalculated
-    ? "Calculate Score"
-    : isInCooldown
-      ? `Refresh in ${cooldownMinutes}min`
-      : "Refresh Score";
+  const buttonText = getRefreshButtonText(
+    lastCalculatedAt || null,
+    cooldownMinutes,
+  );
   const pendingText = "Refresh Pending";
   const failedText = "Refresh Failed";
 

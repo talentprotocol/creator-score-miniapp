@@ -17,7 +17,7 @@ import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 
 import { getTop200LeaderboardEntries } from "@/app/services/leaderboardService";
-import type { LeaderboardEntry } from "@/lib/types/leaderboard";
+import type { LeaderboardEntry } from "@/lib/types";
 
 export async function GET(
   req: NextRequest,

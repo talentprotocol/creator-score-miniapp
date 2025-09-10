@@ -38,3 +38,10 @@ export interface LeaderboardData {
   lastUpdated?: string | null;
   nextUpdate?: string | null;
 }
+
+// Consolidated LeaderboardResponse type (moved from services)
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  lastUpdated?: string | null;
+  nextUpdate?: string | null;
+}

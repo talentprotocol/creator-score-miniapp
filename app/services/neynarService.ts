@@ -1,12 +1,5 @@
 import { getNeynarClient } from "@/lib/neynar-client";
-
-export interface UserWalletAddresses {
-  addresses: string[];
-  custodyAddress: string;
-  primaryEthAddress: string | null;
-  primarySolAddress: string | null;
-  error?: string;
-}
+import type { UserWalletAddresses } from "@/lib/types";
 
 /**
  * Fetches all wallet addresses associated with a Farcaster FID
