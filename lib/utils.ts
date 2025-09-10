@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { unstable_cache } from "next/cache";
 import { isEarningsCredential } from "./total-earnings-config";
-import { LEVEL_RANGES } from "./constants";
+import { LEVEL_RANGES, getLocalBaseUrl } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -71,13 +71,22 @@ export function getLevelBadgeColor(level: number | null): string {
 
 export async function getEthUsdcPrice(): Promise<number> {
   try {
-    const response = await fetch("/api/crypto-prices");
+    // Build the full URL for server-side compatibility
+    let baseUrl = "";
+    if (typeof window === "undefined") {
+      // Server-side: use environment URL or local fallback
+      baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
+    }
+    
+    const url = `${baseUrl}/api/crypto-prices`;
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
     return data.ethPrice;
-  } catch {
+  } catch (error) {
+    console.error("[getEthUsdcPrice] Failed to fetch ETH price:", error);
     // Return fallback price if fetch fails
     return 4300;
   }
@@ -90,13 +99,22 @@ export function convertEthToUsdc(ethAmount: number, ethPrice: number): number {
 // POL (Polygon) price in USD using Coinbase MATIC-USD spot
 export async function getPolUsdPrice(): Promise<number> {
   try {
-    const response = await fetch("/api/crypto-prices");
+    // Build the full URL for server-side compatibility
+    let baseUrl = "";
+    if (typeof window === "undefined") {
+      // Server-side: use environment URL or local fallback
+      baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
+    }
+    
+    const url = `${baseUrl}/api/crypto-prices`;
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
     return data.polPrice;
-  } catch {
+  } catch (error) {
+    console.error("[getPolUsdPrice] Failed to fetch POL price:", error);
     // Conservative fallback
     return 0.25; // $0.25 per POL fallback to match current market prices
   }
