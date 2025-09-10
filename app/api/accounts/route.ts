@@ -32,6 +32,12 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
+    if (!userAuthToken) {
+      return NextResponse.json(
+        { error: "Missing user auth token" },
+        { status: 401 },
+      );
+    }
     const client = new TalentApiClient({ userAuthToken });
 
     const body = await req.json();

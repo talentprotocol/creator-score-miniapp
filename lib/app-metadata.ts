@@ -32,7 +32,7 @@ export const creatorScoreFrame = {
     action: {
       type: "launch_frame",
       name: "Creator Score",
-      url: "https://www.creatorscore.app",
+      url: process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app",
       splashImageUrl: "https://www.creatorscore.app/splash.png",
       splashBackgroundColor: "#C79AF6",
     },

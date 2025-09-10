@@ -113,5 +113,6 @@ Request body example:
 
 ## Pending Tasks
 
-7. Allow users to connect twitter, tiktok and instagram using Privy
+7. Make the features above work in the farcaster mini-app. Ask to sign the talent protocol auth token with farcaster wallet.
+8. Allow users to connect twitter, tiktok and instagram using Privy
 

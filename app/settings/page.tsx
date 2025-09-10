@@ -29,7 +29,7 @@ import {
   Loader2,
   Mail,
 } from "lucide-react";
-import { openExternalUrl } from "@/lib/utils";
+import { openExternalUrl, isFarcasterMiniAppSync } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { usePostHog } from "posthog-js/react";
@@ -48,6 +48,7 @@ function SettingsContent() {
   const posthog = usePostHog();
   const searchParams = useSearchParams();
   const { token: tpToken, loading: tpLoading, stage: tpStage, ensureTalentAuthToken } = useTalentAuthToken();
+  const isMiniApp = isFarcasterMiniAppSync();
 
   // Talent swap state
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
@@ -89,11 +90,11 @@ function SettingsContent() {
     }
   }, [loadingUserResolution, talentUuid]);
 
-  // Ensure token on mount for authenticated users
+  // Ensure token on mount for authenticated users OR when inside Farcaster mini app
   useEffect(() => {
-    if (!authenticated) return;
+    if (!authenticated && !isMiniApp) return;
     void ensureTalentAuthToken();
-  }, [authenticated, ensureTalentAuthToken]);
+  }, [authenticated, isMiniApp, ensureTalentAuthToken]);
 
   // After token is available, refetch settings to get email (requires auth)
   const lastRefreshedTokenRef = React.useRef<string | null>(null);
@@ -106,36 +107,39 @@ function SettingsContent() {
   }, [authenticated, tpToken, refetch]);
 
   // Block settings until we have a Talent Protocol auth token
-  if (authenticated && (tpLoading || !tpToken)) {
+  if ((authenticated || isMiniApp) && (tpLoading || !tpToken)) {
     return (
       <PageContainer>
         <Section variant="content">
           <div className="space-y-3">
-            <h1 className="text-lg font-semibold">Sign to continue</h1>
+            <h1 className="text-lg font-semibold">Wallet signature required</h1>
             <p className="text-sm text-muted-foreground">
               {tpStage === "nonce" && "Preparing secure sign-in..."}
               {tpStage === "sign" && "Waiting for wallet signature..."}
               {tpStage === "exchange" && "Signing complete. Finalizing authentication..."}
+              {tpStage === "rejected" && "You cancelled the request. To manage your settings, please sign the message with your wallet."}
               {(tpStage === "idle" || !tpStage) &&
                 "Waiting for wallet signature before accessing your settings."}
             </p>
             <div className="mt-2">
-              <ButtonFullWidth
-                variant="muted"
-                icon={<Loader2 className="h-4 w-4" />}
-                align="left"
-                onClick={() => void ensureTalentAuthToken()}
-                showRightIcon={false}
-                disabled={tpLoading}
-              >
-                <span className="font-medium">
-                  {tpLoading
-                    ? tpStage === "exchange"
-                      ? "Finalizing..."
-                      : "Awaiting Signature..."
-                    : "Sign to Continue"}
-                </span>
-              </ButtonFullWidth>
+              <div className="flex gap-2">
+                <ButtonFullWidth
+                  variant="muted"
+                  icon={<Loader2 className="h-4 w-4" />}
+                  align="left"
+                  onClick={() => void ensureTalentAuthToken({ force: true })}
+                  showRightIcon={false}
+                  disabled={tpLoading}
+                >
+                  <span className="font-medium">
+                    {tpLoading
+                      ? tpStage === "exchange"
+                        ? "Finalizing..."
+                        : "Awaiting Signature..."
+                      : "Sign Again"}
+                  </span>
+                </ButtonFullWidth>
+              </div>
             </div>
           </div>
         </Section>

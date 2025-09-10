@@ -16,8 +16,10 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // stage: idle | nonce | sign | exchange
-  const [stage, setStage] = useState<"idle" | "nonce" | "sign" | "exchange">(
+  // stage: idle | nonce | sign | exchange | rejected
+  const [stage, setStage] = useState<
+    "idle" | "nonce" | "sign" | "exchange" | "rejected"
+  >(
     "idle",
   );
 
@@ -51,7 +53,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
   }, []);
 
   // Public method to ensure token exists; prompts signing if missing
-  const ensureTalentAuthToken = useCallback(async () => {
+  const ensureTalentAuthToken = useCallback(async (opts?: { force?: boolean }) => {
     if (!enabled) return null;
     if (requestingRef.current) return token;
     if (globalEnsurePromise) return globalEnsurePromise;
@@ -61,6 +63,18 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       setLoading(true);
       setError(null);
       setStage("idle");
+
+      // If user previously rejected, avoid auto-prompt loops unless forced
+      if (typeof window !== "undefined") {
+        try {
+          const rejected = sessionStorage.getItem("tpAuthRejected") === "1";
+          if (rejected && !opts?.force) {
+            setStage("rejected");
+            setError("Wallet signature required");
+            return null;
+          }
+        } catch {}
+      }
 
       const { token: existing, expiresAt: existingExp } = readFromStorage();
       if (existing && !isExpiringSoon(existingExp)) {
@@ -84,26 +98,47 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
 
       // 1) Get nonce - requires wallet address (and optional chain_id)
       setStage("nonce");
-      let address: string | undefined;
+      // Select EIP-1193 provider: prefer Farcaster Mini-App provider if available
+      let provider: any = undefined;
       if (typeof window !== "undefined") {
         try {
-          const accounts = (await (window as any).ethereum?.request?.({
-            method: "eth_requestAccounts",
-          })) as string[] | undefined;
-          address = accounts?.[0];
+          // Try Farcaster Mini-App SDK provider first (embedded wallet)
+          const mod = await import("@farcaster/miniapp-sdk");
+          const sdk = (mod as any)?.sdk;
+          const viaGetter = sdk?.wallet?.getEthereumProvider
+            ? await sdk.wallet.getEthereumProvider()
+            : undefined;
+          const viaLegacy = sdk?.wallet?.ethProvider;
+          const farcasterProvider = viaGetter || viaLegacy;
+          if (farcasterProvider && typeof farcasterProvider.request === "function") {
+            provider = farcasterProvider;
+          }
         } catch {}
+        if (!provider) {
+          // Fallback to injected provider (e.g., Privy/wallet extension)
+          const injected = (window as any).ethereum;
+          if (injected && typeof injected.request === "function") {
+            provider = injected;
+          }
+        }
       }
+
+      if (!provider) throw new Error("No Ethereum provider available");
+
+      let address: string | undefined;
+      try {
+        const accounts = (await provider.request({
+          method: "eth_requestAccounts",
+        })) as string[] | undefined;
+        address = accounts?.[0];
+      } catch {}
       if (!address) throw new Error("Missing wallet address");
 
       let chainId = 1;
-      if (typeof window !== "undefined") {
-        try {
-          const hex = await (window as any).ethereum?.request?.({
-            method: "eth_chainId",
-          });
-          if (typeof hex === "string") chainId = parseInt(hex, 16);
-        } catch {}
-      }
+      try {
+        const hex = await provider.request({ method: "eth_chainId" });
+        if (typeof hex === "string") chainId = parseInt(hex, 16);
+      } catch {}
 
       const nonceResp = await fetch("/api/talent-auth/create-nonce", {
         method: "POST",
@@ -121,13 +156,39 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       // 4) Sign message
       let signature: string | undefined;
       setStage("sign");
-      if (typeof window !== "undefined") {
-        signature = await (window as any).ethereum?.request?.({
+      try {
+        signature = await provider.request({
           method: "personal_sign",
           params: [message, address],
         });
+      } catch (err: any) {
+        // User rejection: set a session flag to prevent auto loops
+        const code = err?.code ?? err?.data?.code;
+        const msg = String(err?.message || "").toLowerCase();
+        const userRejected = code === 4001 || msg.includes("rejected") || msg.includes("denied");
+        if (userRejected) {
+          try {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("tpAuthRejected", "1");
+            }
+          } catch {}
+          setStage("rejected");
+          setError("Signature was cancelled");
+          return null;
+        }
+        throw err;
       }
-      if (!signature) throw new Error("User did not sign message");
+      if (!signature) {
+        // Treat as rejection
+        try {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("tpAuthRejected", "1");
+          }
+        } catch {}
+        setStage("rejected");
+        setError("Signature was cancelled");
+        return null;
+      }
 
       // 5) Exchange for auth token
       setStage("exchange");

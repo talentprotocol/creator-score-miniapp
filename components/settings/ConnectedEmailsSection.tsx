@@ -6,6 +6,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/comp
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
+import { isFarcasterMiniAppSync } from "@/lib/utils";
 
 type EmailAccount = {
   id?: number | string;
@@ -50,6 +51,13 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
     return () => clearTimeout(t);
   }, [success]);
 
+  // When the dropdown opens, proactively ask the user to sign if needed
+  React.useEffect(() => {
+    if (!expanded) return;
+    if (token) return;
+    void ensureTalentAuthToken({ force: true });
+  }, [expanded, token, ensureTalentAuthToken]);
+
   // Normalize API error responses to a clean message
   const extractErrorMessage = async (resp: Response): Promise<string> => {
     try {
@@ -76,7 +84,7 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
   const buildRedirectUrl = (): string => {
     if (typeof window === "undefined") return "";
     const current = window.location.href;
-    const isMiniApp = Boolean((window as unknown as { __FC_MINIAPP__?: boolean }).__FC_MINIAPP__);
+    const isMiniApp = isFarcasterMiniAppSync();
     return isMiniApp
       ? `https://farcaster.xyz/?launchFrameUrl=${encodeURIComponent(current)}`
       : current;
@@ -90,7 +98,7 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
       if (!t) {
         t = (await ensureTalentAuthToken()) || null;
       }
-      if (!t) throw new Error("Missing Talent auth token");
+      if (!t) throw new Error("Wallet signature required");
 
       const resp = await fetch("/api/talent-email-accounts", {
         headers: { "x-talent-auth-token": t },
@@ -135,7 +143,7 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
       if (!t) {
         t = (await ensureTalentAuthToken()) || null;
       }
-      if (!t) throw new Error("Missing Talent auth token");
+      if (!t) throw new Error("Wallet signature required");
 
       const resp = await fetch("/api/talent-email-accounts", {
         method: "POST",
@@ -206,7 +214,7 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
       if (!t) {
         t = (await ensureTalentAuthToken()) || null;
       }
-      if (!t) throw new Error("Missing Talent auth token");
+      if (!t) throw new Error("Wallet signature required");
 
       const resp = await fetch("/api/talent-email-accounts", {
         method: "POST",
@@ -238,7 +246,7 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
       if (!t) {
         t = (await ensureTalentAuthToken()) || null;
       }
-      if (!t) throw new Error("Missing Talent auth token");
+      if (!t) throw new Error("Wallet signature required");
 
       const resp = await fetch("/api/talent-email-accounts", {
         method: "PUT",
@@ -338,16 +346,17 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
   return (
     <div className="space-y-3">
       {/* Connect new email */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch gap-2">
         <input
           type="email"
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
           placeholder="name@example.com"
-          className="flex-1 h-9 px-3 rounded-md border text-sm"
+          aria-label="Email address"
+          className="h-9 px-3 rounded-md border text-sm w-full"
           disabled={connecting}
         />
-        <Button size="sm" onClick={() => void connectEmail()} disabled={connecting || !newEmail}>
+        <Button size="sm" className="w-full sm:w-auto" onClick={() => void connectEmail()} disabled={connecting || !newEmail}>
           {connecting ? "Connecting..." : "Connect Email"}
         </Button>
       </div>
@@ -380,7 +389,7 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
           <div className="space-y-3">
             {primaryDisplay && (
               <div className="bg-background border rounded-lg p-3">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                   {typeof (primaryDisplay as EmailAccount).verified === "boolean" ? (
                     (primaryDisplay as EmailAccount).verified ? (
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -406,13 +415,14 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
                   </div>
                   {typeof (primaryDisplay as EmailAccount).verified === "boolean" &&
                     !(primaryDisplay as EmailAccount).verified && (
-                      <div className="ml-auto">
+                      <div className="w-full sm:w-auto sm:ml-auto mt-2 sm:mt-0">
                         {(() => {
                           const rem = remainingSeconds((primaryDisplay as EmailAccount).last_confirmation_email_sent_at);
                           const disabled = rem > 0;
                           return (
                             <Button
                               size="sm"
+                              className="w-full sm:w-auto"
                               disabled={disabled}
                               onClick={() => void resendVerification((primaryDisplay as EmailAccount).id || "")}
                             >
@@ -429,7 +439,7 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
             {others.length > 0 && (
               <div className="space-y-2">
                 {others.map((e) => (
-                  <div key={e.id || e.email} className="flex items-center justify-between bg-background border rounded-lg p-3">
+                  <div key={e.id || e.email} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-background border rounded-lg p-3 gap-2">
                     <div className="flex items-center gap-2">
                       {e.verified ? (
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -441,21 +451,21 @@ export function ConnectedEmailsSection({ expanded }: ConnectedEmailsSectionProps
                         <span className="text-xs text-muted-foreground">Secondary</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:ml-auto">
                       {!e.verified ? (
                         (() => {
                           const rem = remainingSeconds(e.last_confirmation_email_sent_at);
                           const disabled = rem > 0;
                           return (
-                            <Button size="sm" disabled={disabled} onClick={() => void resendVerification(e.id || "")}>
+                            <Button size="sm" className="w-full sm:w-auto" disabled={disabled} onClick={() => void resendVerification(e.id || "")}>
                               {disabled ? `Resend in ${formatMMSS(rem)}` : "Resend verification"}
                             </Button>
                           );
                         })()
                       ) : (
-                        <Button size="sm" onClick={() => requestMakePrimary(e.id || "", e.email)}>Make primary</Button>
+                        <Button size="sm" className="w-full sm:w-auto" onClick={() => requestMakePrimary(e.id || "", e.email)}>Make primary</Button>
                       )}
-                      <Button size="sm" variant="destructive" onClick={() => requestRemoveEmail(e.id || "", e.email)}>
+                      <Button size="sm" className="w-full sm:w-auto" variant="destructive" onClick={() => requestRemoveEmail(e.id || "", e.email)}>
                         Remove
                       </Button>
                     </div>

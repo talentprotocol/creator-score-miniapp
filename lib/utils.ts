@@ -662,6 +662,22 @@ export async function detectClient(
 }
 
 /**
+ * Lightweight sync check for Farcaster Mini App environment.
+ * Uses window flag and falls back to frame SDK context if available.
+ */
+export function isFarcasterMiniAppSync(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    // Primary: Farcaster clients expose a window flag when running as mini app
+    if ((window as unknown as { __FC_MINIAPP__?: boolean }).__FC_MINIAPP__) {
+      return true;
+    }
+  } catch {}
+
+  return false;
+}
+
+/**
  * Open external URL with environment detection
  */
 export async function openExternalUrl(

@@ -82,6 +82,7 @@ async function getUserSettings(
 async function performAccountAction(
   talentId: string | number,
   action: AccountManagementAction,
+  opts?: { getAuthToken?: () => Promise<string | null> },
 ): Promise<{ success: boolean; message: string }> {
   try {
     switch (action.action) {
@@ -97,9 +98,18 @@ async function performAccountAction(
             action.account_type === "twitter" ||
             action.account_type === "linkedin"
           ) {
+            // Ensure Talent Protocol auth token
+            const t = (await opts?.getAuthToken?.()) || null;
+            if (!t) {
+              throw new Error("Wallet signature required");
+            }
+
             const res = await fetch(`/api/connected-accounts`, {
               method: "PUT",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "x-talent-auth-token": t,
+              },
               body: JSON.stringify({ platform: action.account_type }),
             });
             if (!res.ok) {
@@ -352,8 +362,23 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
             return { success: false, message: "Missing Talent auth token" };
           }
 
-          // Request wallet account and chain
-          const eth = (window as any)?.ethereum;
+          // Request wallet account and chain (prefer Farcaster mini-app provider if available)
+          let eth: any = undefined;
+          try {
+            const mod = await import("@farcaster/miniapp-sdk");
+            const sdk = (mod as any)?.sdk;
+            const viaGetter = sdk?.wallet?.getEthereumProvider
+              ? await sdk.wallet.getEthereumProvider()
+              : undefined;
+            const viaLegacy = sdk?.wallet?.ethProvider;
+            const farcasterProvider = viaGetter || viaLegacy;
+            if (farcasterProvider && typeof farcasterProvider.request === "function") {
+              eth = farcasterProvider;
+            }
+          } catch {}
+          if (!eth) {
+            eth = (window as any)?.ethereum;
+          }
           if (!eth?.request) {
             return { success: false, message: "No Ethereum provider found" };
           }
@@ -438,7 +463,13 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
         }
       }
 
-      const result = await performAccountAction(talentUUID, action);
+      const result = await performAccountAction(talentUUID, action, {
+        getAuthToken: async () => {
+          let t = tpToken;
+          if (!t) t = (await ensureTalentAuthToken()) || null;
+          return t;
+        },
+      });
 
       if (result.success) {
         // For email updates, avoid full page refetch; update local state and cache only
