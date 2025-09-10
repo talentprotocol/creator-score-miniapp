@@ -1,5 +1,6 @@
 import type {
   SocialAccount,
+  TalentSocialAccount,
   WalletAccount,
   GroupedWalletAccounts,
   ConnectedAccountsResponse,
@@ -56,17 +57,24 @@ async function getAccountsForTalentIdInternal(
   try {
     const { talentApiClient } = await import("@/lib/talent-api-client");
 
-    const [accountsResponse, profileResponse] = await Promise.all([
-      talentApiClient.getAccounts({ id: String(talentId) }),
-      talentApiClient.getProfile({ talent_protocol_id: String(talentId) }),
-    ]);
+    const [accountsResponse, socialsResponse, profileResponse] =
+      await Promise.all([
+        talentApiClient.getAccounts({ id: String(talentId) }),
+        talentApiClient.getSocials({ talent_protocol_id: String(talentId) }),
+        talentApiClient.getProfile({ talent_protocol_id: String(talentId) }),
+      ]);
 
     if (!accountsResponse.ok) {
       throw new Error(`Talent API error: ${accountsResponse.status}`);
     }
+    if (!socialsResponse.ok) {
+      throw new Error(`Socials API error: ${socialsResponse.status}`);
+    }
 
-    const accountsData: ConnectedAccountsResponse =
-      await accountsResponse.json();
+    const [accountsData, socialsData] = await Promise.all([
+      accountsResponse.json() as Promise<ConnectedAccountsResponse>,
+      socialsResponse.json() as Promise<{ socials: TalentSocialAccount[] }>,
+    ]);
     let profileData: ProfileResponse | null = null;
 
     // Get profile data for primary wallet information
@@ -76,69 +84,67 @@ async function getAccountsForTalentIdInternal(
 
     // Primary wallet info will be included in the response
 
-    // Process social accounts (from socialAccountsService logic)
-    const rawSocialAccounts = accountsData.accounts.filter(
-      (account) => account.source !== "wallet" && account.source !== "ethereum",
-    );
+    // Process social accounts - use socials endpoint data directly (has follower counts)
+    const socialAccounts: SocialAccount[] = socialsData?.socials
+      ? socialsData.socials
+          .filter((s) => {
+            const src = s.source;
+            // Only exclude linkedin and duplicate ethereum accounts
+            return src !== "linkedin" && src !== "ethereum";
+          })
+          .map((s) => {
+            let handle = s.handle || null;
+            const src = s.source;
 
-    const socialAccounts: SocialAccount[] = rawSocialAccounts
-      .filter((s) => {
-        const src = s.source;
-        // Only exclude linkedin and duplicate ethereum accounts
-        return src !== "linkedin" && src !== "ethereum";
-      })
-      .map((s) => {
-        let handle = s.handle || s.username || null;
-        const src = s.source;
+            if (
+              src === "lens" &&
+              handle &&
+              typeof handle === "string" &&
+              handle.startsWith("lens/")
+            ) {
+              handle = handle.replace(/^lens\//, "");
+            }
 
-        if (
-          src === "lens" &&
-          handle &&
-          typeof handle === "string" &&
-          handle.startsWith("lens/")
-        ) {
-          handle = handle.replace(/^lens\//, "");
-        }
+            if (
+              (src === "farcaster" || src === "twitter") &&
+              handle &&
+              typeof handle === "string" &&
+              !handle.startsWith("@")
+            ) {
+              handle = `@${handle}`;
+            }
 
-        if (
-          (src === "farcaster" || src === "twitter") &&
-          handle &&
-          typeof handle === "string" &&
-          !handle.startsWith("@")
-        ) {
-          handle = `@${handle}`;
-        }
+            const displayName = getDisplayName(src);
 
-        const displayName = getDisplayName(src);
+            if (src === "basename") {
+              return {
+                source: "base",
+                handle,
+                followerCount: null,
+                accountAge: getAccountAge(s.owned_since ?? null),
+                profileUrl: s.profile_url ?? null,
+                imageUrl: s.image_url ?? null,
+                displayName: "Base",
+              };
+            }
 
-        if (src === "basename") {
-          return {
-            source: "base",
-            handle,
-            followerCount: null,
-            accountAge: getAccountAge(s.owned_since ?? null),
-            profileUrl: s.profile_url ?? null,
-            imageUrl: s.image_url ?? null,
-            displayName: "Base",
-          };
-        }
+            // Special handling for EFP fallback URL
+            let profileUrl = s.profile_url ?? null;
+            if (src === "efp" && !profileUrl && handle) {
+              profileUrl = `https://ethfollow.xyz/${handle}`;
+            }
 
-        // Special handling for EFP fallback URL
-        let profileUrl = s.profile_url ?? null;
-        if (src === "efp" && !profileUrl && handle) {
-          profileUrl = `https://ethfollow.xyz/${handle}`;
-        }
-
-        return {
-          source: src,
-          handle,
-          followerCount: null, // Social accounts from /accounts don't have follower count
-          accountAge: getAccountAge(s.owned_since ?? null),
-          profileUrl,
-          imageUrl: s.image_url ?? null,
-          displayName,
-        };
-      });
+            return {
+              source: src,
+              handle,
+              followerCount: s.followers_count ?? null,
+              accountAge: getAccountAge(s.owned_since ?? null),
+              profileUrl,
+              imageUrl: s.image_url ?? null,
+              displayName,
+            };
+          })
+      : [];
 
     // Process wallet accounts (from walletAccountsService logic)
     const walletAccounts = accountsData.accounts.filter(
