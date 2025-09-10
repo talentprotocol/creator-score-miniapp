@@ -79,7 +79,7 @@ export async function getEthUsdcPrice(): Promise<number> {
     return data.ethPrice;
   } catch {
     // Return fallback price if fetch fails
-    return 3000;
+    return 4300;
   }
 }
 
@@ -98,7 +98,7 @@ export async function getPolUsdPrice(): Promise<number> {
     return data.polPrice;
   } catch {
     // Conservative fallback
-    return 1; // $1 per POL fallback to avoid exploding totals
+    return 0.25; // $0.25 per POL fallback to match current market prices
   }
 }
 
