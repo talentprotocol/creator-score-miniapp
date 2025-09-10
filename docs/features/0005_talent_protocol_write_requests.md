@@ -110,9 +110,10 @@ Request body example:
 4. When a user logins with privy we must ask for the talent protocol auth token and store it. ✅
 5. Allow users to connect new wallets using Privy and Talent Protocol POST /accounts endpoint ✅
 6. Integrate GET /email_accounts endpoint from Talent Protocol to get all emails connected by the user. It requires talent auth token and should only be called when the user expands the connected emails dropdown (we need to create it) ✅
+7. Make the features above work in the farcaster mini-app. Ask to sign the talent protocol auth token with farcaster wallet. ✅ 
+8. Let's add a new dropdown to update the user profile. The endpoint to call is: PUT /profile. The user should be able to update the following fields: bio,display_name,location,image_url,main_role,open_to,tags. Tags is an array and the user can pick a max of 3. To get the set of tags we should call GET /tags ✅ 
 
 ## Pending Tasks
 
-7. Make the features above work in the farcaster mini-app. Ask to sign the talent protocol auth token with farcaster wallet.
-8. Allow users to connect twitter, tiktok and instagram using Privy
+9. Allow users to connect twitter, tiktok and instagram using Privy
 

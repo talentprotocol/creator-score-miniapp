@@ -599,6 +599,91 @@ export class TalentApiClient {
   }
 
   /**
+   * Fetch available tags for profiles
+   */
+  async getTags(): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/tags`;
+      const resp = await fetch(url, {
+        method: "GET",
+        headers: this.createHeaders(),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(
+          data?.error || `HTTP ${resp.status}: ${resp.statusText}`,
+        );
+      }
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "getTags",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to fetch tags");
+    }
+  }
+
+  /**
+   * Update current user's profile (requires end-user Authorization token)
+   * Supported fields: bio, display_name, location, tags
+   */
+  async updateProfile(data: {
+    bio?: string | null;
+    display_name?: string | null;
+    location?: string | null;
+    tags?: string[] | null;
+  }): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/profile`;
+      const resp = await fetch(url, {
+        method: "PUT",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const respData = await resp.json();
+      if (!resp.ok) {
+        // Pass through upstream status and message when possible
+        return NextResponse.json(respData, { status: resp.status });
+      }
+      return NextResponse.json(respData, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "updateProfile",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to update profile");
+    }
+  }
+
+  /**
    * Update current user (requires end-user Authorization token)
    * Supported fields: email
    */

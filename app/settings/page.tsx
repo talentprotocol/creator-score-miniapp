@@ -29,6 +29,7 @@ import {
   Loader2,
   Mail,
 } from "lucide-react";
+import { ProfileSettingsSection } from "@/components/settings/ProfileSettingsSection";
 import { openExternalUrl, isFarcasterMiniAppSync } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
@@ -313,6 +314,17 @@ function SettingsContent() {
                 <ConnectedWalletsSection
                   accounts={walletAccounts || []}
                   onAction={performAction}
+                />
+              ),
+            },
+            {
+              id: "profile",
+              title: "Profile",
+              icon: <Settings className="h-4 w-4" />,
+              content: (
+                <ProfileSettingsSection
+                  talentUuid={talentUuid}
+                  initialProfile={undefined}
                 />
               ),
             },
