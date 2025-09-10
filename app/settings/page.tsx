@@ -48,7 +48,7 @@ function SettingsContent() {
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const searchParams = useSearchParams();
-  const { token: tpToken, loading: tpLoading, stage: tpStage, ensureTalentAuthToken } = useTalentAuthToken();
+  const { token: tpToken, loading: tpLoading, stage: tpStage, error: tpError, ensureTalentAuthToken } = useTalentAuthToken();
   const isMiniApp = isFarcasterMiniAppSync();
 
   // Talent swap state
@@ -122,6 +122,9 @@ function SettingsContent() {
               {(tpStage === "idle" || !tpStage) &&
                 "Waiting for wallet signature before accessing your settings."}
             </p>
+            {tpError && (
+              <p className="text-xs text-red-500 mt-1">{tpError}</p>
+            )}
             <div className="mt-2">
               <div className="flex gap-2">
                 <ButtonFullWidth
@@ -141,6 +144,19 @@ function SettingsContent() {
                   </span>
                 </ButtonFullWidth>
               </div>
+              {authenticated && (
+                <div className="flex gap-2 mt-2">
+                  <ButtonFullWidth
+                    variant="muted"
+                    icon={<LogOut className="h-4 w-4" />}
+                    align="left"
+                    onClick={handleLogout}
+                    showRightIcon={false}
+                  >
+                    <span className="font-medium">Log Out</span>
+                  </ButtonFullWidth>
+                </div>
+              )}
             </div>
           </div>
         </Section>

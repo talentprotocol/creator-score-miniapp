@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
+import { isFarcasterMiniAppSync } from "@/lib/utils";
 
 type EnsureOptions = {
   enabled?: boolean;
@@ -37,12 +38,24 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
     if (typeof window === "undefined") return;
     localStorage.setItem("tpAuthToken", t);
     if (exp) localStorage.setItem("tpAuthExpiresAt", String(exp));
+    try {
+      window.dispatchEvent(
+        new CustomEvent("tpAuthTokenUpdated", {
+          detail: { token: t, expiresAt: exp ?? null },
+        }),
+      );
+    } catch {}
   }, []);
 
   const clearStorage = useCallback(() => {
     if (typeof window === "undefined") return;
     localStorage.removeItem("tpAuthToken");
     localStorage.removeItem("tpAuthExpiresAt");
+    try {
+      window.dispatchEvent(
+        new CustomEvent("tpAuthTokenUpdated", { detail: { token: null, expiresAt: null } }),
+      );
+    } catch {}
   }, []);
 
   const isExpiringSoon = useCallback((exp?: number | null) => {
@@ -67,6 +80,11 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       // If user previously rejected, avoid auto-prompt loops unless forced
       if (typeof window !== "undefined") {
         try {
+          // Clear any stale flags when forced
+          if (opts?.force) {
+            sessionStorage.removeItem("tpAuthRejected");
+            sessionStorage.removeItem("tpAuthInProgress");
+          }
           const rejected = sessionStorage.getItem("tpAuthRejected") === "1";
           if (rejected && !opts?.force) {
             setStage("rejected");
@@ -87,8 +105,11 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       if (typeof window !== "undefined") {
         try {
           const inProgress = sessionStorage.getItem("tpAuthInProgress");
-          if (inProgress === "1") {
-            return token; // Another prompt is already running
+          if (inProgress === "1" && !opts?.force) {
+            // Surface clear message when a prompt is already pending
+            setStage("rejected");
+            setError("A wallet request is already pending. Please complete it in your wallet.");
+            return null;
           }
           sessionStorage.setItem("tpAuthInProgress", "1");
         } catch {}
@@ -98,41 +119,129 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
 
       // 1) Get nonce - requires wallet address (and optional chain_id)
       setStage("nonce");
-      // Select EIP-1193 provider: prefer Farcaster Mini-App provider if available
+      // Select EIP-1193 provider based on environment
       let provider: any = undefined;
+      let providerSource: "farcaster" | "privy" | "injected" | "unknown" = "unknown";
       if (typeof window !== "undefined") {
+        const isMiniApp = isFarcasterMiniAppSync?.() === true;
         try {
-          // Try Farcaster Mini-App SDK provider first (embedded wallet)
-          const mod = await import("@farcaster/miniapp-sdk");
-          const sdk = (mod as any)?.sdk;
-          const viaGetter = sdk?.wallet?.getEthereumProvider
-            ? await sdk.wallet.getEthereumProvider()
-            : undefined;
-          const viaLegacy = sdk?.wallet?.ethProvider;
-          const farcasterProvider = viaGetter || viaLegacy;
-          if (farcasterProvider && typeof farcasterProvider.request === "function") {
-            provider = farcasterProvider;
+          if (isMiniApp) {
+            // Only use Farcaster provider inside the mini app
+            const mod = await import("@farcaster/miniapp-sdk");
+            const sdk = (mod as any)?.sdk;
+            const viaGetter = sdk?.wallet?.getEthereumProvider
+              ? await sdk.wallet.getEthereumProvider()
+              : undefined;
+            const viaLegacy = sdk?.wallet?.ethProvider;
+            const farcasterProvider = viaGetter || viaLegacy;
+            if (farcasterProvider && typeof farcasterProvider.request === "function") {
+              provider = farcasterProvider;
+              providerSource = "farcaster";
+            }
           }
         } catch {}
+        // Try Privy's embedded wallet provider next
+        if (!provider) {
+          try {
+            const privyProvider = (window as any)?.privy?.getEthereumProvider
+              ? await (window as any).privy.getEthereumProvider()
+              : undefined;
+            if (privyProvider && typeof privyProvider.request === "function") {
+              provider = privyProvider;
+              providerSource = "privy";
+            }
+          } catch {}
+        }
         if (!provider) {
           // Fallback to injected provider (e.g., Privy/wallet extension)
           const injected = (window as any).ethereum;
           if (injected && typeof injected.request === "function") {
             provider = injected;
+            providerSource = "injected";
           }
         }
       }
 
-      if (!provider) throw new Error("No Ethereum provider available");
+      if (!provider) {
+        setStage("rejected");
+        setError("No Ethereum provider available");
+        return null;
+      }
 
       let address: string | undefined;
       try {
-        const accounts = (await provider.request({
-          method: "eth_requestAccounts",
-        })) as string[] | undefined;
+        // Try silent fetch first
+        let accounts = (await provider.request({ method: "eth_accounts" })) as
+          | string[]
+          | undefined;
+        if (!accounts || accounts.length === 0) {
+          // Prompt user to connect if not already authorized
+          accounts = (await provider.request({
+            method: "eth_requestAccounts",
+          })) as string[] | undefined;
+        }
         address = accounts?.[0];
-      } catch {}
-      if (!address) throw new Error("Missing wallet address");
+      } catch (err: any) {
+        console.error("[useTalentAuthToken] eth_accounts/eth_requestAccounts failed", {
+          providerSource,
+          code: err?.code ?? err?.data?.code,
+          message: err?.message || String(err),
+          raw: err,
+        });
+        const code = err?.code ?? err?.data?.code;
+        // If Farcaster provider fails internally, try fallback once
+        if (providerSource === "farcaster" && code === -32603 && typeof window !== "undefined") {
+          try {
+            let fallbackProvider: any = undefined;
+            const privyProvider = (window as any)?.privy?.getEthereumProvider
+              ? await (window as any).privy.getEthereumProvider()
+              : undefined;
+            if (privyProvider && typeof privyProvider.request === "function") {
+              fallbackProvider = privyProvider;
+              providerSource = "privy";
+            } else if ((window as any).ethereum?.request) {
+              fallbackProvider = (window as any).ethereum;
+              providerSource = "injected";
+            }
+            if (fallbackProvider) {
+              let accounts = (await fallbackProvider.request({ method: "eth_accounts" })) as
+                | string[]
+                | undefined;
+              if (!accounts || accounts.length === 0) {
+                accounts = (await fallbackProvider.request({ method: "eth_requestAccounts" })) as
+                  | string[]
+                  | undefined;
+              }
+              address = accounts?.[0];
+              if (address) {
+                provider = fallbackProvider;
+              }
+            }
+          } catch (fallbackErr) {
+            console.error("[useTalentAuthToken] fallback provider failed", fallbackErr);
+          }
+        }
+        if (address) {
+          // Proceed with the obtained address after fallback
+        } else if (code === -32002) {
+          // A wallet request is already pending; ask the user to complete it
+          setStage("rejected");
+          setError("Wallet request already pending. Please complete it in your wallet.");
+          return null;
+        } else {
+          const deepMsg = err?.data?.originalError?.message || err?.data?.message;
+          const msg = String(deepMsg || err?.message || "Failed to request accounts from wallet");
+          setStage("rejected");
+          setError(code ? `Wallet error (${code}): ${msg}` : msg);
+          return null;
+        }
+      }
+      if (!address) {
+        // Do not persist a rejection flag; allow user to try again immediately
+        setStage("rejected");
+        setError("No wallet account found. Please connect an account in your wallet and try again.");
+        return null;
+      }
 
       let chainId = 1;
       try {
@@ -176,6 +285,12 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
           setError("Signature was cancelled");
           return null;
         }
+        console.error("[useTalentAuthToken] personal_sign failed", {
+          providerSource,
+          code,
+          message: err?.message || String(err),
+          raw: err,
+        });
         throw err;
       }
       if (!signature) {
@@ -215,8 +330,9 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       } catch {}
       return newToken;
       } catch (e) {
+      console.error("[useTalentAuthToken] ensureTalentAuthToken failed", e);
       setError(e instanceof Error ? e.message : String(e));
-      throw e;
+      return null;
       } finally {
       setLoading(false);
       requestingRef.current = false;
@@ -242,6 +358,32 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
     const { token: t, expiresAt: exp } = readFromStorage();
     setToken(t);
     setExpiresAt(exp);
+
+    function handleCustomUpdate(e: Event) {
+      const detail = (e as CustomEvent).detail || {};
+      setToken(detail.token ?? null);
+      setExpiresAt(detail.expiresAt ?? null);
+    }
+
+    function handleStorage(e: StorageEvent) {
+      if (e.key === "tpAuthToken" || e.key === "tpAuthExpiresAt") {
+        const { token: t2, expiresAt: exp2 } = readFromStorage();
+        setToken(t2);
+        setExpiresAt(exp2);
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("tpAuthTokenUpdated", handleCustomUpdate as EventListener);
+      window.addEventListener("storage", handleStorage);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("tpAuthTokenUpdated", handleCustomUpdate as EventListener);
+        window.removeEventListener("storage", handleStorage);
+      }
+    };
   }, [readFromStorage]);
 
   return {
