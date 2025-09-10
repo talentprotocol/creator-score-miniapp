@@ -36,7 +36,7 @@ export async function GET(
     const [socialAccounts, credentials, creatorScoreData, leaderboardResponse] =
       await Promise.all([
         getSocialAccountsForTalentId(params.talentUUID)().catch(() => []),
-        getCredentialsForTalentId(params.talentUUID).catch(() => []),
+        getCredentialsForTalentId(params.talentUUID)().catch(() => []),
         getCreatorScoreForTalentId(params.talentUUID)().catch(() => ({
           score: 0,
         })),

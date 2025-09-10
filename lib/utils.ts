@@ -77,7 +77,7 @@ export async function getEthUsdcPrice(): Promise<number> {
       // Server-side: use environment URL or local fallback
       baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
     }
-    
+
     const url = `${baseUrl}/api/crypto-prices`;
     const response = await fetch(url);
     if (!response.ok) {
@@ -105,7 +105,7 @@ export async function getPolUsdPrice(): Promise<number> {
       // Server-side: use environment URL or local fallback
       baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
     }
-    
+
     const url = `${baseUrl}/api/crypto-prices`;
     const response = await fetch(url);
     if (!response.ok) {
@@ -236,9 +236,12 @@ export async function calculateTotalRewards(
   }>,
   getEthUsdcPriceFn: () => Promise<number>,
 ): Promise<number> {
-  const ethPrice = await getEthUsdcPriceFn();
+  const [ethPrice, polPrice] = await Promise.all([
+    getEthUsdcPriceFn(),
+    getPolUsdPrice(),
+  ]);
 
-  // Sum up all rewards, converting ETH to USDC
+  // Sum up all rewards, converting ETH and POL to USD
   const total = credentials.reduce((sum, credential) => {
     // Only count credentials that are creator earnings - use slug for reliable identification
     const isEarnings = isEarningsCredential(credential.slug || "");
@@ -259,9 +262,11 @@ export async function calculateTotalRewards(
     let contribution = 0;
     const uom = credential.uom || "";
 
-    // Handle different UOMs (ETH, USDC, USD)
+    // Handle different UOMs (ETH, POL, USDC, USD)
     if (uom === "ETH") {
       contribution = convertEthToUsdc(value, ethPrice);
+    } else if (uom === "POL") {
+      contribution = convertPolToUsdc(value, polPrice);
     } else if (uom === "USDC" || uom === "USD") {
       contribution = value;
     } else {

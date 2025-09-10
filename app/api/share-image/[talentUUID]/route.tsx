@@ -6,7 +6,6 @@ import { talentApiClient } from "@/lib/talent-api-client";
 import {
   CACHE_KEYS,
   CACHE_DURATION_10_MINUTES,
-  CACHE_DURATION_30_MINUTES,
 } from "@/lib/cache-keys";
 import {
   calculateTotalFollowers,
@@ -60,14 +59,7 @@ export async function GET(
     // Fetch additional data (PRESERVED EXACTLY)
     const [socialAccounts, credentials, creatorScoreData] = await Promise.all([
       getSocialAccountsForTalentId(params.talentUUID)().catch(() => []),
-      unstable_cache(
-        async () => getCredentialsForTalentId(params.talentUUID),
-        [`credentials-${params.talentUUID}`],
-        {
-          tags: [`credentials-${params.talentUUID}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_30_MINUTES,
-        },
-      )().catch(() => []),
+      getCredentialsForTalentId(params.talentUUID)().catch(() => []),
       getCreatorScoreForTalentId(params.talentUUID)().catch(() => ({
         score: 0,
       })),

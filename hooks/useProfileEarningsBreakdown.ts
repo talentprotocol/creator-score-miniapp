@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useProfileCredentials } from "./useProfileCredentials";
-import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
+import { getEthUsdcPrice, convertEthToUsdc, getPolUsdPrice, convertPolToUsdc } from "@/lib/utils";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 
 interface EarningsBreakdownSegment {
@@ -36,7 +36,10 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
         setLoading(true);
         setError(null);
 
-        const ethPrice = await getEthUsdcPrice();
+        const [ethPrice, polPrice] = await Promise.all([
+          getEthUsdcPrice(),
+          getPolUsdPrice(),
+        ]);
         const issuerTotals = new Map<string, number>();
 
         // Process each credential group
@@ -83,6 +86,8 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
             let usdValue = 0;
             if (point.uom === "ETH") {
               usdValue = convertEthToUsdc(value, ethPrice);
+            } else if (point.uom === "POL") {
+              usdValue = convertPolToUsdc(value, polPrice);
             } else if (point.uom === "USDC") {
               usdValue = value;
             }

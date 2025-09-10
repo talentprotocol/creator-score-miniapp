@@ -204,7 +204,8 @@ async function computeTotalEarningsBadges(
   if (!content) return [];
 
   // Transform credentials to match calculateTotalRewards signature
-  const transformedCredentials = credentials.flatMap((group) =>
+  const credentialGroups = await credentials();
+  const transformedCredentials = credentialGroups.flatMap((group) =>
     group.points.map((point) => ({
       slug: point.slug,
       readable_value: point.readable_value,

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import type { IssuerCredentialGroup } from "@/lib/types";
+import type { IssuerCredentialGroup, CredentialsResponse } from "@/lib/types";
+import { groupCredentialsByIssuer } from "@/lib/credential-utils";
 
 export function useProfileCredentials(talentUUID: string) {
   const [credentials, setCredentials] = React.useState<IssuerCredentialGroup[]>(
@@ -26,7 +27,21 @@ export function useProfileCredentials(talentUUID: string) {
         }
         return res.json();
       })
-      .then((data) => setCredentials(data))
+      .then((data: CredentialsResponse | { error: string }) => {
+        // Transform raw API response to grouped format using shared logic
+        if ("error" in data) {
+          setCredentials([]);
+          return;
+        }
+
+        if (!Array.isArray(data.credentials)) {
+          setCredentials([]);
+          return;
+        }
+
+        const groupedCredentials = groupCredentialsByIssuer(data.credentials);
+        setCredentials(groupedCredentials);
+      })
       .catch((err) => {
         if (err.name !== "AbortError") {
           setError(
