@@ -50,9 +50,9 @@ export async function GET() {
   } catch (error) {
     console.error("[crypto-prices] Fetch failed:", error);
 
-    // Return more realistic fallback prices
+    // hardcoded fallback prices
     return NextResponse.json(
-      { ethPrice: 4300, polPrice: 0.3 },
+      { ethPrice: 4300, polPrice: 0.25 },
       {
         headers: {
           "Cache-Control": "public, max-age=300, stale-while-revalidate=600", // Shorter cache for fallbacks

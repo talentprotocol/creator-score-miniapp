@@ -11,8 +11,6 @@ import {
   createNotFoundResponse,
 } from "./api-utils";
 import { NextResponse } from "next/server";
-import { unstable_cache, revalidateTag } from "next/cache";
-import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "./cache-keys";
 import { dlog, dtimer } from "./debug";
 
 // API endpoints
@@ -702,33 +700,22 @@ export class TalentApiClient {
 
       const queryString = queryParams.toString();
 
-      const cachedSearchProfiles = unstable_cache(
-        async () => {
-          const url = `${TALENT_API_BASE}/search/advanced/profiles?${queryString}&view=scores_minimal`;
+      const url = `${TALENT_API_BASE}/search/advanced/profiles?${queryString}&view=scores_minimal`;
 
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-              "X-API-Key": this.apiKey,
-            },
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(
-              `Talent API error (${response.status}): ${errorText}`,
-            );
-          }
-
-          const data = await response.json();
-          return data;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "X-API-Key": this.apiKey,
         },
-        [`${CACHE_KEYS.PROFILE_SEARCH}-${queryString}`], // Cache key
-        { revalidate: CACHE_DURATION_10_MINUTES }, // Revalidate every 10 minutes
-      );
+      });
 
-      const data = await cachedSearchProfiles();
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Talent API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
       return NextResponse.json(data, { status: 200 });
     } catch (error) {
       logApiError(
@@ -736,29 +723,6 @@ export class TalentApiClient {
         params.query,
         error instanceof Error ? error.message : "Unknown error",
       );
-
-      // Revalidate cache on error
-      const requestData = {
-        query: {
-          identity: params.query.trim(),
-        },
-        sort: {
-          score: {
-            order: "desc",
-          },
-        },
-        page: params.page || 1,
-        per_page: Math.min(params.per_page || 10, 25),
-        view: "scores_minimal",
-      };
-      const queryParams = new URLSearchParams();
-      Object.keys(requestData).forEach((key) => {
-        queryParams.append(
-          key,
-          JSON.stringify(requestData[key as keyof typeof requestData]),
-        );
-      });
-      revalidateTag(`${CACHE_KEYS.PROFILE_SEARCH}-${queryParams.toString()}`);
 
       return createServerErrorResponse(
         `Failed to search profiles: ${error instanceof Error ? error.message : "Unknown error"}`,
