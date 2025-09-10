@@ -1,22 +1,58 @@
 import type {
-  ConnectedAccount,
-  GroupedConnectedAccounts,
+  SocialAccount,
+  WalletAccount,
+  GroupedWalletAccounts,
   ConnectedAccountsResponse,
+  ProfileResponse,
   UserSettings,
   AccountManagementAction,
   HumanityCredentialsResponse,
-  ProfileResponse,
 } from "@/lib/types";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 
+// Helper functions from socialAccountsService
+function getAccountAge(ownedSince: string | null): string | null {
+  if (!ownedSince) return null;
+  const ownedDate = new Date(ownedSince);
+  const now = new Date();
+  const diffMs = now.getTime() - ownedDate.getTime();
+  const diffYears = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 365));
+  if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? "s" : ""}`;
+  const diffMonths = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30));
+  if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? "s" : ""}`;
+  return "<1 month";
+}
+
+function getDisplayName(source: string): string {
+  if (source === "github") return "GitHub";
+  if (source === "base") return "Base";
+  if (source === "ethereum") return "Ethereum";
+  if (source === "farcaster") return "Farcaster";
+  if (source === "lens") return "Lens";
+  if (source === "twitter") return "Twitter";
+  if (source === "linkedin") return "LinkedIn";
+  if (source === "efp") return "EFP";
+  if (source === "ens") return "ENS";
+  return source.charAt(0).toUpperCase() + source.slice(1);
+}
+
+export interface UnifiedAccountsData {
+  social: SocialAccount[];
+  wallet: GroupedWalletAccounts;
+  primaryWalletInfo: {
+    main_wallet_address: string | null;
+    farcaster_primary_wallet_address: string | null;
+  };
+}
+
 /**
- * SERVER-SIDE ONLY: Internal function to fetch connected accounts for a given Talent Protocol ID
- * This function should only be called from server-side code (layouts, API routes)
+ * SERVER-SIDE ONLY: Internal function to fetch all accounts for a given Talent Protocol ID
+ * Consolidates logic from connectedAccountsService, walletAccountsService, and socialAccountsService
  */
-async function getConnectedAccountsForTalentIdInternal(
+async function getAccountsForTalentIdInternal(
   talentId: string | number,
-): Promise<GroupedConnectedAccounts> {
+): Promise<UnifiedAccountsData> {
   try {
     const { talentApiClient } = await import("@/lib/talent-api-client");
 
@@ -38,30 +74,91 @@ async function getConnectedAccountsForTalentIdInternal(
       profileData = await profileResponse.json();
     }
 
-    // Determine the primary wallet address (Farcaster first, then Talent)
-    const primaryWalletAddress =
-      profileData?.farcaster_primary_wallet_address ||
-      profileData?.main_wallet_address ||
-      null;
+    // Primary wallet info will be included in the response
 
-    // Group accounts by type for settings management
-    const socialAccounts = accountsData.accounts.filter(
-      (account: ConnectedAccount) =>
-        account.source === "github" ||
-        account.source === "twitter" ||
-        account.source === "x_twitter",
+    // Process social accounts (from socialAccountsService logic)
+    const rawSocialAccounts = accountsData.accounts.filter(
+      (account) => account.source !== "wallet" && account.source !== "ethereum",
     );
 
-    const walletAccounts = accountsData.accounts
-      .filter((account: ConnectedAccount) => account.source === "wallet")
-      .map((account: ConnectedAccount) => ({
-        ...account,
-        is_primary: account.identifier === primaryWalletAddress,
-      }));
+    const socialAccounts: SocialAccount[] = rawSocialAccounts
+      .filter((s) => {
+        const src = s.source;
+        // Only exclude linkedin and duplicate ethereum accounts
+        return src !== "linkedin" && src !== "ethereum";
+      })
+      .map((s) => {
+        let handle = s.handle || s.username || null;
+        const src = s.source;
+
+        if (
+          src === "lens" &&
+          handle &&
+          typeof handle === "string" &&
+          handle.startsWith("lens/")
+        ) {
+          handle = handle.replace(/^lens\//, "");
+        }
+
+        if (
+          (src === "farcaster" || src === "twitter") &&
+          handle &&
+          typeof handle === "string" &&
+          !handle.startsWith("@")
+        ) {
+          handle = `@${handle}`;
+        }
+
+        const displayName = getDisplayName(src);
+
+        if (src === "basename") {
+          return {
+            source: "base",
+            handle,
+            followerCount: null,
+            accountAge: getAccountAge(s.owned_since ?? null),
+            profileUrl: s.profile_url ?? null,
+            imageUrl: s.image_url ?? null,
+            displayName: "Base",
+          };
+        }
+
+        // Special handling for EFP fallback URL
+        let profileUrl = s.profile_url ?? null;
+        if (src === "efp" && !profileUrl && handle) {
+          profileUrl = `https://ethfollow.xyz/${handle}`;
+        }
+
+        return {
+          source: src,
+          handle,
+          followerCount: null, // Social accounts from /accounts don't have follower count
+          accountAge: getAccountAge(s.owned_since ?? null),
+          profileUrl,
+          imageUrl: s.image_url ?? null,
+          displayName,
+        };
+      });
+
+    // Process wallet accounts (from walletAccountsService logic)
+    const walletAccounts = accountsData.accounts.filter(
+      (account: WalletAccount) => account.source === "wallet",
+    );
+
+    const farcasterVerified = walletAccounts.filter(
+      (account: WalletAccount) => account.imported_from === "farcaster",
+    );
+
+    const talentVerified = walletAccounts.filter(
+      (account: WalletAccount) => account.imported_from === null,
+    );
 
     return {
       social: socialAccounts,
-      wallet: walletAccounts,
+      wallet: {
+        farcasterVerified,
+        talentVerified,
+      },
       primaryWalletInfo: {
         main_wallet_address: profileData?.main_wallet_address || null,
         farcaster_primary_wallet_address:
@@ -69,32 +166,33 @@ async function getConnectedAccountsForTalentIdInternal(
       },
     };
   } catch (error) {
-    console.error("Error fetching connected accounts:", error);
+    console.error("Error fetching accounts:", error);
     throw error; // Don't return empty data silently - let the error bubble up
   }
 }
 
 /**
- * SERVER-SIDE ONLY: Cached version of getConnectedAccountsForTalentId
+ * SERVER-SIDE ONLY: Cached version of getAccountsForTalentId
  * This function should only be called from server-side code (layouts, API routes)
  * Uses proper caching as required by coding principles
  */
-export function getConnectedAccountsForTalentId(talentId: string | number) {
+export function getAccountsForTalentId(talentId: string | number) {
   return unstable_cache(
-    async () => getConnectedAccountsForTalentIdInternal(talentId),
+    async () => getAccountsForTalentIdInternal(talentId),
     [`${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentId}`],
     {
       tags: [
         `${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentId}`,
         CACHE_KEYS.CONNECTED_ACCOUNTS,
       ],
-      revalidate: CACHE_DURATION_5_MINUTES, // Align with client-side cache duration
+      revalidate: CACHE_DURATION_5_MINUTES,
     },
   );
 }
 
 /**
  * SERVER-SIDE ONLY: Get user settings (notifications, preferences, etc.)
+ * Kept from connectedAccountsService for compatibility
  */
 export async function getUserSettings(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -124,6 +222,7 @@ export async function getUserSettings(
 
 /**
  * SERVER-SIDE ONLY: Performs account management action - Placeholder for now
+ * Kept from connectedAccountsService for compatibility
  */
 export async function performAccountAction(
   talentId: string | number,
@@ -179,6 +278,7 @@ export async function performAccountAction(
 
 /**
  * SERVER-SIDE ONLY: Updates notification settings - Placeholder integrating with webhook system
+ * Kept from connectedAccountsService for compatibility
  */
 export async function updateNotificationSettings(
   talentId: string | number,
@@ -206,6 +306,7 @@ export async function updateNotificationSettings(
 
 /**
  * SERVER-SIDE ONLY: Internal function to fetch humanity credentials
+ * Kept from connectedAccountsService for compatibility
  */
 async function fetchHumanityCredentialsInternal(
   talentUuid: string,
@@ -233,6 +334,7 @@ async function fetchHumanityCredentialsInternal(
 /**
  * SERVER-SIDE ONLY: Cached version of fetchHumanityCredentials
  * This function should only be called from server-side code (layouts, API routes)
+ * Kept from connectedAccountsService for compatibility
  */
 export function fetchHumanityCredentials(talentUuid: string) {
   return unstable_cache(

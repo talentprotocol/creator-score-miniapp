@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
+import { useProfileAccounts } from "@/hooks/useProfileAccounts";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
@@ -26,7 +26,7 @@ export function RewardsDecisionModalHandler({
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const { walletData, loading: walletsLoading } = useProfileWalletAccounts(
+  const { wallet: walletData, loading: walletsLoading } = useProfileAccounts(
     talentUuid || undefined,
   );
 

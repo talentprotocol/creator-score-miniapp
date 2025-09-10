@@ -13,7 +13,7 @@ import {
   formatCompactNumber,
   formatNumberWithSuffix,
 } from "@/lib/utils";
-import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
+import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
@@ -55,7 +55,9 @@ export async function GET(
 
     // Fetch additional data (PRESERVED EXACTLY)
     const [socialAccounts, credentials, creatorScoreData] = await Promise.all([
-      getSocialAccountsForTalentId(params.talentUUID)().catch(() => []),
+      getAccountsForTalentId(params.talentUUID)()
+        .then((data) => data.social)
+        .catch(() => []),
       getCredentialsForTalentId(params.talentUUID)().catch(() => []),
       getCreatorScoreForTalentId(params.talentUUID)().catch(() => ({
         score: 0,

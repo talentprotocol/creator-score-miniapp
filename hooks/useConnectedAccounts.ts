@@ -13,14 +13,27 @@ async function getConnectedAccountsForTalentId(
   talentId: string | number,
 ): Promise<GroupedConnectedAccounts> {
   try {
-    const response = await fetch(`/api/connected-accounts?id=${talentId}`);
+    const response = await fetch(`/api/accounts?id=${talentId}`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
-    return data;
+    // Transform unified accounts data to connected accounts format
+    return {
+      social: data.social,
+      wallet: data.wallet.farcasterVerified
+        .concat(data.wallet.talentVerified)
+        .map((account: any) => ({
+          ...account,
+          is_primary:
+            account.identifier ===
+              data.primaryWalletInfo?.farcaster_primary_wallet_address ||
+            account.identifier === data.primaryWalletInfo?.main_wallet_address,
+        })),
+      primaryWalletInfo: data.primaryWalletInfo,
+    };
   } catch (error) {
     console.error(
       "[useConnectedAccounts] Error fetching connected accounts:",

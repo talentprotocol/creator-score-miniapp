@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/drawer";
 import { Icon } from "@/components/ui/icon";
 import { ChevronDown, Copy } from "lucide-react";
-import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
+import { useProfileAccounts } from "@/hooks/useProfileAccounts";
 import {
   truncateAddress,
   formatCompactNumber,
@@ -198,10 +198,10 @@ function WalletAddressesList({
 }) {
   const [copiedAddress, setCopiedAddress] = React.useState<string | null>(null);
   const {
-    walletData,
+    wallet: walletData,
     loading,
     error: walletError,
-  } = useProfileWalletAccounts(isOpen ? talentUUID : undefined);
+  } = useProfileAccounts(isOpen ? talentUUID : undefined);
 
   const handleCopyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
