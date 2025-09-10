@@ -2,11 +2,7 @@ import { supabase } from "@/lib/supabase-client";
 import { PERK_DRAW_DEADLINE_UTC } from "@/lib/constants";
 import { getLevelFromScore } from "@/lib/utils";
 import { getCreatorScoreForTalentId } from "./scoresService";
-
-// NOTE: Perk system is currently disabled/inaccessible
-// This service remains functional for future perk implementations
-
-export type PerkEntryStatus = "ineligible" | "open" | "entered" | "closed";
+import type { PerkEntryStatus } from "@/lib/types";
 
 export async function getPerkEntryStatus(params: {
   perkSlug: string;

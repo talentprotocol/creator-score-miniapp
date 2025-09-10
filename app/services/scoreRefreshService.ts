@@ -1,11 +1,6 @@
 import { BOOST_CONFIG } from "@/lib/constants";
 import { getDataPointsSum } from "./dataPointsService";
-
-export interface TokenBalanceData {
-  balance: number;
-  lastUpdated: string;
-  isBoosted: boolean;
-}
+import type { TokenBalanceData } from "@/lib/types";
 
 /**
  * Fetch token balance for a single profile (for manual refresh)

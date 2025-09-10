@@ -1,9 +1,5 @@
 import { supabase } from "@/lib/supabase-client";
-
-export interface StoredRewardsData {
-  rewards_amount: number | null;
-  rewards_calculated_at: string | null;
-}
+import type { StoredRewardsData } from "@/lib/types";
 
 /**
  * Service for managing rewards data storage in the database.
@@ -140,8 +136,6 @@ export class RewardsStorageService {
         console.error("Error in batch rewards update:", error);
         throw new Error("Failed to batch update rewards");
       }
-
-
     } catch (error) {
       console.error("Unexpected error in batchUpdateOptedOutRewards:", error);
       throw error;

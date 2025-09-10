@@ -1,7 +1,6 @@
 "use client";
 
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import { useRouter } from "next/navigation";
 import React, { useEffect, Suspense } from "react";
 import { SectionAccordion } from "@/components/common/SectionAccordion";
 import { Callout } from "@/components/common/Callout";
@@ -37,11 +36,11 @@ import {
   DEFAULT_TALENT_SWAP_URL,
   SwapResult,
 } from "@/lib/talent-swap";
+import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 
 // Separate component that uses search params
 function SettingsContent() {
-  const router = useRouter();
-  const { handleLogout, authenticated, ready: privyReady } = usePrivyAuth({});
+  const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
   const searchParams = useSearchParams();
@@ -50,6 +49,9 @@ function SettingsContent() {
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
     state: "idle",
   });
+
+  // Modal state for unauthenticated users
+  const [showAuthModal, setShowAuthModal] = React.useState(false);
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
@@ -70,14 +72,12 @@ function SettingsContent() {
     );
   }, [humanityCredentials]);
 
-  // Redirect unauthenticated users to leaderboard (following Badges page pattern)
-  // Only redirect if Privy is ready AND we're not loading AND we have no talentUuid
+  // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
   useEffect(() => {
-    if (privyReady && !loadingUserResolution && !talentUuid) {
-      router.push("/leaderboard");
-      return;
+    if (!loadingUserResolution && !talentUuid) {
+      setShowAuthModal(true);
     }
-  }, [privyReady, loadingUserResolution, talentUuid, router]);
+  }, [loadingUserResolution, talentUuid]);
 
   // Show loading while resolving user
   if (loadingUserResolution) {
@@ -94,9 +94,29 @@ function SettingsContent() {
     );
   }
 
-  // Redirect unauthenticated users (will redirect via useEffect)
+  // Show FarcasterAccessModal for unauthenticated users
   if (!talentUuid) {
-    return null;
+    return (
+      <>
+        <PageContainer>
+          <Section variant="content">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-muted animate-pulse rounded-xl"
+                />
+              ))}
+            </div>
+          </Section>
+        </PageContainer>
+        <FarcasterAccessModal
+          open={showAuthModal}
+          onOpenChange={setShowAuthModal}
+          redirectPath="/settings"
+        />
+      </>
+    );
   }
 
   if (loading || !accounts || !settings || humanityCredentials === null) {
