@@ -1,5 +1,6 @@
 // Shared user/account resolver logic for Talent Protocol users
-import { getLocalBaseUrl } from "./constants";
+import { getPublicBaseUrl } from "./constants";
+import { getCachedData, setCachedData, CACHE_DURATIONS } from "./utils";
 import { validateTalentUUID } from "./validation";
 
 // In-flight request tracking to prevent duplicate concurrent calls
@@ -57,7 +58,7 @@ async function performFidRequest(
 ): Promise<string | null> {
   let baseUrl = "";
   if (typeof window === "undefined") {
-    baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
+    baseUrl = getPublicBaseUrl();
   }
 
   try {
@@ -127,7 +128,7 @@ async function performTalentUserRequest(identifier: string): Promise<{
 } | null> {
   let baseUrl = "";
   if (typeof window === "undefined") {
-    baseUrl = process.env.NEXT_PUBLIC_URL || getLocalBaseUrl();
+    baseUrl = getPublicBaseUrl();
   }
 
   // Add retry logic for server-side calls

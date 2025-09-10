@@ -28,6 +28,7 @@ import {
   Coins,
   Loader2,
   Mail,
+  User,
 } from "lucide-react";
 import { ProfileSettingsSection } from "@/components/settings/ProfileSettingsSection";
 import { openExternalUrl, isFarcasterMiniAppSync } from "@/lib/utils";
@@ -336,7 +337,7 @@ function SettingsContent() {
             {
               id: "profile",
               title: "Profile",
-              icon: <Settings className="h-4 w-4" />,
+              icon: <User className="h-4 w-4" />,
               content: (
                 <ProfileSettingsSection
                   talentUuid={talentUuid}

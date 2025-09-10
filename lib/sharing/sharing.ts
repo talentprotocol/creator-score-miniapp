@@ -7,6 +7,7 @@
  */
 
 import { openExternalUrl } from "@/lib/utils";
+import { getPublicBaseUrl } from "@/lib/constants";
 import type { BadgeState } from "@/lib/types/badges";
 import type { ShareContent, ShareContext } from "./utils";
 import { sanitizeFilename, generateShareUrl } from "./utils";
@@ -183,7 +184,7 @@ export class ShareContentGenerators {
     const filename = sanitizeFilename(`${handle}-creator-score.png`);
 
     // Use absolute URL for share image
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    const baseUrl = getPublicBaseUrl() || "https://creatorscore.app";
     const imageUrl = `${baseUrl}/api/share-image/${talentUUID}`;
 
     const farcasterText = `Check @${farcasterHandle}'s creator stats:\n\n${creatorEmoji} ${creatorType} • 👥 ${followersText} followers\n📊 Score: ${scoreText} • Rank: ${rankText}\n💰 Earnings: ${earningsText}\n\nCheck your Creator Score by @Talent 👇`;
@@ -226,7 +227,7 @@ export class ShareContentGenerators {
       title: badgeTitle,
       levelLabel: badge.levelLabel, // Pass levelLabel for earnings display
     });
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    const baseUrl = getPublicBaseUrl() || "https://creatorscore.app";
     const imageUrl = `${baseUrl}/api/share-image-badge/${badge.badgeSlug}?${badgeImageParams}`;
 
     // Different messaging for earned vs locked badges

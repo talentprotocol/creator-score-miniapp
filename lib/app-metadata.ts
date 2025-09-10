@@ -32,7 +32,12 @@ export const creatorScoreFrame = {
     action: {
       type: "launch_frame",
       name: "Creator Score",
-      url: process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app",
+      url:
+        (process.env.NEXT_PUBLIC_URL?.startsWith("http")
+          ? process.env.NEXT_PUBLIC_URL
+          : process.env.NEXT_PUBLIC_URL
+            ? `https://${process.env.NEXT_PUBLIC_URL}`
+            : "https://www.creatorscore.app"),
       splashImageUrl: "https://www.creatorscore.app/splash.png",
       splashBackgroundColor: "#C79AF6",
     },
@@ -58,7 +63,11 @@ export const APP_METADATA = {
 };
 
 export function getAppMetadata(): AppMetadata {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
+  const baseUrl = (process.env.NEXT_PUBLIC_URL?.startsWith("http")
+    ? process.env.NEXT_PUBLIC_URL
+    : process.env.NEXT_PUBLIC_URL
+      ? `https://${process.env.NEXT_PUBLIC_URL}`
+      : "https://www.creatorscore.app");
 
   return {
     ...APP_METADATA,

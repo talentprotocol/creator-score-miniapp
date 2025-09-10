@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { validateIdentifier } from "@/lib/validation";
-import { RESERVED_WORDS } from "@/lib/constants";
+import { RESERVED_WORDS, getPublicBaseUrl } from "@/lib/constants";
 
 // Dynamic route for opt-out sharing
 // This route will handle /[identifier]/share/optout URLs
@@ -26,9 +26,8 @@ export async function generateMetadata({
 
   try {
     // Resolve user via API route for compliance
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
-    );
+    const base = getPublicBaseUrl();
+    const response = await fetch(`${base}/api/talent-user?id=${encodeURIComponent(params.identifier)}`);
     if (!response.ok) {
       return {
         title: "Creator Not Found - Creator Score",

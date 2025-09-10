@@ -5,6 +5,7 @@ import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 // Uses API routes: GET /api/tags and GET/PUT /api/profile
 
 type Props = {
@@ -19,7 +20,10 @@ type Props = {
 
 export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
   const { token, ensureTalentAuthToken } = useTalentAuthToken();
-  const [loading, setLoading] = React.useState(false);
+  const [tagsLoading, setTagsLoading] = React.useState(false);
+  const [profileLoading, setProfileLoading] = React.useState<boolean>(
+    !initialProfile && !!talentUuid,
+  );
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
@@ -40,7 +44,7 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
   React.useEffect(() => {
     let cancelled = false;
     async function fetchTags() {
-      setLoading(true);
+      setTagsLoading(true);
       setError(null);
       try {
         const res = await fetch(`/api/tags`);
@@ -56,7 +60,7 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Failed to load tags");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setTagsLoading(false);
       }
     }
     fetchTags();
@@ -82,6 +86,9 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
         const preTags: string[] = Array.isArray(data.tags) ? data.tags.slice(0, 3) : [];
         setTags(preTags);
       } catch {}
+      finally {
+        if (!cancelled) setProfileLoading(false);
+      }
     }
     fetchProfile();
     return () => {
@@ -139,8 +146,15 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
     }
   }
 
+  const isLoading = tagsLoading || profileLoading;
+
   return (
     <div className="space-y-4">
+      {isLoading && (
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin" /> Loading profile…
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3">
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Display name</label>
@@ -148,6 +162,7 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Your display name"
+            disabled={isLoading || saving}
           />
         </div>
 
@@ -157,6 +172,7 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Short bio"
+            disabled={isLoading || saving}
           />
         </div>
 
@@ -166,6 +182,7 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="City, Country"
+            disabled={isLoading || saving}
           />
         </div>
 
@@ -177,7 +194,7 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
             <span className="text-[10px] text-muted-foreground">{tags.length}/3 selected</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {loading ? (
+            {tagsLoading ? (
               <span className="text-xs text-muted-foreground">Loading tags…</span>
             ) : (
               (allTags || []).map((tag) => {
@@ -186,8 +203,9 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
                   <button
                     key={tag}
                     type="button"
-                    onClick={() => toggleTag(tag)}
+                    onClick={() => !isLoading && toggleTag(tag)}
                     className={`px-2 py-1 rounded border text-xs ${active ? 'bg-primary text-primary-foreground' : 'bg-background'} `}
+                    disabled={isLoading || saving}
                   >
                     {tag}
                   </button>
@@ -212,8 +230,8 @@ export function ProfileSettingsSection({ talentUuid, initialProfile }: Props) {
         <div className="text-xs text-green-600">{success}</div>
       )}
 
-      <Button className="w-full" onClick={handleSave} disabled={saving}>
-        {saving ? "Saving…" : "Save Profile"}
+      <Button className="w-full" onClick={handleSave} disabled={saving || isLoading}>
+        {isLoading ? "Loading…" : saving ? "Saving…" : "Save Profile"}
       </Button>
     </div>
   );
