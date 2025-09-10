@@ -198,14 +198,13 @@ async function computeCreatorScoreBadges(
 async function computeTotalEarningsBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const credentials = await getCredentialsForTalentId(talentUuid);
+  const credentials = await getCredentialsForTalentId(talentUuid)();
   const content = getBadgeContent("total-earnings");
 
   if (!content) return [];
 
   // Transform credentials to match calculateTotalRewards signature
-  const credentialGroups = await credentials();
-  const transformedCredentials = credentialGroups.flatMap((group) =>
+  const transformedCredentials = credentials.flatMap((group) =>
     group.points.map((point) => ({
       slug: point.slug,
       readable_value: point.readable_value,
@@ -352,7 +351,7 @@ async function computePayItForwardBadges(
 async function computeTotalCollectorsBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const credentials = await getCredentialsForTalentId(talentUuid);
+  const credentials = await getCredentialsForTalentId(talentUuid)();
   const content = getBadgeContent("total-collectors");
 
   if (!content) return [];

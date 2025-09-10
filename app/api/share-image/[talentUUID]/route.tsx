@@ -3,10 +3,7 @@ import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { talentApiClient } from "@/lib/talent-api-client";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_10_MINUTES,
-} from "@/lib/cache-keys";
+import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
 import {
   calculateTotalFollowers,
   convertEthToUsdc,

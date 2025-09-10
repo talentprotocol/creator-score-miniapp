@@ -21,7 +21,7 @@ async function getCredentialsForTalentIdInternal(
     };
     const response = await talentApiClient.getCredentials(params);
     if (!response.ok) return [];
-    
+
     const data: CredentialsResponse | { error: string } = await response.json();
 
     if ("error" in data) {

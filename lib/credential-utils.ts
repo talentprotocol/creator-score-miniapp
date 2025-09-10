@@ -1,10 +1,15 @@
-import type { Credential, IssuerCredentialGroup } from "@/lib/types/credentials";
+import type {
+  Credential,
+  IssuerCredentialGroup,
+} from "@/lib/types/credentials";
 
 /**
  * Groups credentials by issuer and applies custom mappings
  * Shared logic between server service and client hook
  */
-export function groupCredentialsByIssuer(credentials: Credential[]): IssuerCredentialGroup[] {
+export function groupCredentialsByIssuer(
+  credentials: Credential[],
+): IssuerCredentialGroup[] {
   if (!Array.isArray(credentials)) {
     return [];
   }
