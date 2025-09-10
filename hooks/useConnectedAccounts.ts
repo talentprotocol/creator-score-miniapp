@@ -8,6 +8,7 @@ import type {
 import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
+import { isFarcasterMiniApp, connectWalletInMiniApp, listWalletsInMiniApp, getFarcasterEthereumProvider, signMessageInMiniApp, type Eip1193Provider } from "@/lib/client/miniapp";
 
 /**
  * CLIENT-SIDE ONLY: Fetches connected accounts via API routes (follows coding principles)
@@ -76,6 +77,29 @@ async function getUserSettings(
   }
 }
 
+// Parse error message from a failed fetch Response in a robust way
+async function parseErrorResponse(resp: Response): Promise<string> {
+  const fallback = `HTTP ${resp.status}`;
+  try {
+    const text = await resp.text();
+    if (!text) return fallback;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.error === "string" && parsed.error.trim()) {
+        return parsed.error;
+      }
+      if (parsed && typeof parsed.message === "string" && parsed.message.trim()) {
+        return parsed.message;
+      }
+      return text;
+    } catch {
+      return text;
+    }
+  } catch {
+    return fallback;
+  }
+}
+
 /**
  * CLIENT-SIDE ONLY: Performs account management action via API routes
  */
@@ -113,8 +137,7 @@ async function performAccountAction(
               body: JSON.stringify({ platform: action.account_type }),
             });
             if (!res.ok) {
-              const errText = await res.text();
-              throw new Error(errText || `HTTP ${res.status}`);
+              throw new Error(await parseErrorResponse(res));
             }
           }
           return {
@@ -141,8 +164,7 @@ async function performAccountAction(
             body: JSON.stringify({ email: String(action.data?.email || "") }),
           });
           if (!res.ok) {
-            const err = await res.text();
-            throw new Error(err || `HTTP ${res.status}`);
+            throw new Error(await parseErrorResponse(res));
           }
           return { success: true, message: "Email updated successfully. Click on the link in the email to verify your email." };
         } catch (e) {
@@ -352,114 +374,152 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
     try {
       // Handle wallet connect inline to leverage wallet provider & auth token
       if (action.action === "connect" && action.account_type === "wallet") {
+        // Small helpers for this flow
+        const hexFromUtf8 = (value: string): string => {
+          const bytes = new TextEncoder().encode(value);
+          let hex = "0x";
+          for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, "0");
+          return hex;
+        };
+        const signWithProvider = async (
+          provider: Eip1193Provider,
+          message: string,
+          address: string,
+        ): Promise<string> => {
+          const hex = hexFromUtf8(message);
+          try {
+            return (await provider.request({ method: "personal_sign", params: [hex, address] })) as string;
+          } catch {
+            try {
+              return (await provider.request({ method: "personal_sign", params: [address, hex] })) as string;
+            } catch {
+              return (await provider.request({ method: "personal_sign", params: [message, address] })) as string;
+            }
+          }
+        };
+
         try {
           // Ensure we have a user auth token for write request
           let token = tpToken;
-          if (!token) {
-            token = (await ensureTalentAuthToken()) || null;
-          }
-          if (!token) {
-            return { success: false, message: "Missing Talent auth token" };
-          }
+          if (!token) token = (await ensureTalentAuthToken({ force: true })) || null;
+          if (!token) return { success: false, message: "Missing Talent auth token" };
 
-          // Request wallet account and chain (prefer Farcaster mini-app provider if available)
-          let eth: any = undefined;
-          try {
-            const mod = await import("@farcaster/miniapp-sdk");
-            const sdk = (mod as any)?.sdk;
-            const viaGetter = sdk?.wallet?.getEthereumProvider
-              ? await sdk.wallet.getEthereumProvider()
-              : undefined;
-            const viaLegacy = sdk?.wallet?.ethProvider;
-            const farcasterProvider = viaGetter || viaLegacy;
-            if (farcasterProvider && typeof farcasterProvider.request === "function") {
-              eth = farcasterProvider;
-            }
-          } catch {}
-          if (!eth) {
-            eth = (window as any)?.ethereum;
-          }
-          if (!eth?.request) {
-            return { success: false, message: "No Ethereum provider found" };
-          }
+          const isMini = await isFarcasterMiniApp(150);
 
-          // Prompt user to grant permissions (opens account selection UI on most wallets)
-          try {
-            await eth.request({
-              method: "wallet_requestPermissions",
-              params: [{ eth_accounts: {} }],
+          // Strategy A: Farcaster Mini App
+          const connectViaFarcaster = async (): Promise<{ success: boolean; message: string }> => {
+            await connectWalletInMiniApp();
+            const listed = await listWalletsInMiniApp();
+            console.log("listed", listed);
+            const address = listed?.primaryWallet?.address || listed?.wallets?.[0]?.address;
+            const chain_id = (listed?.primaryWallet?.chainId || listed?.wallets?.[0]?.chainId || 1) as number;
+            if (!address) return { success: false, message: "No wallet address selected" };
+
+            const nr = await fetch("/api/talent-auth/create-user-nonce", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-talent-auth-token": token! },
+              body: JSON.stringify({}),
             });
-          } catch {}
+            if (!nr.ok) throw new Error(await parseErrorResponse(nr));
+            const nonce = (await nr.json())?.nonce as string | undefined;
+            if (!nonce) throw new Error("Missing nonce");
+            const message = `Connect with Talent Protocol\nnonce: ${nonce}`;
 
-          const accountsReq: string[] = await eth.request({ method: "eth_requestAccounts" });
-
-          // Prefer a newly connected address if possible
-          const existing = new Set(
-            (accounts?.wallet || []).map((w) => w.identifier.toLowerCase()),
-          );
-          const picked = accountsReq.find(
-            (a) => !existing.has(String(a).toLowerCase()),
-          ) || accountsReq?.[0];
-          const address = picked;
-          if (!address) {
-            return { success: false, message: "No wallet address selected" };
-          }
-          const chainHex: string = await eth.request({ method: "eth_chainId" });
-          const chain_id = parseInt(chainHex, 16) || 1;
-
-          // Get user-specific nonce from authenticated endpoint
-          const nonceResp = await fetch("/api/talent-auth/create-user-nonce", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-talent-auth-token": token,
-            },
-            body: JSON.stringify({}),
-          });
-          if (!nonceResp.ok) {
-            const t = await nonceResp.text();
-            throw new Error(t || `Failed to get nonce (${nonceResp.status})`);
-          }
-          const nonceData = await nonceResp.json();
-          const nonce: string | undefined = nonceData?.nonce;
-          if (!nonce) throw new Error("Missing nonce");
-
-          const message = `Connect with Talent Protocol\nnonce: ${nonce}`;
-          const signature: string = await eth.request({
-            method: "personal_sign",
-            params: [message, address],
-          });
-          if (!signature) throw new Error("Signing cancelled");
-
-          // Call our API to connect wallet (passes user token server-side)
-          const connectResp = await fetch(`/api/connected-accounts`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-talent-auth-token": token,
-            },
-            body: JSON.stringify({ address, signature, chain_id }),
-          });
-          if (!connectResp.ok) {
-            let msg = `HTTP ${connectResp.status}`;
-            try {
-              const errJson = await connectResp.json();
-              if (errJson?.error) msg = String(errJson.error);
-            } catch {
-              const errText = await connectResp.text();
-              if (errText) msg = errText;
+            let signature = await signMessageInMiniApp(message);
+            if (!signature) {
+              const fc = (await getFarcasterEthereumProvider()) as Eip1193Provider | null;
+              if (!fc) return { success: false, message: "No Ethereum provider found for signing" };
+              signature = await signWithProvider(fc, message, address);
             }
-            throw new Error(msg);
-          }
 
-          // Refresh only accounts so UI doesn't show global loading and can display success notice
-          await refetchAccountsOnly();
-          return { success: true, message: "Wallet connected" };
-        } catch (e) {
-          return {
-            success: false,
-            message: e instanceof Error ? e.message : "Failed to connect wallet",
+            const doConnect = (userToken: string) =>
+              fetch(`/api/connected-accounts`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-talent-auth-token": userToken },
+                body: JSON.stringify({ address, signature, chain_id }),
+              });
+
+            let resp = await doConnect(token!);
+            if (resp.status === 401) {
+              const refreshed = (await ensureTalentAuthToken({ force: true })) || null;
+              if (!refreshed) return { success: false, message: "Wallet signature required" };
+              token = refreshed;
+              resp = await doConnect(token);
+            }
+            if (!resp.ok) throw new Error(await parseErrorResponse(resp));
+            await refetchAccountsOnly();
+            return { success: true, message: "Wallet connected" };
           };
+
+          // Strategy B: Privy/injected wallet
+          const connectViaPrivy = async (): Promise<{ success: boolean; message: string }> => {
+            let provider: Eip1193Provider | null = null;
+            try {
+              const w = window as unknown as { privy?: { getEthereumProvider?: () => Promise<Eip1193Provider> }; ethereum?: Eip1193Provider };
+              if (w.privy?.getEthereumProvider) provider = await w.privy.getEthereumProvider();
+              if (!provider && w.ethereum) provider = w.ethereum;
+            } catch {}
+            if (!provider) return { success: false, message: "No Ethereum provider found" };
+
+            try {
+              await provider.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+            } catch {}
+
+            let address: string | undefined;
+            try {
+              const accountsReq = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+              const existing = new Set((accounts?.wallet || []).map((w) => w.identifier.toLowerCase()));
+              address = accountsReq.find((a) => !existing.has(String(a).toLowerCase())) || accountsReq?.[0];
+            } catch (reqErr: any) {
+              return { success: false, message: `[wallet] ${reqErr?.message || String(reqErr)}` };
+            }
+            if (!address) return { success: false, message: "No wallet address selected" };
+
+            let chain_id = 1;
+            try {
+              const chainHex = (await provider.request({ method: "eth_chainId" })) as string;
+              chain_id = parseInt(chainHex, 16) || 1;
+            } catch {}
+
+            const nr = await fetch("/api/talent-auth/create-user-nonce", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-talent-auth-token": token! },
+              body: JSON.stringify({}),
+            });
+            if (!nr.ok) throw new Error(await parseErrorResponse(nr));
+            const nonce = (await nr.json())?.nonce as string | undefined;
+            if (!nonce) throw new Error("Missing nonce");
+            const message = `Connect with Talent Protocol\nnonce: ${nonce}`;
+
+            let signature: string;
+            try {
+              signature = await signWithProvider(provider, message, address);
+            } catch (sigErr: any) {
+              return { success: false, message: `[sign] ${sigErr?.message || String(sigErr)}` };
+            }
+
+            const doConnect = (userToken: string) =>
+              fetch(`/api/connected-accounts`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-talent-auth-token": userToken },
+                body: JSON.stringify({ address, signature, chain_id }),
+              });
+
+            let resp = await doConnect(token!);
+            if (resp.status === 401) {
+              const refreshed = (await ensureTalentAuthToken({ force: true })) || null;
+              if (!refreshed) return { success: false, message: "Wallet signature required" };
+              token = refreshed;
+              resp = await doConnect(token);
+            }
+            if (!resp.ok) throw new Error(await parseErrorResponse(resp));
+            await refetchAccountsOnly();
+            return { success: true, message: "Wallet connected" };
+          };
+
+          return isMini ? await connectViaFarcaster() : await connectViaPrivy();
+        } catch (e) {
+          return { success: false, message: e instanceof Error ? e.message : String(e) };
         }
       }
 

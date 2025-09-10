@@ -123,7 +123,11 @@ export class TalentApiClient {
         throw new Error("Invalid response format from Talent API");
       }
 
-      const data = await response.json();
+      type JsonRecord = Record<string, unknown> | null;
+      let data: JsonRecord = null;
+      try {
+        data = (await response.json()) as JsonRecord;
+      } catch {}
       responseTimer.end();
 
       if (!response.ok) {
@@ -131,23 +135,28 @@ export class TalentApiClient {
           endpoint,
           status: response.status,
           statusText: response.statusText,
-          error_message: data.error || "No error message",
+          error_message: (data && typeof (data as { error?: unknown }).error === "string"
+            ? (data as { error?: string }).error
+            : "No error message"),
           data_keys: data ? Object.keys(data) : [],
         });
-        throw new Error(
-          data.error || `HTTP ${response.status}: ${response.statusText}`,
-        );
+        const msg =
+          (data && typeof (data as { error?: unknown }).error === "string"
+            ? (data as { error?: string }).error
+            : undefined) ||
+          `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(msg);
       }
 
       dlog("TalentAPI", "makeRequest_success", {
         endpoint,
         status: response.status,
         data_keys: data ? Object.keys(data) : [],
-        has_profile: !!data.profile,
-        has_scores: !!data.scores,
-        has_socials: !!data.socials,
-        has_credentials: !!data.credentials,
-        has_posts: !!data.posts,
+        has_profile: !!(data as Record<string, unknown> | null)?.profile,
+        has_scores: !!(data as Record<string, unknown> | null)?.scores,
+        has_socials: !!(data as Record<string, unknown> | null)?.socials,
+        has_credentials: !!(data as Record<string, unknown> | null)?.credentials,
+        has_posts: !!(data as Record<string, unknown> | null)?.posts,
       });
 
       requestTimer.end();
@@ -227,11 +236,12 @@ export class TalentApiClient {
         dlog("TalentAPI", "getScore_error_response", {
           status: response.status,
           statusText: response.statusText,
-          error_message: data.error || "No error message",
+          error_message: data?.error || "No error message",
         });
-        throw new Error(
-          data.error || `HTTP ${response.status}: ${response.statusText}`,
-        );
+        const msg =
+          (data && typeof data.error === "string" && data.error) ||
+          `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(msg);
       }
 
       // Transform Farcaster response to match wallet response format

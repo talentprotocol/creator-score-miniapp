@@ -58,10 +58,13 @@ export function ConnectedWalletsSection({
     setBusy(true);
     try {
       const result = await onAction({ action: "connect", account_type: "wallet" });
-      if (!result.success) {
-        // Log detailed error, show generic message to user
-        console.error("Connect wallet failed:", result.message);
-        setNotice({ type: "error", message: "Couldn't connect wallet. Please try again." });
+      if (!result || !result.success) {
+        const msg = (result && typeof result.message === "string" && result.message.trim())
+          ? result.message
+          : "Couldn't connect wallet. Please try again.";
+        // Log full result for diagnostics but avoid accessing undefined props
+        console.error("Connect wallet failed:", msg, result ?? {});
+        setNotice({ type: "error", message: msg });
       } else {
         setNotice({ type: "success", message: "Wallet connected" });
       }

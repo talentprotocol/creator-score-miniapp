@@ -31,7 +31,8 @@ import {
   User,
 } from "lucide-react";
 import { ProfileSettingsSection } from "@/components/settings/ProfileSettingsSection";
-import { openExternalUrl, isFarcasterMiniAppSync } from "@/lib/utils";
+import { openExternalUrl } from "@/lib/utils";
+import { isFarcasterMiniApp } from "@/lib/client/miniapp";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { usePostHog } from "posthog-js/react";
@@ -53,7 +54,17 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const { token: tpToken, loading: tpLoading, stage: tpStage, error: tpError, ensureTalentAuthToken } = useTalentAuthToken();
-  const isMiniApp = isFarcasterMiniAppSync();
+  const [isMiniApp, setIsMiniApp] = React.useState(false);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const val = await isFarcasterMiniApp(150);
+      if (mounted) setIsMiniApp(val);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Talent swap state
   const [swapResult, setSwapResult] = React.useState<SwapResult>({

@@ -672,10 +672,21 @@ export function isFarcasterMiniAppSync(): boolean {
     if ((window as unknown as { __FC_MINIAPP__?: boolean }).__FC_MINIAPP__) {
       return true;
     }
+    // Heuristic: Warpcast/Farcaster user agents in embedded webviews
+    const ua = (navigator && navigator.userAgent) || "";
+    if (/Warpcast|Farcaster/i.test(ua)) {
+      return true;
+    }
   } catch {}
 
   return false;
 }
+
+/**
+ * Robust async detection using official Farcaster Mini App SDK.
+ * Falls back gracefully when SDK isn't available.
+ */
+// Moved async mini app detection to client-only module to keep imports at top-level
 
 /**
  * Open external URL with environment detection

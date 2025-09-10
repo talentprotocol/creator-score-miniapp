@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { isFarcasterMiniAppSync } from "@/lib/utils";
+import { isFarcasterMiniApp, getFarcasterEthereumProvider, signMessageInMiniApp } from "@/lib/client/miniapp";
 
 type EnsureOptions = {
   enabled?: boolean;
@@ -23,6 +23,16 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
   >(
     "idle",
   );
+
+  // Helper to encode a UTF-8 string to 0x-prefixed hex for personal_sign
+  const convertUtf8ToHex = useCallback((value: string): string => {
+    const bytes = new TextEncoder().encode(value);
+    let hex = "0x";
+    for (let i = 0; i < bytes.length; i++) {
+      hex += bytes[i].toString(16).padStart(2, "0");
+    }
+    return hex;
+  }, []);
 
   const readFromStorage = useCallback(() => {
     if (typeof window === "undefined") return { token: null, expiresAt: null };
@@ -64,6 +74,8 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
     const fiveDays = 5 * 24 * 60 * 60;
     return exp - nowSec < fiveDays;
   }, []);
+
+  // No embedded wallet usage; only use connected EIP-1193 providers
 
   // Public method to ensure token exists; prompts signing if missing
   const ensureTalentAuthToken = useCallback(async (opts?: { force?: boolean }) => {
@@ -123,25 +135,18 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       let provider: any = undefined;
       let providerSource: "farcaster" | "privy" | "injected" | "unknown" = "unknown";
       if (typeof window !== "undefined") {
-        const isMiniApp = isFarcasterMiniAppSync?.() === true;
+        const isMiniApp = (await isFarcasterMiniApp(150)) === true;
         try {
           if (isMiniApp) {
-            // Only use Farcaster provider inside the mini app
-            const mod = await import("@farcaster/miniapp-sdk");
-            const sdk = (mod as any)?.sdk;
-            const viaGetter = sdk?.wallet?.getEthereumProvider
-              ? await sdk.wallet.getEthereumProvider()
-              : undefined;
-            const viaLegacy = sdk?.wallet?.ethProvider;
-            const farcasterProvider = viaGetter || viaLegacy;
+            const farcasterProvider = await getFarcasterEthereumProvider();
             if (farcasterProvider && typeof farcasterProvider.request === "function") {
               provider = farcasterProvider;
               providerSource = "farcaster";
             }
           }
         } catch {}
-        // Try Privy's embedded wallet provider next
-        if (!provider) {
+        // Outside Farcaster mini app, try Privy and injected providers
+        if (!provider && !isMiniApp) {
           try {
             const privyProvider = (window as any)?.privy?.getEthereumProvider
               ? await (window as any).privy.getEthereumProvider()
@@ -152,8 +157,8 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
             }
           } catch {}
         }
-        if (!provider) {
-          // Fallback to injected provider (e.g., Privy/wallet extension)
+        if (!provider && !isMiniApp) {
+          // Fallback to injected provider (e.g., wallet extension)
           const injected = (window as any).ethereum;
           if (injected && typeof injected.request === "function") {
             provider = injected;
@@ -162,6 +167,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
         }
       }
 
+      // If no provider after all strategies, error out
       if (!provider) {
         setStage("rejected");
         setError("No Ethereum provider available");
@@ -189,38 +195,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
           raw: err,
         });
         const code = err?.code ?? err?.data?.code;
-        // If Farcaster provider fails internally, try fallback once
-        if (providerSource === "farcaster" && code === -32603 && typeof window !== "undefined") {
-          try {
-            let fallbackProvider: any = undefined;
-            const privyProvider = (window as any)?.privy?.getEthereumProvider
-              ? await (window as any).privy.getEthereumProvider()
-              : undefined;
-            if (privyProvider && typeof privyProvider.request === "function") {
-              fallbackProvider = privyProvider;
-              providerSource = "privy";
-            } else if ((window as any).ethereum?.request) {
-              fallbackProvider = (window as any).ethereum;
-              providerSource = "injected";
-            }
-            if (fallbackProvider) {
-              let accounts = (await fallbackProvider.request({ method: "eth_accounts" })) as
-                | string[]
-                | undefined;
-              if (!accounts || accounts.length === 0) {
-                accounts = (await fallbackProvider.request({ method: "eth_requestAccounts" })) as
-                  | string[]
-                  | undefined;
-              }
-              address = accounts?.[0];
-              if (address) {
-                provider = fallbackProvider;
-              }
-            }
-          } catch (fallbackErr) {
-            console.error("[useTalentAuthToken] fallback provider failed", fallbackErr);
-          }
-        }
+        // Inside Farcaster mini app, do not fallback to other providers
         if (address) {
           // Proceed with the obtained address after fallback
         } else if (code === -32002) {
@@ -266,10 +241,35 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       let signature: string | undefined;
       setStage("sign");
       try {
-        signature = await provider.request({
-          method: "personal_sign",
-          params: [message, address],
-        });
+        // Prefer Mini App SDK wallet signing when present to avoid CORS
+        if (providerSource === "farcaster") {
+          const miniSig = await signMessageInMiniApp(message);
+          if (miniSig) {
+            signature = miniSig;
+          }
+        }
+        // Fallback to EIP-1193 personal_sign with robust parameter/encoding fallbacks
+        if (!signature) {
+          const hexMessage = convertUtf8ToHex(message);
+          try {
+            signature = await provider.request({
+              method: "personal_sign",
+              params: [hexMessage, address],
+            });
+          } catch (innerErr: any) {
+            try {
+              signature = await provider.request({
+                method: "personal_sign",
+                params: [address, hexMessage],
+              });
+            } catch {
+              signature = await provider.request({
+                method: "personal_sign",
+                params: [message, address],
+              });
+            }
+          }
+        }
       } catch (err: any) {
         // User rejection: set a session flag to prevent auto loops
         const code = err?.code ?? err?.data?.code;
