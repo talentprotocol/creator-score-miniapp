@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
 import {
-  getCachedData,
-  setCachedData,
-  CACHE_DURATIONS,
   formatNumberWithSuffix,
   calculateTotalRewards,
   getEthUsdcPrice,
 } from "@/lib/utils";
 import { useProfileCredentials } from "./useProfileCredentials";
-import { CACHE_KEYS } from "@/lib/cache-keys";
 
 export function useProfileTotalEarnings(talentUUID: string) {
   const [totalEarnings, setTotalEarnings] = useState<number | undefined>(
@@ -51,18 +47,6 @@ export function useProfileTotalEarnings(talentUUID: string) {
         return;
       }
 
-      // Check cache first
-      const cacheKey = `${CACHE_KEYS.TOTAL_EARNINGS}_${talentUUID}_v0`;
-      const cachedEarnings = getCachedData<number>(
-        cacheKey,
-        CACHE_DURATIONS.PROFILE_DATA,
-      );
-      if (cachedEarnings !== null) {
-        setTotalEarnings(cachedEarnings);
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
@@ -83,9 +67,6 @@ export function useProfileTotalEarnings(talentUUID: string) {
         );
 
         setTotalEarnings(total);
-
-        // Cache the total earnings
-        setCachedData(cacheKey, total);
       } catch (err) {
         console.error("Error calculating total earnings:", err);
         setError(

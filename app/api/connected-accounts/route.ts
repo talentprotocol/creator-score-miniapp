@@ -16,7 +16,11 @@ export async function GET(req: NextRequest) {
     // Call the connected accounts service that returns the expected structure
     const data = await getConnectedAccountsForTalentId(params.id)();
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+      },
+    });
   } catch (error) {
     console.error("Error in connected-accounts API route:", error);
     return NextResponse.json(

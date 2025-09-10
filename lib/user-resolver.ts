@@ -1,6 +1,5 @@
 // Shared user/account resolver logic for Talent Protocol users
 import { getLocalBaseUrl } from "./constants";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "./utils";
 import { validateTalentUUID } from "./validation";
 
 // In-flight request tracking to prevent duplicate concurrent calls
@@ -34,24 +33,13 @@ export function getAccountSource(id: string): "wallet" | "farcaster" | null {
 export async function resolveFidToTalentUuid(
   fid: number,
 ): Promise<string | null> {
-  const cacheKey = `fid_to_talent_uuid_${fid}`;
-
-  // Check cache first
-  const cachedUuid = getCachedData<string>(
-    cacheKey,
-    CACHE_DURATIONS.PROFILE_DATA,
-  );
-  if (cachedUuid !== null) {
-    return cachedUuid;
-  }
-
   // Check if there's already a request in flight for this FID
   if (inFlightRequests.has(fid)) {
     return inFlightRequests.get(fid)!;
   }
 
   // Create the request promise
-  const requestPromise = performFidRequest(fid, cacheKey);
+  const requestPromise = performFidRequest(fid);
 
   // Store it in the in-flight map
   inFlightRequests.set(fid, requestPromise);
@@ -66,7 +54,6 @@ export async function resolveFidToTalentUuid(
 
 async function performFidRequest(
   fid: number,
-  cacheKey: string,
 ): Promise<string | null> {
   let baseUrl = "";
   if (typeof window === "undefined") {
@@ -80,8 +67,6 @@ async function performFidRequest(
     if (res.ok) {
       const user = await res.json();
       if (user && user.id) {
-        // Cache the result
-        setCachedData(cacheKey, user.id);
         return user.id;
       }
     }
@@ -89,8 +74,6 @@ async function performFidRequest(
     console.error("[resolveFidToTalentUuid] Error:", error);
   }
 
-  // Cache null result to prevent repeated failed requests
-  setCachedData(cacheKey, null);
   return null;
 }
 

@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Post, PostsResponse } from "@/lib/types";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
 
 /**
  * CLIENT-SIDE ONLY: Fetches all posts via API route (follows coding principles)
@@ -67,28 +65,12 @@ export function useProfilePostsAll(talentUUID: string) {
   const fetchAllPosts = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `${CACHE_KEYS.PROFILE_POSTS_ALL}_${talentUUID}`;
-
-    // Check cache first
-    const cachedPosts = getCachedData<Post[]>(
-      cacheKey,
-      CACHE_DURATIONS.POSTS_DATA, // Use correct cache duration (30 minutes)
-    );
-    if (cachedPosts) {
-      setPosts(cachedPosts);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
       const postsData = await getAllPostsForTalentId(talentUUID);
       setPosts(postsData);
-
-      // Cache the posts data
-      setCachedData(cacheKey, postsData);
     } catch (err) {
       console.error("Error fetching all posts:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch posts");
@@ -96,11 +78,11 @@ export function useProfilePostsAll(talentUUID: string) {
     } finally {
       setLoading(false);
     }
-  }, [talentUUID]); // Only depend on talentUUID
+  }, [talentUUID]);
 
   useEffect(() => {
     fetchAllPosts();
-  }, [fetchAllPosts]); // Only depend on the memoized function
+  }, [fetchAllPosts]);
 
   // Process posts into yearly data for chart
   const yearlyData = useMemo((): YearlyPostData[] => {

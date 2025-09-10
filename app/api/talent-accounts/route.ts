@@ -16,7 +16,11 @@ export async function GET(req: NextRequest) {
     // ✅ FIXED: Call service layer instead of API client directly
     const data = await getWalletAccountsForTalentId(params.id);
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+      },
+    });
   } catch (error) {
     console.error("Error in talent-accounts API route:", error);
     return NextResponse.json(

@@ -70,37 +70,13 @@ export function getLevelBadgeColor(level: number | null): string {
 }
 
 export async function getEthUsdcPrice(): Promise<number> {
-  const cacheKey = "eth_usdc_price";
-
-  // Check cache first
-  const cachedPrice = getCachedData<number>(
-    cacheKey,
-    CACHE_DURATIONS.ETH_PRICE,
-  );
-  if (cachedPrice !== null && cachedPrice !== undefined) {
-    return cachedPrice;
-  }
-
   try {
-    const response = await fetch(
-      "https://api.coinbase.com/v2/prices/ETH-USD/spot",
-    );
-
+    const response = await fetch("/api/crypto-prices");
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-
     const data = await response.json();
-    const price = parseFloat(data.data?.amount);
-
-    if (isNaN(price) || price <= 0) {
-      throw new Error("Invalid price data");
-    }
-
-    // Cache the price with correct 24-hour duration
-    setCachedData(cacheKey, price);
-
-    return price;
+    return data.ethPrice;
   } catch {
     // Return fallback price if fetch fails
     return 3000;
@@ -113,30 +89,13 @@ export function convertEthToUsdc(ethAmount: number, ethPrice: number): number {
 
 // POL (Polygon) price in USD using Coinbase MATIC-USD spot
 export async function getPolUsdPrice(): Promise<number> {
-  const cacheKey = "pol_usd_price";
-
-  const cachedPrice = getCachedData<number>(
-    cacheKey,
-    CACHE_DURATIONS.ETH_PRICE,
-  );
-  if (cachedPrice !== null && cachedPrice !== undefined) {
-    return cachedPrice;
-  }
-
   try {
-    const response = await fetch(
-      "https://api.coinbase.com/v2/prices/MATIC-USD/spot",
-    );
+    const response = await fetch("/api/crypto-prices");
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
-    const price = parseFloat(data.data?.amount);
-    if (isNaN(price) || price <= 0) {
-      throw new Error("Invalid price data");
-    }
-    setCachedData(cacheKey, price);
-    return price;
+    return data.polPrice;
   } catch {
     // Conservative fallback
     return 1; // $1 per POL fallback to avoid exploding totals
@@ -462,58 +421,6 @@ export function cleanCredentialLabel(label: string, issuer: string): string {
     : label;
 }
 
-// Cache data structure for localStorage
-interface CachedData<T> {
-  data: T;
-  timestamp: number;
-}
-
-export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    // Ensure consistent cache key format
-    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
-    const cached = localStorage.getItem(cacheKey);
-    if (!cached) {
-      return null;
-    }
-
-    const parsed: CachedData<T> = JSON.parse(cached);
-    const age = Date.now() - parsed.timestamp;
-
-    if (age > maxAgeMs) {
-      localStorage.removeItem(cacheKey);
-      return null;
-    }
-
-    return parsed.data;
-  } catch {
-    return null;
-  }
-}
-
-export function setCachedData<T>(key: string, data: T): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    const cacheData: CachedData<T> = {
-      data,
-      timestamp: Date.now(),
-    };
-
-    // Ensure consistent cache key format
-    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
-    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-  } catch {
-    // Storage quota exceeded or other error, silently fail
-  }
-}
-
 // Unstable cache wrapper for specific data fetching functions
 export function createCachedFunction<TArgs extends readonly unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>,
@@ -529,18 +436,6 @@ export function createCachedFunction<TArgs extends readonly unknown[], TReturn>(
 export function msToSeconds(ms: number): number {
   return Math.floor(ms / 1000);
 }
-
-// Cache duration constants
-export const CACHE_DURATIONS = {
-  PROFILE_DATA: 5 * 60 * 1000, // 5 minutes
-  SOCIAL_ACCOUNTS: 60 * 60 * 1000, // 1 hour
-  POSTS_DATA: 30 * 60 * 1000, // 30 minutes
-  CREDENTIALS_DATA: 30 * 60 * 1000, // 30 minutes
-  SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
-  EXPENSIVE_COMPUTATION: 30 * 60 * 1000, // 30 minutes for expensive computations
-  ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours
-  LEADERBOARD_DATA: 5 * 60 * 1000, // 5 minutes for leaderboard data
-} as const;
 
 export { resolveTalentUser } from "./user-resolver";
 

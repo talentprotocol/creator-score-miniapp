@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import type { SocialAccount, TalentSocialAccount } from "@/lib/types";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
 
 function getAccountAge(ownedSince: string | null): string | null {
   if (!ownedSince) return null;
@@ -122,28 +120,12 @@ export function useProfileSocialAccounts(talentUUID: string) {
   const fetchSocialAccounts = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `${CACHE_KEYS.PROFILE_SOCIAL_ACCOUNTS}_${talentUUID}`;
-
-    // Check cache first
-    const cachedAccounts = getCachedData<SocialAccount[]>(
-      cacheKey,
-      CACHE_DURATIONS.SOCIAL_ACCOUNTS, // Use correct cache duration (1 hour)
-    );
-    if (cachedAccounts) {
-      setSocialAccounts(cachedAccounts);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
       const accounts = await getSocialAccountsForTalentId(talentUUID);
       setSocialAccounts(accounts);
-
-      // Cache the social accounts data
-      setCachedData(cacheKey, accounts);
     } catch (err) {
       console.error("Error fetching social accounts:", err);
       setError(
@@ -153,11 +135,11 @@ export function useProfileSocialAccounts(talentUUID: string) {
     } finally {
       setLoading(false);
     }
-  }, [talentUUID]); // Only depend on talentUUID
+  }, [talentUUID]);
 
   useEffect(() => {
     fetchSocialAccounts();
-  }, [fetchSocialAccounts]); // Only depend on the memoized function
+  }, [fetchSocialAccounts]);
 
   return { socialAccounts, loading, error };
 }

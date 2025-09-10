@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { useProfileCredentials } from "./useProfileCredentials";
-import {
-  getEthUsdcPrice,
-  convertEthToUsdc,
-  getCachedData,
-  setCachedData,
-  CACHE_DURATIONS,
-} from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
+import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 
 interface EarningsBreakdownSegment {
@@ -35,19 +28,6 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
     async function calculateEarningsBreakdown() {
       if (!credentials || credentials.length === 0) {
         setBreakdown(null);
-        setLoading(false);
-        return;
-      }
-
-      const cacheKey = `${CACHE_KEYS.EARNINGS_BREAKDOWN}_${talentUUID}`;
-
-      // Check cache first
-      const cachedBreakdown = getCachedData<EarningsBreakdown>(
-        cacheKey,
-        CACHE_DURATIONS.PROFILE_DATA,
-      );
-      if (cachedBreakdown) {
-        setBreakdown(cachedBreakdown);
         setLoading(false);
         return;
       }
@@ -162,9 +142,6 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
         };
 
         setBreakdown(result);
-
-        // Cache the result
-        setCachedData(cacheKey, result);
       } catch (err) {
         console.error("Error calculating earnings breakdown:", err);
         setError(

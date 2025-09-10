@@ -14,5 +14,15 @@ export async function GET(req: NextRequest) {
 
   const params = extractTalentProtocolParams(searchParams);
 
-  return talentApiClient.getSocials(params);
+  const response = await talentApiClient.getSocials(params);
+
+  // Add HTTP cache headers for browser caching
+  if (response instanceof Response) {
+    response.headers.set(
+      "Cache-Control",
+      "public, max-age=300, stale-while-revalidate=600",
+    );
+  }
+
+  return response;
 }
