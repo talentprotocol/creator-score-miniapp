@@ -171,7 +171,6 @@ export async function GET(
     const response = new Response(imageResponse.body, {
       headers: {
         ...imageResponse.headers,
-        "Cache-Control": "public, max-age=3600",
         "Access-Control-Allow-Origin": "*",
       },
     });

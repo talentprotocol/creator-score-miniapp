@@ -7,16 +7,7 @@ export async function GET() {
   try {
     const result = await getTop200LeaderboardEntries();
     
-    // Return response with no-cache headers to prevent any caching
-    return new NextResponse(JSON.stringify(result), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Failed to fetch snapshot leaderboard data:", error);
     return NextResponse.json(

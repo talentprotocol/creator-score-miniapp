@@ -39,25 +39,11 @@ export async function GET() {
       throw new Error("Invalid price data from Coinbase");
     }
 
-    return NextResponse.json(
-      { ethPrice, polPrice },
-      {
-        headers: {
-          "Cache-Control": "public, max-age=3600, stale-while-revalidate=7200",
-        },
-      },
-    );
+    return NextResponse.json({ ethPrice, polPrice });
   } catch (error) {
     console.error("[crypto-prices] Fetch failed:", error);
 
     // hardcoded fallback prices
-    return NextResponse.json(
-      { ethPrice: 4300, polPrice: 0.25 },
-      {
-        headers: {
-          "Cache-Control": "public, max-age=300, stale-while-revalidate=600", // Shorter cache for fallbacks
-        },
-      },
-    );
+    return NextResponse.json({ ethPrice: 4300, polPrice: 0.25 });
   }
 }

@@ -27,13 +27,6 @@ export async function GET(req: NextRequest) {
 
   const response = await talentApiClient.getCredentials(params);
 
-  // Add HTTP cache headers for browser caching
-  if (response instanceof Response) {
-    response.headers.set(
-      "Cache-Control",
-      "public, max-age=300, stale-while-revalidate=600",
-    );
-  }
 
   return response;
 }

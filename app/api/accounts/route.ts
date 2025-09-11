@@ -16,11 +16,7 @@ export async function GET(req: NextRequest) {
     // Call the unified accounts service
     const data = await getAccountsForTalentId(params.id)();
 
-    return NextResponse.json(data, {
-      headers: {
-        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
-      },
-    });
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error in accounts API route:", error);
     return NextResponse.json(
