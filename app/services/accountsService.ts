@@ -25,17 +25,81 @@ function getAccountAge(ownedSince: string | null): string | null {
   return "<1 month";
 }
 
+const DISPLAY_NAME_MAP: Record<string, string> = {
+  github: "GitHub",
+  base: "Base",
+  ethereum: "Ethereum",
+  farcaster: "Farcaster",
+  lens: "Lens",
+  twitter: "Twitter",
+  linkedin: "LinkedIn",
+  efp: "EFP",
+  ens: "ENS",
+} as const;
+
 function getDisplayName(source: string): string {
-  if (source === "github") return "GitHub";
-  if (source === "base") return "Base";
-  if (source === "ethereum") return "Ethereum";
-  if (source === "farcaster") return "Farcaster";
-  if (source === "lens") return "Lens";
-  if (source === "twitter") return "Twitter";
-  if (source === "linkedin") return "LinkedIn";
-  if (source === "efp") return "EFP";
-  if (source === "ens") return "ENS";
-  return source.charAt(0).toUpperCase() + source.slice(1);
+  return (
+    DISPLAY_NAME_MAP[source] || source.charAt(0).toUpperCase() + source.slice(1)
+  );
+}
+
+/**
+ * Maps a TalentSocialAccount to SocialAccount with proper transformations
+ */
+function mapSocialAccount(social: TalentSocialAccount): SocialAccount {
+  let handle = social.handle || null;
+  const src = social.source;
+
+  // Handle lens/ prefix removal
+  if (
+    src === "lens" &&
+    handle &&
+    typeof handle === "string" &&
+    handle.startsWith("lens/")
+  ) {
+    handle = handle.replace(/^lens\//, "");
+  }
+
+  // Add @ prefix for farcaster and twitter
+  if (
+    (src === "farcaster" || src === "twitter") &&
+    handle &&
+    typeof handle === "string" &&
+    !handle.startsWith("@")
+  ) {
+    handle = `@${handle}`;
+  }
+
+  const displayName = getDisplayName(src);
+
+  // Special case for basename → base mapping
+  if (src === "basename") {
+    return {
+      source: "base",
+      handle,
+      followerCount: null,
+      accountAge: getAccountAge(social.owned_since ?? null),
+      profileUrl: social.profile_url ?? null,
+      imageUrl: social.image_url ?? null,
+      displayName: "Base",
+    };
+  }
+
+  // Special handling for EFP fallback URL
+  let profileUrl = social.profile_url ?? null;
+  if (src === "efp" && !profileUrl && handle) {
+    profileUrl = `https://ethfollow.xyz/${handle}`;
+  }
+
+  return {
+    source: src,
+    handle,
+    followerCount: social.followers_count ?? null,
+    accountAge: getAccountAge(social.owned_since ?? null),
+    profileUrl,
+    imageUrl: social.image_url ?? null,
+    displayName,
+  };
 }
 
 export interface UnifiedAccountsData {
@@ -92,58 +156,7 @@ async function getAccountsForTalentIdInternal(
             // Only exclude linkedin and duplicate ethereum accounts
             return src !== "linkedin" && src !== "ethereum";
           })
-          .map((s) => {
-            let handle = s.handle || null;
-            const src = s.source;
-
-            if (
-              src === "lens" &&
-              handle &&
-              typeof handle === "string" &&
-              handle.startsWith("lens/")
-            ) {
-              handle = handle.replace(/^lens\//, "");
-            }
-
-            if (
-              (src === "farcaster" || src === "twitter") &&
-              handle &&
-              typeof handle === "string" &&
-              !handle.startsWith("@")
-            ) {
-              handle = `@${handle}`;
-            }
-
-            const displayName = getDisplayName(src);
-
-            if (src === "basename") {
-              return {
-                source: "base",
-                handle,
-                followerCount: null,
-                accountAge: getAccountAge(s.owned_since ?? null),
-                profileUrl: s.profile_url ?? null,
-                imageUrl: s.image_url ?? null,
-                displayName: "Base",
-              };
-            }
-
-            // Special handling for EFP fallback URL
-            let profileUrl = s.profile_url ?? null;
-            if (src === "efp" && !profileUrl && handle) {
-              profileUrl = `https://ethfollow.xyz/${handle}`;
-            }
-
-            return {
-              source: src,
-              handle,
-              followerCount: s.followers_count ?? null,
-              accountAge: getAccountAge(s.owned_since ?? null),
-              profileUrl,
-              imageUrl: s.image_url ?? null,
-              displayName,
-            };
-          })
+          .map(mapSocialAccount)
       : [];
 
     // Process wallet accounts (from walletAccountsService logic)
