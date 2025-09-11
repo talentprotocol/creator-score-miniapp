@@ -6,6 +6,9 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { truncateAddress, openExternalUrl } from "@/lib/utils";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
+import { WalletConnectInBrowserModal } from "@/components/modals/WalletConnectInBrowserModal";
+import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
+import { isFarcasterMiniApp } from "@/lib/client/miniapp";
 import type { ConnectedAccount, AccountManagementAction } from "@/lib/types";
 //
 
@@ -29,6 +32,20 @@ export function ConnectedWalletsSection({
   const [notice, setNotice] = React.useState<
     { type: "error" | "success"; message: string } | null
   >(null);
+  const { token: tpToken, expiresAt } = useTalentAuthToken();
+  const [isMiniApp, setIsMiniApp] = React.useState(false);
+  const [showBrowserModal, setShowBrowserModal] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const val = await isFarcasterMiniApp(150);
+      if (mounted) setIsMiniApp(val);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSetPrimary = async (account: ConnectedAccount) => {
     // For Farcaster-verified wallets, always open Farcaster settings
@@ -55,6 +72,11 @@ export function ConnectedWalletsSection({
   const handleConnectWallet = async () => {
     if (busy) return;
     setNotice(null);
+    // In Farcaster Mini App, prevent SDK-based connect and show modal to open browser
+    if (isMiniApp) {
+      setShowBrowserModal(true);
+      return;
+    }
     setBusy(true);
     try {
       const result = await onAction({ action: "connect", account_type: "wallet" });
@@ -62,7 +84,6 @@ export function ConnectedWalletsSection({
         const msg = (result && typeof result.message === "string" && result.message.trim())
           ? result.message
           : "Couldn't connect wallet. Please try again.";
-        // Log full result for diagnostics but avoid accessing undefined props
         console.error("Connect wallet failed:", msg, result ?? {});
         setNotice({ type: "error", message: msg });
       } else {
@@ -73,7 +94,6 @@ export function ConnectedWalletsSection({
       setNotice({ type: "error", message: "Couldn't connect wallet. Please try again." });
     } finally {
       setBusy(false);
-      // Auto-dismiss success after a short delay; keep errors visible
       setTimeout(() => {
         setNotice((cur) => (cur?.type === "success" ? null : cur));
       }, 5000);
@@ -113,6 +133,12 @@ export function ConnectedWalletsSection({
           open={modalOpen}
           onOpenChange={setModalOpen}
           accountType="wallet"
+        />
+        <WalletConnectInBrowserModal
+          open={showBrowserModal}
+          onOpenChange={setShowBrowserModal}
+          authToken={tpToken}
+          expiresAt={expiresAt}
         />
       </div>
     );
@@ -205,6 +231,12 @@ export function ConnectedWalletsSection({
         open={modalOpen}
         onOpenChange={setModalOpen}
         accountType="wallet"
+      />
+      <WalletConnectInBrowserModal
+        open={showBrowserModal}
+        onOpenChange={setShowBrowserModal}
+        authToken={tpToken}
+        expiresAt={expiresAt}
       />
     </div>
   );

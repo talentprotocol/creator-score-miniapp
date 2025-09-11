@@ -32,8 +32,9 @@ import {
 } from "lucide-react";
 import { ProfileSettingsSection } from "@/components/settings/ProfileSettingsSection";
 import { openExternalUrl } from "@/lib/utils";
-import { isFarcasterMiniApp } from "@/lib/client/miniapp";
+import { isFarcasterMiniApp, getFarcasterEthereumProvider } from "@/lib/client/miniapp";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useWallets, usePrivy } from "@privy-io/react-auth";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { usePostHog } from "posthog-js/react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -44,22 +45,37 @@ import {
   SwapResult,
 } from "@/lib/talent-swap";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Separate component that uses search params
 function SettingsContent() {
   const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
+  const { user: privyUser } = usePrivy();
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
+  const { wallets, ready: walletsReady } = useWallets();
   const searchParams = useSearchParams();
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const { token: tpToken, loading: tpLoading, stage: tpStage, error: tpError, ensureTalentAuthToken } = useTalentAuthToken();
   const [isMiniApp, setIsMiniApp] = React.useState(false);
+  const [miniWalletAddress, setMiniWalletAddress] = React.useState<string | null>(null);
   useEffect(() => {
     let mounted = true;
     (async () => {
       const val = await isFarcasterMiniApp(150);
       if (mounted) setIsMiniApp(val);
+      if (val) {
+        try {
+          const provider = await getFarcasterEthereumProvider();
+          if (provider && typeof provider.request === "function") {
+            const accounts = (await provider.request({ method: "eth_accounts" })) as string[] | undefined;
+            if (mounted) setMiniWalletAddress(accounts?.[0] || null);
+          }
+        } catch {}
+      } else {
+        if (mounted) setMiniWalletAddress(null);
+      }
     })();
     return () => {
       mounted = false;
@@ -77,11 +93,27 @@ function SettingsContent() {
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
 
-  // Read success message from URL (e.g., success_message=Email%20verified)
+  // Handle inbound auth_token/expires_at and success_message query params
   React.useEffect(() => {
     const anyParams = !!searchParams?.toString();
     const msg = searchParams?.get("success_message");
     if (msg) setSuccessMessage(msg);
+
+    const inboundToken = searchParams?.get("auth_token");
+    const inboundExpRaw = searchParams?.get("expires_at");
+    const inboundExp = inboundExpRaw ? Number(inboundExpRaw) : null;
+
+    if (inboundToken) {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("tpAuthToken", inboundToken);
+          if (inboundExp) localStorage.setItem("tpAuthExpiresAt", String(inboundExp));
+          window.dispatchEvent(new CustomEvent("tpAuthTokenUpdated", { detail: { token: inboundToken, expiresAt: inboundExp } }));
+          sessionStorage.setItem("tpAuthJustIssued", "1");
+        }
+      } catch {}
+    }
+
     // Strip ALL query params on load for a clean URL
     if (anyParams) {
       try {
@@ -350,6 +382,18 @@ function SettingsContent() {
     handleLogout();
   };
 
+  // Display-friendly wallet address (first 5, last 5)
+  const formatShortAddress = (addr: string | null | undefined): string | null => {
+    if (!addr || typeof addr !== "string") return null;
+    const trimmed = addr.trim();
+    if (trimmed.length <= 10) return trimmed;
+    return `${trimmed.slice(0, 5)}…${trimmed.slice(-5)}`;
+  };
+  const primaryAddress = (walletsReady && wallets && wallets[0]?.address)
+    ? wallets[0].address
+    : (privyUser?.wallet?.address || null);
+  const shortAddress = formatShortAddress(primaryAddress);
+
   // Handle talent swap click
   const handleTalentSwapClick = async () => {
     // Track analytics
@@ -530,18 +574,38 @@ function SettingsContent() {
         </div>
 
         {/* Log Out - with extra spacing above */}
-        {authenticated && (
-          <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
-            <ButtonFullWidth
-              variant="muted"
-              icon={<LogOut className="h-4 w-4" />}
-              align="left"
-              onClick={handleLogoutClick}
-              showRightIcon={false}
-            >
-              <span className="font-medium">Log Out</span>
-            </ButtonFullWidth>
+        {isMiniApp ? (
+          <div className="bg-muted rounded-xl border-0 shadow-none mt-2 p-3 text-sm">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              <span className="font-medium">Connected wallet — </span>
+              <span className="text-muted-foreground">{formatShortAddress(miniWalletAddress) || "—"}</span>
+            </div>
           </div>
+        ) : (
+          authenticated && (
+            <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
+              <ButtonFullWidth
+                variant="muted"
+                icon={<LogOut className="h-4 w-4" />}
+                align="left"
+                onClick={handleLogoutClick}
+                showRightIcon={false}
+              >
+                <span className="font-medium">
+                  Log Out
+                  {shortAddress ? (
+                    <>
+                      {" — "}
+                      <span className="text-muted-foreground">{shortAddress}</span>
+                    </>
+                  ) : (
+                    ""
+                  )}
+                </span>
+              </ButtonFullWidth>
+            </div>
+          )
         )}
 
         {/* Footer */}
@@ -580,7 +644,7 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<div>Loading settings...</div>}>
+    <Suspense fallback={<Skeleton className="h-16 w-full" />}>
       <SettingsContent />
     </Suspense>
   );

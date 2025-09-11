@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
+import { usePrivy, useSignMessage, useWallets } from "@privy-io/react-auth";
 import { isFarcasterMiniApp, getFarcasterEthereumProvider, signMessageInMiniApp } from "@/lib/client/miniapp";
 
 type EnsureOptions = {
@@ -75,6 +76,11 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
     return exp - nowSec < fiveDays;
   }, []);
 
+  // Privy context and signer for non-Farcaster environments
+  const { user: privyUser, authenticated: privyAuthenticated } = usePrivy();
+  const { signMessage } = useSignMessage();
+  const { wallets, ready: walletsReady } = useWallets();
+
   // No embedded wallet usage; only use connected EIP-1193 providers
 
   // Public method to ensure token exists; prompts signing if missing
@@ -145,8 +151,14 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
             }
           }
         } catch {}
-        // Outside Farcaster mini app, try Privy and injected providers
+        // Outside Farcaster mini app, we prefer Privy SDK signing; provider is optional.
         if (!provider && !isMiniApp) {
+          if (!walletsReady) {
+            // Wait for wallets to settle before proceeding outside Farcaster
+            setStage("rejected");
+            setError("Wallets not ready yet. Please try again.");
+            return null;
+          }
           try {
             const privyProvider = (window as any)?.privy?.getEthereumProvider
               ? await (window as any).privy.getEthereumProvider()
@@ -156,72 +168,69 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
               providerSource = "privy";
             }
           } catch {}
-        }
-        if (!provider && !isMiniApp) {
-          // Fallback to injected provider (e.g., wallet extension)
-          const injected = (window as any).ethereum;
-          if (injected && typeof injected.request === "function") {
-            provider = injected;
-            providerSource = "injected";
+          if (!provider) {
+            const injected = (window as any).ethereum;
+            if (injected && typeof injected.request === "function") {
+              provider = injected;
+              providerSource = "injected";
+            }
           }
         }
       }
 
-      // If no provider after all strategies, error out
-      if (!provider) {
-        setStage("rejected");
-        setError("No Ethereum provider available");
-        return null;
-      }
+      // For non-Farcaster flows, provider is optional because we can sign via Privy SDK.
 
       let address: string | undefined;
-      try {
-        // Try silent fetch first
-        let accounts = (await provider.request({ method: "eth_accounts" })) as
-          | string[]
-          | undefined;
-        if (!accounts || accounts.length === 0) {
-          // Prompt user to connect if not already authorized
-          accounts = (await provider.request({
-            method: "eth_requestAccounts",
-          })) as string[] | undefined;
-        }
-        address = accounts?.[0];
-      } catch (err: any) {
-        console.error("[useTalentAuthToken] eth_accounts/eth_requestAccounts failed", {
-          providerSource,
-          code: err?.code ?? err?.data?.code,
-          message: err?.message || String(err),
-          raw: err,
-        });
-        const code = err?.code ?? err?.data?.code;
-        // Inside Farcaster mini app, do not fallback to other providers
-        if (address) {
-          // Proceed with the obtained address after fallback
-        } else if (code === -32002) {
-          // A wallet request is already pending; ask the user to complete it
-          setStage("rejected");
-          setError("Wallet request already pending. Please complete it in your wallet.");
-          return null;
-        } else {
+      if (provider && providerSource === "farcaster") {
+        try {
+          let accounts = (await provider.request({ method: "eth_accounts" })) as string[] | undefined;
+          if (!accounts || accounts.length === 0) {
+            accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[] | undefined;
+          }
+          address = accounts?.[0];
+        } catch (err: any) {
+          console.error("[useTalentAuthToken] eth_accounts/eth_requestAccounts failed", {
+            providerSource,
+            code: err?.code ?? err?.data?.code,
+            message: err?.message || String(err),
+            raw: err,
+          });
+          const code = err?.code ?? err?.data?.code;
+          if (code === -32002) {
+            setStage("rejected");
+            setError("Wallet request already pending. Please complete it in your wallet.");
+            return null;
+          }
           const deepMsg = err?.data?.originalError?.message || err?.data?.message;
           const msg = String(deepMsg || err?.message || "Failed to request accounts from wallet");
           setStage("rejected");
           setError(code ? `Wallet error (${code}): ${msg}` : msg);
           return null;
         }
+      } else {
+        // Outside Farcaster, prefer Privy SDK wallet list
+        address = (wallets && wallets[0]?.address) || privyUser?.wallet?.address || address;
       }
       if (!address) {
-        // Do not persist a rejection flag; allow user to try again immediately
         setStage("rejected");
-        setError("No wallet account found. Please connect an account in your wallet and try again.");
+        setError("No wallet account found. Please connect a wallet and try again.");
         return null;
       }
 
       let chainId = 1;
       try {
-        const hex = await provider.request({ method: "eth_chainId" });
-        if (typeof hex === "string") chainId = parseInt(hex, 16);
+        if (provider && typeof provider.request === "function") {
+          const hex = await provider.request({ method: "eth_chainId" });
+          if (typeof hex === "string") chainId = parseInt(hex, 16);
+        } else if (wallets && wallets.length > 0) {
+          // Privy wallet chain ID may be CAIP-2 (e.g., "eip155:1")
+          const caip = (wallets[0] as any)?.chainId as string | undefined;
+          if (caip && typeof caip === "string") {
+            const parts = caip.split(":");
+            const parsed = parts.length === 2 ? parseInt(parts[1], 10) : NaN;
+            if (!isNaN(parsed)) chainId = parsed;
+          }
+        }
       } catch {}
 
       const nonceResp = await fetch("/api/talent-auth/create-nonce", {
@@ -248,25 +257,27 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
             signature = miniSig;
           }
         }
-        // Fallback to EIP-1193 personal_sign with robust parameter/encoding fallbacks
-        if (!signature) {
-          const hexMessage = convertUtf8ToHex(message);
+        // Outside Farcaster, request signature via Privy SDK first; fallback to provider if available
+        if (!signature && providerSource !== "farcaster") {
           try {
-            signature = await provider.request({
-              method: "personal_sign",
-              params: [hexMessage, address],
-            });
-          } catch (innerErr: any) {
-            try {
-              signature = await provider.request({
-                method: "personal_sign",
-                params: [address, hexMessage],
-              });
-            } catch {
-              signature = await provider.request({
-                method: "personal_sign",
-                params: [message, address],
-              });
+            const signingAddress = wallets && wallets.length > 0 ? wallets[0]?.address || address : address;
+            const res = await signMessage({ message }, { address: signingAddress });
+            signature = res?.signature;
+          } catch (sdkErr) {
+            // Fallback to provider.personal_sign if available
+            if (provider && typeof provider.request === "function") {
+              const hexMessage = convertUtf8ToHex(message);
+              try {
+                signature = await provider.request({ method: "personal_sign", params: [hexMessage, address] });
+              } catch (innerErr: any) {
+                try {
+                  signature = await provider.request({ method: "personal_sign", params: [address, hexMessage] });
+                } catch {
+                  signature = await provider.request({ method: "personal_sign", params: [message, address] });
+                }
+              }
+            } else {
+              throw sdkErr;
             }
           }
         }
@@ -312,7 +323,14 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, signature, chain_id: chainId }),
       });
-      if (!tokenResp.ok) throw new Error("Failed to create auth token");
+      if (!tokenResp.ok) {
+        try {
+          const txt = await tokenResp.text();
+          throw new Error(`Failed to create auth token: ${tokenResp.status} ${tokenResp.statusText} ${txt || ""}`.trim());
+        } catch {
+          throw new Error("Failed to create auth token");
+        }
+      }
       const tokenData = await tokenResp.json();
       const newToken: string | undefined = tokenData?.auth?.token;
       const newExp: number | undefined = tokenData?.auth?.expires_at;

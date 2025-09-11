@@ -1,6 +1,6 @@
 "use client";
 
-import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useLogin, usePrivy, useWallets, useConnectWallet } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
@@ -91,6 +91,23 @@ export const usePrivyAuth = ({
   const router = useRouter();
   const [fetchingTalentUser, setFetchingTalentUser] = useState(false);
   const { ready, authenticated, user: privyUser, logout } = usePrivy();
+  const { wallets, ready: walletsReady } = useWallets();
+  const autoRequestedRef = useRef(false);
+  const CONNECT_WALLET_BLOCK_KEY = "connectWalletAutoBlocked";
+  const CONNECT_WALLET_ATTEMPTED_KEY = "connectWalletAutoAttempted";
+  const { connectWallet } = useConnectWallet({
+    onSuccess: () => {
+      try {
+        if (typeof window !== "undefined") sessionStorage.removeItem(CONNECT_WALLET_BLOCK_KEY);
+      } catch {}
+      void ensureTalentAuthToken();
+    },
+    onError: () => {
+      try {
+        if (typeof window !== "undefined") sessionStorage.setItem(CONNECT_WALLET_BLOCK_KEY, "1");
+      } catch {}
+    },
+  });
   const { ensureTalentAuthToken, clearToken } = useTalentAuthToken();
 
   const { login } = useLogin({
@@ -104,15 +121,56 @@ export const usePrivyAuth = ({
   // Use global state instead of local state
   const talentUserId = useGlobalTalentUserId();
 
-  // Mirror settings behavior globally: once authenticated, ensure TP auth token
+  // Auto-request Talent Protocol auth token after Privy login, once a wallet is present
   useEffect(() => {
     if (!authenticated) return;
-    void ensureTalentAuthToken();
-  }, [authenticated, ensureTalentAuthToken]);
+    if (!walletsReady) return;
+    if (autoRequestedRef.current) return;
+    // If user has rejected signature earlier, don't auto ensure/connect
+    const userRejected = (() => {
+      try {
+        if (typeof window !== "undefined") return sessionStorage.getItem("tpAuthRejected") === "1";
+      } catch {}
+      return false;
+    })();
+    if (userRejected) return;
+    const blocked = (() => {
+      try {
+        if (typeof window !== "undefined") return sessionStorage.getItem(CONNECT_WALLET_BLOCK_KEY) === "1";
+      } catch {}
+      return false;
+    })();
+    if (blocked) return;
+    const attempted = (() => {
+      try {
+        if (typeof window !== "undefined") return sessionStorage.getItem(CONNECT_WALLET_ATTEMPTED_KEY) === "1";
+      } catch {}
+      return false;
+    })();
+
+    const primaryAddress = (wallets && wallets[0]?.address) || privyUser?.wallet?.address;
+    if (primaryAddress) {
+      autoRequestedRef.current = true;
+      void ensureTalentAuthToken();
+      return;
+    }
+
+    // No wallet yet – open Privy connect wallet modal once, then ensure on success
+    autoRequestedRef.current = true;
+    try {
+      try { if (typeof window !== "undefined") sessionStorage.setItem(CONNECT_WALLET_ATTEMPTED_KEY, "1"); } catch {}
+      connectWallet({ walletChainType: "ethereum-only" });
+    } catch {}
+  }, [authenticated, walletsReady, wallets && wallets[0]?.address, privyUser?.wallet?.address, ensureTalentAuthToken, connectWallet]);
 
   const handleLogin = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("talentUserId");
+      try {
+        sessionStorage.removeItem(CONNECT_WALLET_BLOCK_KEY);
+        sessionStorage.removeItem(CONNECT_WALLET_ATTEMPTED_KEY);
+        sessionStorage.removeItem("tpAuthRejected");
+      } catch {}
     }
     login({ walletChainType: "ethereum-only" });
   };
