@@ -59,6 +59,7 @@ Use posthog to keep track of new features usage. Include event tracking on the a
 
 - **Hook Interface Standard**: All client hooks return `{data, loading, error}` consistently
 - **Hook Naming**: `useProfile*` for profile data, `useLeaderboard*` for leaderboard, `useUser*` for current user (etc..)
+- **Server-Side URL Resolution**: Always use absolute URLs in server contexts; relative URLs fail in SSR/API routes/build-time
 - **Caching Location**:
   - Server Components: prefer `fetch` with `next: { revalidate, tags }`
   - Services: use `unstable_cache` for heavy/shared computations

@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { useProfileCredentials } from "./useProfileCredentials";
-import {
-  getEthUsdcPrice,
-  convertEthToUsdc,
-  getCachedData,
-  setCachedData,
-  CACHE_DURATIONS,
-} from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
+import { getEthUsdcPrice, convertEthToUsdc, getPolUsdPrice, convertPolToUsdc } from "@/lib/utils";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 
 interface EarningsBreakdownSegment {
@@ -39,24 +32,14 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
         return;
       }
 
-      const cacheKey = `${CACHE_KEYS.EARNINGS_BREAKDOWN}_${talentUUID}`;
-
-      // Check cache first
-      const cachedBreakdown = getCachedData<EarningsBreakdown>(
-        cacheKey,
-        CACHE_DURATIONS.PROFILE_DATA,
-      );
-      if (cachedBreakdown) {
-        setBreakdown(cachedBreakdown);
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
 
-        const ethPrice = await getEthUsdcPrice();
+        const [ethPrice, polPrice] = await Promise.all([
+          getEthUsdcPrice(),
+          getPolUsdPrice(),
+        ]);
         const issuerTotals = new Map<string, number>();
 
         // Process each credential group
@@ -103,6 +86,8 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
             let usdValue = 0;
             if (point.uom === "ETH") {
               usdValue = convertEthToUsdc(value, ethPrice);
+            } else if (point.uom === "POL") {
+              usdValue = convertPolToUsdc(value, polPrice);
             } else if (point.uom === "USDC") {
               usdValue = value;
             }
@@ -162,9 +147,6 @@ export function useProfileEarningsBreakdown(talentUUID: string) {
         };
 
         setBreakdown(result);
-
-        // Cache the result
-        setCachedData(cacheKey, result);
       } catch (err) {
         console.error("Error calculating earnings breakdown:", err);
         setError(

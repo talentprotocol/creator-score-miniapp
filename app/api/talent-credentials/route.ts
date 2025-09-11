@@ -25,5 +25,8 @@ export async function GET(req: NextRequest) {
     params.scorer_slug = "creator_score";
   }
 
-  return talentApiClient.getCredentials(params);
+  const response = await talentApiClient.getCredentials(params);
+
+
+  return response;
 }

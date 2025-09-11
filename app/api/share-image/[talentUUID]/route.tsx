@@ -3,11 +3,7 @@ import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { talentApiClient } from "@/lib/talent-api-client";
-import {
-  CACHE_KEYS,
-  CACHE_DURATION_10_MINUTES,
-  CACHE_DURATION_30_MINUTES,
-} from "@/lib/cache-keys";
+import { CACHE_KEYS, CACHE_DURATION_10_MINUTES } from "@/lib/cache-keys";
 import {
   calculateTotalFollowers,
   convertEthToUsdc,
@@ -17,7 +13,7 @@ import {
   formatCompactNumber,
   formatNumberWithSuffix,
 } from "@/lib/utils";
-import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
+import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
@@ -59,15 +55,10 @@ export async function GET(
 
     // Fetch additional data (PRESERVED EXACTLY)
     const [socialAccounts, credentials, creatorScoreData] = await Promise.all([
-      getSocialAccountsForTalentId(params.talentUUID)().catch(() => []),
-      unstable_cache(
-        async () => getCredentialsForTalentId(params.talentUUID),
-        [`credentials-${params.talentUUID}`],
-        {
-          tags: [`credentials-${params.talentUUID}`, CACHE_KEYS.CREDENTIALS],
-          revalidate: CACHE_DURATION_30_MINUTES,
-        },
-      )().catch(() => []),
+      getAccountsForTalentId(params.talentUUID)()
+        .then((data) => data.social)
+        .catch(() => []),
+      getCredentialsForTalentId(params.talentUUID)().catch(() => []),
       getCreatorScoreForTalentId(params.talentUUID)().catch(() => ({
         score: 0,
       })),
@@ -353,7 +344,6 @@ export async function GET(
           },
         ],
         headers: {
-          "Cache-Control": "public, max-age=3600",
           "Access-Control-Allow-Origin": "*",
         },
       },

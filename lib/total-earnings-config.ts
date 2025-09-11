@@ -21,6 +21,7 @@ export const TOTAL_EARNINGS_CONFIG: TotalEarningsConfig = {
     "noice_tips_earnings",
     "coop_records_earnings", // Music Earnings from Coop Records
     "paragraph_creator_rewards", // Creator Rewards from Paragraph
+    "paragraph_creator_rewards_pol", // Creator Rewards (POL) from Paragraph
     "pods_creator_rewards", // Creator Rewards from Pods
     "lens_total_earnings", // Total Earnings from Lens
     "flaunch_earnings", // Flaunch creator earnings (USD)

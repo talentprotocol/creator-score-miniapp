@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { Post, PostsResponse } from "@/lib/types";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
-import { CACHE_KEYS } from "@/lib/cache-keys";
 
 /**
  * CLIENT-SIDE ONLY: Fetches posts via API route (follows coding principles)
@@ -53,22 +51,6 @@ export function useProfilePostsPaginated(
   const loadInitialData = useCallback(async () => {
     if (!talentUUID) return;
 
-    const cacheKey = `${CACHE_KEYS.PROFILE_POSTS_PAGINATED}_${talentUUID}_${perPage}`;
-
-    // Check cache first
-    const cachedData = getCachedData<Post[]>(
-      cacheKey,
-      CACHE_DURATIONS.POSTS_DATA, // Use correct cache duration (30 minutes)
-    );
-
-    if (cachedData && cachedData.length > 0) {
-      setPosts(cachedData);
-      setPage(1);
-      setHasMore(cachedData.length >= perPage);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -77,9 +59,6 @@ export function useProfilePostsPaginated(
       setPosts(data);
       setPage(1);
       setHasMore(data.length >= perPage);
-
-      // Cache the initial data
-      setCachedData(cacheKey, data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load posts");
       setPosts([]);

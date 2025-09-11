@@ -5,7 +5,6 @@ export const CACHE_KEYS = {
   LEADERBOARD_BASIC: "leaderboard-basic",
   LEADERBOARD: "leaderboard",
   BOOSTED_PROFILES: "boosted-profiles",
-  PROFILE_SEARCH: "profile-search",
   SHARE_IMAGE_DATA: "share-image-data",
   CREATOR_SCORES: "creator-scores",
   SOCIAL_ACCOUNTS: "social-accounts",
@@ -49,32 +48,17 @@ export const CACHE_DURATION_1_YEAR = 31536000; // 1 year
  * Clear cache for a specific user's data
  */
 export async function clearUserCache(talentUuid: string): Promise<void> {
-  // Clear server-side cache
+  // Clear server-side cache only
   revalidateTag(`${CACHE_KEYS.CREDENTIALS}-${talentUuid}`);
   revalidateTag(CACHE_KEYS.CREDENTIALS);
   revalidateTag(`${CACHE_KEYS.USER_PROFILE}-${talentUuid}`);
   revalidateTag(CACHE_KEYS.USER_PROFILE);
-
-  // Clear client-side cache if in browser
-  if (typeof window !== "undefined") {
-    const cacheKeys = [
-      `${CACHE_KEYS.PROFILE_CREDENTIALS}_${talentUuid}`,
-      `${CACHE_KEYS.CONNECTED_ACCOUNTS}_${talentUuid}`,
-      `${CACHE_KEYS.USER_SETTINGS}_${talentUuid}`,
-      `${CACHE_KEYS.HUMANITY_CREDENTIALS}_${talentUuid}`,
-      `${CACHE_KEYS.PROFILE_POSTS}_${talentUuid}`,
-      `${CACHE_KEYS.PROFILE_SOCIAL_ACCOUNTS}_${talentUuid}`,
-      `${CACHE_KEYS.PROFILE_WALLET_ACCOUNTS}_${talentUuid}`,
-      `${CACHE_KEYS.TOTAL_EARNINGS}_${talentUuid}`,
-      `${CACHE_KEYS.EARNINGS_BREAKDOWN}_${talentUuid}`,
-    ];
-
-    cacheKeys.forEach((key) => {
-      // Remove both with and without cache: prefix
-      localStorage.removeItem(key);
-      localStorage.removeItem(`cache:${key}`);
-    });
-  }
+  revalidateTag(`${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentUuid}`);
+  revalidateTag(`${CACHE_KEYS.PROFILE_SOCIAL_ACCOUNTS}-${talentUuid}`);
+  revalidateTag(`${CACHE_KEYS.PROFILE_WALLET_ACCOUNTS}-${talentUuid}`);
+  revalidateTag(`${CACHE_KEYS.PROFILE_POSTS}-${talentUuid}`);
+  revalidateTag(`${CACHE_KEYS.TOTAL_EARNINGS}-${talentUuid}`);
+  revalidateTag(`${CACHE_KEYS.EARNINGS_BREAKDOWN}-${talentUuid}`);
 }
 
 /**
@@ -90,14 +74,7 @@ export async function clearAllCaches(): Promise<void> {
  * Clear specific cache types for a user
  */
 export function clearUserCredentialsCache(talentUuid: string): void {
-  if (typeof window !== "undefined") {
-    const credentialCacheKeys = [
-      `${CACHE_KEYS.PROFILE_CREDENTIALS}_${talentUuid}`,
-    ];
-
-    credentialCacheKeys.forEach((key) => {
-      localStorage.removeItem(key);
-      localStorage.removeItem(`cache:${key}`);
-    });
-  }
+  // Only clear server-side cache
+  revalidateTag(`${CACHE_KEYS.CREDENTIALS}-${talentUuid}`);
+  revalidateTag(CACHE_KEYS.CREDENTIALS);
 }

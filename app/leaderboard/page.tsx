@@ -50,7 +50,7 @@ import { useUserTokenBalance } from "@/hooks/useUserTokenBalance";
 import { RewardsDecisionModalHandler } from "@/components/common/RewardsDecisionModalHandler";
 import { RewardsDecisionModal } from "@/components/modals/RewardsDecisionModal";
 import { useOptedOutPercentage } from "@/hooks/useOptedOutPercentage";
-import { useProfileWalletAccounts } from "@/hooks/useProfileWalletAccounts";
+import { useProfileAccounts } from "@/hooks/useProfileAccounts";
 
 // Feature flag to enable/disable pinned leaderboard entry
 const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
@@ -140,7 +140,7 @@ function LeaderboardContent() {
     useOptedOutPercentage();
 
   // Fetch wallet data for rewards distribution
-  const { walletData, loading: walletsLoading } = useProfileWalletAccounts(
+  const { wallet: walletData, loading: walletsLoading } = useProfileAccounts(
     userTalentUuid || undefined,
   );
 

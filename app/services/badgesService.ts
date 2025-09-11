@@ -3,7 +3,7 @@ import { CACHE_KEYS, CACHE_DURATION_5_MINUTES } from "@/lib/cache-keys";
 import { LEVEL_RANGES } from "@/lib/constants";
 
 import { getCreatorScoreForTalentId } from "./scoresService";
-import { getSocialAccountsForTalentId } from "./socialAccountsService";
+import { getAccountsForTalentId } from "./accountsService";
 import { getCachedUserTokenBalance } from "./tokenBalanceService";
 import { getCredentialsForTalentId } from "./credentialsService";
 import { getDataPointsSum } from "./dataPointsService";
@@ -198,7 +198,7 @@ async function computeCreatorScoreBadges(
 async function computeTotalEarningsBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const credentials = await getCredentialsForTalentId(talentUuid);
+  const credentials = await getCredentialsForTalentId(talentUuid)();
   const content = getBadgeContent("total-earnings");
 
   if (!content) return [];
@@ -230,7 +230,8 @@ async function computeTotalEarningsBadges(
 async function computeTotalFollowersBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const socials = await getSocialAccountsForTalentId(talentUuid)();
+  const accountsData = await getAccountsForTalentId(talentUuid)();
+  const socials = accountsData.social;
   const totalFollowers = socials.reduce((sum, social) => {
     return sum + (social.followerCount || 0);
   }, 0);
@@ -351,7 +352,7 @@ async function computePayItForwardBadges(
 async function computeTotalCollectorsBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
-  const credentials = await getCredentialsForTalentId(talentUuid);
+  const credentials = await getCredentialsForTalentId(talentUuid)();
   const content = getBadgeContent("total-collectors");
 
   if (!content) return [];

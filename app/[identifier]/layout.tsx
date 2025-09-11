@@ -5,7 +5,7 @@ import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { validateIdentifier } from "@/lib/validation";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
-import { getSocialAccountsForTalentId } from "@/app/services/socialAccountsService";
+import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
 import {
@@ -22,8 +22,6 @@ import {
   formatNumberWithSuffix,
 } from "@/lib/utils";
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
-import { CACHE_KEYS, CACHE_DURATION_30_MINUTES } from "@/lib/cache-keys";
 import { dlog, dtimer } from "@/lib/debug";
 
 export async function generateMetadata({
@@ -75,21 +73,16 @@ export async function generateMetadata({
     const [creatorScoreResult, socialAccountsResult, credentialsResult] =
       await Promise.allSettled([
         getCreatorScoreForTalentId(user.id)().catch(() => ({ score: 0 })),
-        getSocialAccountsForTalentId(user.id)().catch((error) => {
-          console.error(
-            "[Profile Layout] Social accounts fetch failed:",
-            error,
-          );
-          return []; // Return empty array for graceful degradation
-        }),
-        unstable_cache(
-          async () => getCredentialsForTalentId(user.id),
-          [`credentials-${user.id!}`],
-          {
-            tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
-            revalidate: CACHE_DURATION_30_MINUTES,
-          },
-        )().catch((error) => {
+        getAccountsForTalentId(user.id)()
+          .then((data) => data.social)
+          .catch((error) => {
+            console.error(
+              "[Profile Layout] Social accounts fetch failed:",
+              error,
+            );
+            return []; // Return empty array for graceful degradation
+          }),
+        getCredentialsForTalentId(user.id)().catch((error) => {
           console.error("[Profile Layout] Credentials fetch failed:", error);
           return []; // Return empty array for graceful degradation
         }),
@@ -382,21 +375,16 @@ export default async function ProfileLayout({
         calculating: false,
       };
     }),
-    getSocialAccountsForTalentId(user.id)().catch((error) => {
-      dlog("ProfileLayout", "social_accounts_fetch_failed", {
-        user_id: user.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return []; // Return empty array for graceful degradation
-    }),
-    unstable_cache(
-      async () => getCredentialsForTalentId(user.id),
-      [`credentials-${user.id}`],
-      {
-        tags: [`credentials-${user.id!}`, CACHE_KEYS.CREDENTIALS],
-        revalidate: CACHE_DURATION_30_MINUTES,
-      },
-    )().catch((error) => {
+    getAccountsForTalentId(user.id)()
+      .then((data) => data.social)
+      .catch((error) => {
+        dlog("ProfileLayout", "social_accounts_fetch_failed", {
+          user_id: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return []; // Return empty array for graceful degradation
+      }),
+    getCredentialsForTalentId(user.id)().catch((error) => {
       dlog("ProfileLayout", "credentials_fetch_failed", {
         user_id: user.id,
         error: error instanceof Error ? error.message : String(error),

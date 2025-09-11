@@ -1,38 +1,22 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { FrameNotificationDetails } from "@farcaster/frame-sdk";
-import { getCachedData, setCachedData } from "./utils";
-
-const notificationServiceKey =
-  process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ?? "minikit";
-
-function getUserNotificationDetailsKey(fid: number): string {
-  return `cache:${notificationServiceKey}:user:${fid}`;
-}
 
 export async function getUserNotificationDetails(
-  fid: number,
+  _fid: number,
 ): Promise<FrameNotificationDetails | null> {
-  return getCachedData<FrameNotificationDetails>(
-    getUserNotificationDetailsKey(fid),
-    60 * 60 * 1000, // 1 hour TTL to match previous behavior
-  );
+  // Return null - no client-side caching
+  return null;
 }
 
 export async function setUserNotificationDetails(
-  fid: number,
-  notificationDetails: FrameNotificationDetails,
+  _fid: number,
+  _notificationDetails: FrameNotificationDetails,
 ): Promise<void> {
-  setCachedData(getUserNotificationDetailsKey(fid), notificationDetails);
+  // No-op - no client-side caching
 }
 
 export async function deleteUserNotificationDetails(
-  fid: number,
+  _fid: number,
 ): Promise<void> {
-  const key = getUserNotificationDetailsKey(fid);
-  if (typeof window !== "undefined") {
-    try {
-      window.localStorage.removeItem(key);
-    } catch {
-      // no-op
-    }
-  }
+  // No-op - no client-side caching
 }

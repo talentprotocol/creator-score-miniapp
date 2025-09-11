@@ -14,5 +14,8 @@ export async function GET(req: NextRequest) {
 
   const params = extractTalentProtocolParams(searchParams);
 
-  return talentApiClient.getPosts(params);
+  const response = await talentApiClient.getPosts(params);
+
+
+  return response;
 }
