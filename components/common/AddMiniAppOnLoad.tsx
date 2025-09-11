@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import { isFarcasterMiniAppSync } from "@/lib/utils";
 
 /**
  * Triggers the native addMiniApp prompt as soon as the mini-app loads.
@@ -17,10 +18,8 @@ export function AddMiniAppOnLoad() {
     // Only attempt in browser
     if (typeof window === "undefined") return;
 
-    // Some Farcaster clients expose detection via window; if unavailable, still try.
-    const isMiniApp = Boolean(
-      (window as unknown as { __FC_MINIAPP__?: boolean }).__FC_MINIAPP__,
-    );
+    // Lightweight detection for Farcaster mini app
+    const isMiniApp = isFarcasterMiniAppSync();
 
     // The action requires production domain that matches farcaster.json manifest.
     // We call regardless; the SDK will throw on invalid domain or user rejection.

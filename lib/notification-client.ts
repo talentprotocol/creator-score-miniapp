@@ -3,9 +3,10 @@ import {
   type SendNotificationRequest,
   sendNotificationResponseSchema,
 } from "@farcaster/frame-sdk";
+import { getPublicBaseUrl } from "@/lib/constants";
 import { getUserNotificationDetails } from "@/lib/notification";
 
-const appUrl = process.env.NEXT_PUBLIC_URL || "";
+const appUrl = getPublicBaseUrl();
 
 type SendFrameNotificationResult =
   | {

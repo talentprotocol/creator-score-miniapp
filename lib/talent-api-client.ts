@@ -20,13 +20,16 @@ const TALENT_API_BASE = "https://api.talentprotocol.com";
 
 export interface TalentApiClientOptions {
   apiKey?: string;
+  userAuthToken?: string;
 }
 
 export class TalentApiClient {
   private apiKey: string;
+  private userAuthToken?: string;
 
   constructor(options: TalentApiClientOptions = {}) {
     this.apiKey = options.apiKey || process.env.TALENT_API_KEY || "";
+    this.userAuthToken = options.userAuthToken;
   }
 
   private validateApiKey(): string | null {
@@ -65,6 +68,15 @@ export class TalentApiClient {
     return urlParams;
   }
 
+  private createHeaders(): Record<string, string> {
+    const headers = createTalentApiHeaders(this.apiKey);
+    if (this.userAuthToken) {
+      // Pass through user auth token when available
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${this.userAuthToken}`;
+    }
+    return headers;
+  }
+
   private async makeRequest(
     endpoint: string,
     params: URLSearchParams,
@@ -72,7 +84,7 @@ export class TalentApiClient {
   ): Promise<any> {
     const requestTimer = dtimer("TalentAPI", `makeRequest_${endpoint}`);
     const url = buildApiUrl(`${TALENT_API_BASE}${endpoint}`, params);
-    const headers = createTalentApiHeaders(this.apiKey);
+    const headers = this.createHeaders();
 
     dlog("TalentAPI", "makeRequest_start", {
       endpoint,
@@ -84,10 +96,14 @@ export class TalentApiClient {
     try {
       const response = await fetch(url, {
         headers,
-        next: {
-          revalidate: 60,
-          tags: [url],
-        },
+        ...(this.userAuthToken
+          ? { cache: "no-store" }
+          : {
+              next: {
+                revalidate: 60,
+                tags: [url],
+              },
+            }),
       });
 
       const responseTimer = dtimer("TalentAPI", `response_${endpoint}`);
@@ -109,7 +125,11 @@ export class TalentApiClient {
         throw new Error("Invalid response format from Talent API");
       }
 
-      const data = await response.json();
+      type JsonRecord = Record<string, unknown> | null;
+      let data: JsonRecord = null;
+      try {
+        data = (await response.json()) as JsonRecord;
+      } catch {}
       responseTimer.end();
 
       if (!response.ok) {
@@ -117,23 +137,28 @@ export class TalentApiClient {
           endpoint,
           status: response.status,
           statusText: response.statusText,
-          error_message: data.error || "No error message",
+          error_message: (data && typeof (data as { error?: unknown }).error === "string"
+            ? (data as { error?: string }).error
+            : "No error message"),
           data_keys: data ? Object.keys(data) : [],
         });
-        throw new Error(
-          data.error || `HTTP ${response.status}: ${response.statusText}`,
-        );
+        const msg =
+          (data && typeof (data as { error?: unknown }).error === "string"
+            ? (data as { error?: string }).error
+            : undefined) ||
+          `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(msg);
       }
 
       dlog("TalentAPI", "makeRequest_success", {
         endpoint,
         status: response.status,
         data_keys: data ? Object.keys(data) : [],
-        has_profile: !!data.profile,
-        has_scores: !!data.scores,
-        has_socials: !!data.socials,
-        has_credentials: !!data.credentials,
-        has_posts: !!data.posts,
+        has_profile: !!(data as Record<string, unknown> | null)?.profile,
+        has_scores: !!(data as Record<string, unknown> | null)?.scores,
+        has_socials: !!(data as Record<string, unknown> | null)?.socials,
+        has_credentials: !!(data as Record<string, unknown> | null)?.credentials,
+        has_posts: !!(data as Record<string, unknown> | null)?.posts,
       });
 
       requestTimer.end();
@@ -181,14 +206,17 @@ export class TalentApiClient {
     try {
       const urlParams = this.buildRequestParams(params);
       const url = buildApiUrl(`${TALENT_API_BASE}/score`, urlParams);
-      const headers = createTalentApiHeaders(this.apiKey);
+      const headers = this.createHeaders();
 
       dlog("TalentAPI", "getScore_request", {
         url: url.replace(process.env.TALENT_API_KEY || "", "[REDACTED]"),
         url_params: Object.fromEntries(urlParams.entries()),
       });
 
-      const response = await fetch(url, { headers });
+      const response = await fetch(url, {
+        headers,
+        ...(this.userAuthToken ? { cache: "no-store" } : {}),
+      });
 
       dlog("TalentAPI", "getScore_response", {
         status: response.status,
@@ -210,11 +238,12 @@ export class TalentApiClient {
         dlog("TalentAPI", "getScore_error_response", {
           status: response.status,
           statusText: response.statusText,
-          error_message: data.error || "No error message",
+          error_message: data?.error || "No error message",
         });
-        throw new Error(
-          data.error || `HTTP ${response.status}: ${response.statusText}`,
-        );
+        const msg =
+          (data && typeof data.error === "string" && data.error) ||
+          `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(msg);
       }
 
       // Transform Farcaster response to match wallet response format
@@ -581,6 +610,138 @@ export class TalentApiClient {
     }
   }
 
+  /**
+   * Fetch available tags for profiles
+   */
+  async getTags(): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/tags`;
+      const resp = await fetch(url, {
+        method: "GET",
+        headers: this.createHeaders(),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(
+          data?.error || `HTTP ${resp.status}: ${resp.statusText}`,
+        );
+      }
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "getTags",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to fetch tags");
+    }
+  }
+
+  /**
+   * Update current user's profile (requires end-user Authorization token)
+   * Supported fields: bio, display_name, location, tags
+   */
+  async updateProfile(data: {
+    bio?: string | null;
+    display_name?: string | null;
+    location?: string | null;
+    tags?: string[] | null;
+  }): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/profile`;
+      const resp = await fetch(url, {
+        method: "PUT",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const respData = await resp.json();
+      if (!resp.ok) {
+        // Pass through upstream status and message when possible
+        return NextResponse.json(respData, { status: resp.status });
+      }
+      return NextResponse.json(respData, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "updateProfile",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to update profile");
+    }
+  }
+
+  /**
+   * Update current user (requires end-user Authorization token)
+   * Supported fields: email
+   */
+  async updateUser(data: { email?: string }): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/users`;
+      const resp = await fetch(url, {
+        method: "PUT",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const respData = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(
+          respData.error || `HTTP ${resp.status}: ${resp.statusText}`,
+        );
+      }
+
+      return NextResponse.json(respData, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "updateUser",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to update user");
+    }
+  }
+
   async getAccounts(params: TalentProtocolParams): Promise<NextResponse> {
     const errorMessage = validateTalentProtocolParams(params);
     if (errorMessage) {
@@ -612,6 +773,98 @@ export class TalentApiClient {
       return createServerErrorResponse(
         `Failed to fetch accounts: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
+    }
+  }
+
+  /**
+   * Connect a new wallet account to the current user (requires end-user Authorization token)
+   */
+  async connectWalletAccount(params: {
+    address: string;
+    signature: string;
+    chain_id: number;
+  }): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/accounts`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        // Pass through upstream status and error details for better UX
+        return NextResponse.json(data, { status: resp.status });
+      }
+
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "connectWalletAccount",
+        params.address,
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to connect wallet account");
+    }
+  }
+
+  /**
+   * Create a user-specific nonce for connecting a wallet (requires end-user Authorization token)
+   */
+  async createUserNonce(): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}/user_nonces`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...this.createHeaders(),
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "createUserNonce",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to create user nonce");
     }
   }
 
@@ -656,6 +909,59 @@ export class TalentApiClient {
       return createServerErrorResponse(
         `Failed to fetch humanity credentials: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
+    }
+  }
+
+  /**
+   * Disconnect social account (requires end-user Authorization token)
+   */
+  async disconnectAccount(platform: "github" | "twitter" | "linkedin"): Promise<NextResponse> {
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    const endpointMap: Record<string, string> = {
+      github: "/accounts/disconnect_github",
+      twitter: "/accounts/disconnect_twitter",
+      linkedin: "/accounts/disconnect_linkedin",
+    };
+
+    const path = endpointMap[platform];
+    if (!path) {
+      return createBadRequestResponse("Unsupported platform");
+    }
+
+    try {
+      const url = `${TALENT_API_BASE}${path}`;
+      const resp = await fetch(url, {
+        method: "PUT",
+        headers: this.createHeaders(),
+      });
+
+      if (!validateJsonResponse(resp)) {
+        throw new Error("Invalid response format from Talent API");
+      }
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(
+          data.error || `HTTP ${resp.status}: ${resp.statusText}`,
+        );
+      }
+
+      return NextResponse.json(data, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "disconnectAccount",
+        platform,
+        error instanceof Error ? error.message : String(error),
+      );
+      return createServerErrorResponse("Failed to disconnect account");
     }
   }
 
@@ -823,3 +1129,396 @@ export class TalentApiClient {
 
 // Export a default instance
 export const talentApiClient = new TalentApiClient();
+
+// Auth helpers
+export async function createTalentAuthNonce(
+  address: string,
+  chainId?: number,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/auth/create_nonce`, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ address, chain_id: chainId }),
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(data.error || `HTTP ${resp.status}: ${resp.statusText}`);
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "create_nonce",
+      address,
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create auth nonce");
+  }
+}
+
+// Email accounts (requires end-user Authorization token)
+export async function getEmailAccountsWithAuth(
+  userAuthToken: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/email_accounts`, {
+      method: "GET",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+      },
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      return NextResponse.json(data, { status: resp.status });
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "getEmailAccounts",
+      "self",
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to fetch email accounts");
+  }
+}
+
+// Resend email verification (requires end-user Authorization token)
+export async function resendEmailVerificationWithAuth(
+  userAuthToken: string,
+  emailAccountId: number | string,
+  redirectToUrl?: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+
+  if (!emailAccountId && emailAccountId !== 0) {
+    return createBadRequestResponse("Missing email account id");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts/${encodeURIComponent(String(emailAccountId))}/resend_verification`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+        "Content-Type": "application/json",
+      },
+      body: redirectToUrl ? JSON.stringify({ redirect_to_url: redirectToUrl }) : undefined,
+    });
+
+    // Some APIs return 204 No Content on success
+    if (resp.status === 204) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    // Fallback for non-JSON responses
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "resendEmailVerification",
+      String(emailAccountId),
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to resend email verification");
+  }
+}
+
+// Create/connect a new email account (requires end-user Authorization token)
+export async function createEmailAccountWithAuth(
+  userAuthToken: string,
+  emailAddress: string,
+  redirectToUrl?: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+  if (!emailAddress || typeof emailAddress !== "string") {
+    return createBadRequestResponse("Missing or invalid email address");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        redirectToUrl ? { email: emailAddress, redirect_to_url: redirectToUrl } : { email: emailAddress },
+      ),
+    });
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    // Fallback for non-JSON responses
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "createEmailAccount",
+      emailAddress,
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create email account");
+  }
+}
+
+// Make an email account primary (requires end-user Authorization token)
+export async function makePrimaryEmailAccountWithAuth(
+  userAuthToken: string,
+  emailAccountId: number | string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+  if (emailAccountId === undefined || emailAccountId === null) {
+    return createBadRequestResponse("Missing email account id");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts/${encodeURIComponent(String(emailAccountId))}/make_primary`;
+    const resp = await fetch(url, {
+      method: "PUT",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+      },
+    });
+
+    if (resp.status === 204) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "makePrimaryEmailAccount",
+      String(emailAccountId),
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to set primary email account");
+  }
+}
+
+// Disconnect/remove an email account (requires end-user Authorization token)
+export async function disconnectEmailAccountWithAuth(
+  userAuthToken: string,
+  emailAccountId: number | string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+  if (emailAccountId === undefined || emailAccountId === null) {
+    return createBadRequestResponse("Missing email account id");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/email_accounts/${encodeURIComponent(String(emailAccountId))}/disconnect`;
+    const resp = await fetch(url, {
+      method: "PUT",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+      },
+    });
+
+    if (resp.status === 204) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "disconnectEmailAccount",
+      String(emailAccountId),
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to disconnect email account");
+  }
+}
+
+export async function createTalentAuthToken(params: {
+  address: string;
+  signature: string;
+  chain_id: number;
+}): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/auth/create_auth_token`, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(data.error || `HTTP ${resp.status}: ${resp.statusText}`);
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "create_auth_token",
+      params.address,
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create auth token");
+  }
+}
+
+// User nonce helper (requires end-user Authorization token)
+export async function createUserNonceWithAuth(
+  userAuthToken: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+
+  try {
+    const resp = await fetch(`${TALENT_API_BASE}/user_nonces`, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!validateJsonResponse(resp)) {
+      throw new Error("Invalid response format from Talent API");
+    }
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      return NextResponse.json(data, { status: resp.status });
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "create_user_nonce",
+      "self",
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to create user nonce");
+  }
+}

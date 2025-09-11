@@ -1,6 +1,6 @@
 // Removed direct service import - now using API route for compliance
 import { redirect } from "next/navigation";
-import { RESERVED_WORDS } from "@/lib/constants";
+import { RESERVED_WORDS, getPublicBaseUrl } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { validateIdentifier } from "@/lib/validation";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
@@ -50,9 +50,8 @@ export async function generateMetadata({
 
   try {
     // Resolve user via API route for compliance
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
-    );
+    const base = getPublicBaseUrl();
+    const response = await fetch(`${base}/api/talent-user?id=${params.identifier}`);
     if (!response.ok) {
       return {
         title: "Creator Not Found - Creator Score",
@@ -291,9 +290,8 @@ export default async function ProfileLayout({
     identifier: params.identifier,
   });
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
-  );
+  const base2 = getPublicBaseUrl();
+  const response = await fetch(`${base2}/api/talent-user?id=${encodeURIComponent(params.identifier)}`);
   if (!response.ok) {
     return <CreatorNotFoundCard />;
   }

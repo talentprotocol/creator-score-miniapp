@@ -17,6 +17,7 @@ import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 
 import { getTop200LeaderboardEntries } from "@/app/services/leaderboardService";
+import { getPublicBaseUrl } from "@/lib/constants";
 import type { LeaderboardEntry } from "@/lib/types";
 
 export async function GET(
@@ -137,8 +138,8 @@ export async function GET(
       "Creator";
     const avatar = (profileData as { image_url?: string }).image_url;
 
-    // Use NEXT_PUBLIC_URL for asset loading (fonts, images)
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    // Use normalized public base URL for asset loading (fonts, images)
+    const baseUrl = getPublicBaseUrl() || "https://creatorscore.app";
 
     // Strip emojis (PRESERVED EXACTLY from Canvas version)
     const cleanName = displayName.replace(

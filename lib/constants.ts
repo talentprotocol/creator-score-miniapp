@@ -11,6 +11,20 @@ export function getLocalBaseUrl(): string {
   return `http://localhost:${DEV_PORT}`;
 }
 
+/**
+ * Get the public base URL suitable for server-side fetches.
+ * Ensures a protocol is present (defaults to https://) when using NEXT_PUBLIC_URL.
+ */
+export function getPublicBaseUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_URL;
+  if (raw && raw.trim().length > 0) {
+    const val = raw.trim();
+    if (/^https?:\/\//i.test(val)) return val;
+    return `https://${val}`;
+  }
+  return getLocalBaseUrl();
+}
+
 export const LEVEL_RANGES = [
   { min: 0, max: 39, name: "Level 1" },
   { min: 40, max: 79, name: "Level 2" },
