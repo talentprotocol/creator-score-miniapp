@@ -24,6 +24,7 @@ export interface LeaderboardSnapshot {
   rank: number;
   rewards_amount: number;
   created_at: string;
+  opt_out: boolean | null; // true = opted out, false = opted in, null = no decision
 }
 
 export interface LeaderboardSnapshotResponse {

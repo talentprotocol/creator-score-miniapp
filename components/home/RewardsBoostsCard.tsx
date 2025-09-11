@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { Bell, Plus, Twitter, Share2 } from "lucide-react";
+import { Bell, Plus, X, Share2 } from "lucide-react";
 import { detectClient } from "@/lib/utils";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 
@@ -74,7 +74,7 @@ export function RewardsBoostsCard({ talentUuid }: RewardsBoostsCardProps) {
           href="/settings"
           className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
         >
-          <Icon icon={Twitter} size="sm" color="muted" />
+          <Icon icon={X} size="sm" color="muted" />
           <span className="flex-1 text-sm text-left">Connect X</span>
           <span className="text-xs text-muted-foreground">+10%</span>
         </Link>
