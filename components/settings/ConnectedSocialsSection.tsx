@@ -1,16 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Github,
-  Twitter,
-  Instagram,
-  Youtube,
-  Video,
-  FileText,
-  Heart,
-  Linkedin,
-} from "lucide-react";
+import { GitBranch, X } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
@@ -28,58 +19,16 @@ const socialPlatforms = [
   {
     name: "X (Twitter)",
     source: "x_twitter",
-    icon: Twitter,
+    icon: X,
     color: "text-foreground",
     comingSoon: false,
   },
   {
     name: "GitHub",
     source: "github",
-    icon: Github,
+    icon: GitBranch,
     color: "text-foreground",
     comingSoon: false,
-  },
-  {
-    name: "Instagram",
-    source: "instagram",
-    icon: Instagram,
-    color: "text-foreground",
-    comingSoon: true,
-  },
-  {
-    name: "YouTube",
-    source: "youtube",
-    icon: Youtube,
-    color: "text-foreground",
-    comingSoon: true,
-  },
-  {
-    name: "TikTok",
-    source: "tiktok",
-    icon: Video,
-    color: "text-foreground",
-    comingSoon: true,
-  },
-  {
-    name: "Substack",
-    source: "substack",
-    icon: FileText,
-    color: "text-foreground",
-    comingSoon: true,
-  },
-  {
-    name: "Patreon",
-    source: "patreon",
-    icon: Heart,
-    color: "text-foreground",
-    comingSoon: true,
-  },
-  {
-    name: "LinkedIn",
-    source: "linkedin",
-    icon: Linkedin,
-    color: "text-foreground",
-    comingSoon: true,
   },
 ];
 

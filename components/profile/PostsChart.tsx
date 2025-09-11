@@ -33,8 +33,8 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
   const getSolidColor = (year: number) => {
     const colors = {
       0: "bg-brand-purple", // Primary brand color
-      1: "bg-green-500", // Secondary brand color
-      2: "bg-blue-500", // Secondary brand color
+      1: "bg-brand-green", // Secondary brand color
+      2: "bg-brand-blue", // Secondary brand color
       3: "bg-brand-pink", // Secondary brand color
     };
     const index = yearlyData.findIndex((d) => d.year === year);
@@ -44,7 +44,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
 
   if (loading) {
     return (
-      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200">
+      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-none">
         <div className="space-y-4 sm:space-y-6">
           <div className="flex gap-2">
             {[...Array(3)].map((_, i) => (
@@ -63,7 +63,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
 
   if (error) {
     return (
-      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200">
+      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-none">
         <div className="text-center py-8">
           <div className="text-sm text-destructive">{error}</div>
         </div>
@@ -73,7 +73,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
 
   if (yearlyData.length === 0) {
     return (
-      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200">
+      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-none">
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">No post activity data available.</p>
           <p className="text-xs mt-2">
@@ -86,7 +86,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
   }
 
   return (
-    <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200">
+    <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-none">
       {/* Year Pills & Total Posts - Same Line */}
       <div className="mb-4 sm:mb-6 flex items-center justify-between gap-4">
         <div className="flex gap-2 flex-wrap">

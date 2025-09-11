@@ -3,7 +3,6 @@ import { PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
-import { supabase } from "@/lib/supabase-client";
 
 type Profile = {
   id: string;
@@ -109,36 +108,8 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
   );
 
-  // Step 5: Fetch opt-out status for all users (no caching for accuracy)
-  let optedOutUserIds: string[] = [];
-  let optedInUserIds: string[] = [];
-  try {
-    // Fetch opted_out and opted_in users only - undecided is anyone not in these arrays
-    const { data: optedOutData, error: optedOutError } = await supabase
-      .from("user_preferences")
-      .select("talent_uuid, rewards_decision")
-      .eq("rewards_decision", "opted_out");
-
-    if (optedOutError) {
-      console.error("Error fetching opted_out users:", optedOutError);
-    }
-
-    const { data: optedInData, error: optedInError } = await supabase
-      .from("user_preferences")
-      .select("talent_uuid, rewards_decision")
-      .eq("rewards_decision", "opted_in");
-
-    if (optedInError) {
-      console.error("Error fetching opted_in users:", optedInError);
-    }
-
-    optedOutUserIds = optedOutData?.map((row) => row.talent_uuid) ?? [];
-    optedInUserIds = optedInData?.map((row) => row.talent_uuid) ?? [];
-    // undecidedUserIds remains empty - we'll calculate undecided status in the mapping logic
-  } catch (error) {
-    console.error("Error fetching user preferences:", error);
-    // Continue with empty arrays
-  }
+  // Step 5: Opt-out status is now read directly from leaderboard_snapshots.opt_out
+  // No separate query needed - it's already in the snapshots data
 
   // Step 6: Create snapshot map for quick lookup
   const snapshotMap = new Map(
@@ -154,12 +125,13 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
 
-    const isOptedOut = optedOutUserIds.includes(profile.id);
-    const isOptedIn = optedInUserIds.includes(profile.id);
-    const isUndecided = !isOptedOut && !isOptedIn; // If not opted out and not opted in, then undecided
-
     // Get snapshot data for this profile
     const snapshot = snapshotMap.get(profile.id);
+
+    // Use opt_out status from snapshot data
+    const isOptedOut = snapshot?.opt_out === true;
+    const isOptedIn = snapshot?.opt_out === false;
+    const isUndecided = snapshot?.opt_out === null; // NULL means no decision made
 
     return {
       name: profile.display_name || profile.name || "Unknown",

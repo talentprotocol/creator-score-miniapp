@@ -8,11 +8,7 @@ import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
-import {
-  isEarningsCredential,
-  getCollectorCountCredentials,
-  getPlatformDisplayName,
-} from "@/lib/total-earnings-config";
+import { isEarningsCredential } from "@/lib/total-earnings-config";
 import {
   getEthUsdcPrice,
   getPolUsdPrice,
@@ -20,6 +16,7 @@ import {
   convertPolToUsdc,
   formatCompactNumber,
   formatNumberWithSuffix,
+  calculateTotalCollectors,
 } from "@/lib/utils";
 import type { Metadata } from "next";
 import { dlog, dtimer } from "@/lib/debug";
@@ -552,81 +549,12 @@ export default async function ProfileLayout({
     })),
   };
 
-  // Calculate collectors breakdown from collector count credentials
-  const platformCollectorCounts = new Map<string, number>();
-  let totalCollectors = 0;
-
-  // First pass: collect raw data by slug for business logic
-  const rawCollectorData = new Map<string, number>();
-
-  credentials.forEach((credentialGroup) => {
-    credentialGroup.points.forEach((point) => {
-      if (!getCollectorCountCredentials().includes(point.slug || "")) {
-        return;
-      }
-      if (!point.readable_value) return;
-
-      // Parse collector count value
-      const cleanValue = point.readable_value;
-      let value: number;
-      const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
-
-      if (numericValue.includes("K")) {
-        value = parseFloat(numericValue.replace("K", "")) * 1000;
-      } else if (numericValue.includes("M")) {
-        value = parseFloat(numericValue.replace("M", "")) * 1000000;
-      } else {
-        value = parseFloat(numericValue);
-      }
-
-      if (isNaN(value)) return;
-
-      // Store raw data by slug
-      rawCollectorData.set(point.slug || "", value);
-    });
-  });
-
-  // Business logic: adjust for double-counting using slugs
-  const mirrorCollectors =
-    rawCollectorData.get("mirror_unique_collectors") || 0;
-  const paragraphCollectors =
-    rawCollectorData.get("paragraph_unique_collectors") || 0;
-  const openseaCollectors =
-    rawCollectorData.get("opensea_nft_total_owners") || 0;
-
-  // Calculate adjusted NFTs count (subtract both Mirror and Paragraph to avoid double-counting)
-  const adjustedOpenseaCollectors = Math.max(
-    0,
-    openseaCollectors - mirrorCollectors - paragraphCollectors,
-  );
-
-  // Second pass: populate UI-friendly map with adjusted values
-  rawCollectorData.forEach((value, slug) => {
-    const platformName = getPlatformDisplayName(slug);
-
-    if (slug === "opensea_nft_total_owners") {
-      // Use adjusted value for NFTs (OpenSea minus Mirror minus Paragraph collectors)
-      platformCollectorCounts.set(platformName, adjustedOpenseaCollectors);
-    } else if (slug === "mirror_unique_collectors") {
-      // Include Mirror collectors separately
-      platformCollectorCounts.set(platformName, value);
-    } else if (slug === "paragraph_unique_collectors") {
-      // Include Paragraph collectors separately
-      platformCollectorCounts.set(platformName, value);
-    } else {
-      // Use original value for other platforms
-      platformCollectorCounts.set(platformName, value);
-    }
-  });
-
-  // Calculate total collectors (now without double-counting)
-  totalCollectors = Array.from(platformCollectorCounts.values()).reduce(
-    (sum, value) => sum + value,
-    0,
-  );
+  // Calculate collectors breakdown using shared utility
+  const { totalCollectors, platformCounts } =
+    calculateTotalCollectors(credentials);
 
   // Create collectors breakdown
-  const sortedPlatforms = Array.from(platformCollectorCounts.entries()).sort(
+  const sortedPlatforms = Array.from(platformCounts.entries()).sort(
     ([, a], [, b]) => b - a,
   );
 

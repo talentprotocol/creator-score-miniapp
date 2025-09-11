@@ -22,7 +22,9 @@ interface UseLeaderboardDataReturn {
  */
 async function getLeaderboardBasic(): Promise<LeaderboardData> {
   try {
-    const response = await fetch(`/api/leaderboard/basic`, {
+    // Add cache-busting timestamp to prevent browser caching
+    const timestamp = Date.now();
+    const response = await fetch(`/api/rewards?t=${timestamp}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -35,12 +37,12 @@ async function getLeaderboardBasic(): Promise<LeaderboardData> {
 
     return await response.json();
   } catch (error) {
-    console.error("[useScoreLeaderboardData] Client-side fetch failed:", error);
+    console.error("[useLeaderboardOptimized] Client-side fetch failed:", error);
     throw error;
   }
 }
 
-export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
+export function useRewardsData(): UseLeaderboardDataReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
@@ -89,6 +91,7 @@ export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
+      // Always force fresh data when refetching
       loadBasicData();
     },
     [loadBasicData],
@@ -110,9 +113,16 @@ export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
     [],
   );
 
-  // Load basic data on mount
+  // Load basic data on mount and refresh every 30 seconds to ensure fresh data
   useEffect(() => {
     loadBasicData();
+
+    // Set up interval to refresh data every 30 seconds
+    const interval = setInterval(() => {
+      loadBasicData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, [loadBasicData]);
 
   return {

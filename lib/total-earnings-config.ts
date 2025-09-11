@@ -98,6 +98,7 @@ export const PLATFORM_NAME_MAPPINGS: Record<string, string> = {
   opensea_nft_total_owners: "NFTs",
   paragraph_unique_collectors: "Paragraph",
   zora_unique_holders: "Zora",
+  zora_creator_coin_unique_holders: "Zora",
 };
 
 /**

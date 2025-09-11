@@ -19,10 +19,10 @@ import {
 } from "@/lib/utils";
 import type { SocialAccount } from "@/lib/types";
 import {
-  Twitter,
+  X,
   Linkedin,
   CircleUserRound,
-  Github,
+  GitBranch,
   WalletMinimal,
   Sprout,
   BadgeCheck,
@@ -39,10 +39,10 @@ interface ProfileAccountsSheetProps {
 const platformIcons: Record<string, typeof ChevronDown> = {
   base: WalletMinimal,
   ethereum: WalletMinimal,
-  github: Github,
+  github: GitBranch,
   farcaster: BadgeCheck,
   lens: Sprout,
-  twitter: Twitter,
+  twitter: X,
   linkedin: Linkedin,
   efp: Users,
   ens: Globe,
@@ -57,8 +57,8 @@ function useMediaQuery(query: string) {
       setMatches(media.matches);
     }
     const listener = () => setMatches(media.matches);
-    media.addListener(listener);
-    return () => media.removeListener(listener);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
   }, [matches, query]);
 
   return matches;
