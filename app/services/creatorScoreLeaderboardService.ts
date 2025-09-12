@@ -115,7 +115,11 @@ export async function getCreatorScoreLeaderboard(
               let totalEarnings: number | undefined;
               if (earningsResponse.ok) {
                 const earningsData = await earningsResponse.json();
-                totalEarnings = earningsData.readable_value || undefined;
+                // Extract readable_value from the data_points array
+                const dataPoint = earningsData.data_points?.[0];
+                totalEarnings = dataPoint?.readable_value
+                  ? parseFloat(dataPoint.readable_value)
+                  : undefined;
               }
 
               // Extract Creator Score from scores array (same logic as search hook)
@@ -234,7 +238,11 @@ export async function getUserProfileData(
 
       if (earningsResponse.ok) {
         const earningsData = await earningsResponse.json();
-        totalEarnings = earningsData.readable_value || undefined;
+        // Extract readable_value from the data_points array
+        const dataPoint = earningsData.data_points?.[0];
+        totalEarnings = dataPoint?.readable_value
+          ? parseFloat(dataPoint.readable_value)
+          : undefined;
       }
     } catch (error) {
       console.error(`Error fetching earnings for user ${talentUuid}:`, error);
