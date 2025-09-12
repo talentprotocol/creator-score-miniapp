@@ -103,7 +103,7 @@ export async function getCreatorScoreLeaderboard(
             try {
               // Get total earnings using data_points endpoint
               const earningsResponse = await fetch(
-                `https://api.talentprotocol.com/data_points?id=${profile.id}&slug=total_creator_earnings`,
+                `https://api.talentprotocol.com/data_points?id=${profile.id}&slugs=total_creator_earnings`,
                 {
                   headers: {
                     Accept: "application/json",
@@ -115,7 +115,9 @@ export async function getCreatorScoreLeaderboard(
               let totalEarnings: number | undefined;
               if (earningsResponse.ok) {
                 const earningsData = await earningsResponse.json();
-                totalEarnings = earningsData.readable_value || undefined;
+                // Extract readable_value from the data_points array
+                const dataPoint = earningsData.data_points?.[0];
+                totalEarnings = dataPoint?.readable_value ? parseFloat(dataPoint.readable_value) : undefined;
               }
 
               // Extract Creator Score from scores array (same logic as search hook)
@@ -223,7 +225,7 @@ export async function getUserProfileData(
     let totalEarnings: number | undefined;
     try {
       const earningsResponse = await fetch(
-        `https://api.talentprotocol.com/data_points?id=${talentUuid}&slug=total_creator_earnings`,
+        `https://api.talentprotocol.com/data_points?id=${talentUuid}&slugs=total_creator_earnings`,
         {
           headers: {
             Accept: "application/json",
@@ -234,7 +236,9 @@ export async function getUserProfileData(
 
       if (earningsResponse.ok) {
         const earningsData = await earningsResponse.json();
-        totalEarnings = earningsData.readable_value || undefined;
+        // Extract readable_value from the data_points array
+        const dataPoint = earningsData.data_points?.[0];
+        totalEarnings = dataPoint?.readable_value ? parseFloat(dataPoint.readable_value) : undefined;
       }
     } catch (error) {
       console.error(`Error fetching earnings for user ${talentUuid}:`, error);
