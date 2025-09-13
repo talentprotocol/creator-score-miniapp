@@ -7,7 +7,6 @@ import { getAccountsForTalentId } from "./accountsService";
 import { getCachedUserTokenBalance } from "./tokenBalanceService";
 import { getCredentialsForTalentId } from "./credentialsService";
 import { getDataPointsSum } from "./dataPointsService";
-import { supabase } from "@/lib/supabase-client";
 
 import {
   getBadgeContent,
@@ -287,49 +286,6 @@ async function computeWeeklyStreaksBadges(
   return [badge];
 }
 
-async function computePayItForwardBadges(
-  talentUuid: string,
-): Promise<BadgeState[]> {
-  const content = getBadgeContent("paid-forward");
-  if (!content) return [];
-
-  // Check if user has opted out of rewards (Pay It Forward action) from leaderboard_snapshots
-  const { data: snapshot } = await supabase
-    .from("leaderboard_snapshots")
-    .select("opt_out, rewards_amount")
-    .eq("talent_uuid", talentUuid)
-    .single();
-
-  const isOptedOut = snapshot?.opt_out === true;
-
-  if (!isOptedOut) {
-    // User hasn't opted out, so they should get a locked badge (level 0)
-    // This represents the potential they could unlock by opting out
-    const badge = createDynamicBadge(content, 0, content.levelThresholds);
-
-    // Force the badge to be locked (level 0) for non-opted-out users
-    if (badge.currentLevel > 0) {
-      badge.currentLevel = 0;
-      badge.levelLabel = "Locked";
-      badge.progressLabel = "Opt out to unlock";
-      badge.progressPct = 0;
-      badge.artworkUrl = getBadgeArtworkUrl(badge.badgeSlug, 0);
-    }
-
-    return [badge];
-  }
-
-  // User has opted out - use rewards amount from the snapshot data already fetched
-  const donationAmount = snapshot?.rewards_amount || 0;
-
-  const badge = createDynamicBadge(
-    content,
-    donationAmount,
-    content.levelThresholds,
-  );
-  return [badge];
-}
-
 async function computeTotalCollectorsBadges(
   talentUuid: string,
 ): Promise<BadgeState[]> {
@@ -414,7 +370,6 @@ async function getBadgesForUserUncached(
       totalCollectorsBadges,
       dailyStreaksBadges,
       weeklyStreaksBadges,
-      payItForwardBadges,
       platformTalentBadges,
       platformBaseBadges,
     ] = await Promise.all([
@@ -424,7 +379,6 @@ async function getBadgesForUserUncached(
       computeTotalCollectorsBadges(talentUuid),
       computeDailyStreaksBadges(talentUuid),
       computeWeeklyStreaksBadges(talentUuid),
-      computePayItForwardBadges(talentUuid),
       computePlatformTalentBadges(talentUuid),
       computePlatformBaseBadges(talentUuid),
     ]);
@@ -434,7 +388,6 @@ async function getBadgesForUserUncached(
       ...dailyStreaksBadges,
       ...weeklyStreaksBadges,
       ...creatorScoreBadges,
-      ...payItForwardBadges,
       ...totalEarningsBadges,
       ...totalFollowersBadges,
       ...totalCollectorsBadges,
@@ -472,7 +425,6 @@ async function getBadgesForUserUncached(
                   ...dailyStreaksBadges,
                   ...weeklyStreaksBadges,
                   ...creatorScoreBadges,
-                  ...payItForwardBadges,
                 ]
               : []),
             ...(section.id === "records"

@@ -176,26 +176,14 @@ export async function generateMetadata({
     // Always use canonical URL for Open Graph metadata (not localhost)
     const canonicalUrl = "https://creatorscore.app";
 
-    // Determine content based on sharing context
-    const shareType = searchParams?.share;
-    const isOptout = shareType === "optout";
+    // Use regular profile sharing image
+    const dynamicImageUrl = `${canonicalUrl}/api/share-image/${user.id}`;
 
-    // Select appropriate image URL and content
-    const dynamicImageUrl = isOptout
-      ? `${canonicalUrl}/api/share-image-optout/${user.id}`
-      : `${canonicalUrl}/api/share-image/${user.id}`;
+    const title = `${displayName} - Creator Score`;
 
-    const title = isOptout
-      ? `${displayName} - Paid It Forward`
-      : `${displayName} - Creator Score`;
+    const description = `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`;
 
-    const description = isOptout
-      ? `${displayName} paid forward 100% of their Creator Score rewards to support onchain creators.`
-      : `Creator Score: ${creatorScore.toLocaleString()} • Total Earnings: ${formatNumberWithSuffix(totalEarnings)} • ${formatCompactNumber(totalFollowers)} total followers`;
-
-    const altText = isOptout
-      ? `${displayName} Paid It Forward`
-      : `${displayName} Creator Score Card`;
+    const altText = `${displayName} Creator Score Card`;
 
     // Build canonical URL with query parameters for proper social media previews
     const canonicalUrlWithParams =

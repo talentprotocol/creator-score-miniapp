@@ -258,8 +258,6 @@ export const BOOST_CONFIG = {
 
 // Global per-callout flags (applied across all carousels)
 export const CALLOUT_FLAGS = {
-  // Enable Opt-out callout
-  optout: true,
   // Keep Boost callout enabled
   boost: true,
   // Keep Perk callout enabled

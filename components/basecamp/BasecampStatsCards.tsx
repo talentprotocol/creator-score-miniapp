@@ -47,16 +47,13 @@ export function BasecampStatsCards({
         />
         <StatCard
           title="Builder Rewards"
-          value={`${stats.totalBuilderRewards.toFixed(2)} ETH`}
+          value={formatCurrency(stats.totalBuilderRewards)}
         />
         <StatCard
           title="Contracts Deployed"
           value={formatCompactNumber(stats.totalContractsDeployed)}
         />
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        Data as of {new Date(stats.calculationDate).toLocaleDateString()}
-      </p>
     </div>
   );
 }

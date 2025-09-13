@@ -22,7 +22,7 @@ export function Header() {
   const { talentId } = usePrivyAuth({});
 
   const handleTitleClick = () => {
-    router.push("/leaderboard");
+    router.push("/basecamp");
   };
 
   const handleNavClick = (

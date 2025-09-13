@@ -28,7 +28,6 @@ const PROFILES_PER_PAGE = 200;
 export function useBasecampLeaderboard(
   talentUuid?: string | null,
   tab: BasecampTab = "creator",
-  isMobile: boolean = false,
 ): UseBasecampLeaderboardReturn {
   const [profiles, setProfiles] = useState<BasecampProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,21 +35,16 @@ export function useBasecampLeaderboard(
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
-  // Get default sort column based on tab and device type
-  const getDefaultSortColumn = (
-    tabValue: BasecampTab,
-    isMobileDevice: boolean,
-  ): SortColumn => {
+  // Get default sort column based on tab
+  const getDefaultSortColumn = (tabValue: BasecampTab): SortColumn => {
     switch (tabValue) {
       case "coins":
-        // Mobile: sort by 24h volume, Desktop: sort by market cap
-        return isMobileDevice
-          ? "zora_creator_coin_24h_volume"
-          : "zora_creator_coin_market_cap";
+        // Both mobile and desktop sort by 24h volume by default
+        return "zora_creator_coin_24h_volume";
       case "creator":
         return "total_earnings";
       case "builder":
-        return "rewards_amount";
+        return "builder_score";
       default:
         return "total_earnings";
     }
@@ -61,11 +55,11 @@ export function useBasecampLeaderboard(
     Record<BasecampTab, { column: SortColumn; order: SortOrder }>
   >(() => ({
     coins: {
-      column: getDefaultSortColumn("coins", isMobile),
+      column: getDefaultSortColumn("coins"),
       order: "desc",
     },
     creator: { column: "total_earnings", order: "desc" },
-    builder: { column: "rewards_amount", order: "desc" },
+    builder: { column: "builder_score", order: "desc" },
   }));
 
   // Current sort state based on active tab
@@ -94,7 +88,6 @@ export function useBasecampLeaderboard(
           sortBy: sortColumn,
           sortOrder: sortOrder,
           tab,
-          isMobile: isMobile.toString(),
         });
 
         // No longer need to pass talentUuid for server-side pinned user

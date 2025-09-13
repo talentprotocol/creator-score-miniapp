@@ -25,7 +25,7 @@ export default function ProfilePage() {
     } else if (talentId) {
       router.push(`/${talentId}`);
     } else {
-      router.push("/leaderboard");
+      router.push("/basecamp");
     }
   }, [user, router, talentId]);
 

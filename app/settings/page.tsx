@@ -7,25 +7,19 @@ import { Callout } from "@/components/common/Callout";
 import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
-import { PayItForwardSection } from "@/components/settings/PayItForwardSection";
-import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
-import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { getVersionDisplay } from "@/lib/version";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
 import {
-  FileText,
   MessageCircle,
   LogOut,
   Users,
   Wallet,
-  Settings,
-  CheckCircle,
-  XCircle,
-  HandHeart,
   Coins,
   Loader2,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
@@ -56,21 +50,9 @@ function SettingsContent() {
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
 
-  const {
-    accounts,
-    settings,
-    humanityCredentials,
-    loading,
-    error,
-    performAction,
-  } = useConnectedAccounts(talentUuid || undefined);
-
-  // Check if any humanity credentials are verified (must be before early returns)
-  const hasVerifiedHumanityCredentials = React.useMemo(() => {
-    return (
-      humanityCredentials?.some((credential) => credential.points > 0) || false
-    );
-  }, [humanityCredentials]);
+  const { accounts, loading, error, performAction } = useConnectedAccounts(
+    talentUuid || undefined,
+  );
 
   // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
   useEffect(() => {
@@ -119,7 +101,7 @@ function SettingsContent() {
     );
   }
 
-  if (loading || !accounts || !settings || humanityCredentials === null) {
+  if (loading || !accounts) {
     return (
       <PageContainer>
         <Section variant="content">
@@ -244,35 +226,6 @@ function SettingsContent() {
                 />
               ),
             },
-            {
-              id: "pay-it-forward",
-              title: "Pay It Forward",
-              icon: <HandHeart className="h-4 w-4" />,
-              content: <PayItForwardSection />,
-            },
-            {
-              id: "proof-of-humanity",
-              title: "Proof of Humanity",
-              icon: hasVerifiedHumanityCredentials ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <XCircle className="h-4 w-4" />
-              ),
-              content: (
-                <ProofOfHumanitySection credentials={humanityCredentials} />
-              ),
-            },
-            {
-              id: "account-settings",
-              title: "Account Settings",
-              icon: <Settings className="h-4 w-4" />,
-              content: (
-                <AccountSettingsSection
-                  settings={settings}
-                  onAction={performAction}
-                />
-              ),
-            },
           ]}
         />
 
@@ -287,20 +240,6 @@ function SettingsContent() {
             showRightIcon={true}
           >
             <span className="font-medium">{getTalentButtonText()}</span>
-          </ButtonFullWidth>
-        </div>
-
-        {/* Dev Docs */}
-        <div className="mt-2">
-          <ButtonFullWidth
-            variant="muted"
-            icon={<FileText className="h-4 w-4" />}
-            align="left"
-            href="https://docs.talentprotocol.com/"
-            external
-            onClick={() => handleExternalLinkClick("dev_docs")}
-          >
-            <span className="font-medium">Dev Docs</span>
           </ButtonFullWidth>
         </div>
 

@@ -1,11 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { InfoIcon, HandHeart, HandCoins } from "lucide-react";
+import { InfoIcon } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { PfpBorder } from "@/components/ui/pfp-border";
 import { cn } from "@/lib/utils";
-import posthog from "posthog-js";
 // useUserRewardsDecision hook was deleted - using static behavior for rewards page
 
 interface MyRewardsProps {
@@ -16,7 +15,6 @@ interface MyRewardsProps {
   isLoading?: boolean;
   rank?: number;
   onInfoClick?: () => void;
-  onOptOutBadgeClick: () => void;
   talentUuid?: string | null;
 }
 
@@ -28,7 +26,6 @@ export function MyRewards({
   isLoading = false,
   rank,
   onInfoClick,
-  onOptOutBadgeClick,
   // talentUuid no longer needed for static rewards page
 }: MyRewardsProps) {
   const isTop200 =
@@ -74,37 +71,6 @@ export function MyRewards({
                 >
                   {rewards}
                 </p>
-                {rewardsDecision === "opted_out" && (
-                  // PAY FORWARD badge
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 h-6 rounded-full px-2.5 bg-brand-green-light hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-brand-green text-brand-green"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      try {
-                        posthog.capture("optout_badge_clicked", {
-                          location: "my_rewards",
-                        });
-                      } catch {}
-                      onOptOutBadgeClick();
-                    }}
-                    aria-label="View Pay It Forward settings"
-                  >
-                    <HandHeart className="h-3 w-3 text-brand-green" />
-                    <span className="text-[10px] font-semibold tracking-wide">
-                      PAID FORWARD
-                    </span>
-                  </button>
-                )}
-                {rewardsDecision === "opted_in" && (
-                  // OPTED IN badge
-                  <div className="inline-flex items-center gap-1.5 h-6 rounded-full px-2.5 bg-brand-blue-light text-brand-blue">
-                    <HandCoins className="h-3 w-3 text-brand-blue" />
-                    <span className="text-[10px] font-semibold tracking-wide">
-                      OPTED IN
-                    </span>
-                  </div>
-                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 {isTop200 ? (

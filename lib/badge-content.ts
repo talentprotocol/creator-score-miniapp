@@ -156,24 +156,6 @@ export const BADGE_CONTENT: Record<string, BadgeContent> = {
     sectionId: "records",
   },
 
-  "paid-forward": {
-    slug: "paid-forward",
-    title: "Paid Forward",
-    description:
-      "Help grow the creator economy by donating rewards to emerging creators!",
-    levelThresholds: [0, 25, 50, 75, 100, 125],
-    levelLabels: [
-      "$0 Paid Forward",
-      "$25+ Paid Forward",
-      "$50+ Paid Forward",
-      "$75+ Paid Forward",
-      "$100+ Paid Forward",
-      "$125+ Paid Forward",
-    ],
-    uom: "USD",
-    sectionId: "trophies",
-  },
-
   talent: {
     slug: "talent",
     title: "Talent Protocol",

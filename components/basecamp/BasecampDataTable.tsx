@@ -81,6 +81,16 @@ const COLUMN_CONFIGS = {
       sortable: false as const,
     },
     {
+      key: "volume_24h",
+      title: "Volume 24h",
+      sortable: "zora_creator_coin_24h_volume" as SortColumn,
+    },
+    {
+      key: "total_volume",
+      title: "Total Volume",
+      sortable: "zora_creator_coin_total_volume" as SortColumn,
+    },
+    {
       key: "market_cap",
       title: "Market Cap",
       sortable: "zora_creator_coin_market_cap" as SortColumn,
@@ -89,16 +99,6 @@ const COLUMN_CONFIGS = {
       key: "market_cap_24h",
       title: "Market Cap 24h Δ",
       sortable: "zora_creator_coin_market_cap_24h" as SortColumn,
-    },
-    {
-      key: "total_volume",
-      title: "Total Volume",
-      sortable: "zora_creator_coin_total_volume" as SortColumn,
-    },
-    {
-      key: "volume_24h",
-      title: "Volume 24h",
-      sortable: "zora_creator_coin_24h_volume" as SortColumn,
     },
     {
       key: "holders",
@@ -114,11 +114,6 @@ const COLUMN_CONFIGS = {
   creator: [
     { key: "creator", title: "Creator", sortable: false as const },
     { key: "zora_handle", title: "Zora Handle", sortable: false as const },
-    {
-      key: "creator_score",
-      title: "Creator Score",
-      sortable: "creator_score" as SortColumn,
-    },
     {
       key: "total_earnings",
       title: "Total Earnings",
@@ -138,6 +133,11 @@ const COLUMN_CONFIGS = {
       key: "total_posts",
       title: "Total Posts",
       sortable: "total_posts" as SortColumn,
+    },
+    {
+      key: "creator_score",
+      title: "Creator Score",
+      sortable: "creator_score" as SortColumn,
     },
   ],
   builder: [

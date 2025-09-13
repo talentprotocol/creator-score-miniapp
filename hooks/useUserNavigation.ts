@@ -3,14 +3,7 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import {
-  User,
-  Trophy,
-  Settings,
-  Search,
-  Award,
-  TrendingUp,
-} from "lucide-react";
+import { User, Settings, Search, Award, Tent } from "lucide-react";
 
 export function useUserNavigation() {
   const { context } = useMiniKit();
@@ -30,14 +23,9 @@ export function useUserNavigation() {
 
   const navItems = [
     {
-      href: "/leaderboard",
-      icon: TrendingUp,
-      label: "Leaderboard",
-    },
-    {
-      href: "/rewards",
-      icon: Trophy,
-      label: "Rewards",
+      href: "/basecamp",
+      icon: Tent,
+      label: "Basecamp",
     },
     {
       href: "/badges",
