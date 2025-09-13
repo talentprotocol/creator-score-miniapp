@@ -23,8 +23,8 @@ export async function GET() {
       async () => {
         const latestDate = await getLatestCalculationDate();
 
-        // Get reputation total
-        const { count: reputationCount } = await supabase
+        // Get total users (for creator and builder tabs)
+        const { count: totalCount } = await supabase
           .from("base200_leaderboard")
           .select("*", { count: "exact", head: true })
           .eq("calculation_date", latestDate)
@@ -41,7 +41,8 @@ export async function GET() {
           .not("zora_creator_coin_address", "is", null);
 
         return {
-          reputationTotal: reputationCount || 0,
+          creatorTotal: totalCount || 0,
+          builderTotal: totalCount || 0,
           coinsTotal: coinsCount || 0,
         };
       },

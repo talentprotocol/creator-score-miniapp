@@ -7,7 +7,6 @@ import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBasecampLeaderboard } from "@/hooks/useBasecampLeaderboard";
 import { useBasecampStats } from "@/hooks/useBasecampStats";
 import { useBasecampTotals } from "@/hooks/useBasecampTotals";
-import { useBasecampTabVisibility } from "@/hooks/useBasecampTabVisibility";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,16 +35,13 @@ function BasecampContent() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // Tab state management
-  const currentTab = (searchParams.get("tab") || "reputation") as BasecampTab;
-
-  // Check if coins tab should be visible
-  const { showCoinsTab, loading: tabCheckLoading } = useBasecampTabVisibility();
+  const currentTab = (searchParams.get("tab") || "creator") as BasecampTab;
 
   // Note: Sort state is managed by the hook, we just need to track tab changes
 
   // Data hooks
   const { stats, loading: statsLoading } = useBasecampStats();
-  const { reputationTotal, coinsTotal } = useBasecampTotals();
+  const { creatorTotal, builderTotal, coinsTotal } = useBasecampTotals();
 
   const {
     profiles,
@@ -77,7 +73,7 @@ function BasecampContent() {
   // Handle tab change with URL update
   const handleTabChange = (tabId: string) => {
     const newSearchParams = new URLSearchParams(searchParams);
-    if (tabId === "reputation") {
+    if (tabId === "creator") {
       newSearchParams.delete("tab"); // Default tab
     } else {
       newSearchParams.set("tab", tabId);
@@ -90,54 +86,101 @@ function BasecampContent() {
     router.push(`/${profile.talent_uuid || profile.id}`);
   };
 
-  // Define tabs based on visibility
+  // Define tabs - all 3 tabs are always visible
   const tabs = [
-    { id: "reputation", label: "Creator Reputation", count: reputationTotal },
-    ...(showCoinsTab
-      ? [{ id: "coins", label: "Creator Coins", count: coinsTotal }]
-      : []),
+    { id: "coins", label: "Creator Coins", count: coinsTotal },
+    { id: "creator", label: "Creator Score", count: creatorTotal },
+    { id: "builder", label: "Builder Score", count: builderTotal },
   ];
 
   // Map data for mobile CreatorList based on current tab
-  const creatorListItems = profiles.map((profile, index) => ({
-    id: profile.talent_uuid,
-    name: profile.display_name,
-    avatarUrl: profile.image_url || undefined,
-    rank: offset + index + 1, // Simple mobile rank based on current sort order
-    primaryMetric:
-      currentTab === "coins"
-        ? formatCompactNumber(profile.base200_score || 0)
-        : formatCompactNumber(profile.creator_score || 0),
-    secondaryMetric:
-      currentTab === "coins"
-        ? profile.zora_creator_coin_market_cap
+  const creatorListItems = profiles.map((profile, index) => {
+    let primaryMetric: string;
+    let secondaryMetric: string;
+
+    switch (currentTab) {
+      case "coins":
+        primaryMetric = profile.zora_creator_coin_24h_volume
+          ? formatCurrency(profile.zora_creator_coin_24h_volume)
+          : "0";
+        secondaryMetric = profile.zora_creator_coin_market_cap
           ? `Market Cap: ${formatCurrency(profile.zora_creator_coin_market_cap)}`
-          : "Market Cap: N/A"
-        : profile.total_earnings
-          ? `Total Earnings: ${formatCurrency(profile.total_earnings)}`
-          : "Total Earnings: N/A",
-  }));
+          : "Market Cap: N/A";
+        break;
+      case "creator":
+        primaryMetric = profile.total_earnings
+          ? formatCurrency(profile.total_earnings)
+          : "0";
+        secondaryMetric = profile.creator_score
+          ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
+          : "Creator Score: N/A";
+        break;
+      case "builder":
+        primaryMetric = profile.total_earnings
+          ? formatCurrency(profile.total_earnings)
+          : "0";
+        secondaryMetric = profile.builder_score
+          ? `Builder Score: ${formatCompactNumber(profile.builder_score)}`
+          : "Builder Score: N/A";
+        break;
+      default:
+        primaryMetric = "0";
+        secondaryMetric = "N/A";
+    }
+
+    return {
+      id: profile.talent_uuid,
+      name: profile.display_name,
+      avatarUrl: profile.image_url || undefined,
+      rank: offset + index + 1, // Simple mobile rank based on current sort order
+      primaryMetric,
+      secondaryMetric,
+    };
+  });
 
   // Add pinned user for both desktop and mobile views in correct position
   const finalCreatorItems = (() => {
     if (isLoggedIn && pinnedUser) {
+      let primaryMetric: string;
+      let secondaryMetric: string;
+
+      switch (currentTab) {
+        case "coins":
+          primaryMetric = pinnedUser.zora_creator_coin_24h_volume
+            ? formatCurrency(pinnedUser.zora_creator_coin_24h_volume)
+            : "0";
+          secondaryMetric = pinnedUser.zora_creator_coin_market_cap
+            ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
+            : "Market Cap: N/A";
+          break;
+        case "creator":
+          primaryMetric = pinnedUser.total_earnings
+            ? formatCurrency(pinnedUser.total_earnings)
+            : "0";
+          secondaryMetric = pinnedUser.creator_score
+            ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
+            : "Creator Score: N/A";
+          break;
+        case "builder":
+          primaryMetric = pinnedUser.total_earnings
+            ? formatCurrency(pinnedUser.total_earnings)
+            : "0";
+          secondaryMetric = pinnedUser.builder_score
+            ? `Builder Score: ${formatCompactNumber(pinnedUser.builder_score)}`
+            : "Builder Score: N/A";
+          break;
+        default:
+          primaryMetric = "0";
+          secondaryMetric = "N/A";
+      }
+
       const pinnedItem = {
         id: pinnedUser.talent_uuid,
         name: pinnedUser.display_name,
         avatarUrl: pinnedUser.image_url || undefined,
         rank: pinnedUser.rank || 0, // Use server-calculated rank for pinned users
-        primaryMetric:
-          currentTab === "coins"
-            ? formatCompactNumber(pinnedUser.base200_score || 0)
-            : formatCompactNumber(pinnedUser.creator_score || 0),
-        secondaryMetric:
-          currentTab === "coins"
-            ? pinnedUser.zora_creator_coin_market_cap
-              ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
-              : "Market Cap: N/A"
-            : pinnedUser.total_earnings
-              ? `Total Earnings: ${formatCurrency(pinnedUser.total_earnings)}`
-              : "Total Earnings: N/A",
+        primaryMetric,
+        secondaryMetric,
       };
 
       // Remove from main list if present and insert at correct position
@@ -214,16 +257,14 @@ function BasecampContent() {
         />
       </Section>
 
-      {/* Tabs - only show if coins tab is available OR loading */}
-      {(showCoinsTab || tabCheckLoading) && (
-        <Section variant="full-width">
-          <TabNavigation
-            tabs={tabs}
-            activeTab={currentTab}
-            onTabChange={handleTabChange}
-          />
-        </Section>
-      )}
+      {/* Tabs */}
+      <Section variant="full-width">
+        <TabNavigation
+          tabs={tabs}
+          activeTab={currentTab}
+          onTabChange={handleTabChange}
+        />
+      </Section>
 
       {/* Leaderboard Section */}
       <Section variant="content" animate>
@@ -287,7 +328,11 @@ function BasecampContent() {
                 Creator
               </span>
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {currentTab === "coins" ? "Coin Score" : "Creator Score"}
+                {currentTab === "coins"
+                  ? "Volume 24h"
+                  : currentTab === "creator"
+                    ? "Earnings"
+                    : "Earnings"}
               </span>
             </div>
 

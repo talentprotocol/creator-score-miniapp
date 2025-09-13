@@ -44,4 +44,4 @@ export type SortColumn =
 
 export type SortOrder = "asc" | "desc";
 
-export type BasecampTab = "reputation" | "coins";
+export type BasecampTab = "coins" | "creator" | "builder";

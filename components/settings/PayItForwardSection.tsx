@@ -10,7 +10,6 @@ import { ShareModal } from "@/components/modals/ShareModal";
 import { ShareContentGenerators } from "@/lib/sharing";
 
 import { usePostHog } from "posthog-js/react";
-import { supabase } from "@/lib/supabase-client";
 
 /**
  * PayItForwardSection Component (Read-Only)
@@ -27,51 +26,23 @@ import { supabase } from "@/lib/supabase-client";
 export function PayItForwardSection() {
   // State management for display and sharing only
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isOptedOut, setIsOptedOut] = useState<boolean | null>(null);
-  const [rewardAmount, setRewardAmount] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
 
   // User context and data hooks
   const { talentUuid, handle } = useFidToTalentUuid();
-  // Remove unused top200Entries
-  useRewardsData(); // Keep for consistency but don't destructure unused values
+  const { entries: leaderboardEntries } = useRewardsData(); // Get leaderboard data with opt-out status
 
   const posthog = usePostHog();
 
-  // Check opt-out status from leaderboard_snapshots
-  useEffect(() => {
-    if (!talentUuid) {
-      setLoading(false);
-      return;
-    }
+  // Find user's entry in leaderboard data to get opt-out status and reward amount
+  const userEntry = React.useMemo(() => {
+    if (!talentUuid || !leaderboardEntries.length) return null;
+    return leaderboardEntries.find(
+      (entry) => String(entry.talent_protocol_id) === String(talentUuid),
+    );
+  }, [talentUuid, leaderboardEntries]);
 
-    async function checkOptOutStatus() {
-      try {
-        const { data: snapshot, error } = await supabase
-          .from("leaderboard_snapshots")
-          .select("opt_out, rewards_amount")
-          .eq("talent_uuid", talentUuid)
-          .single();
-
-        if (error) {
-          console.error("Error fetching opt-out status:", error);
-          setIsOptedOut(false);
-          setRewardAmount(0);
-        } else {
-          setIsOptedOut(snapshot?.opt_out === true);
-          setRewardAmount(snapshot?.rewards_amount || 0);
-        }
-      } catch (error) {
-        console.error("Error checking opt-out status:", error);
-        setIsOptedOut(false);
-        setRewardAmount(0);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    checkOptOutStatus();
-  }, [talentUuid]);
+  const isOptedOut = userEntry?.isOptedOut || false;
+  const rewardAmount = userEntry?.baseReward || 0;
 
   // Simple fetch for fname from talent-user API (same as profile layout)
   const [fname, setFname] = useState<string | null>(null);
@@ -122,11 +93,7 @@ export function PayItForwardSection() {
     [talentUuid, currentRewards],
   );
 
-  // Early return if not opted out or still loading
-  if (loading) {
-    return null; // Don't show anything while loading
-  }
-
+  // Early return if not opted out
   if (!isOptedOut) {
     return null; // Only show this section if user opted out
   }

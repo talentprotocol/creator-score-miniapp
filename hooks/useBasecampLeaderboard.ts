@@ -28,7 +28,7 @@ const PROFILES_PER_PAGE = 200;
 
 export function useBasecampLeaderboard(
   talentUuid?: string | null,
-  tab: BasecampTab = "reputation",
+  tab: BasecampTab = "creator",
 ): UseBasecampLeaderboardReturn {
   const [profiles, setProfiles] = useState<BasecampProfile[]>([]);
   const [pinnedUser, setPinnedUser] = useState<BasecampProfile | null>(null);
@@ -37,7 +37,23 @@ export function useBasecampLeaderboard(
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
-  const [sortColumn, setSortColumn] = useState<SortColumn>("creator_score");
+  // Get default sort column based on tab
+  const getDefaultSortColumn = (tabValue: BasecampTab): SortColumn => {
+    switch (tabValue) {
+      case "coins":
+        return "zora_creator_coin_24h_volume";
+      case "creator":
+        return "total_earnings";
+      case "builder":
+        return "total_earnings";
+      default:
+        return "total_earnings";
+    }
+  };
+
+  const [sortColumn, setSortColumn] = useState<SortColumn>(
+    getDefaultSortColumn(tab),
+  );
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [isSorting, setIsSorting] = useState(false);
 
@@ -97,6 +113,14 @@ export function useBasecampLeaderboard(
     },
     [talentUuid, sortColumn, sortOrder, tab],
   );
+
+  // Reset sorting when tab changes
+  useEffect(() => {
+    const newSortColumn = getDefaultSortColumn(tab);
+    setSortColumn(newSortColumn);
+    setSortOrder("desc");
+    setOffset(0);
+  }, [tab]);
 
   // Reset and fetch when sorting changes
   useEffect(() => {

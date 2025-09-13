@@ -69,41 +69,8 @@ function SortableHeader({
 
 // Column configurations for different tabs
 const COLUMN_CONFIGS = {
-  reputation: [
-    { key: "creator", title: "Creator", sortable: false as const },
-    { key: "zora_handle", title: "Zora Handle", sortable: false as const },
-    {
-      key: "creator_score",
-      title: "Creator Score",
-      sortable: "creator_score" as SortColumn,
-    },
-    {
-      key: "builder_score",
-      title: "Builder Score",
-      sortable: "builder_score" as SortColumn,
-    },
-    {
-      key: "total_earnings",
-      title: "Total Earnings",
-      sortable: "total_earnings" as SortColumn,
-    },
-    {
-      key: "total_collectors",
-      title: "Total Collectors",
-      sortable: "total_collectors" as SortColumn,
-    },
-    {
-      key: "total_followers",
-      title: "Total Followers",
-      sortable: "total_followers" as SortColumn,
-    },
-    {
-      key: "total_posts",
-      title: "Total Posts",
-      sortable: "total_posts" as SortColumn,
-    },
-  ],
   coins: [
+    { key: "rank", title: "Rank", sortable: false as const },
     { key: "creator", title: "Creator", sortable: false as const },
     {
       key: "zora_handle",
@@ -141,6 +108,66 @@ const COLUMN_CONFIGS = {
       sortable: false as const,
     },
   ],
+  creator: [
+    { key: "rank", title: "Rank", sortable: false as const },
+    { key: "creator", title: "Creator", sortable: false as const },
+    { key: "zora_handle", title: "Zora Handle", sortable: false as const },
+    {
+      key: "creator_score",
+      title: "Creator Score",
+      sortable: "creator_score" as SortColumn,
+    },
+    {
+      key: "total_earnings",
+      title: "Total Earnings",
+      sortable: "total_earnings" as SortColumn,
+    },
+    {
+      key: "total_collectors",
+      title: "Total Collectors",
+      sortable: "total_collectors" as SortColumn,
+    },
+    {
+      key: "total_followers",
+      title: "Total Followers",
+      sortable: "total_followers" as SortColumn,
+    },
+    {
+      key: "total_posts",
+      title: "Total Posts",
+      sortable: "total_posts" as SortColumn,
+    },
+  ],
+  builder: [
+    { key: "rank", title: "Rank", sortable: false as const },
+    { key: "creator", title: "Creator", sortable: false as const },
+    { key: "zora_handle", title: "Zora Handle", sortable: false as const },
+    {
+      key: "builder_score",
+      title: "Builder Score",
+      sortable: "builder_score" as SortColumn,
+    },
+    {
+      key: "total_earnings",
+      title: "Builder Rewards",
+      sortable: "total_earnings" as SortColumn,
+    },
+    {
+      key: "total_collectors",
+      title: "Total Collectors",
+      sortable: "total_collectors" as SortColumn,
+    },
+    {
+      key: "total_followers",
+      title: "Total Followers",
+      sortable: "total_followers" as SortColumn,
+    },
+    {
+      key: "total_posts",
+      title: "Total Posts",
+      sortable: "total_posts" as SortColumn,
+    },
+  ],
 };
 
 export function BasecampDataTable({
@@ -150,13 +177,16 @@ export function BasecampDataTable({
   onSort,
   onRowClick,
   pinnedIndex,
-  tab = "reputation",
+  tab = "creator",
 }: BasecampDataTableProps) {
   const columns = COLUMN_CONFIGS[tab];
 
   // Helper function to render cell content based on column key
   const renderCellContent = (profile: BasecampProfile, columnKey: string) => {
     switch (columnKey) {
+      case "rank":
+        return <span className="font-medium">#{profile.rank}</span>;
+
       case "creator":
         return (
           <div className="flex items-center gap-3">

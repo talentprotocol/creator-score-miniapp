@@ -46,7 +46,7 @@ export async function getBasecampLeaderboard(
   limit: number = 50,
   sortBy: SortColumn = "creator_score",
   sortOrder: SortOrder = "desc",
-  tab: BasecampTab = "reputation",
+  tab: BasecampTab = "creator",
 ): Promise<{ profiles: BasecampProfile[]; total: number; hasMore: boolean }> {
   return unstable_cache(
     async () => {
@@ -230,7 +230,7 @@ export async function hasCreatorCoins(): Promise<boolean> {
 // Get user's rank for pinned display
 export async function getUserBasecampRank(
   talentUuid: string,
-  tab: BasecampTab = "reputation",
+  tab: BasecampTab = "creator",
 ): Promise<BasecampProfile | null> {
   return unstable_cache(
     async () => {

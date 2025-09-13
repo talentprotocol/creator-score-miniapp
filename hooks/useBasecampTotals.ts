@@ -3,14 +3,16 @@
 import { useState, useEffect } from "react";
 
 interface UseBasecampTotalsReturn {
-  reputationTotal: number;
+  creatorTotal: number;
+  builderTotal: number;
   coinsTotal: number;
   loading: boolean;
   error: string | null;
 }
 
 export function useBasecampTotals(): UseBasecampTotalsReturn {
-  const [reputationTotal, setReputationTotal] = useState(0);
+  const [creatorTotal, setCreatorTotal] = useState(0);
+  const [builderTotal, setBuilderTotal] = useState(0);
   const [coinsTotal, setCoinsTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,12 +29,14 @@ export function useBasecampTotals(): UseBasecampTotalsReturn {
         }
 
         const data = await response.json();
-        setReputationTotal(data.reputationTotal || 0);
+        setCreatorTotal(data.creatorTotal || 0);
+        setBuilderTotal(data.builderTotal || 0);
         setCoinsTotal(data.coinsTotal || 0);
       } catch (err) {
         console.error("Error fetching basecamp totals:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
-        setReputationTotal(0);
+        setCreatorTotal(0);
+        setBuilderTotal(0);
         setCoinsTotal(0);
       } finally {
         setLoading(false);
@@ -43,7 +47,8 @@ export function useBasecampTotals(): UseBasecampTotalsReturn {
   }, []);
 
   return {
-    reputationTotal,
+    creatorTotal,
+    builderTotal,
     coinsTotal,
     loading,
     error,
