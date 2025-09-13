@@ -154,9 +154,9 @@ export function formatNumberSmart(num: number): string {
       // 1-digit B: always show 2 decimals
       return `${billions.toFixed(2)}B`;
     } else {
-      // 2+ digit B: show max 1 decimal
+      // 2+ digit B: always show max 1 decimal
       const rounded = Math.round(billions * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}B`;
+      return `${rounded.toFixed(1)}B`;
     }
   }
 
@@ -167,9 +167,9 @@ export function formatNumberSmart(num: number): string {
       // 1-digit M: always show 2 decimals
       return `${millions.toFixed(2)}M`;
     } else {
-      // 2+ digit M: show max 1 decimal
+      // 2+ digit M: always show max 1 decimal
       const rounded = Math.round(millions * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+      return `${rounded.toFixed(1)}M`;
     }
   }
 
@@ -180,9 +180,9 @@ export function formatNumberSmart(num: number): string {
       // 1-digit K: always show 2 decimals
       return `${thousands.toFixed(2)}K`;
     } else {
-      // 2+ digit K: show max 1 decimal
+      // 2+ digit K: always show max 1 decimal
       const rounded = Math.round(thousands * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      return `${rounded.toFixed(1)}K`;
     }
   }
 
@@ -472,7 +472,7 @@ export function formatReadableValue(
         return `$${billions.toFixed(2)}B`;
       } else {
         const rounded = Math.round(billions * 10) / 10;
-        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}B`;
+        return `$${rounded.toFixed(1)}B`;
       }
     }
     if (num >= 1_000_000) {
@@ -481,7 +481,7 @@ export function formatReadableValue(
         return `$${millions.toFixed(2)}M`;
       } else {
         const rounded = Math.round(millions * 10) / 10;
-        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+        return `$${rounded.toFixed(1)}M`;
       }
     }
     if (num >= 10_000) {
@@ -490,7 +490,7 @@ export function formatReadableValue(
         return `$${thousands.toFixed(2)}K`;
       } else {
         const rounded = Math.round(thousands * 10) / 10;
-        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+        return `$${rounded.toFixed(1)}K`;
       }
     }
     return Number.isInteger(num) ? `$${num.toFixed(0)}` : `$${num.toFixed(1)}`;
@@ -517,7 +517,7 @@ export function formatReadableValue(
         return `${thousands.toFixed(2)}K`;
       } else {
         const rounded = Math.round(thousands * 10) / 10;
-        return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+        return `${rounded.toFixed(1)}K`;
       }
     }
     return Math.round(num).toString();
@@ -531,7 +531,7 @@ export function formatReadableValue(
         return `${thousands.toFixed(2)}K`;
       } else {
         const rounded = Math.round(thousands * 10) / 10;
-        return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+        return `${rounded.toFixed(1)}K`;
       }
     }
     return num >= 1 ? num.toFixed(2) : num.toFixed(3);
@@ -544,7 +544,7 @@ export function formatReadableValue(
       return `${thousands.toFixed(2)}K`;
     } else {
       const rounded = Math.round(thousands * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      return `${rounded.toFixed(1)}K`;
     }
   }
   // For small generic numbers, trim excessive precision
@@ -783,7 +783,7 @@ export function formatWithK(value: number): string {
       return `${thousands.toFixed(2)}K`;
     } else {
       const rounded = Math.round(thousands * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      return `${rounded.toFixed(1)}K`;
     }
   }
   return value.toString();
