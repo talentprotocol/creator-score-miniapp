@@ -13,6 +13,8 @@ export interface BasecampProfile {
   creator_score: number | null;
   builder_score: number | null;
   total_earnings: number | null;
+  rewards_amount: number | null;
+  smart_contracts_deployed: number | null; // Smart contracts deployed from CSV
   total_collectors: number | null;
   total_followers: number | null;
   total_posts: number | null;
@@ -21,8 +23,8 @@ export interface BasecampProfile {
 }
 
 export interface BasecampStats {
-  totalAttendees: number;
-  totalCreatorCoins: number;
+  totalBuilderRewards: number;
+  totalContractsDeployed: number;
   totalMarketCap: number;
   totalCreatorEarnings: number;
   calculationDate: string;
@@ -33,6 +35,8 @@ export type SortColumn =
   | "creator_score"
   | "builder_score"
   | "total_earnings"
+  | "rewards_amount"
+  | "smart_contracts_deployed"
   | "total_collectors"
   | "total_followers"
   | "total_posts"

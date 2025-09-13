@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getBasecampLeaderboard,
-  getUserBasecampRank,
-} from "@/app/services/basecampLeaderboardService";
+import { getBasecampLeaderboard } from "@/app/services/basecampLeaderboardService";
 import { SortColumn, SortOrder, BasecampTab } from "@/lib/types/basecamp";
 
 export async function GET(request: NextRequest) {
@@ -10,21 +7,34 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const offset = parseInt(searchParams.get("offset") || "0");
     const limit = parseInt(searchParams.get("limit") || "50");
+    // Get tab-specific default sort column
+    const getDefaultSortColumn = (tabValue: BasecampTab): SortColumn => {
+      switch (tabValue) {
+        case "coins":
+          return "zora_creator_coin_market_cap";
+        case "creator":
+          return "total_earnings";
+        case "builder":
+          return "rewards_amount";
+        default:
+          return "total_earnings";
+      }
+    };
+
+    const tab = (searchParams.get("tab") || "coins") as BasecampTab;
     const sortBy = (searchParams.get("sortBy") ||
-      "base200_score") as SortColumn;
+      getDefaultSortColumn(tab)) as SortColumn;
     const sortOrder = (searchParams.get("sortOrder") || "desc") as SortOrder;
-    const talentUuid = searchParams.get("talentUuid");
-    const tab = (searchParams.get("tab") || "reputation") as BasecampTab;
 
-    const [leaderboardData, pinnedUser] = await Promise.all([
-      getBasecampLeaderboard(offset, limit, sortBy, sortOrder, tab),
-      talentUuid ? getUserBasecampRank(talentUuid, tab) : null,
-    ]);
+    const leaderboardData = await getBasecampLeaderboard(
+      offset,
+      limit,
+      sortBy,
+      sortOrder,
+      tab,
+    );
 
-    return NextResponse.json({
-      ...leaderboardData,
-      pinnedUser,
-    });
+    return NextResponse.json(leaderboardData);
   } catch (error) {
     console.error("Basecamp leaderboard API error:", error);
     return NextResponse.json(

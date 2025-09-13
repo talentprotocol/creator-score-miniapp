@@ -52,7 +52,11 @@ export async function getBasecampLeaderboard(
     async () => {
       const latestDate = await getLatestCalculationDate();
 
-      // Build query with filters and sorting
+      // For builder tab sorting by builder metrics, we need to handle sorting differently
+      const isBuilderMetricSort =
+        sortBy === "rewards_amount" || sortBy === "smart_contracts_deployed";
+
+      // Build query with filters
       let query = supabase
         .from("base200_leaderboard")
         .select("*", { count: "exact" })
@@ -65,9 +69,15 @@ export async function getBasecampLeaderboard(
         query = query.not("zora_creator_coin_address", "is", null);
       }
 
-      query = query
-        .order(sortBy, { ascending: sortOrder === "asc", nullsFirst: false })
-        .range(offset, offset + limit - 1);
+      // Only add sorting if it's not a builder metric sort
+      if (!isBuilderMetricSort) {
+        query = query
+          .order(sortBy, { ascending: sortOrder === "asc", nullsFirst: false })
+          .range(offset, offset + limit - 1);
+      } else {
+        // For builder metrics, fetch more data and sort later
+        query = query.order("creator_score", { ascending: false });
+      }
 
       const { data: currentData, error, count } = await query;
       if (error) throw error;
@@ -97,7 +107,7 @@ export async function getBasecampLeaderboard(
           );
 
           // Calculate deltas and add to profiles
-          profiles = currentData.map((profile, index) => {
+          profiles = currentData.map((profile) => {
             const currentHolders =
               profile.zora_creator_coin_unique_holders || 0;
             const prevHolders = previousHolders.get(profile.talent_uuid) || 0;
@@ -105,28 +115,79 @@ export async function getBasecampLeaderboard(
 
             return {
               ...profile,
-              rank: offset + index + 1, // Add rank calculation
               zora_creator_coin_holders_24h_delta: holdersDelta,
             };
           });
         } else {
           // No previous data available, set all deltas to 0
-          profiles = currentData.map((profile, index) => ({
+          profiles = currentData.map((profile) => ({
             ...profile,
-            rank: offset + index + 1, // Add rank calculation
             zora_creator_coin_holders_24h_delta: 0,
           }));
         }
       } else {
-        // Add rank calculation for non-coins tabs
-        profiles = (currentData || []).map((profile, index) => ({
+        // No rank calculation needed for desktop tables
+        profiles = currentData || [];
+      }
+
+      // Add rewards and contracts data from database
+      // Following coding principles: Single query instead of N+1 lookups
+      const talentUuids = profiles.map((p) => p.talent_uuid);
+
+      const { data: builderMetrics } = await supabase
+        .from("basecamp_builder_metrics")
+        .select("talent_uuid, smart_contracts_deployed, builder_rewards_eth")
+        .eq("calculation_date", "2025-09-13") // Use current date for builder metrics
+        .in("talent_uuid", talentUuids);
+
+      // Create lookup map for builder metrics
+      const metricsMap = new Map(
+        builderMetrics?.map((m) => [m.talent_uuid, m]) || [],
+      );
+
+      // Merge builder metrics with profiles
+      let profilesWithRewards = profiles.map((profile) => {
+        const metrics = metricsMap.get(profile.talent_uuid);
+        return {
           ...profile,
-          rank: offset + index + 1,
-        }));
+          rewards_amount: metrics?.builder_rewards_eth || 0,
+          smart_contracts_deployed: metrics?.smart_contracts_deployed || 0,
+        };
+      });
+
+      // Handle builder metric sorting
+      if (isBuilderMetricSort) {
+        // Sort by the builder metric
+        profilesWithRewards.sort((a, b) => {
+          const aValue =
+            sortBy === "rewards_amount"
+              ? a.rewards_amount
+              : a.smart_contracts_deployed;
+          const bValue =
+            sortBy === "rewards_amount"
+              ? b.rewards_amount
+              : b.smart_contracts_deployed;
+
+          if (sortOrder === "asc") {
+            return (aValue || 0) - (bValue || 0);
+          } else {
+            return (bValue || 0) - (aValue || 0);
+          }
+        });
+
+        // Apply pagination after sorting
+        const total = profilesWithRewards.length;
+        profilesWithRewards = profilesWithRewards.slice(offset, offset + limit);
+
+        return {
+          profiles: profilesWithRewards,
+          total,
+          hasMore: offset + limit < total,
+        };
       }
 
       return {
-        profiles: profiles,
+        profiles: profilesWithRewards,
         total: count || 0,
         hasMore: offset + limit < (count || 0),
       };
@@ -148,58 +209,51 @@ export async function getBasecampStats(): Promise<BasecampStats> {
     async () => {
       const latestDate = await getLatestCalculationDate();
 
-      const { data, error } = await supabase
-        .from("base200_leaderboard")
-        .select(
-          `
-          talent_uuid,
-          zora_creator_coin_market_cap,
-          total_earnings
-        `,
-        )
-        .eq("calculation_date", latestDate)
-        .eq("basecamp_002_participant", true)
-        .not("display_name", "is", null);
+      // Get basecamp leaderboard stats in parallel with builder metrics
+      const [basecampData, builderMetricsData] = await Promise.all([
+        supabase
+          .from("base200_leaderboard")
+          .select("talent_uuid, zora_creator_coin_market_cap, total_earnings")
+          .eq("calculation_date", latestDate)
+          .eq("basecamp_002_participant", true)
+          .not("display_name", "is", null),
 
-      if (error) throw error;
+        supabase
+          .from("basecamp_builder_metrics")
+          .select("smart_contracts_deployed, builder_rewards_eth")
+          .eq("calculation_date", "2025-09-13"), // Use current date for builder metrics
+      ]);
 
-      const stats = data?.reduce(
-        (
-          acc: {
-            totalAttendees: number;
-            totalCreatorCoins: number;
-            totalMarketCap: number;
-            totalCreatorEarnings: number;
-          },
-          record: {
-            zora_creator_coin_market_cap?: number | null;
-            total_earnings?: number | null;
-          },
-        ) => ({
-          totalAttendees: acc.totalAttendees + 1,
-          totalCreatorCoins: record.zora_creator_coin_market_cap
-            ? acc.totalCreatorCoins + 1
-            : acc.totalCreatorCoins,
+      if (basecampData.error) throw basecampData.error;
+      if (builderMetricsData.error) throw builderMetricsData.error;
+
+      // Calculate basecamp stats
+      const basecampStats = basecampData.data?.reduce(
+        (acc, record) => ({
           totalMarketCap:
             acc.totalMarketCap + (record.zora_creator_coin_market_cap || 0),
           totalCreatorEarnings:
             acc.totalCreatorEarnings + (record.total_earnings || 0),
         }),
-        {
-          totalAttendees: 0,
-          totalCreatorCoins: 0,
-          totalMarketCap: 0,
-          totalCreatorEarnings: 0,
-        },
-      ) || {
-        totalAttendees: 0,
-        totalCreatorCoins: 0,
-        totalMarketCap: 0,
-        totalCreatorEarnings: 0,
-      };
+        { totalMarketCap: 0, totalCreatorEarnings: 0 },
+      ) || { totalMarketCap: 0, totalCreatorEarnings: 0 };
+
+      // Calculate builder metrics totals
+      const builderStats = builderMetricsData.data?.reduce(
+        (acc, record) => ({
+          totalBuilderRewards:
+            acc.totalBuilderRewards + (Number(record.builder_rewards_eth) || 0),
+          totalContractsDeployed:
+            acc.totalContractsDeployed + (record.smart_contracts_deployed || 0),
+        }),
+        { totalBuilderRewards: 0, totalContractsDeployed: 0 },
+      ) || { totalBuilderRewards: 0, totalContractsDeployed: 0 };
 
       return {
-        ...stats,
+        totalBuilderRewards: builderStats.totalBuilderRewards,
+        totalContractsDeployed: builderStats.totalContractsDeployed,
+        totalMarketCap: basecampStats.totalMarketCap,
+        totalCreatorEarnings: basecampStats.totalCreatorEarnings,
         calculationDate: latestDate,
       };
     },
@@ -235,58 +289,4 @@ export async function hasCreatorCoins(): Promise<boolean> {
   )();
 }
 
-// Get user's rank for pinned display
-export async function getUserBasecampRank(
-  talentUuid: string,
-  tab: BasecampTab = "creator",
-): Promise<BasecampProfile | null> {
-  return unstable_cache(
-    async () => {
-      const latestDate = await getLatestCalculationDate();
-
-      const { data, error } = await supabase
-        .from("base200_leaderboard")
-        .select("*")
-        .eq("calculation_date", latestDate)
-        .eq("basecamp_002_participant", true)
-        .eq("talent_uuid", talentUuid)
-        .single();
-
-      if (error || !data || !data.display_name) return null;
-
-      // For coins tab, return null if user doesn't have coins
-      if (tab === "coins" && !data.zora_creator_coin_address) {
-        return null;
-      }
-
-      // Calculate rank by counting higher scores with same filtering
-      let rankQuery = supabase
-        .from("base200_leaderboard")
-        .select("talent_uuid", { count: "exact" })
-        .eq("calculation_date", latestDate)
-        .eq("basecamp_002_participant", true)
-        .not("display_name", "is", null)
-        .gt("base200_score", data.base200_score);
-
-      // Add same filtering for rank calculation
-      if (tab === "coins") {
-        rankQuery = rankQuery.not("zora_creator_coin_address", "is", null);
-      }
-
-      const { count } = await rankQuery.order("base200_score", {
-        ascending: false,
-        nullsFirst: false,
-      });
-
-      return {
-        ...data,
-        rank: (count || 0) + 1,
-      };
-    },
-    [CACHE_KEYS.LEADERBOARD + `-basecamp-user-rank-${tab}-${talentUuid}`],
-    {
-      revalidate: CACHE_DURATION_1_HOUR,
-      tags: [CACHE_KEYS.LEADERBOARD + "-basecamp"],
-    },
-  )();
-}
+// Note: getUserBasecampRank function removed - now using simple client-side ranking

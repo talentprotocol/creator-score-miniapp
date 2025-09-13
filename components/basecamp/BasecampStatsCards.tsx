@@ -38,20 +38,20 @@ export function BasecampStatsCards({
     <div className="space-y-3">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Attendees"
-          value={formatCompactNumber(stats.totalAttendees)}
+          title="Creator Earnings"
+          value={formatCurrency(stats.totalCreatorEarnings)}
         />
         <StatCard
-          title="Total Creator Coins"
-          value={formatCompactNumber(stats.totalCreatorCoins)}
-        />
-        <StatCard
-          title="Creator Coin Market Cap"
+          title="Coins Market Cap"
           value={formatCurrency(stats.totalMarketCap)}
         />
         <StatCard
-          title="Total Creator Earnings"
-          value={formatCurrency(stats.totalCreatorEarnings)}
+          title="Builder Rewards"
+          value={`${stats.totalBuilderRewards.toFixed(2)} ETH`}
+        />
+        <StatCard
+          title="Contracts Deployed"
+          value={formatCompactNumber(stats.totalContractsDeployed)}
         />
       </div>
       <p className="text-xs text-muted-foreground text-center">

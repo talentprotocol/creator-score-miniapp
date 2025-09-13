@@ -10,7 +10,6 @@ import {
 
 interface UseBasecampLeaderboardReturn {
   profiles: BasecampProfile[];
-  pinnedUser: BasecampProfile | null;
   loading: boolean;
   error: string | null;
   hasMore: boolean;
@@ -31,7 +30,6 @@ export function useBasecampLeaderboard(
   tab: BasecampTab = "creator",
 ): UseBasecampLeaderboardReturn {
   const [profiles, setProfiles] = useState<BasecampProfile[]>([]);
-  const [pinnedUser, setPinnedUser] = useState<BasecampProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -41,20 +39,28 @@ export function useBasecampLeaderboard(
   const getDefaultSortColumn = (tabValue: BasecampTab): SortColumn => {
     switch (tabValue) {
       case "coins":
-        return "zora_creator_coin_24h_volume";
+        return "zora_creator_coin_market_cap";
       case "creator":
         return "total_earnings";
       case "builder":
-        return "total_earnings";
+        return "rewards_amount";
       default:
         return "total_earnings";
     }
   };
 
-  const [sortColumn, setSortColumn] = useState<SortColumn>(
-    getDefaultSortColumn(tab),
-  );
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  // Tab-aware sort state - each tab preserves its own sorting
+  const [tabSortStates, setTabSortStates] = useState<
+    Record<BasecampTab, { column: SortColumn; order: SortOrder }>
+  >(() => ({
+    coins: { column: "zora_creator_coin_market_cap", order: "desc" },
+    creator: { column: "total_earnings", order: "desc" },
+    builder: { column: "rewards_amount", order: "desc" },
+  }));
+
+  // Current sort state based on active tab
+  const sortColumn = tabSortStates[tab].column;
+  const sortOrder = tabSortStates[tab].order;
   const [isSorting, setIsSorting] = useState(false);
 
   const fetchData = useCallback(
@@ -80,9 +86,7 @@ export function useBasecampLeaderboard(
           tab,
         });
 
-        if (talentUuid) {
-          params.append("talentUuid", talentUuid);
-        }
+        // No longer need to pass talentUuid for server-side pinned user
 
         const response = await fetch(
           `/api/basecamp-leaderboard?${params.toString()}`,
@@ -101,7 +105,7 @@ export function useBasecampLeaderboard(
           setProfiles((prev) => [...prev, ...data.profiles]);
         }
 
-        setPinnedUser(data.pinnedUser || null);
+        // No longer using server-side pinned user
         setHasMore(data.hasMore);
       } catch (err) {
         console.error("Error fetching basecamp leaderboard:", err);
@@ -114,11 +118,8 @@ export function useBasecampLeaderboard(
     [talentUuid, sortColumn, sortOrder, tab],
   );
 
-  // Reset sorting when tab changes
+  // Reset offset when tab changes
   useEffect(() => {
-    const newSortColumn = getDefaultSortColumn(tab);
-    setSortColumn(newSortColumn);
-    setSortOrder("desc");
     setOffset(0);
   }, [tab]);
 
@@ -137,11 +138,16 @@ export function useBasecampLeaderboard(
     }
   }, [offset, hasMore, loading, isSorting, fetchData]);
 
-  const setSorting = useCallback((column: SortColumn, order: SortOrder) => {
-    setSortColumn(column);
-    setSortOrder(order);
-    setOffset(0);
-  }, []);
+  const setSorting = useCallback(
+    (column: SortColumn, order: SortOrder) => {
+      setTabSortStates((prev) => ({
+        ...prev,
+        [tab]: { column, order },
+      }));
+      setOffset(0);
+    },
+    [tab],
+  );
 
   const refetch = useCallback(() => {
     setOffset(0);
@@ -150,7 +156,6 @@ export function useBasecampLeaderboard(
 
   return {
     profiles,
-    pinnedUser,
     loading,
     error,
     hasMore,

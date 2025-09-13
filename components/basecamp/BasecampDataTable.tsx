@@ -50,7 +50,11 @@ function SortableHeader({
 
   return (
     <button
-      className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+      className={`flex items-center gap-1 text-xs uppercase tracking-wide transition-colors ${
+        isActive
+          ? "text-foreground font-medium"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
       onClick={() => onSort(column, nextOrder)}
     >
       {title}
@@ -70,11 +74,10 @@ function SortableHeader({
 // Column configurations for different tabs
 const COLUMN_CONFIGS = {
   coins: [
-    { key: "rank", title: "Rank", sortable: false as const },
     { key: "creator", title: "Creator", sortable: false as const },
     {
       key: "zora_handle",
-      title: "Zora Handle / Symbol",
+      title: "Zora Handle",
       sortable: false as const,
     },
     {
@@ -109,7 +112,6 @@ const COLUMN_CONFIGS = {
     },
   ],
   creator: [
-    { key: "rank", title: "Rank", sortable: false as const },
     { key: "creator", title: "Creator", sortable: false as const },
     { key: "zora_handle", title: "Zora Handle", sortable: false as const },
     {
@@ -139,7 +141,6 @@ const COLUMN_CONFIGS = {
     },
   ],
   builder: [
-    { key: "rank", title: "Rank", sortable: false as const },
     { key: "creator", title: "Creator", sortable: false as const },
     { key: "zora_handle", title: "Zora Handle", sortable: false as const },
     {
@@ -148,24 +149,19 @@ const COLUMN_CONFIGS = {
       sortable: "builder_score" as SortColumn,
     },
     {
-      key: "total_earnings",
+      key: "rewards_amount",
       title: "Builder Rewards",
-      sortable: "total_earnings" as SortColumn,
+      sortable: "rewards_amount" as SortColumn,
     },
     {
-      key: "total_collectors",
-      title: "Total Collectors",
-      sortable: "total_collectors" as SortColumn,
+      key: "smart_contracts_deployed",
+      title: "Contracts Deployed",
+      sortable: "smart_contracts_deployed" as SortColumn,
     },
     {
       key: "total_followers",
       title: "Total Followers",
       sortable: "total_followers" as SortColumn,
-    },
-    {
-      key: "total_posts",
-      title: "Total Posts",
-      sortable: "total_posts" as SortColumn,
     },
   ],
 };
@@ -302,6 +298,24 @@ export function BasecampDataTable({
           <span className="text-sm font-medium">
             {profile.builder_score
               ? formatCompactNumber(profile.builder_score)
+              : "—"}
+          </span>
+        );
+
+      case "smart_contracts_deployed":
+        return (
+          <span className="text-sm font-medium">
+            {profile.smart_contracts_deployed !== null
+              ? profile.smart_contracts_deployed.toLocaleString()
+              : "—"}
+          </span>
+        );
+
+      case "rewards_amount":
+        return (
+          <span className="text-sm font-medium">
+            {profile.rewards_amount
+              ? formatCurrency(profile.rewards_amount)
               : "—"}
           </span>
         );

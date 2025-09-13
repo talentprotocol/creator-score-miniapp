@@ -35,7 +35,7 @@ function BasecampContent() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // Tab state management
-  const currentTab = (searchParams.get("tab") || "creator") as BasecampTab;
+  const currentTab = (searchParams.get("tab") || "coins") as BasecampTab;
 
   // Note: Sort state is managed by the hook, we just need to track tab changes
 
@@ -45,7 +45,6 @@ function BasecampContent() {
 
   const {
     profiles,
-    pinnedUser,
     loading,
     error,
     hasMore,
@@ -70,6 +69,17 @@ function BasecampContent() {
 
   const isLoggedIn = !!(user?.fid || userTalentUuid);
 
+  // Simple client-side pinned user logic
+  const pinnedUser =
+    isLoggedIn && userTalentUuid
+      ? profiles.find((profile) => profile.talent_uuid === userTalentUuid)
+      : null;
+  const pinnedUserRank = pinnedUser
+    ? offset +
+      profiles.findIndex((profile) => profile.talent_uuid === userTalentUuid) +
+      1
+    : null;
+
   // Debug logging for user identification
   if (process.env.NODE_ENV === "development") {
     console.log("Basecamp - User context:", {
@@ -78,15 +88,15 @@ function BasecampContent() {
       isLoggedIn,
       pinnedUserUuid: pinnedUser?.talent_uuid,
       pinnedUserName: pinnedUser?.display_name,
-      userMatchesPinned:
-        userTalentUuid && pinnedUser?.talent_uuid === userTalentUuid,
+      pinnedUserRank,
+      userFoundInResults: !!pinnedUser,
     });
   }
 
   // Handle tab change with URL update
   const handleTabChange = (tabId: string) => {
     const newSearchParams = new URLSearchParams(searchParams);
-    if (tabId === "creator") {
+    if (tabId === "coins") {
       newSearchParams.delete("tab"); // Default tab
     } else {
       newSearchParams.set("tab", tabId);
@@ -129,8 +139,8 @@ function BasecampContent() {
           : "Creator Score: N/A";
         break;
       case "builder":
-        primaryMetric = profile.total_earnings
-          ? formatCurrency(profile.total_earnings)
+        primaryMetric = profile.rewards_amount
+          ? formatCurrency(profile.rewards_amount)
           : "0";
         secondaryMetric = profile.builder_score
           ? `Builder Score: ${formatCompactNumber(profile.builder_score)}`
@@ -151,14 +161,9 @@ function BasecampContent() {
     };
   });
 
-  // Add pinned user for mobile view only, and only if it's the correct user
+  // Add pinned user for mobile view only, and only if user is found in results
   const finalCreatorItems = (() => {
-    if (
-      isLoggedIn &&
-      pinnedUser &&
-      userTalentUuid &&
-      pinnedUser.talent_uuid === userTalentUuid
-    ) {
+    if (pinnedUser && pinnedUserRank) {
       let primaryMetric: string;
       let secondaryMetric: string;
 
@@ -180,8 +185,8 @@ function BasecampContent() {
             : "Creator Score: N/A";
           break;
         case "builder":
-          primaryMetric = pinnedUser.total_earnings
-            ? formatCurrency(pinnedUser.total_earnings)
+          primaryMetric = pinnedUser.rewards_amount
+            ? formatCurrency(pinnedUser.rewards_amount)
             : "0";
           secondaryMetric = pinnedUser.builder_score
             ? `Builder Score: ${formatCompactNumber(pinnedUser.builder_score)}`
@@ -196,7 +201,7 @@ function BasecampContent() {
         id: pinnedUser.talent_uuid,
         name: pinnedUser.display_name,
         avatarUrl: pinnedUser.image_url || undefined,
-        rank: pinnedUser.rank || 0, // Use server-calculated rank for pinned users
+        rank: pinnedUserRank, // Use simple client-calculated rank
         primaryMetric,
         secondaryMetric,
       };
@@ -206,12 +211,8 @@ function BasecampContent() {
         (item) => item.id !== pinnedUser.talent_uuid,
       );
 
-      // Insert pinned user at their correct rank position
-      const pinnedRank = pinnedUser.rank || 0;
-      const insertIndex = Math.max(
-        0,
-        Math.min(pinnedRank - offset - 1, filteredItems.length),
-      );
+      // Insert pinned user at the top for mobile view
+      const insertIndex = 0;
 
       // Insert the pinned user at the correct position
       const result = [...filteredItems];
@@ -336,14 +337,7 @@ function BasecampContent() {
               items={finalCreatorItems}
               onItemClick={handleItemClick}
               loading={loading}
-              pinnedIndex={
-                isLoggedIn &&
-                pinnedUser &&
-                userTalentUuid &&
-                pinnedUser.talent_uuid === userTalentUuid
-                  ? 0
-                  : undefined
-              }
+              pinnedIndex={pinnedUser && pinnedUserRank ? 0 : undefined}
             />
           </>
         )}

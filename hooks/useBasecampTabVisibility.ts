@@ -14,7 +14,7 @@ export function useBasecampTabVisibility() {
           throw new Error(`API error: ${response.status}`);
         }
         const stats = await response.json();
-        setShowCoinsTab(stats.totalCreatorCoins > 0);
+        setShowCoinsTab(stats.totalMarketCap > 0);
       } catch (error) {
         console.error("Error checking coins tab visibility:", error);
         setShowCoinsTab(false);
