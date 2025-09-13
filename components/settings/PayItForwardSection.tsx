@@ -118,7 +118,7 @@ export function PayItForwardSection() {
 
   return (
     <div className="relative space-y-4">
-      <div className="rounded-lg border bg-white p-4">
+      <div className="rounded-lg border bg-card p-4">
         <div className="space-y-4">
           {/* Description: Shows what was done */}
           <Typography size="base" className="text-foreground">

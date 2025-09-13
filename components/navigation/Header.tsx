@@ -78,8 +78,8 @@ export function Header() {
                   aria-label="Go to home"
                 >
                   <Image
-                    src="/cs-logo-header.svg"
-                    alt="Creator Score"
+                    src="/logos/talent_scg_long.svg"
+                    alt="Talent Score"
                     priority
                     fetchPriority="high"
                     fill

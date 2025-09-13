@@ -44,7 +44,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
 
   if (loading) {
     return (
-      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-none">
+      <Card className="w-full min-w-0 p-3 sm:p-6 bg-card rounded-xl border shadow-none">
         <div className="space-y-4 sm:space-y-6">
           <div className="flex gap-2">
             {[...Array(3)].map((_, i) => (
@@ -63,7 +63,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
 
   if (error) {
     return (
-      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-none">
+      <Card className="w-full min-w-0 p-3 sm:p-6 bg-card rounded-xl border shadow-none">
         <div className="text-center py-8">
           <div className="text-sm text-destructive">{error}</div>
         </div>
@@ -73,7 +73,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
 
   if (yearlyData.length === 0) {
     return (
-      <Card className="w-full min-w-0 p-3 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-none">
+      <Card className="w-full min-w-0 p-3 sm:p-6 bg-card rounded-xl border shadow-none">
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">No post activity data available.</p>
           <p className="text-xs mt-2">
@@ -107,7 +107,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
           <div className="text-xs text-muted-foreground font-medium">
             Total Posts
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">
+          <div className="text-xl sm:text-2xl font-bold text-foreground">
             {selectedYearData?.total || 0}
           </div>
         </div>
@@ -117,7 +117,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
       <div className="w-full min-w-0 overflow-x-auto">
         <div className="w-full" style={{ minWidth: "400px" }}>
           {/* Stream Visualization */}
-          <div className="relative h-24 sm:h-32 bg-gray-50 rounded-lg overflow-hidden mb-3 sm:mb-4">
+          <div className="relative h-24 sm:h-32 bg-muted/30 rounded-lg overflow-hidden mb-3 sm:mb-4">
             <div className="flex h-full">
               {(selectedYearData?.months || Array(12).fill(0)).map(
                 (count, monthIndex) => {
@@ -176,7 +176,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
             ].map((month, index) => (
               <div
                 key={index}
-                className="flex-1 text-center text-xs text-gray-400"
+                className="flex-1 text-center text-xs text-muted-foreground"
               >
                 <span className="hidden sm:inline">{month}</span>
                 <span className="sm:hidden">

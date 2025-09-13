@@ -27,41 +27,56 @@
     --ring: 258 90% 66%;           /* #9333ea --creator-purple (purple-600) */
     --radius: 0.5rem;
 
-    /* Brand Colors - Exact Tailwind 600 values */
-    --creator-purple: 258 90% 66%;  /* purple-600 #9333ea */
-    --creator-green: 142 76% 36%;   /* green-600 #16a34a */  
-    --creator-blue: 197 71% 40%;    /* cyan-600 #0891b2 */
-    --creator-pink: 327 73% 50%;    /* pink-600 #db2777 */
+    /* Brand Colors - Updated for Basecamp-style dark theme */
+    --creator-purple: 217 91% 60%;  /* blue-500 #3b82f6 - primary blue */
+    --creator-green: 142 76% 36%;   /* green-600 #16a34a - keep green for success states */  
+    --creator-blue: 217 91% 60%;    /* blue-500 #3b82f6 - primary blue accent */
+    --creator-pink: 327 73% 50%;    /* pink-600 #db2777 - keep pink for variety */
 
-    /* Badge Level Progression Colors */
+    /* Badge Level Progression Colors - Blue-focused progression */
     --badge-level-1: 217 91% 60%;   /* blue-500 #3b82f6 */
-    --badge-level-2: 197 71% 40%;   /* cyan-600 #0891b2 (existing brand-blue) */
-    --badge-level-3: 142 76% 36%;   /* green-600 #16a34a (existing brand-green) */
-    --badge-level-4: 48 96% 53%;    /* yellow-500 #eab308 */
-    --badge-level-5: 20 91% 48%;    /* orange-600 #ea580c */
-    --badge-level-6: 258 90% 66%;   /* purple-600 #9333ea (existing brand-purple) */
+    --badge-level-2: 197 71% 50%;   /* cyan-500 #06b6d4 - brighter cyan */
+    --badge-level-3: 142 76% 36%;   /* green-600 #16a34a - keep green for success */
+    --badge-level-4: 48 96% 53%;    /* yellow-500 #eab308 - keep yellow for warning */
+    --badge-level-5: 20 91% 48%;    /* orange-600 #ea580c - keep orange for danger */
+    --badge-level-6: 217 91% 70%;   /* blue-400 #60a5fa - lighter blue for highest level */
   }
  
   .dark {
-    --background: 0 0% 7%;         /* #111111 - dark mode */
-    --foreground: 0 0% 98%;        /* #fafafa - dark mode */
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 258 90% 66%;
-    --primary-foreground: 0 0% 7%;
-    --secondary: 0 0% 16%;         /* #292929 - subtle section surfaces */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 13%;            /* #212121 - hovers/active, skeleton bg */
-    --muted-foreground: 0 0% 64%; /* #a3a3a3 - dark mode text-gray-400 */
-    --accent: 0 0% 20%;            /* #343434 - emphasis surfaces */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 28%;            /* #484848 - slightly darker for separation */
-    --input: 0 0% 28%;
-    --ring: 258 90% 66%;
+    --background: 0 0% 4%;         /* #0a0a0a - very dark background like Basecamp */
+    --foreground: 0 0% 100%;       /* #ffffff - pure white text */
+    --card: 0 0% 6%;               /* #0f0f0f - slightly lighter than background */
+    --card-foreground: 0 0% 100%;  /* #ffffff - white text on cards */
+    --popover: 0 0% 6%;            /* #0f0f0f - popover background */
+    --popover-foreground: 0 0% 100%; /* #ffffff - white text on popovers */
+    --primary: 217 91% 60%;        /* #3b82f6 - blue-500 for primary actions */
+    --primary-foreground: 0 0% 100%; /* #ffffff - white text on primary */
+    --secondary: 0 0% 8%;          /* #141414 - subtle section surfaces */
+    --secondary-foreground: 0 0% 100%; /* #ffffff - white text on secondary */
+    --muted: 0 0% 10%;             /* #1a1a1a - hovers/active, skeleton bg */
+    --muted-foreground: 0 0% 70%;  /* #b3b3b3 - muted text */
+    --accent: 0 0% 12%;            /* #1f1f1f - emphasis surfaces */
+    --accent-foreground: 0 0% 100%; /* #ffffff - white text on accent */
+    --destructive: 0 84% 60%;      /* #ef4444 - red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* #ffffff - white text on destructive */
+    --warning: 48 96% 53%;         /* #eab308 - yellow for warnings */
+    --warning-foreground: 0 0% 4%; /* #0a0a0a - dark text on warning */
+    --border: 0 0% 15%;            /* #262626 - borders */
+    --input: 0 0% 15%;             /* #262626 - input borders */
+    --ring: 217 91% 60%;           /* #3b82f6 - blue-500 for focus rings */
+  }
+
+  /* Force white text in dark mode */
+  .dark * {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .dark .text-muted-foreground {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+  
+  .dark .text-foreground {
+    color: hsl(var(--foreground)) !important;
   }
 }
 

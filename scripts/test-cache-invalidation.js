@@ -9,7 +9,7 @@
  * 3. Verifying that the new decision status appears in the leaderboard
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
 
 async function testCacheInvalidation() {
   console.log("🧪 Testing leaderboard cache invalidation...\n");
