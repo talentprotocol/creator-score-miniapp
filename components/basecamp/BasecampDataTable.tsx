@@ -70,14 +70,8 @@ function SortableHeader({
 // Column configurations for different tabs
 const COLUMN_CONFIGS = {
   reputation: [
-    { key: "rank", title: "Rank", sortable: false as const },
     { key: "creator", title: "Creator", sortable: false as const },
     { key: "zora_handle", title: "Zora Handle", sortable: false as const },
-    {
-      key: "market_cap",
-      title: "Market Cap",
-      sortable: "zora_creator_coin_market_cap" as SortColumn,
-    },
     {
       key: "creator_score",
       title: "Creator Score",
@@ -103,9 +97,13 @@ const COLUMN_CONFIGS = {
       title: "Total Followers",
       sortable: "total_followers" as SortColumn,
     },
+    {
+      key: "total_posts",
+      title: "Total Posts",
+      sortable: "total_posts" as SortColumn,
+    },
   ],
   coins: [
-    { key: "rank", title: "Rank", sortable: false as const },
     { key: "creator", title: "Creator", sortable: false as const },
     {
       key: "zora_handle",
@@ -159,9 +157,6 @@ export function BasecampDataTable({
   // Helper function to render cell content based on column key
   const renderCellContent = (profile: BasecampProfile, columnKey: string) => {
     switch (columnKey) {
-      case "rank":
-        return <span className="font-medium">#{profile.rank}</span>;
-
       case "creator":
         return (
           <div className="flex items-center gap-3">
@@ -308,6 +303,15 @@ export function BasecampDataTable({
           </span>
         );
 
+      case "total_posts":
+        return (
+          <span className="text-sm font-medium">
+            {profile.total_posts
+              ? formatCompactNumber(profile.total_posts)
+              : "—"}
+          </span>
+        );
+
       default:
         return <span className="text-sm">—</span>;
     }
@@ -319,10 +323,7 @@ export function BasecampDataTable({
         <TableHeader>
           <TableRow className="border-b">
             {columns.map((column) => (
-              <TableHead
-                key={column.key}
-                className={column.key === "rank" ? "w-16" : ""}
-              >
+              <TableHead key={column.key}>
                 {column.sortable ? (
                   <SortableHeader
                     column={column.sortable}

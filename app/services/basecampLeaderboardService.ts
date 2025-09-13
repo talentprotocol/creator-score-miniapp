@@ -66,7 +66,7 @@ export async function getBasecampLeaderboard(
       }
 
       query = query
-        .order(sortBy, { ascending: sortOrder === "asc" })
+        .order(sortBy, { ascending: sortOrder === "asc", nullsFirst: false })
         .range(offset, offset + limit - 1);
 
       const { data: currentData, error, count } = await query;
@@ -117,15 +117,8 @@ export async function getBasecampLeaderboard(
         }
       }
 
-      // Add rank calculation (1-based)
-      const rankedProfiles =
-        profiles?.map((profile: BasecampProfile, index: number) => ({
-          ...profile,
-          rank: offset + index + 1,
-        })) || [];
-
       return {
-        profiles: rankedProfiles,
+        profiles: profiles,
         total: count || 0,
         hasMore: offset + limit < (count || 0),
       };
@@ -272,7 +265,10 @@ export async function getUserBasecampRank(
         rankQuery = rankQuery.not("zora_creator_coin_address", "is", null);
       }
 
-      const { count } = await rankQuery;
+      const { count } = await rankQuery.order("base200_score", {
+        ascending: false,
+        nullsFirst: false,
+      });
 
       return {
         ...data,

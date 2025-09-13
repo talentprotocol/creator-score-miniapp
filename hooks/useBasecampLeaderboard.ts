@@ -14,14 +14,17 @@ interface UseBasecampLeaderboardReturn {
   loading: boolean;
   error: string | null;
   hasMore: boolean;
+  total: number; // Add total count for tab badges
   sortColumn: SortColumn;
   sortOrder: SortOrder;
+  isSorting: boolean;
+  offset: number;
   showMore: () => void;
   setSorting: (column: SortColumn, order: SortOrder) => void;
   refetch: () => void;
 }
 
-const PROFILES_PER_PAGE = 50;
+const PROFILES_PER_PAGE = 200;
 
 export function useBasecampLeaderboard(
   talentUuid?: string | null,
@@ -32,15 +35,24 @@ export function useBasecampLeaderboard(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [sortColumn, setSortColumn] = useState<SortColumn>("creator_score");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [isSorting, setIsSorting] = useState(false);
 
   const fetchData = useCallback(
-    async (currentOffset: number, reset: boolean = false) => {
+    async (
+      currentOffset: number,
+      reset: boolean = false,
+      isSortChange: boolean = false,
+    ) => {
       try {
         if (reset) {
           setLoading(true);
+        }
+        if (isSortChange) {
+          setIsSorting(true);
         }
         setError(null);
 
@@ -68,6 +80,7 @@ export function useBasecampLeaderboard(
 
         if (reset) {
           setProfiles(data.profiles);
+          setTotal(data.total || 0);
         } else {
           setProfiles((prev) => [...prev, ...data.profiles]);
         }
@@ -79,6 +92,7 @@ export function useBasecampLeaderboard(
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
+        setIsSorting(false);
       }
     },
     [talentUuid, sortColumn, sortOrder, tab],
@@ -87,16 +101,17 @@ export function useBasecampLeaderboard(
   // Reset and fetch when sorting changes
   useEffect(() => {
     setOffset(0);
-    fetchData(0, true);
+    fetchData(0, true, true); // Pass isSortChange = true
   }, [fetchData]);
 
   const showMore = useCallback(() => {
-    if (!loading && hasMore) {
+    if (!loading && hasMore && !isSorting) {
+      // Prevent pagination during sorting
       const newOffset = offset + PROFILES_PER_PAGE;
       setOffset(newOffset);
-      fetchData(newOffset, false);
+      fetchData(newOffset, false, false);
     }
-  }, [offset, hasMore, loading, fetchData]);
+  }, [offset, hasMore, loading, isSorting, fetchData]);
 
   const setSorting = useCallback((column: SortColumn, order: SortOrder) => {
     setSortColumn(column);
@@ -106,7 +121,7 @@ export function useBasecampLeaderboard(
 
   const refetch = useCallback(() => {
     setOffset(0);
-    fetchData(0, true);
+    fetchData(0, true, false);
   }, [fetchData]);
 
   return {
@@ -115,8 +130,11 @@ export function useBasecampLeaderboard(
     loading,
     error,
     hasMore,
+    total,
     sortColumn,
     sortOrder,
+    isSorting,
+    offset,
     showMore,
     setSorting,
     refetch,

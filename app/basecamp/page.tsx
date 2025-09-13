@@ -6,6 +6,7 @@ import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBasecampLeaderboard } from "@/hooks/useBasecampLeaderboard";
 import { useBasecampStats } from "@/hooks/useBasecampStats";
+import { useBasecampTotals } from "@/hooks/useBasecampTotals";
 import { useBasecampTabVisibility } from "@/hooks/useBasecampTabVisibility";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -44,6 +45,8 @@ function BasecampContent() {
 
   // Data hooks
   const { stats, loading: statsLoading } = useBasecampStats();
+  const { reputationTotal, coinsTotal } = useBasecampTotals();
+
   const {
     profiles,
     pinnedUser,
@@ -52,6 +55,8 @@ function BasecampContent() {
     hasMore,
     sortColumn,
     sortOrder,
+    isSorting,
+    offset,
     showMore,
     setSorting,
   } = useBasecampLeaderboard(userTalentUuid, currentTab);
@@ -87,16 +92,18 @@ function BasecampContent() {
 
   // Define tabs based on visibility
   const tabs = [
-    { id: "reputation", label: "Creator Reputation" },
-    ...(showCoinsTab ? [{ id: "coins", label: "Creator Coins" }] : []),
+    { id: "reputation", label: "Creator Reputation", count: reputationTotal },
+    ...(showCoinsTab
+      ? [{ id: "coins", label: "Creator Coins", count: coinsTotal }]
+      : []),
   ];
 
   // Map data for mobile CreatorList based on current tab
-  const creatorListItems = profiles.map((profile) => ({
+  const creatorListItems = profiles.map((profile, index) => ({
     id: profile.talent_uuid,
     name: profile.display_name,
     avatarUrl: profile.image_url || undefined,
-    rank: profile.rank,
+    rank: offset + index + 1, // Simple mobile rank based on current sort order
     primaryMetric:
       currentTab === "coins"
         ? formatCompactNumber(profile.base200_score || 0)
@@ -111,14 +118,14 @@ function BasecampContent() {
           : "Total Earnings: N/A",
   }));
 
-  // Add pinned user for mobile view
+  // Add pinned user for both desktop and mobile views in correct position
   const finalCreatorItems = (() => {
     if (isLoggedIn && pinnedUser) {
       const pinnedItem = {
         id: pinnedUser.talent_uuid,
         name: pinnedUser.display_name,
         avatarUrl: pinnedUser.image_url || undefined,
-        rank: pinnedUser.rank,
+        rank: pinnedUser.rank || 0, // Use server-calculated rank for pinned users
         primaryMetric:
           currentTab === "coins"
             ? formatCompactNumber(pinnedUser.base200_score || 0)
@@ -133,13 +140,49 @@ function BasecampContent() {
               : "Total Earnings: N/A",
       };
 
-      // Remove from main list if present
+      // Remove from main list if present and insert at correct position
       const filteredItems = creatorListItems.filter(
         (item) => item.id !== pinnedUser.talent_uuid,
       );
-      return [pinnedItem, ...filteredItems];
+
+      // Insert pinned user at their correct rank position
+      const pinnedRank = pinnedUser.rank || 0;
+      const insertIndex = Math.max(
+        0,
+        Math.min(pinnedRank - offset - 1, filteredItems.length),
+      );
+
+      // Insert the pinned user at the correct position
+      const result = [...filteredItems];
+      result.splice(insertIndex, 0, pinnedItem);
+
+      return result;
     }
     return creatorListItems;
+  })();
+
+  // Create final desktop data with pinned user in rank position
+  const finalDesktopData = (() => {
+    if (isLoggedIn && pinnedUser) {
+      // Remove pinned user from main profiles if present
+      const filteredProfiles = profiles.filter(
+        (profile) => profile.talent_uuid !== pinnedUser.talent_uuid,
+      );
+
+      // Insert pinned user at their correct rank position
+      const pinnedRank = pinnedUser.rank || 0;
+      const insertIndex = Math.max(
+        0,
+        Math.min(pinnedRank - offset - 1, filteredProfiles.length),
+      );
+
+      // Insert the pinned user at the correct position
+      const result = [...filteredProfiles];
+      result.splice(insertIndex, 0, pinnedUser);
+
+      return result;
+    }
+    return profiles;
   })();
 
   return (
@@ -210,15 +253,25 @@ function BasecampContent() {
 
         {/* Desktop Table View */}
         {isDesktop && !loading && profiles.length > 0 && (
-          <BasecampDataTable
-            data={profiles}
-            sortColumn={sortColumn}
-            sortOrder={sortOrder}
-            onSort={setSorting}
-            onRowClick={handleItemClick}
-            pinnedIndex={isLoggedIn && pinnedUser ? 0 : undefined}
-            tab={currentTab}
-          />
+          <div className="relative">
+            {isSorting && (
+              <div className="absolute top-2 right-2 z-10">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
+                  <div className="animate-spin h-3 w-3 border border-muted-foreground border-t-transparent rounded-full" />
+                  Sorting...
+                </div>
+              </div>
+            )}
+            <BasecampDataTable
+              data={finalDesktopData}
+              sortColumn={sortColumn}
+              sortOrder={sortOrder}
+              onSort={setSorting}
+              onRowClick={handleItemClick}
+              pinnedIndex={isLoggedIn && pinnedUser ? 0 : undefined}
+              tab={currentTab}
+            />
+          </div>
         )}
 
         {/* Mobile Card View */}
@@ -248,9 +301,13 @@ function BasecampContent() {
         )}
 
         {/* Show More Button */}
-        {!loading && hasMore && (
+        {!loading && hasMore && !isSorting && (
           <div className="flex justify-center mt-6">
-            <Button variant="ghost" onClick={showMore} disabled={loading}>
+            <Button
+              variant="ghost"
+              onClick={showMore}
+              disabled={loading || isSorting}
+            >
               Show More
             </Button>
           </div>

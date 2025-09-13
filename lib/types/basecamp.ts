@@ -15,8 +15,9 @@ export interface BasecampProfile {
   total_earnings: number | null;
   total_collectors: number | null;
   total_followers: number | null;
+  total_posts: number | null;
   base200_score: number;
-  rank: number;
+  rank?: number; // Make optional - only used for mobile/pinned users
 }
 
 export interface BasecampStats {
@@ -34,6 +35,7 @@ export type SortColumn =
   | "total_earnings"
   | "total_collectors"
   | "total_followers"
+  | "total_posts"
   | "zora_creator_coin_market_cap"
   | "zora_creator_coin_market_cap_24h"
   | "zora_creator_coin_total_volume"
