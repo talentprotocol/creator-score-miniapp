@@ -17,34 +17,12 @@ export function Providers(props: { children: ReactNode }) {
     console.error("NEXT_PUBLIC_ONCHAINKIT_API_KEY is not defined");
   }
 
-  const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  const privyClientId = process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID;
+  const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
+  const privyClientId = process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID!;
 
   if (!privyAppId || !privyClientId) {
     console.error(
       "NEXT_PUBLIC_PRIVY_APP_ID or NEXT_PUBLIC_PRIVY_CLIENT_ID is not defined",
-    );
-    // Return a fallback provider that doesn't require Privy
-    return (
-      <PostHogProvider>
-        <div className="min-h-screen bg-background text-foreground">
-          <div className="container mx-auto p-8">
-            <h1 className="text-2xl font-bold mb-4">App Configuration Required</h1>
-            <p className="text-muted-foreground mb-4">
-              Please configure the required environment variables to use this app.
-            </p>
-            <div className="bg-muted p-4 rounded-lg">
-              <h2 className="font-semibold mb-2">Required Environment Variables:</h2>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>NEXT_PUBLIC_PRIVY_APP_ID</li>
-                <li>NEXT_PUBLIC_PRIVY_CLIENT_ID</li>
-                <li>NEXT_PUBLIC_ONCHAINKIT_API_KEY</li>
-                <li>TALENT_API_KEY</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </PostHogProvider>
     );
   }
 

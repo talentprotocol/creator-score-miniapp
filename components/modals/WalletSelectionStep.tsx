@@ -88,7 +88,7 @@ export function WalletSelectionStep({
 
                   {/* Primary Chip */}
                   {isPrimary && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
                       Primary
                     </span>
                   )}

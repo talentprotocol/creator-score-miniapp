@@ -46,7 +46,7 @@ export async function generateMetadata({
   try {
     // Resolve user via API route for compliance
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || "http://localhost:3002"}/api/talent-user?id=${params.identifier}`,
+      `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
     );
     if (!response.ok) {
       return {
@@ -282,7 +282,7 @@ export default async function ProfileLayout({
   });
 
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_URL || "http://localhost:3002"}/api/talent-user?id=${params.identifier}`,
+    `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
   );
   if (!response.ok) {
     return <CreatorNotFoundCard />;

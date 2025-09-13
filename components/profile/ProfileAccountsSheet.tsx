@@ -162,7 +162,7 @@ function SocialAccountsList({
           <div
             key={`${account.source}-${account.handle || idx}`}
             className={`flex items-center gap-3 py-2 transition-colors ${
-              account.profileUrl ? "cursor-pointer active:bg-muted" : ""
+              account.profileUrl ? "cursor-pointer active:bg-gray-200" : ""
             }`}
             onClick={
               account.profileUrl
@@ -244,7 +244,7 @@ function WalletAddressesList({
   const WalletItem = ({ address }: { address: string }) => (
     <div
       key={address}
-      className="flex items-center gap-3 py-2 cursor-pointer transition-colors active:bg-muted"
+      className="flex items-center gap-3 py-2 cursor-pointer transition-colors active:bg-gray-200"
       onClick={() => handleCopyAddress(address)}
     >
       <svg
@@ -273,7 +273,7 @@ function WalletAddressesList({
             e.stopPropagation();
             handleCopyAddress(address);
           }}
-          className="p-1 hover:bg-muted/50 active:bg-muted rounded transition-colors"
+          className="p-1 hover:bg-gray-100 active:bg-gray-200 rounded transition-colors"
           aria-label={`Copy address ${truncateAddress(address)}`}
         >
           {copiedAddress === address ? (

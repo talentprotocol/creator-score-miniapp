@@ -87,9 +87,9 @@ export function SearchResults({
         <div className="max-w-sm mx-auto space-y-4">
           {/* Error icon and title */}
           <div>
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-destructive/10 flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
               <svg
-                className="w-6 h-6 text-destructive"
+                className="w-6 h-6 text-red-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -102,7 +102,7 @@ export function SearchResults({
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-1">
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
               {isNetworkError
                 ? "Connection Problem"
                 : isRateLimited
@@ -114,7 +114,7 @@ export function SearchResults({
           </div>
 
           {/* Error message */}
-          <p className="text-sm text-muted-foreground leading-relaxed">{error}</p>
+          <p className="text-sm text-gray-600 leading-relaxed">{error}</p>
 
           {/* Retry button - only show if we have a retry function and it's not a rate limit error */}
           {onRetry && !isRateLimited && (
@@ -135,7 +135,7 @@ export function SearchResults({
                 )}
               </Button>
               {retryCount > 0 && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   Retry attempt {retryCount}
                 </p>
               )}
@@ -158,8 +158,8 @@ export function SearchResults({
   if (results.length === 0 && query.trim().length >= 2 && !loading && !error) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground mb-2">No creators found</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-gray-600 mb-2">No creators found</p>
+        <p className="text-sm text-gray-500">
           Try searching with a different name or handle
         </p>
       </div>
