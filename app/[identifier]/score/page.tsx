@@ -1,15 +1,9 @@
-"use client";
-
-import { ScoreDataPoints } from "@/components/profile/ScoreDataPoints";
+import { redirect } from "next/navigation";
 
 interface ProfileScorePageProps {
   params: { identifier: string };
 }
 
-export default function ProfileScorePage({}: ProfileScorePageProps) {
-  return (
-    <div className="space-y-6">
-      <ScoreDataPoints />
-    </div>
-  );
+export default function ProfileScorePage({ params }: ProfileScorePageProps) {
+  redirect(`/${params.identifier}/stats`);
 }

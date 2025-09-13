@@ -21,5 +21,5 @@ export function getVersionDisplay(): string {
   const buildDate = getBuildDate();
 
   // Format: v0.1.0 (2025.01.13)
-  return `Creator Score App ${version} (${buildDate.replace(/-/g, ".")})`;
+  return `BASE200 App ${version} (${buildDate.replace(/-/g, ".")})`;
 }

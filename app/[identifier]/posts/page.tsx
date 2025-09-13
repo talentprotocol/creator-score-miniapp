@@ -1,11 +1,9 @@
-"use client";
-
-import { PostsContent } from "@/components/profile/PostsContent";
+import { redirect } from "next/navigation";
 
 interface ProfilePostsPageProps {
   params: { identifier: string };
 }
 
-export default function ProfilePostsPage({}: ProfilePostsPageProps) {
-  return <PostsContent />;
+export default function ProfilePostsPage({ params }: ProfilePostsPageProps) {
+  redirect(`/${params.identifier}/stats`);
 }
