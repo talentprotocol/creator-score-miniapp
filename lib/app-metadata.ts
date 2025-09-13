@@ -26,14 +26,14 @@ export interface AppMetadata {
 // Frame object for fc:frame meta tag
 export const creatorScoreFrame = {
   version: "next",
-  imageUrl: "https://www.creatorscore.app/hero.png",
+  imageUrl: "https://www.base200.com/hero.png",
   button: {
     title: "Check Your Score",
     action: {
       type: "launch_frame",
-      name: "Creator Score",
-      url: "https://www.creatorscore.app",
-      splashImageUrl: "https://www.creatorscore.app/splash.png",
+      name: "BASE200",
+      url: "https://www.base200.com",
+      splashImageUrl: "https://www.base200.com/splash.png",
       splashBackgroundColor: "#C79AF6",
     },
   },
@@ -41,24 +41,24 @@ export const creatorScoreFrame = {
 
 // Static metadata configuration (version controlled)
 export const APP_METADATA = {
-  name: "Creator Score App",
-  subtitle: "Create Onchain. Earn Rewards.",
+  name: "BASE200",
+  subtitle: "Reputation-Backed Talent Index",
   description:
-    "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens, and start earning rewards in USDC.",
-  tagline: "Create Onchain. Earn Rewards.",
+    "BASE200 makes it super easy to track and trade top talent at BaseCamp. A reputation-backed talent index for the Base ecosystem.",
+  tagline: "Reputation-Backed Talent Index",
 
   splashBackgroundColor: "#C79AF6",
 
   primaryCategory: "social",
-  tags: ["creator", "onchain", "reputation", "base", "rewards"],
+  tags: ["talent", "base", "reputation", "index", "basecamp"],
 
-  ogTitle: "Creator Score App",
+  ogTitle: "BASE200 - Reputation-Backed Talent Index",
   ogDescription:
-    "Track your creator reputation across onchain platforms like Zora, Farcaster, Mirror or Lens.",
+    "Track and trade top talent at BaseCamp with BASE200's reputation-backed talent index.",
 };
 
 export function getAppMetadata(): AppMetadata {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
+  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.base200.com";
 
   return {
     ...APP_METADATA,

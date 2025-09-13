@@ -31,8 +31,8 @@ const nextConfig = {
       "api.dicebear.com",
       "i.imgur.com",
       "imagedelivery.net",
-      "www.creatorscore.app",
-      "creatorscore.app",
+      "www.base200.com",
+      "base200.com",
     ],
   },
   transpilePackages: ["@coinbase/wallet-sdk", "@coinbase/onchainkit"],
@@ -71,10 +71,10 @@ const nextConfig = {
               object-src 'none';
               base-uri 'self';
               form-action 'self';
-              frame-ancestors 'self' https://www.creatorscore.app https://creatorscore.app https://warpcast.com https://*.warpcast.com https://farcaster.xyz https://*.farcaster.xyz;
+              frame-ancestors 'self' https://www.base200.com https://base200.com https://warpcast.com https://*.warpcast.com https://farcaster.xyz https://*.farcaster.xyz;
               child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org;
               frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com;
-              connect-src 'self' https://www.creatorscore.app https://creatorscore.app https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://*.walletconnect.com https://pulse.walletconnect.org https://api.web3modal.org https://warpcast.com https://client.warpcast.com https://api.coinbase.com https://vercel.live;
+              connect-src 'self' https://www.base200.com https://base200.com https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://*.walletconnect.com https://pulse.walletconnect.org https://api.web3modal.org https://warpcast.com https://client.warpcast.com https://api.coinbase.com https://vercel.live;
               worker-src 'self';
               manifest-src 'self'
             `

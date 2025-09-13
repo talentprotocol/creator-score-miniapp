@@ -8,10 +8,16 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0");
     const limit = parseInt(searchParams.get("limit") || "50");
     // Get tab-specific default sort column
-    const getDefaultSortColumn = (tabValue: BasecampTab): SortColumn => {
+    const getDefaultSortColumn = (
+      tabValue: BasecampTab,
+      isMobileDevice: boolean,
+    ): SortColumn => {
       switch (tabValue) {
         case "coins":
-          return "zora_creator_coin_market_cap";
+          // Mobile: sort by 24h volume, Desktop: sort by market cap
+          return isMobileDevice
+            ? "zora_creator_coin_24h_volume"
+            : "zora_creator_coin_market_cap";
         case "creator":
           return "total_earnings";
         case "builder":
@@ -22,8 +28,9 @@ export async function GET(request: NextRequest) {
     };
 
     const tab = (searchParams.get("tab") || "coins") as BasecampTab;
+    const isMobile = searchParams.get("isMobile") === "true";
     const sortBy = (searchParams.get("sortBy") ||
-      getDefaultSortColumn(tab)) as SortColumn;
+      getDefaultSortColumn(tab, isMobile)) as SortColumn;
     const sortOrder = (searchParams.get("sortOrder") || "desc") as SortOrder;
 
     const leaderboardData = await getBasecampLeaderboard(

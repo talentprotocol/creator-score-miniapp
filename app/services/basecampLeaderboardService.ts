@@ -137,7 +137,6 @@ export async function getBasecampLeaderboard(
       const { data: builderMetrics } = await supabase
         .from("basecamp_builder_metrics")
         .select("talent_uuid, smart_contracts_deployed, builder_rewards_eth")
-        .eq("calculation_date", "2025-09-13") // Use current date for builder metrics
         .in("talent_uuid", talentUuids);
 
       // Create lookup map for builder metrics
@@ -220,8 +219,7 @@ export async function getBasecampStats(): Promise<BasecampStats> {
 
         supabase
           .from("basecamp_builder_metrics")
-          .select("smart_contracts_deployed, builder_rewards_eth")
-          .eq("calculation_date", "2025-09-13"), // Use current date for builder metrics
+          .select("smart_contracts_deployed, builder_rewards_eth"),
       ]);
 
       if (basecampData.error) throw basecampData.error;

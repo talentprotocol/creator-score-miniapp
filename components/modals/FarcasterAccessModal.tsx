@@ -64,7 +64,7 @@ export function FarcasterAccessModal({
 
   const handleFarcasterClick = () => {
     window.open(
-      "https://farcaster.xyz/miniapps/WSqcbI1uxFJo/creator-score-mini-app",
+      "https://farcaster.xyz/miniapps/YOUR_NEW_APP_ID/base200-mini-app",
       "_blank",
     );
   };
