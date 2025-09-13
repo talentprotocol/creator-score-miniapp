@@ -107,7 +107,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
           <div className="text-xs text-muted-foreground font-medium">
             Total Posts
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">
+          <div className="text-xl sm:text-2xl font-bold text-foreground">
             {selectedYearData?.total || 0}
           </div>
         </div>
@@ -176,7 +176,7 @@ export function PostsChart({ yearlyData, loading, error }: PostsChartProps) {
             ].map((month, index) => (
               <div
                 key={index}
-                className="flex-1 text-center text-xs text-gray-400"
+                className="flex-1 text-center text-xs text-muted-foreground"
               >
                 <span className="hidden sm:inline">{month}</span>
                 <span className="sm:hidden">

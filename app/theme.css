@@ -10,7 +10,7 @@
     --card-foreground: 0 0% 7%;    /* #111111 */
     --popover: 0 0% 100%;          /* #ffffff */
     --popover-foreground: 0 0% 7%; /* #111111 */
-    --primary: 258 90% 66%;        /* #9333ea --creator-purple (purple-600) */
+    --primary: 200 100% 70%;       /* #66b3ff --basecamp-blue */
     --primary-foreground: 0 0% 98%;/* #FAFAFA */
     --secondary: 0 0% 97%;         /* #F7F7F7 - subtle section surfaces, quiet cards */
     --secondary-foreground: 0 0% 9%;/* #171717 */
@@ -24,14 +24,14 @@
     --warning-foreground: 0 0% 98%; /* #FAFAFA */
     --border: 0 0% 78%;            /* #C7C7C7 - slightly darker for separation */
     --input: 0 0% 78%;             /* #C7C7C7 */
-    --ring: 258 90% 66%;           /* #9333ea --creator-purple (purple-600) */
+    --ring: 200 100% 70%;          /* #66b3ff --basecamp-blue */
     --radius: 0.5rem;
 
-    /* Brand Colors - Exact Tailwind 600 values */
-    --creator-purple: 258 90% 66%;  /* purple-600 #9333ea */
-    --creator-green: 142 76% 36%;   /* green-600 #16a34a */  
-    --creator-blue: 197 71% 40%;    /* cyan-600 #0891b2 */
-    --creator-pink: 327 73% 50%;    /* pink-600 #db2777 */
+    /* Brand Colors - Basecamp inspired */
+    --creator-purple: 200 100% 70%;  /* Basecamp blue #66b3ff */
+    --creator-green: 200 100% 70%;   /* Basecamp blue #66b3ff */  
+    --creator-blue: 200 100% 70%;    /* Basecamp blue #66b3ff */
+    --creator-pink: 200 100% 70%;    /* Basecamp blue #66b3ff */
 
     /* Badge Level Progression Colors */
     --badge-level-1: 217 91% 60%;   /* blue-500 #3b82f6 */
@@ -43,25 +43,25 @@
   }
  
   .dark {
-    --background: 0 0% 7%;         /* #111111 - dark mode */
-    --foreground: 0 0% 98%;        /* #fafafa - dark mode */
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 258 90% 66%;
-    --primary-foreground: 0 0% 7%;
-    --secondary: 0 0% 16%;         /* #292929 - subtle section surfaces */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 13%;            /* #212121 - hovers/active, skeleton bg */
-    --muted-foreground: 0 0% 64%; /* #a3a3a3 - dark mode text-gray-400 */
-    --accent: 0 0% 20%;            /* #343434 - emphasis surfaces */
-    --accent-foreground: 0 0% 98%;
+    --background: 0 0% 0%;         /* #000000 - pure black for Basecamp branding */
+    --foreground: 0 0% 100%;       /* #ffffff - pure white text */
+    --card: 0 0% 5%;              /* #0d0d0d - very dark gray for cards */
+    --card-foreground: 0 0% 100%;  /* #ffffff - white text on cards */
+    --popover: 0 0% 5%;           /* #0d0d0d - very dark gray for popovers */
+    --popover-foreground: 0 0% 100%; /* #ffffff - white text on popovers */
+    --primary: 200 100% 70%;      /* #66b3ff - Basecamp blue */
+    --primary-foreground: 0 0% 0%; /* #000000 - black text on blue */
+    --secondary: 0 0% 8%;         /* #141414 - dark gray for subtle surfaces */
+    --secondary-foreground: 0 0% 100%; /* #ffffff - white text */
+    --muted: 0 0% 10%;            /* #1a1a1a - dark gray for hovers/active */
+    --muted-foreground: 0 0% 70%; /* #b3b3b3 - light gray for muted text */
+    --accent: 0 0% 12%;           /* #1f1f1f - emphasis surfaces */
+    --accent-foreground: 0 0% 100%; /* #ffffff - white text */
     --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 28%;            /* #484848 - slightly darker for separation */
-    --input: 0 0% 28%;
-    --ring: 258 90% 66%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;           /* #262626 - dark gray borders */
+    --input: 0 0% 15%;            /* #262626 - dark gray inputs */
+    --ring: 200 100% 70%;         /* #66b3ff - Basecamp blue for focus rings */
   }
 }
 
@@ -191,10 +191,17 @@
   /* Default font family - Geist with fallbacks */
   body {
     font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: hsl(var(--foreground));
   }
   
   /* Cy font for headings H1 and H2 */
   h1, h2 {
     font-family: var(--font-cy), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: hsl(var(--foreground));
+  }
+  
+  /* Ensure all text elements inherit proper colors */
+  p, span, div, a, button, input, textarea, select {
+    color: inherit;
   }
 }

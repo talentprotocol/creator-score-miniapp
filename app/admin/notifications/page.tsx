@@ -509,7 +509,7 @@ const AdminNotificationsPage: React.FC = () => {
                         <td className="p-1 text-red-600">
                           {notification.failed_count}
                         </td>
-                        <td className="p-1 text-gray-500">
+                        <td className="p-1 text-muted-foreground">
                           {new Date(notification.sent_at).toLocaleDateString()}
                         </td>
                       </tr>

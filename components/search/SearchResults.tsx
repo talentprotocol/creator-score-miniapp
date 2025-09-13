@@ -102,7 +102,7 @@ export function SearchResults({
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
+            <h3 className="text-lg font-medium text-foreground mb-1">
               {isNetworkError
                 ? "Connection Problem"
                 : isRateLimited
@@ -114,7 +114,7 @@ export function SearchResults({
           </div>
 
           {/* Error message */}
-          <p className="text-sm text-gray-600 leading-relaxed">{error}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{error}</p>
 
           {/* Retry button - only show if we have a retry function and it's not a rate limit error */}
           {onRetry && !isRateLimited && (
@@ -135,7 +135,7 @@ export function SearchResults({
                 )}
               </Button>
               {retryCount > 0 && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Retry attempt {retryCount}
                 </p>
               )}
@@ -144,7 +144,7 @@ export function SearchResults({
 
           {/* Rate limit specific message */}
           {isRateLimited && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Please wait a moment before searching again
             </p>
           )}
@@ -158,8 +158,8 @@ export function SearchResults({
   if (results.length === 0 && query.trim().length >= 2 && !loading && !error) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600 mb-2">No creators found</p>
-        <p className="text-sm text-gray-500">
+        <p className="text-muted-foreground mb-2">No creators found</p>
+        <p className="text-sm text-muted-foreground">
           Try searching with a different name or handle
         </p>
       </div>

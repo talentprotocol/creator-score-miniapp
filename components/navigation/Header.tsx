@@ -10,6 +10,7 @@ import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { useBackButton } from "@/hooks/useBackButton";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -78,8 +79,8 @@ export function Header() {
                   aria-label="Go to home"
                 >
                   <Image
-                    src="/cs-logo-header.svg"
-                    alt="Creator Score"
+                    src="/logos/talent_scg_long.svg"
+                    alt="Talent Score"
                     priority
                     fetchPriority="high"
                     fill
@@ -153,9 +154,10 @@ export function Header() {
             }
           `}</style>
 
-          {/* Right: Settings */}
+          {/* Right: Theme Toggle and Settings */}
           <div className="flex-1 flex items-center justify-end">
-            <div className="px-4 md:max-w-xl md:w-full md:mx-auto md:flex md:justify-end">
+            <div className="px-4 md:max-w-xl md:w-full md:mx-auto md:flex md:justify-end md:items-center md:gap-2">
+              <ThemeToggle />
               <Link
                 href={settingsItem.href}
                 onClick={(e) => handleNavClick(settingsItem, e)}

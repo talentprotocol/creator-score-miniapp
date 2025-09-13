@@ -7,7 +7,7 @@ export default function ExploreFeaturedPage() {
     <ExploreLayout>
       {() => (
         <div className="text-center py-12">
-          <p className="text-gray-600">Featured tab coming soon</p>
+          <p className="text-muted-foreground">Featured tab coming soon</p>
         </div>
       )}
     </ExploreLayout>

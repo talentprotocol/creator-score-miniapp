@@ -7,7 +7,7 @@ export default function ExploreFriendsPage() {
     <ExploreLayout>
       {() => (
         <div className="text-center py-12">
-          <p className="text-gray-600">Friends tab coming soon</p>
+          <p className="text-muted-foreground">Friends tab coming soon</p>
         </div>
       )}
     </ExploreLayout>
