@@ -254,36 +254,6 @@ export class ShareContentGenerators {
       twitterText,
     };
   }
-
-  /**
-   * Generate share content for pay-it-forward/opt-out
-   */
-  static optout(context: ShareContext): ShareContent {
-    const { handle, talentUUID } = context;
-
-    // Generate URLs and content (use dynamic route for Pay It Forward context)
-    const url = `${generateShareUrl(handle)}/share/optout`;
-    const filename = sanitizeFilename(`${handle}-paid-forward.png`);
-
-    // Use absolute URL for share image
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
-    const imageUrl = `${baseUrl}/api/share-image-optout/${talentUUID}`;
-
-    const farcasterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score app, built by @talent 👇`;
-
-    const twitterText = `I paid forward 100 percent of my Creator Score rewards to support onchain creators.\n\nCheck out my profile in the Creator Score App, built by @TalentProtocol 👇`;
-
-    return {
-      type: "optout",
-      title: "Share Your Good Deed",
-      description: "Let the world know you support creators",
-      imageUrl,
-      filename,
-      url,
-      farcasterText,
-      twitterText,
-    };
-  }
 }
 
 // ============================================================================

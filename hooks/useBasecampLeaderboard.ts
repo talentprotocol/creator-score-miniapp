@@ -39,11 +39,12 @@ export function useBasecampLeaderboard(
   const getDefaultSortColumn = (tabValue: BasecampTab): SortColumn => {
     switch (tabValue) {
       case "coins":
-        return "zora_creator_coin_market_cap";
+        // Both mobile and desktop sort by 24h volume by default
+        return "zora_creator_coin_24h_volume";
       case "creator":
         return "total_earnings";
       case "builder":
-        return "rewards_amount";
+        return "builder_score";
       default:
         return "total_earnings";
     }
@@ -53,9 +54,12 @@ export function useBasecampLeaderboard(
   const [tabSortStates, setTabSortStates] = useState<
     Record<BasecampTab, { column: SortColumn; order: SortOrder }>
   >(() => ({
-    coins: { column: "zora_creator_coin_market_cap", order: "desc" },
+    coins: {
+      column: getDefaultSortColumn("coins"),
+      order: "desc",
+    },
     creator: { column: "total_earnings", order: "desc" },
-    builder: { column: "rewards_amount", order: "desc" },
+    builder: { column: "builder_score", order: "desc" },
   }));
 
   // Current sort state based on active tab

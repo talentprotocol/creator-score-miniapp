@@ -112,7 +112,7 @@ function BasecampContent() {
   // Define tabs - all 3 tabs are always visible
   const tabs = [
     { id: "coins", label: "Creator Coins", count: coinsTotal },
-    { id: "creator", label: "Creator Score", count: creatorTotal },
+    { id: "creator", label: "Creator Earnings", count: creatorTotal },
     { id: "builder", label: "Builder Score", count: builderTotal },
   ];
 
@@ -123,12 +123,23 @@ function BasecampContent() {
 
     switch (currentTab) {
       case "coins":
-        primaryMetric = profile.zora_creator_coin_24h_volume
-          ? formatCurrency(profile.zora_creator_coin_24h_volume)
-          : "0";
-        secondaryMetric = profile.zora_creator_coin_market_cap
-          ? `Market Cap: ${formatCurrency(profile.zora_creator_coin_market_cap)}`
-          : "Market Cap: N/A";
+        // For mobile coins tab: if sorted by 24h volume, show market cap as primary
+        if (!isDesktop && sortColumn === "zora_creator_coin_24h_volume") {
+          primaryMetric = profile.zora_creator_coin_market_cap
+            ? formatCurrency(profile.zora_creator_coin_market_cap)
+            : "0";
+          secondaryMetric = profile.zora_creator_coin_24h_volume
+            ? `Volume 24h: ${formatCurrency(profile.zora_creator_coin_24h_volume)}`
+            : "Volume 24h: 0";
+        } else {
+          // Default behavior: show 24h volume as primary, market cap as secondary
+          primaryMetric = profile.zora_creator_coin_24h_volume
+            ? formatCurrency(profile.zora_creator_coin_24h_volume)
+            : "0";
+          secondaryMetric = profile.zora_creator_coin_market_cap
+            ? `Market Cap: ${formatCurrency(profile.zora_creator_coin_market_cap)}`
+            : "Market Cap: N/A";
+        }
         break;
       case "creator":
         primaryMetric = profile.total_earnings
@@ -139,12 +150,12 @@ function BasecampContent() {
           : "Creator Score: N/A";
         break;
       case "builder":
-        primaryMetric = profile.rewards_amount
-          ? formatCurrency(profile.rewards_amount)
+        primaryMetric = profile.builder_score
+          ? formatCompactNumber(profile.builder_score)
           : "0";
-        secondaryMetric = profile.builder_score
-          ? `Builder Score: ${formatCompactNumber(profile.builder_score)}`
-          : "Builder Score: N/A";
+        secondaryMetric = profile.rewards_amount
+          ? `Rewards: ${formatCurrency(profile.rewards_amount)}`
+          : "Rewards: $0";
         break;
       default:
         primaryMetric = "0";
@@ -169,12 +180,23 @@ function BasecampContent() {
 
       switch (currentTab) {
         case "coins":
-          primaryMetric = pinnedUser.zora_creator_coin_24h_volume
-            ? formatCurrency(pinnedUser.zora_creator_coin_24h_volume)
-            : "0";
-          secondaryMetric = pinnedUser.zora_creator_coin_market_cap
-            ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
-            : "Market Cap: N/A";
+          // For mobile coins tab: if sorted by 24h volume, show market cap as primary
+          if (!isDesktop && sortColumn === "zora_creator_coin_24h_volume") {
+            primaryMetric = pinnedUser.zora_creator_coin_market_cap
+              ? formatCurrency(pinnedUser.zora_creator_coin_market_cap)
+              : "0";
+            secondaryMetric = pinnedUser.zora_creator_coin_24h_volume
+              ? `Volume 24h: ${formatCurrency(pinnedUser.zora_creator_coin_24h_volume)}`
+              : "Volume 24h: 0";
+          } else {
+            // Default behavior: show 24h volume as primary, market cap as secondary
+            primaryMetric = pinnedUser.zora_creator_coin_24h_volume
+              ? formatCurrency(pinnedUser.zora_creator_coin_24h_volume)
+              : "0";
+            secondaryMetric = pinnedUser.zora_creator_coin_market_cap
+              ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
+              : "Market Cap: N/A";
+          }
           break;
         case "creator":
           primaryMetric = pinnedUser.total_earnings
@@ -185,12 +207,12 @@ function BasecampContent() {
             : "Creator Score: N/A";
           break;
         case "builder":
-          primaryMetric = pinnedUser.rewards_amount
-            ? formatCurrency(pinnedUser.rewards_amount)
+          primaryMetric = pinnedUser.builder_score
+            ? formatCompactNumber(pinnedUser.builder_score)
             : "0";
-          secondaryMetric = pinnedUser.builder_score
-            ? `Builder Score: ${formatCompactNumber(pinnedUser.builder_score)}`
-            : "Builder Score: N/A";
+          secondaryMetric = pinnedUser.rewards_amount
+            ? `Rewards: ${formatCurrency(pinnedUser.rewards_amount)}`
+            : "Rewards: $0";
           break;
         default:
           primaryMetric = "0";
@@ -329,7 +351,7 @@ function BasecampContent() {
                   ? "Volume 24h"
                   : currentTab === "creator"
                     ? "Earnings"
-                    : "Rewards"}
+                    : "Builder Score"}
               </span>
             </div>
 

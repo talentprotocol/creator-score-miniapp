@@ -1,6 +1,6 @@
 {
-  "name": "builder-score-miniapp",
-  "version": "1.5.1",
+  "name": "base200-miniapp",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo --port 3002",

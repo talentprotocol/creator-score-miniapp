@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     const getDefaultSortColumn = (tabValue: BasecampTab): SortColumn => {
       switch (tabValue) {
         case "coins":
-          return "zora_creator_coin_market_cap";
+          // Both mobile and desktop sort by 24h volume by default
+          return "zora_creator_coin_24h_volume";
         case "creator":
           return "total_earnings";
         case "builder":

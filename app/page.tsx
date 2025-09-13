@@ -41,22 +41,22 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function Home() {
   // For embed compatibility, we need this page to render content
-  // But we'll redirect users to leaderboard using client-side navigation
+  // But we'll redirect users to basecamp using client-side navigation
   return (
     <div>
       <script
         dangerouslySetInnerHTML={{
           __html: `
             if (typeof window !== 'undefined') {
-              window.location.replace('/leaderboard');
+              window.location.replace('/basecamp');
             }
           `,
         }}
       />
       <noscript>
-        <meta httpEquiv="refresh" content="0; url=/leaderboard" />
+        <meta httpEquiv="refresh" content="0; url=/basecamp" />
         <p>
-          Redirecting to <a href="/leaderboard">leaderboard</a>...
+          Redirecting to <a href="/basecamp">basecamp</a>...
         </p>
       </noscript>
     </div>

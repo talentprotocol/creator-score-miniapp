@@ -29,9 +29,8 @@ import {
 import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Award, HandCoins } from "lucide-react";
+import { Award, HandCoins } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import posthog from "posthog-js";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -152,9 +151,6 @@ function RewardsContent() {
             rank={userTop200Entry?.rank}
             onInfoClick={undefined}
             talentUuid={userTalentUuid}
-            onOptOutBadgeClick={() =>
-              router.push("/settings?section=pay-it-forward")
-            }
           />
         )}
 
@@ -196,26 +192,6 @@ function RewardsContent() {
                 permanentHideKey: "badges_announcement_dismissed",
                 onClose: () => {
                   // Handle dismissal - this triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                },
-              });
-
-              // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
-              items.push({
-                id: "optout",
-                variant: "brand-green",
-                icon: <HandHeart className="h-4 w-4" />,
-                title: "Pay It Forward",
-                description: "Give your rewards, keep your rank.",
-                href: isLoggedIn
-                  ? "/settings?section=pay-it-forward"
-                  : undefined,
-                onClick: !isLoggedIn
-                  ? () => setLoginModalOpen(true)
-                  : undefined,
-                permanentHideKey: "optout_callout_hidden",
-                onClose: () => {
-                  // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                  // The actual dismissal logic is handled by CalloutCarousel, not here
                 },
               });
 
@@ -372,30 +348,7 @@ function RewardsContent() {
                           ? "brand-blue"
                           : "muted",
                     isOptedOut: isOptedOut,
-                    badge: isOptedOut ? (
-                      isLoggedIn ? (
-                        <button
-                          type="button"
-                          className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-brand-green"
-                          aria-label="View Pay It Forward settings"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            try {
-                              posthog.capture("optout_badge_clicked", {
-                                location: "leaderboard_row",
-                              });
-                            } catch {}
-                            router.push("/settings?section=pay-it-forward");
-                          }}
-                        >
-                          <HandHeart className="h-3 w-3 text-brand-green" />
-                        </button>
-                      ) : (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light">
-                          <HandHeart className="h-3 w-3 text-brand-green" />
-                        </div>
-                      )
-                    ) : isOptedIn ? (
+                    badge: isOptedIn ? (
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue-light">
                         <HandCoins className="h-3 w-3 text-brand-blue" />
                       </div>
@@ -452,30 +405,7 @@ function RewardsContent() {
                         ? "brand-blue"
                         : "muted",
                   isOptedOut: pinnedIsOptedOut,
-                  badge: pinnedIsOptedOut ? (
-                    isLoggedIn ? (
-                      <button
-                        type="button"
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-brand-green"
-                        aria-label="View Pay It Forward settings"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          try {
-                            posthog.capture("optout_badge_clicked", {
-                              location: "leaderboard_row",
-                            });
-                          } catch {}
-                          router.push("/settings?section=pay-it-forward");
-                        }}
-                      >
-                        <HandHeart className="h-3 w-3 text-brand-green" />
-                      </button>
-                    ) : (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green-light">
-                        <HandHeart className="h-3 w-3 text-brand-green" />
-                      </div>
-                    )
-                  ) : pinnedIsOptedIn ? (
+                  badge: pinnedIsOptedIn ? (
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue-light">
                       <HandCoins className="h-3 w-3 text-brand-blue" />
                     </div>

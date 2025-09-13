@@ -5,7 +5,6 @@ const path = require("path");
 const BADGE_SLUG_MAPPING = {
   "weekly-streak": "weekly-streaks",
   "daily-streak": "daily-streaks",
-  "pay-forward": "paid-forward",
   collectors: "total-collectors",
   "creator-score": "creator-score",
   talent: "talent",

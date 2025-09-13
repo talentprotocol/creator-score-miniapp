@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { supabase } from "@/lib/supabase-client";
+import { getEthUsdcPrice, convertEthToUsdc } from "@/lib/utils";
 import {
   BasecampProfile,
   BasecampStats,
@@ -140,17 +141,22 @@ export async function getBasecampLeaderboard(
         .eq("calculation_date", "2025-09-13") // Use current date for builder metrics
         .in("talent_uuid", talentUuids);
 
+      // Get ETH price for conversion
+      const ethPrice = await getEthUsdcPrice();
+
       // Create lookup map for builder metrics
       const metricsMap = new Map(
         builderMetrics?.map((m) => [m.talent_uuid, m]) || [],
       );
 
-      // Merge builder metrics with profiles
+      // Merge builder metrics with profiles, converting ETH to USD
       let profilesWithRewards = profiles.map((profile) => {
         const metrics = metricsMap.get(profile.talent_uuid);
+        const ethRewards = metrics?.builder_rewards_eth || 0;
+        const usdRewards = convertEthToUsdc(ethRewards, ethPrice);
         return {
           ...profile,
-          rewards_amount: metrics?.builder_rewards_eth || 0,
+          rewards_amount: usdRewards,
           smart_contracts_deployed: metrics?.smart_contracts_deployed || 0,
         };
       });
@@ -238,14 +244,21 @@ export async function getBasecampStats(): Promise<BasecampStats> {
         { totalMarketCap: 0, totalCreatorEarnings: 0 },
       ) || { totalMarketCap: 0, totalCreatorEarnings: 0 };
 
-      // Calculate builder metrics totals
+      // Get ETH price for conversion
+      const ethPrice = await getEthUsdcPrice();
+
+      // Calculate builder metrics totals, converting ETH to USD
       const builderStats = builderMetricsData.data?.reduce(
-        (acc, record) => ({
-          totalBuilderRewards:
-            acc.totalBuilderRewards + (Number(record.builder_rewards_eth) || 0),
-          totalContractsDeployed:
-            acc.totalContractsDeployed + (record.smart_contracts_deployed || 0),
-        }),
+        (acc, record) => {
+          const ethRewards = Number(record.builder_rewards_eth) || 0;
+          const usdRewards = convertEthToUsdc(ethRewards, ethPrice);
+          return {
+            totalBuilderRewards: acc.totalBuilderRewards + usdRewards,
+            totalContractsDeployed:
+              acc.totalContractsDeployed +
+              (record.smart_contracts_deployed || 0),
+          };
+        },
         { totalBuilderRewards: 0, totalContractsDeployed: 0 },
       ) || { totalBuilderRewards: 0, totalContractsDeployed: 0 };
 

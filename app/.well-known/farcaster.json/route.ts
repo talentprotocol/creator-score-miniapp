@@ -15,7 +15,7 @@ function withValidProperties(
 
 export async function GET() {
   const frameMetadata = getFrameMetadata();
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
+  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.base200.com";
 
   // Ensure environment variables are defined
   const farcasterHeader = process.env.FARCASTER_HEADER;
