@@ -70,6 +70,19 @@ function BasecampContent() {
 
   const isLoggedIn = !!(user?.fid || userTalentUuid);
 
+  // Debug logging for user identification
+  if (process.env.NODE_ENV === "development") {
+    console.log("Basecamp - User context:", {
+      fid: user?.fid,
+      userTalentUuid,
+      isLoggedIn,
+      pinnedUserUuid: pinnedUser?.talent_uuid,
+      pinnedUserName: pinnedUser?.display_name,
+      userMatchesPinned:
+        userTalentUuid && pinnedUser?.talent_uuid === userTalentUuid,
+    });
+  }
+
   // Handle tab change with URL update
   const handleTabChange = (tabId: string) => {
     const newSearchParams = new URLSearchParams(searchParams);
@@ -138,9 +151,14 @@ function BasecampContent() {
     };
   });
 
-  // Add pinned user for both desktop and mobile views in correct position
+  // Add pinned user for mobile view only, and only if it's the correct user
   const finalCreatorItems = (() => {
-    if (isLoggedIn && pinnedUser) {
+    if (
+      isLoggedIn &&
+      pinnedUser &&
+      userTalentUuid &&
+      pinnedUser.talent_uuid === userTalentUuid
+    ) {
       let primaryMetric: string;
       let secondaryMetric: string;
 
@@ -204,29 +222,7 @@ function BasecampContent() {
     return creatorListItems;
   })();
 
-  // Create final desktop data with pinned user in rank position
-  const finalDesktopData = (() => {
-    if (isLoggedIn && pinnedUser) {
-      // Remove pinned user from main profiles if present
-      const filteredProfiles = profiles.filter(
-        (profile) => profile.talent_uuid !== pinnedUser.talent_uuid,
-      );
-
-      // Insert pinned user at their correct rank position
-      const pinnedRank = pinnedUser.rank || 0;
-      const insertIndex = Math.max(
-        0,
-        Math.min(pinnedRank - offset - 1, filteredProfiles.length),
-      );
-
-      // Insert the pinned user at the correct position
-      const result = [...filteredProfiles];
-      result.splice(insertIndex, 0, pinnedUser);
-
-      return result;
-    }
-    return profiles;
-  })();
+  // Desktop uses raw profiles data without pinned user manipulation
 
   return (
     <PageContainer className={isDesktop ? "max-w-none px-6" : undefined}>
@@ -304,12 +300,12 @@ function BasecampContent() {
               </div>
             )}
             <BasecampDataTable
-              data={finalDesktopData}
+              data={profiles}
               sortColumn={sortColumn}
               sortOrder={sortOrder}
               onSort={setSorting}
               onRowClick={handleItemClick}
-              pinnedIndex={isLoggedIn && pinnedUser ? 0 : undefined}
+              pinnedIndex={undefined}
               tab={currentTab}
             />
           </div>
@@ -332,7 +328,7 @@ function BasecampContent() {
                   ? "Volume 24h"
                   : currentTab === "creator"
                     ? "Earnings"
-                    : "Earnings"}
+                    : "Rewards"}
               </span>
             </div>
 
@@ -340,7 +336,14 @@ function BasecampContent() {
               items={finalCreatorItems}
               onItemClick={handleItemClick}
               loading={loading}
-              pinnedIndex={isLoggedIn && pinnedUser ? 0 : undefined}
+              pinnedIndex={
+                isLoggedIn &&
+                pinnedUser &&
+                userTalentUuid &&
+                pinnedUser.talent_uuid === userTalentUuid
+                  ? 0
+                  : undefined
+              }
             />
           </>
         )}

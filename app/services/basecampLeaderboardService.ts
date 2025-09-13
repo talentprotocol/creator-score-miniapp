@@ -97,7 +97,7 @@ export async function getBasecampLeaderboard(
           );
 
           // Calculate deltas and add to profiles
-          profiles = currentData.map((profile) => {
+          profiles = currentData.map((profile, index) => {
             const currentHolders =
               profile.zora_creator_coin_unique_holders || 0;
             const prevHolders = previousHolders.get(profile.talent_uuid) || 0;
@@ -105,16 +105,24 @@ export async function getBasecampLeaderboard(
 
             return {
               ...profile,
+              rank: offset + index + 1, // Add rank calculation
               zora_creator_coin_holders_24h_delta: holdersDelta,
             };
           });
         } else {
           // No previous data available, set all deltas to 0
-          profiles = currentData.map((profile) => ({
+          profiles = currentData.map((profile, index) => ({
             ...profile,
+            rank: offset + index + 1, // Add rank calculation
             zora_creator_coin_holders_24h_delta: 0,
           }));
         }
+      } else {
+        // Add rank calculation for non-coins tabs
+        profiles = (currentData || []).map((profile, index) => ({
+          ...profile,
+          rank: offset + index + 1,
+        }));
       }
 
       return {
