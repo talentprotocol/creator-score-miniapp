@@ -293,7 +293,7 @@ function ProfileLayoutContentInner({
             title="Creator Score"
             value={scoreLoading ? "—" : (creatorScore?.toLocaleString() ?? "—")}
             onClick={() => {
-              router.push(`/${identifier}/score`);
+              router.push(`/${identifier}/stats`);
             }}
           />
         </div>
