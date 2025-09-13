@@ -1,12 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Create a proxy that throws the error only when the client is actually used
-const createSupabaseProxy = () => {
+const createSupabaseProxy = (): SupabaseClient => {
   if (!supabaseUrl || !supabaseKey) {
-    return new Proxy({} as any, {
+    return new Proxy({} as SupabaseClient, {
       get() {
         throw new Error(
           "Missing Supabase configuration. Please check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.",
