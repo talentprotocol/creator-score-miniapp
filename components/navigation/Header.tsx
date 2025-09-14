@@ -10,7 +10,6 @@ import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { useBackButton } from "@/hooks/useBackButton";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -75,12 +74,12 @@ export function Header() {
               ) : (
                 <button
                   onClick={handleTitleClick}
-                  className="h-9 w-24 cursor-pointer relative"
+                  className="h-9 w-32 cursor-pointer relative"
                   aria-label="Go to home"
                 >
                   <Image
-                    src="/cs-logo-header.svg"
-                    alt="Creator Score"
+                    src="/logos/talent_scg_long.svg"
+                    alt="Talent SCG"
                     priority
                     fetchPriority="high"
                     fill
@@ -154,11 +153,10 @@ export function Header() {
             }
           `}</style>
 
-          {/* Right: Theme toggle and Settings */}
-          <div className="flex-1 flex items-center justify-end">
-            <div className="px-4 md:max-w-xl md:w-full md:mx-auto md:flex md:justify-end md:items-center md:gap-2">
-              <ThemeToggle />
-              <Link
+                {/* Right: Settings */}
+                <div className="flex-1 flex items-center justify-end">
+                  <div className="px-4 md:max-w-xl md:w-full md:mx-auto md:flex md:justify-end md:items-center md:gap-2">
+                    <Link
                 href={settingsItem.href}
                 onClick={(e) => handleNavClick(settingsItem, e)}
                 className="flex items-center justify-center h-10 w-10 -mr-2 group transition-colors"
