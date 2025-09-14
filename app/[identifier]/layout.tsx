@@ -22,10 +22,8 @@ import { dlog, dtimer } from "@/lib/debug";
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: { identifier: string };
-  searchParams?: { share?: string };
 }): Promise<Metadata> {
   // Validate identifier format to prevent injection attacks
   if (!validateIdentifier(params.identifier)) {
@@ -184,11 +182,8 @@ export async function generateMetadata({
 
     const altText = `${displayName} Creator Score Card`;
 
-    // Build canonical URL with query parameters for proper social media previews
-    const canonicalUrlWithParams =
-      searchParams && Object.keys(searchParams).length > 0
-        ? `${canonicalUrl}/${canonical}?${new URLSearchParams(searchParams).toString()}`
-        : `${canonicalUrl}/${canonical}`;
+    // Build canonical URL for proper social media previews
+    const canonicalUrlWithParams = `${canonicalUrl}/${canonical}`;
 
     return {
       title,
@@ -313,9 +308,9 @@ export default async function ProfileLayout({
     params.identifier !== canonical &&
     params.identifier !== undefined
   ) {
-    // Always redirect to stats tab since it's the only content now
-    const redirectUrl = `/${canonical}/stats`;
-    dlog("ProfileLayout", "redirecting_to_canonical_stats", {
+    // Redirect to canonical identifier
+    const redirectUrl = `/${canonical}`;
+    dlog("ProfileLayout", "redirecting_to_canonical", {
       from: params.identifier,
       to: redirectUrl,
     });

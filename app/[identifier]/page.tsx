@@ -1,11 +1,11 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function PublicProfilePage({
-  params,
-}: {
+import { StatsContent } from "@/components/profile/StatsContent";
+
+interface PublicProfilePageProps {
   params: { identifier: string };
-}) {
-  // Always redirect to stats tab by default
-  // Layout already handles user resolution and canonical redirects
-  redirect(`/${params.identifier}/stats`);
+}
+
+export default function PublicProfilePage({}: PublicProfilePageProps) {
+  return <StatsContent />;
 }
