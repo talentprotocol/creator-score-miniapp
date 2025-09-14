@@ -7,6 +7,7 @@ import { getMiniKitConfig } from "@/lib/app-metadata";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { AddMiniAppOnLoad } from "@/components/common/AddMiniAppOnLoad";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export function Providers(props: { children: ReactNode }) {
   const miniKitConfig = getMiniKitConfig();
@@ -27,24 +28,31 @@ export function Providers(props: { children: ReactNode }) {
   }
 
   return (
-    <PostHogProvider>
-      <PrivyProvider appId={privyAppId} clientId={privyClientId}>
-        <MiniKitProvider
-          apiKey={apiKey || ""}
-          chain={base}
-          config={{
-            appearance: {
-              mode: "auto",
-              theme: "mini-app-theme",
-              name: miniKitConfig.name,
-              logo: miniKitConfig.logo,
-            },
-          }}
-        >
-          <AddMiniAppOnLoad />
-          {props.children}
-        </MiniKitProvider>
-      </PrivyProvider>
-    </PostHogProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      disableTransitionOnChange
+    >
+      <PostHogProvider>
+        <PrivyProvider appId={privyAppId} clientId={privyClientId}>
+          <MiniKitProvider
+            apiKey={apiKey || ""}
+            chain={base}
+            config={{
+              appearance: {
+                mode: "auto",
+                theme: "mini-app-theme",
+                name: miniKitConfig.name,
+                logo: miniKitConfig.logo,
+              },
+            }}
+          >
+            <AddMiniAppOnLoad />
+            {props.children}
+          </MiniKitProvider>
+        </PrivyProvider>
+      </PostHogProvider>
+    </ThemeProvider>
   );
 }

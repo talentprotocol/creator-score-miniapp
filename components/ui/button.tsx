@@ -10,10 +10,21 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "border border-input bg-background hover:bg-muted",
-        "brand-purple":
-          "bg-brand-purple-light text-brand-purple hover:bg-brand-purple-dark",
+        "brand-base-blue":
+          "bg-brand-base-blue-light text-brand-base-blue hover:bg-brand-base-blue-dark",
+        "brand-cerulean":
+          "bg-brand-cerulean-light text-brand-cerulean hover:bg-brand-cerulean-dark",
+        "brand-yellow":
+          "bg-brand-yellow-light text-brand-yellow hover:bg-brand-yellow-dark",
+        "brand-tan":
+          "bg-brand-tan-light text-brand-tan hover:bg-brand-tan-dark",
         "brand-green":
           "bg-brand-green-light text-brand-green hover:bg-brand-green-dark",
+        "brand-lime-green":
+          "bg-brand-lime-green-light text-brand-lime-green hover:bg-brand-lime-green-dark",
+        // Legacy brand colors for backward compatibility
+        "brand-purple":
+          "bg-brand-purple-light text-brand-purple hover:bg-brand-purple-dark",
         "brand-blue":
           "bg-brand-blue-light text-brand-blue hover:bg-brand-blue-dark",
         "brand-pink":

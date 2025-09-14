@@ -27,9 +27,15 @@ const iconSizes = {
 const iconColors = {
   primary: "text-foreground",
   muted: "text-muted-foreground",
-  brand: "text-brand-purple",
-  "brand-purple": "text-brand-purple",
+  brand: "text-brand-base-blue",
+  "brand-base-blue": "text-brand-base-blue",
+  "brand-cerulean": "text-brand-cerulean",
+  "brand-yellow": "text-brand-yellow",
+  "brand-tan": "text-brand-tan",
   "brand-green": "text-brand-green",
+  "brand-lime-green": "text-brand-lime-green",
+  // Legacy brand colors for backward compatibility
+  "brand-purple": "text-brand-purple",
   "brand-blue": "text-brand-blue",
   "brand-pink": "text-brand-pink",
   error: "text-destructive",

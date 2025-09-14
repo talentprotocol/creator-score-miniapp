@@ -94,11 +94,11 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
       </head>
-      <body className="min-h-full bg-white flex flex-col">
+      <body className="min-h-full bg-background flex flex-col">
         <script
           dangerouslySetInnerHTML={{ __html: globalErrorHandlingScript }}
         />
-        <div className="relative flex flex-col w-full bg-background my-0 md:my-0 md:bg-white md:shadow-none md:rounded-none md:overflow-hidden">
+        <div className="relative flex flex-col w-full bg-background my-0 md:my-0 md:bg-background md:shadow-none md:rounded-none md:overflow-hidden">
           <Providers>
             <ErrorBoundary>
               <Header />

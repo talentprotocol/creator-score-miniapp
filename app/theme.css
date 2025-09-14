@@ -10,7 +10,7 @@
     --card-foreground: 0 0% 7%;    /* #111111 */
     --popover: 0 0% 100%;          /* #ffffff */
     --popover-foreground: 0 0% 7%; /* #111111 */
-    --primary: 258 90% 66%;        /* #9333ea --creator-purple (purple-600) */
+    --primary: 240 100% 50%;       /* #0000FF - Base Blue as primary */
     --primary-foreground: 0 0% 98%;/* #FAFAFA */
     --secondary: 0 0% 97%;         /* #F7F7F7 - subtle section surfaces, quiet cards */
     --secondary-foreground: 0 0% 9%;/* #171717 */
@@ -24,10 +24,26 @@
     --warning-foreground: 0 0% 98%; /* #FAFAFA */
     --border: 0 0% 78%;            /* #C7C7C7 - slightly darker for separation */
     --input: 0 0% 78%;             /* #C7C7C7 */
-    --ring: 258 90% 66%;           /* #9333ea --creator-purple (purple-600) */
+    --ring: 240 100% 50%;          /* #0000FF - Base Blue for focus rings */
     --radius: 0.5rem;
 
-    /* Brand Colors - Exact Tailwind 600 values */
+    /* Brand Colors - New Base Blue palette */
+    --base-blue: 240 100% 50%;     /* #0000FF - Base Blue (primary) */
+    --cerulean: 210 100% 62%;      /* #3C8AFF - Cerulean */
+    --yellow: 45 100% 59%;         /* #FFD12F - Yellow */
+    --tan: 45 25% 60%;             /* #B8A581 - Tan */
+    --green: 120 100% 39%;         /* #66C800 - Green */
+    --lime-green: 90 100% 70%;     /* #B6F569 - Lime Green */
+
+    /* Grayscale Foundation */
+    --gray-0: 0 0% 100%;           /* #FFFFFF */
+    --gray-10: 220 20% 95%;        /* #EEF0F3 */
+    --gray-15: 220 15% 90%;        /* #DEE1E7 */
+    --gray-30: 220 10% 75%;        /* #B1B7C3 */
+    --gray-50: 220 8% 50%;         /* #717886 */
+    --gray-60: 220 8% 40%;         /* #5B616E */
+
+    /* Legacy brand colors for backward compatibility */
     --creator-purple: 258 90% 66%;  /* purple-600 #9333ea */
     --creator-green: 142 76% 36%;   /* green-600 #16a34a */  
     --creator-blue: 197 71% 40%;    /* cyan-600 #0891b2 */
@@ -43,25 +59,27 @@
   }
  
   .dark {
-    --background: 0 0% 7%;         /* #111111 - dark mode */
-    --foreground: 0 0% 98%;        /* #fafafa - dark mode */
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 258 90% 66%;
-    --primary-foreground: 0 0% 7%;
-    --secondary: 0 0% 16%;         /* #292929 - subtle section surfaces */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 13%;            /* #212121 - hovers/active, skeleton bg */
-    --muted-foreground: 0 0% 64%; /* #a3a3a3 - dark mode text-gray-400 */
-    --accent: 0 0% 20%;            /* #343434 - emphasis surfaces */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 28%;            /* #484848 - slightly darker for separation */
-    --input: 0 0% 28%;
-    --ring: 258 90% 66%;
+    --background: 220 15% 8%;      /* #0F1114 - dark blue-gray background */
+    --foreground: 0 0% 98%;        /* #fafafa - light text */
+    --card: 220 15% 10%;           /* #16181C - slightly lighter than background */
+    --card-foreground: 0 0% 98%;   /* #fafafa - light text on cards */
+    --popover: 220 15% 10%;        /* #16181C - same as card */
+    --popover-foreground: 0 0% 98%;/* #fafafa - light text */
+    --primary: 240 100% 60%;       /* #3333FF - brighter Base Blue for dark mode */
+    --primary-foreground: 0 0% 98%;/* #fafafa - light text on primary */
+    --secondary: 220 15% 15%;      /* #1F2329 - subtle section surfaces */
+    --secondary-foreground: 0 0% 98%;/* #fafafa - light text */
+    --muted: 220 15% 12%;          /* #1A1D23 - hovers/active, skeleton bg */
+    --muted-foreground: 220 8% 65%;/* #9CA3AF - muted text */
+    --accent: 220 15% 18%;         /* #252A32 - emphasis surfaces */
+    --accent-foreground: 0 0% 98%; /* #fafafa - light text */
+    --destructive: 0 63% 50%;      /* #EF4444 - brighter red for dark mode */
+    --destructive-foreground: 0 0% 98%; /* #fafafa - light text */
+    --warning: 20 91% 55%;         /* #F97316 - brighter orange for dark mode */
+    --warning-foreground: 0 0% 98%; /* #fafafa - light text */
+    --border: 220 15% 25%;         /* #3F4751 - borders */
+    --input: 220 15% 25%;          /* #3F4751 - input borders */
+    --ring: 240 100% 60%;          /* #3333FF - Base Blue for focus rings */
   }
 }
 
@@ -73,13 +91,44 @@
     @apply fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0;
   }
 
-  /* Brand Color Utilities - Semantic access to brand colors */
-  .text-brand-green { color: hsl(var(--creator-green)); }
-  .text-brand-green-muted { color: hsl(var(--creator-green) / 0.7); }
-  .bg-brand-green { background-color: hsl(var(--creator-green)); }
-  .bg-brand-green-light { background-color: hsl(var(--creator-green) / 0.1); }
-  .bg-brand-green-dark { background-color: hsl(var(--creator-green) / 0.2); }
+  /* Brand Color Utilities - New Base Blue palette */
+  .text-brand-base-blue { color: hsl(var(--base-blue)); }
+  .text-brand-base-blue-muted { color: hsl(var(--base-blue) / 0.7); }
+  .bg-brand-base-blue { background-color: hsl(var(--base-blue)); }
+  .bg-brand-base-blue-light { background-color: hsl(var(--base-blue) / 0.1); }
+  .bg-brand-base-blue-dark { background-color: hsl(var(--base-blue) / 0.2); }
   
+  .text-brand-cerulean { color: hsl(var(--cerulean)); }
+  .text-brand-cerulean-muted { color: hsl(var(--cerulean) / 0.7); }
+  .bg-brand-cerulean { background-color: hsl(var(--cerulean)); }
+  .bg-brand-cerulean-light { background-color: hsl(var(--cerulean) / 0.1); }
+  .bg-brand-cerulean-dark { background-color: hsl(var(--cerulean) / 0.2); }
+  
+  .text-brand-yellow { color: hsl(var(--yellow)); }
+  .text-brand-yellow-muted { color: hsl(var(--yellow) / 0.7); }
+  .bg-brand-yellow { background-color: hsl(var(--yellow)); }
+  .bg-brand-yellow-light { background-color: hsl(var(--yellow) / 0.1); }
+  .bg-brand-yellow-dark { background-color: hsl(var(--yellow) / 0.2); }
+  
+  .text-brand-tan { color: hsl(var(--tan)); }
+  .text-brand-tan-muted { color: hsl(var(--tan) / 0.7); }
+  .bg-brand-tan { background-color: hsl(var(--tan)); }
+  .bg-brand-tan-light { background-color: hsl(var(--tan) / 0.1); }
+  .bg-brand-tan-dark { background-color: hsl(var(--tan) / 0.2); }
+  
+  .text-brand-green { color: hsl(var(--green)); }
+  .text-brand-green-muted { color: hsl(var(--green) / 0.7); }
+  .bg-brand-green { background-color: hsl(var(--green)); }
+  .bg-brand-green-light { background-color: hsl(var(--green) / 0.1); }
+  .bg-brand-green-dark { background-color: hsl(var(--green) / 0.2); }
+  
+  .text-brand-lime-green { color: hsl(var(--lime-green)); }
+  .text-brand-lime-green-muted { color: hsl(var(--lime-green) / 0.7); }
+  .bg-brand-lime-green { background-color: hsl(var(--lime-green)); }
+  .bg-brand-lime-green-light { background-color: hsl(var(--lime-green) / 0.1); }
+  .bg-brand-lime-green-dark { background-color: hsl(var(--lime-green) / 0.2); }
+
+  /* Legacy brand colors for backward compatibility */
   .text-brand-purple { color: hsl(var(--creator-purple)); }
   .text-brand-purple-muted { color: hsl(var(--creator-purple) / 0.7); }
   .bg-brand-purple { background-color: hsl(var(--creator-purple)); }
@@ -106,26 +155,26 @@
   .bg-badge-level-5 { background-color: hsl(var(--badge-level-5)); }
   .bg-badge-level-6 { background-color: hsl(var(--badge-level-6)); }
   
-  /* Semantic state colors - using existing brand colors where possible */
-  .text-success { color: hsl(var(--creator-green)); }
-  .bg-success { background-color: hsl(var(--creator-green)); }
-  .bg-success-light { background-color: hsl(var(--creator-green) / 0.1); }
-  .border-success { border-color: hsl(var(--creator-green) / 0.3); }
+  /* Semantic state colors - using new brand colors */
+  .text-success { color: hsl(var(--green)); }
+  .bg-success { background-color: hsl(var(--green)); }
+  .bg-success-light { background-color: hsl(var(--green) / 0.1); }
+  .border-success { border-color: hsl(var(--green) / 0.3); }
   
-  .text-warning { color: hsl(var(--warning)); }
-  .bg-warning { background-color: hsl(var(--warning)); }
-  .bg-warning-light { background-color: hsl(var(--warning) / 0.1); }
-  .border-warning { border-color: hsl(var(--warning) / 0.3); }
+  .text-warning { color: hsl(var(--yellow)); }
+  .bg-warning { background-color: hsl(var(--yellow)); }
+  .bg-warning-light { background-color: hsl(var(--yellow) / 0.1); }
+  .border-warning { border-color: hsl(var(--yellow) / 0.3); }
   
   .text-error { color: hsl(var(--destructive)); }
   .bg-error { background-color: hsl(var(--destructive)); }
   .bg-error-light { background-color: hsl(var(--destructive) / 0.1); }
   .border-error { border-color: hsl(var(--destructive) / 0.3); }
   
-  .text-info { color: hsl(var(--creator-blue)); }
-  .bg-info { background-color: hsl(var(--creator-blue)); }
-  .bg-info-light { background-color: hsl(var(--creator-blue) / 0.1); }
-  .border-info { border-color: hsl(var(--creator-blue) / 0.3); }
+  .text-info { color: hsl(var(--cerulean)); }
+  .bg-info { background-color: hsl(var(--cerulean)); }
+  .bg-info-light { background-color: hsl(var(--cerulean) / 0.1); }
+  .border-info { border-color: hsl(var(--cerulean) / 0.3); }
   
 }
 

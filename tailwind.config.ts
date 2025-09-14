@@ -64,7 +64,13 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         brand: {
-          DEFAULT: "hsl(var(--creator-purple))",
+          DEFAULT: "hsl(var(--base-blue))",
+          "base-blue": "hsl(var(--base-blue))",
+          "cerulean": "hsl(var(--cerulean))",
+          "yellow": "hsl(var(--yellow))",
+          "tan": "hsl(var(--tan))",
+          "green": "hsl(var(--green))",
+          "lime-green": "hsl(var(--lime-green))",
         },
         card: {
           DEFAULT: "hsl(var(--card))",
@@ -103,6 +109,15 @@ const config: Config = {
           "3": "hsl(var(--chart-3))",
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
+        },
+        // Brand grayscale system
+        gray: {
+          "0": "hsl(var(--gray-0))",
+          "10": "hsl(var(--gray-10))",
+          "15": "hsl(var(--gray-15))",
+          "30": "hsl(var(--gray-30))",
+          "50": "hsl(var(--gray-50))",
+          "60": "hsl(var(--gray-60))",
         },
       },
       animation: {
