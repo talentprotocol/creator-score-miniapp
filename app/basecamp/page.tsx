@@ -6,7 +6,6 @@ import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBasecampLeaderboard } from "@/hooks/useBasecampLeaderboard";
 import { useBasecampStats } from "@/hooks/useBasecampStats";
-import { useBasecampTotals } from "@/hooks/useBasecampTotals";
 import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -41,7 +40,6 @@ function BasecampContent() {
 
   // Data hooks
   const { stats, loading: statsLoading } = useBasecampStats();
-  const { creatorTotal, builderTotal, coinsTotal } = useBasecampTotals();
 
   const {
     profiles,
@@ -111,9 +109,9 @@ function BasecampContent() {
 
   // Define tabs - all 3 tabs are always visible
   const tabs = [
-    { id: "coins", label: "Creator Coins", count: coinsTotal },
-    { id: "creator", label: "Creator Earnings", count: creatorTotal },
-    { id: "builder", label: "Builder Score", count: builderTotal },
+    { id: "coins", label: "Coins" },
+    { id: "creator", label: "Earnings" },
+    { id: "builder", label: "Scores" },
   ];
 
   // Map data for mobile CreatorList based on current tab
@@ -135,17 +133,17 @@ function BasecampContent() {
         primaryMetric = profile.total_earnings
           ? formatCurrency(profile.total_earnings)
           : "0";
-        secondaryMetric = profile.creator_score
-          ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
-          : "Creator Score: N/A";
+        secondaryMetric = profile.rewards_amount
+          ? `Base Builder Rewards: ${formatCurrency(profile.rewards_amount)}`
+          : "Base Builder Rewards: $0";
         break;
       case "builder":
         primaryMetric = profile.builder_score
           ? formatCompactNumber(profile.builder_score)
           : "0";
-        secondaryMetric = profile.rewards_amount
-          ? `Rewards: ${formatCurrency(profile.rewards_amount)}`
-          : "Rewards: $0";
+        secondaryMetric = profile.creator_score
+          ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
+          : "Creator Score: N/A";
         break;
       default:
         primaryMetric = "0";
@@ -182,17 +180,17 @@ function BasecampContent() {
           primaryMetric = pinnedUser.total_earnings
             ? formatCurrency(pinnedUser.total_earnings)
             : "0";
-          secondaryMetric = pinnedUser.creator_score
-            ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
-            : "Creator Score: N/A";
+          secondaryMetric = pinnedUser.rewards_amount
+            ? `Base Builder Rewards: ${formatCurrency(pinnedUser.rewards_amount)}`
+            : "Base Builder Rewards: $0";
           break;
         case "builder":
           primaryMetric = pinnedUser.builder_score
             ? formatCompactNumber(pinnedUser.builder_score)
             : "0";
-          secondaryMetric = pinnedUser.rewards_amount
-            ? `Rewards: ${formatCurrency(pinnedUser.rewards_amount)}`
-            : "Rewards: $0";
+          secondaryMetric = pinnedUser.creator_score
+            ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
+            : "Creator Score: N/A";
           break;
         default:
           primaryMetric = "0";
@@ -262,6 +260,7 @@ function BasecampContent() {
           tabs={tabs}
           activeTab={currentTab}
           onTabChange={handleTabChange}
+          showCounts={false}
         />
       </Section>
 

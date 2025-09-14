@@ -7,7 +7,6 @@ import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
-// import { HowToEarnModalHandler } from "@/components/common/HowToEarnModalHandler";
 import {
   getPageMetadata,
   getFrameMetadata,
@@ -108,7 +107,6 @@ export default function RootLayout({
                 </main>
               </SwipeWrapper>
               <BottomNav />
-              {/* <HowToEarnModalHandler /> */}
             </ErrorBoundary>
           </Providers>
         </div>

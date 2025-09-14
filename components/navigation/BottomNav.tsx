@@ -24,12 +24,8 @@ export function BottomNav() {
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
     setClickedIcon(item.href);
 
-    // If user tries to access Profile or Badges without user context, show modal
-    if (
-      !talentUuid &&
-      !talentId &&
-      (item.label === "Profile" || item.label === "Badges")
-    ) {
+    // If user tries to access Profile without user context, show modal
+    if (!talentUuid && !talentId && item.label === "Profile") {
       e.preventDefault();
       setRedirectPath(item.href);
       setShowModal(true);
@@ -66,7 +62,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t pb-safe md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t pb-safe hidden md:block">
         <div className="max-w-xl mx-auto flex items-center justify-around h-[88px]">
           {navItems.map((item) => {
             const current = pathname || "";

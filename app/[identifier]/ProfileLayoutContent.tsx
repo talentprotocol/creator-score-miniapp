@@ -11,7 +11,6 @@ import {
   calculateTotalFollowers,
   detectClient,
 } from "@/lib/utils";
-import { processCreatorCategories } from "@/lib/credentialUtils";
 import { useProfileActions } from "@/hooks/useProfileActions";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
@@ -145,11 +144,6 @@ function ProfileLayoutContentInner({
   );
 
   const profileShareData = React.useMemo(() => {
-    // Get creator type from credentials
-    const categoryData = profileData?.credentials
-      ? processCreatorCategories(profileData.credentials)
-      : null;
-
     return {
       creatorScore,
       totalFollowers,
@@ -159,10 +153,8 @@ function ProfileLayoutContentInner({
         | string
         | undefined,
       fname: profile?.fname,
-      creatorType: categoryData?.primaryCategory?.name,
-      creatorEmoji: categoryData?.primaryCategory?.emoji,
     };
-  }, [creatorScore, totalFollowers, totalEarnings, rank, profile, profileData]);
+  }, [creatorScore, totalFollowers, totalEarnings, rank, profile]);
 
   const shareContent = React.useMemo(
     () => ShareContentGenerators.profile(shareContext, profileShareData),
@@ -229,8 +221,6 @@ function ProfileLayoutContentInner({
           bio={profile.bio || undefined}
           socialAccounts={socialAccounts}
           talentUUID={talentUUID}
-          isOwnProfile={!!isOwnProfile}
-          hasCreatorScore={!hasNoScore}
           rank={rank || undefined}
         />
 
@@ -321,7 +311,6 @@ function ProfileLayoutContentInner({
           </div>
         )}
       </Section>
-
 
       {/* Content section */}
       <Section variant="content" animate>

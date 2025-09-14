@@ -22,7 +22,7 @@ export function useUserCalloutPrefs(talentUuid: string | null | undefined) {
     if (!talentUuid) return;
     setState((s) => ({ ...s, loading: true }));
     try {
-      const url = `/api/user-preferences?talent_uuid=${encodeURIComponent(talentUuid)}`;
+      const url = `/api/base200-user-preferences?talent_uuid=${encodeURIComponent(talentUuid)}`;
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) throw new Error(`Failed to load prefs: ${res.status}`);
       const json = await res.json();
@@ -45,12 +45,11 @@ export function useUserCalloutPrefs(talentUuid: string | null | undefined) {
     async (id: string) => {
       if (!talentUuid) return;
       try {
-        const res = await fetch(`/api/user-preferences`, {
+        const res = await fetch(`/api/base200-user-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             talent_uuid: talentUuid,
-            creator_category: null,
             add_dismissed_id: id,
           }),
         });
@@ -68,12 +67,11 @@ export function useUserCalloutPrefs(talentUuid: string | null | undefined) {
     async (id: string) => {
       if (!talentUuid) return;
       try {
-        const res = await fetch(`/api/user-preferences`, {
+        const res = await fetch(`/api/base200-user-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             talent_uuid: talentUuid,
-            creator_category: null,
             add_permanently_hidden_id: id,
           }),
         });

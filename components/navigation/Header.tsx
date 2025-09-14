@@ -30,13 +30,11 @@ export function Header() {
     e: React.MouseEvent,
   ) => {
     setClickedIcon(item.href);
-    // If user tries to access Profile, Settings, or Badges without user context or talentId, show modal
+    // If user tries to access Profile or Settings without user context or talentId, show modal
     if (
       !talentUuid &&
       !talentId &&
-      (item.label === "Profile" ||
-        item.label === "Settings" ||
-        item.label === "Badges")
+      (item.label === "Profile" || item.label === "Settings")
     ) {
       e.preventDefault();
       setRedirectPath(item.href);

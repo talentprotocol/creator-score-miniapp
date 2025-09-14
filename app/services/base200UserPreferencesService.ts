@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase-client";
 import {
-  UserPreferencesResponse,
-  UserPreferencesUpdateRequest,
-} from "@/lib/types/user-preferences";
+  Base200UserPreferencesResponse,
+  Base200UserPreferencesUpdateRequest,
+} from "@/lib/types/base200-user-preferences";
 
 function emptyCalloutPrefs() {
   return {
@@ -11,12 +11,12 @@ function emptyCalloutPrefs() {
   };
 }
 
-export async function getUserPreferencesByTalentUuid(
+export async function getBase200UserPreferencesByTalentUuid(
   talentUUID: string,
-): Promise<UserPreferencesResponse> {
+): Promise<Base200UserPreferencesResponse> {
   const { data, error } = await supabase
-    .from("user_preferences")
-    .select("callout_prefs, rewards_decision, future_pool_contribution")
+    .from("base200_user_preferences")
+    .select("callout_prefs")
     .eq("talent_uuid", talentUUID)
     .single();
 
@@ -33,33 +33,27 @@ export async function getUserPreferencesByTalentUuid(
       dismissedIds: callout_prefs.dismissedIds ?? [],
       permanentlyHiddenIds: callout_prefs.permanentlyHiddenIds ?? [],
     },
-    rewards_decision:
-      (data?.rewards_decision as UserPreferencesResponse["rewards_decision"]) ??
-      null,
-    future_pool_contribution: (data?.future_pool_contribution as number) ?? 0,
   };
 }
 
-export async function updateUserPreferencesAtomic(
-  req: UserPreferencesUpdateRequest,
+export async function updateBase200UserPreferencesAtomic(
+  req: Base200UserPreferencesUpdateRequest,
 ) {
   const { talent_uuid } = req;
 
   // Fetch or initialize
-  const current = await getUserPreferencesByTalentUuid(talent_uuid);
+  const current = await getBase200UserPreferencesByTalentUuid(talent_uuid);
 
   const next = {
     callout_prefs: {
       dismissedIds: new Set(current.callout_prefs.dismissedIds),
       permanentlyHiddenIds: new Set(current.callout_prefs.permanentlyHiddenIds),
     },
-    rewards_decision: req.rewards_decision ?? current.rewards_decision ?? null,
   } as {
     callout_prefs: {
       dismissedIds: Set<string>;
       permanentlyHiddenIds: Set<string>;
     };
-    rewards_decision: UserPreferencesResponse["rewards_decision"];
   };
 
   if (req.add_dismissed_id)
@@ -79,39 +73,16 @@ export async function updateUserPreferencesAtomic(
       dismissedIds: Array.from(next.callout_prefs.dismissedIds),
       permanentlyHiddenIds: Array.from(next.callout_prefs.permanentlyHiddenIds),
     },
-    rewards_decision: next.rewards_decision,
     updated_at: new Date().toISOString(),
-    decision_made_at: undefined as string | undefined,
   };
 
-  // Add decision_made_at timestamp when rewards_decision changes to a non-NULL value
-  if (
-    req.rewards_decision !== undefined &&
-    req.rewards_decision !== current.rewards_decision &&
-    req.rewards_decision !== null
-  ) {
-    payload.decision_made_at = new Date().toISOString();
-  }
-
   const { data, error } = await supabase
-    .from("user_preferences")
+    .from("base200_user_preferences")
     .upsert(payload, { onConflict: "talent_uuid" })
-    .select(
-      "callout_prefs, rewards_decision, future_pool_contribution, updated_at, decision_made_at",
-    )
+    .select("callout_prefs, updated_at")
     .single();
 
   if (error) throw error;
-
-  // No cache invalidation needed since user preferences are no longer cached
-  if (
-    req.rewards_decision !== undefined &&
-    req.rewards_decision !== current.rewards_decision
-  ) {
-    console.log(
-      `[UserPreferencesService] Rewards decision updated for user ${talent_uuid}: ${current.rewards_decision} -> ${req.rewards_decision}`,
-    );
-  }
 
   return {
     callout_prefs: {
@@ -130,9 +101,6 @@ export async function updateUserPreferencesAtomic(
           }
         ).permanentlyHiddenIds ?? [],
     },
-    rewards_decision: data.rewards_decision,
-    future_pool_contribution: data.future_pool_contribution,
     updated_at: data.updated_at,
-    decision_made_at: data.decision_made_at,
   };
 }

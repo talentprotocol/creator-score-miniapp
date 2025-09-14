@@ -1,9 +1,9 @@
-// Removed direct service import - now using API route for compliance
 import { redirect } from "next/navigation";
 import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { validateIdentifier } from "@/lib/validation";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
+import { getTalentUserService } from "@/app/services/userService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
@@ -41,17 +41,8 @@ export async function generateMetadata({
   }
 
   try {
-    // Resolve user via API route for compliance
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
-    );
-    if (!response.ok) {
-      return {
-        title: "Creator Not Found - Creator Score",
-        description: "This creator could not be found.",
-      };
-    }
-    const user = await response.json();
+    // Resolve user directly using service function (no internal API calls)
+    const user = await getTalentUserService(params.identifier);
 
     if (!user || !user.id) {
       return {
@@ -257,21 +248,15 @@ export default async function ProfileLayout({
     return <CreatorNotFoundCard />;
   }
 
-  // Resolve user via API route for compliance
+  // Resolve user directly using service function (no internal API calls)
   const userResolutionTimer = dtimer("ProfileLayout", "user_resolution");
-  dlog("ProfileLayout", "calling_api_route", {
+  dlog("ProfileLayout", "calling_user_service", {
     identifier: params.identifier,
   });
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
-  );
-  if (!response.ok) {
-    return <CreatorNotFoundCard />;
-  }
-  const user = await response.json();
+  const user = await getTalentUserService(params.identifier);
 
-  dlog("ProfileLayout", "api_route_result", {
+  dlog("ProfileLayout", "user_service_result", {
     identifier: params.identifier,
     user_found: !!user,
     user_id: user?.id || null,
@@ -322,41 +307,38 @@ export default async function ProfileLayout({
   dlog("ProfileLayout", "fetch_bundle_start", { user_id: user.id });
 
   // Use Promise.allSettled to handle individual service failures gracefully
-  const [
-    creatorScoreResult,
-    socialAccountsResult,
-    credentialsResult,
-  ] = await Promise.allSettled([
-    getCreatorScoreForTalentId(user.id)().catch((error) => {
-      dlog("ProfileLayout", "creator_score_fetch_failed", {
-        user_id: user.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return {
-        score: 0,
-        level: 1,
-        levelName: "Level 1",
-        lastCalculatedAt: null,
-        calculating: false,
-      };
-    }),
-    getAccountsForTalentId(user.id)()
-      .then((data) => data.social)
-      .catch((error) => {
-        dlog("ProfileLayout", "social_accounts_fetch_failed", {
+  const [creatorScoreResult, socialAccountsResult, credentialsResult] =
+    await Promise.allSettled([
+      getCreatorScoreForTalentId(user.id)().catch((error) => {
+        dlog("ProfileLayout", "creator_score_fetch_failed", {
+          user_id: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return {
+          score: 0,
+          level: 1,
+          levelName: "Level 1",
+          lastCalculatedAt: null,
+          calculating: false,
+        };
+      }),
+      getAccountsForTalentId(user.id)()
+        .then((data) => data.social)
+        .catch((error) => {
+          dlog("ProfileLayout", "social_accounts_fetch_failed", {
+            user_id: user.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return []; // Return empty array for graceful degradation
+        }),
+      getCredentialsForTalentId(user.id)().catch((error) => {
+        dlog("ProfileLayout", "credentials_fetch_failed", {
           user_id: user.id,
           error: error instanceof Error ? error.message : String(error),
         });
         return []; // Return empty array for graceful degradation
       }),
-    getCredentialsForTalentId(user.id)().catch((error) => {
-      dlog("ProfileLayout", "credentials_fetch_failed", {
-        user_id: user.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return []; // Return empty array for graceful degradation
-    }),
-  ]);
+    ]);
 
   // Extract successful results with fallbacks for failed services
   const creatorScoreData =
@@ -397,7 +379,6 @@ export default async function ProfileLayout({
       error: credentialsResult.reason,
     });
   }
-
 
   // Calculate total earnings using the same sophisticated logic as the original system
   const [ethPrice, polPrice] = await Promise.all([

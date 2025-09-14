@@ -27,7 +27,7 @@ export function useAutoModal(config: AutoModalConfig) {
     const checkModalStatus = async () => {
       try {
         const response = await fetch(
-          `/api/user-preferences?talent_uuid=${talentUuid}`,
+          `/api/base200-user-preferences?talent_uuid=${talentUuid}`,
         );
 
         if (response.ok) {
