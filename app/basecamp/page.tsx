@@ -123,23 +123,13 @@ function BasecampContent() {
 
     switch (currentTab) {
       case "coins":
-        // For mobile coins tab: if sorted by 24h volume, show market cap as primary
-        if (!isDesktop && sortColumn === "zora_creator_coin_24h_volume") {
-          primaryMetric = profile.zora_creator_coin_market_cap
-            ? formatCurrency(profile.zora_creator_coin_market_cap)
-            : "0";
-          secondaryMetric = profile.zora_creator_coin_24h_volume
-            ? `Volume 24h: ${formatCurrency(profile.zora_creator_coin_24h_volume)}`
-            : "Volume 24h: 0";
-        } else {
-          // Default behavior: show 24h volume as primary, market cap as secondary
-          primaryMetric = profile.zora_creator_coin_24h_volume
-            ? formatCurrency(profile.zora_creator_coin_24h_volume)
-            : "0";
-          secondaryMetric = profile.zora_creator_coin_market_cap
-            ? `Market Cap: ${formatCurrency(profile.zora_creator_coin_market_cap)}`
-            : "Market Cap: N/A";
-        }
+        // Always show Volume 24h as primary metric (right side) and Market Cap as secondary (below name)
+        primaryMetric = profile.zora_creator_coin_24h_volume
+          ? formatCurrency(profile.zora_creator_coin_24h_volume)
+          : "0";
+        secondaryMetric = profile.zora_creator_coin_market_cap
+          ? `Market Cap: ${formatCurrency(profile.zora_creator_coin_market_cap)}`
+          : "Market Cap: N/A";
         break;
       case "creator":
         primaryMetric = profile.total_earnings
@@ -180,23 +170,13 @@ function BasecampContent() {
 
       switch (currentTab) {
         case "coins":
-          // For mobile coins tab: if sorted by 24h volume, show market cap as primary
-          if (!isDesktop && sortColumn === "zora_creator_coin_24h_volume") {
-            primaryMetric = pinnedUser.zora_creator_coin_market_cap
-              ? formatCurrency(pinnedUser.zora_creator_coin_market_cap)
-              : "0";
-            secondaryMetric = pinnedUser.zora_creator_coin_24h_volume
-              ? `Volume 24h: ${formatCurrency(pinnedUser.zora_creator_coin_24h_volume)}`
-              : "Volume 24h: 0";
-          } else {
-            // Default behavior: show 24h volume as primary, market cap as secondary
-            primaryMetric = pinnedUser.zora_creator_coin_24h_volume
-              ? formatCurrency(pinnedUser.zora_creator_coin_24h_volume)
-              : "0";
-            secondaryMetric = pinnedUser.zora_creator_coin_market_cap
-              ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
-              : "Market Cap: N/A";
-          }
+          // Always show Volume 24h as primary metric (right side) and Market Cap as secondary (below name)
+          primaryMetric = pinnedUser.zora_creator_coin_24h_volume
+            ? formatCurrency(pinnedUser.zora_creator_coin_24h_volume)
+            : "0";
+          secondaryMetric = pinnedUser.zora_creator_coin_market_cap
+            ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
+            : "Market Cap: N/A";
           break;
         case "creator":
           primaryMetric = pinnedUser.total_earnings
