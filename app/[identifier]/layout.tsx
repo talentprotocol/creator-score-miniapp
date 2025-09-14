@@ -7,7 +7,6 @@ import { ProfileLayoutContent } from "./ProfileLayoutContent";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
-import { getAllPostsForTalentId } from "@/app/services/postsService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 import {
   getEthUsdcPrice,
@@ -314,26 +313,13 @@ export default async function ProfileLayout({
     params.identifier !== canonical &&
     params.identifier !== undefined
   ) {
-    // Preserve the current path when redirecting to canonical
-    const currentPath = params.identifier;
-    if (currentPath.includes("/")) {
-      const pathParts = currentPath.split("/");
-      const tabPart = pathParts[pathParts.length - 1];
-      const redirectUrl = `/${canonical}/${tabPart}`;
-      dlog("ProfileLayout", "redirecting_to_canonical_with_tab", {
-        from: currentPath,
-        to: redirectUrl,
-        tab: tabPart,
-      });
-      redirect(redirectUrl);
-    } else {
-      const redirectUrl = `/${canonical}/stats`;
-      dlog("ProfileLayout", "redirecting_to_canonical_default_tab", {
-        from: currentPath,
-        to: redirectUrl,
-      });
-      redirect(redirectUrl);
-    }
+    // Always redirect to stats tab since it's the only content now
+    const redirectUrl = `/${canonical}/stats`;
+    dlog("ProfileLayout", "redirecting_to_canonical_stats", {
+      from: params.identifier,
+      to: redirectUrl,
+    });
+    redirect(redirectUrl);
   }
 
   // 🚀 FETCH ALL PROFILE DATA HERE (server-side, once)
@@ -345,7 +331,6 @@ export default async function ProfileLayout({
     creatorScoreResult,
     socialAccountsResult,
     credentialsResult,
-    postsResult,
   ] = await Promise.allSettled([
     getCreatorScoreForTalentId(user.id)().catch((error) => {
       dlog("ProfileLayout", "creator_score_fetch_failed", {
@@ -376,13 +361,6 @@ export default async function ProfileLayout({
       });
       return []; // Return empty array for graceful degradation
     }),
-    getAllPostsForTalentId(user.id)().catch((error) => {
-      dlog("ProfileLayout", "posts_fetch_failed", {
-        user_id: user.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return []; // Return empty array for graceful degradation
-    }),
   ]);
 
   // Extract successful results with fallbacks for failed services
@@ -405,8 +383,6 @@ export default async function ProfileLayout({
   const credentials =
     credentialsResult.status === "fulfilled" ? credentialsResult.value : [];
 
-  const posts = postsResult.status === "fulfilled" ? postsResult.value : [];
-
   // Log any failed services for monitoring
   if (creatorScoreResult.status === "rejected") {
     dlog("ProfileLayout", "creator_score_service_failed", {
@@ -426,35 +402,7 @@ export default async function ProfileLayout({
       error: credentialsResult.reason,
     });
   }
-  if (postsResult.status === "rejected") {
-    dlog("ProfileLayout", "posts_service_failed", {
-      user_id: user.id,
-      error: postsResult.reason,
-    });
-  }
 
-  // Process posts into yearly data (same logic as hooks)
-  const yearlyDataMap = posts.reduce(
-    (acc: Record<number, number[]>, post: { onchain_created_at: string }) => {
-      const date = new Date(post.onchain_created_at);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-
-      if (!acc[year]) {
-        acc[year] = new Array(12).fill(0);
-      }
-      acc[year][month]++;
-      return acc;
-    },
-    {},
-  );
-
-  // Convert to YearlyPostData format
-  const yearlyData = Object.entries(yearlyDataMap).map(([year, months]) => ({
-    year: parseInt(year),
-    months: months as number[],
-    total: (months as number[]).reduce((sum, count) => sum + count, 0),
-  }));
 
   // Calculate total earnings using the same sophisticated logic as the original system
   const [ethPrice, polPrice] = await Promise.all([
@@ -568,7 +516,6 @@ export default async function ProfileLayout({
     calculating: creatorScoreData.calculating || false,
     social_accounts_count: socialAccounts.length,
     credentials_groups_count: credentials.length,
-    posts_count: posts.length,
     total_followers: totalFollowers,
     total_earnings: totalEarnings,
     earnings_segments_count: earningsBreakdown.segments.length,
@@ -611,8 +558,6 @@ export default async function ProfileLayout({
         calculating: creatorScoreData.calculating || false,
         socialAccounts,
         totalEarnings,
-        posts,
-        yearlyData,
         credentials,
         earningsBreakdown,
         collectorsBreakdown,

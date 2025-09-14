@@ -4,7 +4,6 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { StatCard } from "@/components/common/StatCard";
-import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { Button } from "@/components/ui/button";
 import {
   formatNumberWithSuffix,
@@ -323,10 +322,6 @@ function ProfileLayoutContentInner({
         )}
       </Section>
 
-      {/* Full width tabs */}
-      <Section variant="full-width">
-        <ProfileTabs talentUUID={talentUUID} identifier={identifier} />
-      </Section>
 
       {/* Content section */}
       <Section variant="content" animate>
