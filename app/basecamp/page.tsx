@@ -115,8 +115,8 @@ function BasecampContent() {
   // Define tabs - all 3 tabs are always visible
   const tabs = [
     { id: "coins", label: "Coins" },
-    { id: "creator", label: "Earnings" },
-    { id: "builder", label: "Scores" },
+    { id: "creator", label: "Creators" },
+    { id: "builder", label: "Builders" },
   ];
 
   // Map data for mobile CreatorList based on current tab
@@ -135,20 +135,20 @@ function BasecampContent() {
           : "Market Cap: N/A";
         break;
       case "creator":
-        primaryMetric = profile.total_earnings
-          ? formatCurrency(profile.total_earnings)
+        primaryMetric = profile.creator_score
+          ? formatCompactNumber(profile.creator_score)
           : "0";
-        secondaryMetric = profile.rewards_amount
-          ? `Base Builder Rewards: ${formatCurrency(profile.rewards_amount)}`
-          : "Base Builder Rewards: $0";
+        secondaryMetric = profile.total_earnings
+          ? `Creator Earnings: ${formatCurrency(profile.total_earnings)}`
+          : "Creator Earnings: N/A";
         break;
       case "builder":
         primaryMetric = profile.builder_score
           ? formatCompactNumber(profile.builder_score)
           : "0";
-        secondaryMetric = profile.creator_score
-          ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
-          : "Creator Score: N/A";
+        secondaryMetric = profile.rewards_amount
+          ? `Base Builder Rewards: ${formatCurrency(profile.rewards_amount)}`
+          : "Base Builder Rewards: $0";
         break;
       default:
         primaryMetric = "0";
@@ -182,20 +182,20 @@ function BasecampContent() {
             : "Market Cap: N/A";
           break;
         case "creator":
-          primaryMetric = pinnedUser.total_earnings
-            ? formatCurrency(pinnedUser.total_earnings)
+          primaryMetric = pinnedUser.creator_score
+            ? formatCompactNumber(pinnedUser.creator_score)
             : "0";
-          secondaryMetric = pinnedUser.rewards_amount
-            ? `Base Builder Rewards: ${formatCurrency(pinnedUser.rewards_amount)}`
-            : "Base Builder Rewards: $0";
+          secondaryMetric = pinnedUser.total_earnings
+            ? `Creator Earnings: ${formatCurrency(pinnedUser.total_earnings)}`
+            : "Creator Earnings: N/A";
           break;
         case "builder":
           primaryMetric = pinnedUser.builder_score
             ? formatCompactNumber(pinnedUser.builder_score)
             : "0";
-          secondaryMetric = pinnedUser.creator_score
-            ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
-            : "Creator Score: N/A";
+          secondaryMetric = pinnedUser.rewards_amount
+            ? `Base Builder Rewards: ${formatCurrency(pinnedUser.rewards_amount)}`
+            : "Base Builder Rewards: $0";
           break;
         default:
           primaryMetric = "0";
@@ -344,7 +344,7 @@ function BasecampContent() {
                 {currentTab === "coins"
                   ? "Volume 24h"
                   : currentTab === "creator"
-                    ? "Earnings"
+                    ? "Creator Score"
                     : "Builder Score"}
               </span>
             </div>

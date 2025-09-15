@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
           // Both mobile and desktop sort by 24h volume by default
           return "zora_creator_coin_24h_volume";
         case "creator":
-          return "total_earnings";
+          return "creator_score";
         case "builder":
           return "rewards_amount";
         default:
