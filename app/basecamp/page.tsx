@@ -6,7 +6,6 @@ import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBasecampLeaderboard } from "@/hooks/useBasecampLeaderboard";
 import { useBasecampStats } from "@/hooks/useBasecampStats";
-import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sdk } from "@farcaster/frame-sdk";
@@ -16,12 +15,10 @@ import { Section } from "@/components/common/Section";
 import { CreatorList } from "@/components/common/CreatorList";
 import { BasecampDataTable } from "@/components/basecamp/BasecampDataTable";
 import { BasecampStatsCards } from "@/components/basecamp/BasecampStatsCards";
-import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Typography } from "@/components/ui/typography";
-import { Target } from "lucide-react";
 
 import {
   formatCompactNumber,
@@ -58,12 +55,6 @@ function BasecampContent() {
     showMore,
     setSorting,
   } = useBasecampLeaderboard(userTalentUuid, currentTab);
-
-  // Callout preferences
-  const {
-    permanentlyHiddenIds: permanentlyHiddenCalloutIds,
-    addPermanentlyHiddenId,
-  } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
