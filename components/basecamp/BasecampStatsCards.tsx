@@ -54,32 +54,32 @@ export function BasecampStatsCards({
     <div className="space-y-3">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <DualMetricStatCard
-          title="Coins Launched"
-          primaryValue={formatCompactNumber(stats.coinsLaunchedToday)}
-          primaryLabel="Today"
-          secondaryValue={formatCompactNumber(stats.coinsLaunchedTotal)}
-          secondaryLabel="Total"
-        />
-        <DualMetricStatCard
-          title="Market Cap"
+          title="Coin Market Cap 24h"
           primaryValue={formatCurrency(stats.marketCapToday)}
-          primaryLabel="Today"
-          secondaryValue={formatCurrency(stats.marketCapTotal)}
-          secondaryLabel="Total"
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCurrency(stats.marketCapTotal)}`}
+          secondaryLabel=""
         />
         <DualMetricStatCard
-          title="Volume"
+          title="Coin Volume 24h"
           primaryValue={formatCurrency(stats.volumeToday)}
-          primaryLabel="Today"
-          secondaryValue={formatCurrency(stats.volumeTotal)}
-          secondaryLabel="Total"
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCurrency(stats.volumeTotal)}`}
+          secondaryLabel=""
         />
         <DualMetricStatCard
-          title="Holders"
+          title="New Coins Launched"
+          primaryValue={formatCompactNumber(stats.coinsLaunchedToday)}
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCompactNumber(stats.coinsLaunchedTotal)}`}
+          secondaryLabel=""
+        />
+        <DualMetricStatCard
+          title="New Coin Holders"
           primaryValue={formatCompactNumber(stats.holdersChangeToday)}
-          primaryLabel="Today"
-          secondaryValue={formatCompactNumber(stats.holdersTotal)}
-          secondaryLabel="Total"
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCompactNumber(stats.holdersTotal)}`}
+          secondaryLabel=""
         />
       </div>
     </div>

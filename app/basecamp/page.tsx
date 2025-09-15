@@ -236,7 +236,7 @@ function BasecampContent() {
       <Section variant="header">
         <div>
           <Typography as="h1" size="2xl" weight="bold">
-            BaseCamp Coins
+            BaseCamp Builders & Creators
           </Typography>
           <Typography color="muted">{formatPageDate(new Date())}</Typography>
         </div>
