@@ -51,7 +51,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-30 w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="w-full flex items-center h-14">
           {/* Left: Back button or title */}
           <div className="flex-1 flex items-center md:justify-end">

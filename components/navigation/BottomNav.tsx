@@ -42,7 +42,7 @@ export function BottomNav() {
   // Prevent hydration mismatch by not rendering pathname-dependent content until mounted
   if (!mounted) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t pb-safe md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border pb-safe md:hidden">
         <div className="max-w-xl mx-auto flex items-center justify-around h-[88px]">
           {navItems.map((item) => (
             <div
@@ -62,7 +62,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t pb-safe hidden md:block">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border pb-safe md:hidden">
         <div className="max-w-xl mx-auto flex items-center justify-around h-[88px]">
           {navItems.map((item) => {
             const current = pathname || "";
