@@ -214,35 +214,47 @@ export async function getBasecampStats(): Promise<BasecampStats> {
   return unstable_cache(
     async () => {
       const latestDate = await getLatestCalculationDate();
+      const previousDate = await getPreviousCalculationDate(latestDate);
 
-      // Get basecamp leaderboard stats in parallel with builder metrics
-      const [basecampData, builderMetricsData] = await Promise.all([
-        supabase
+      // Get current data (basecamp participants with creator coins only)
+      const { data: currentData, error: currentError } = await supabase
+        .from("base200_leaderboard")
+        .select("*")
+        .eq("calculation_date", latestDate)
+        .eq("basecamp_002_participant", true)
+        .not("display_name", "is", null)
+        .not("zora_creator_coin_address", "is", null);
+
+      if (currentError) throw currentError;
+
+      // Get previous data for delta calculations
+      let previousData = null;
+      if (previousDate) {
+        const { data: prevData, error: prevError } = await supabase
           .from("base200_leaderboard")
-          .select("talent_uuid, zora_creator_coin_market_cap, total_earnings")
-          .eq("calculation_date", latestDate)
+          .select(
+            "talent_uuid, zora_creator_coin_address, zora_creator_coin_unique_holders",
+          )
+          .eq("calculation_date", previousDate)
           .eq("basecamp_002_participant", true)
-          .not("display_name", "is", null),
+          .not("display_name", "is", null)
+          .not("zora_creator_coin_address", "is", null);
 
+        if (!prevError) previousData = prevData;
+      }
+
+      // Calculate new metrics
+      const newMetrics = calculateNewMetrics(currentData || [], previousData);
+
+      // Get existing metrics (builder rewards, contracts, etc.) in parallel
+      const [builderMetricsData] = await Promise.all([
         supabase
           .from("basecamp_builder_metrics")
           .select("smart_contracts_deployed, builder_rewards_eth")
           .eq("calculation_date", "2025-09-13"), // Use current date for builder metrics
       ]);
 
-      if (basecampData.error) throw basecampData.error;
       if (builderMetricsData.error) throw builderMetricsData.error;
-
-      // Calculate basecamp stats
-      const basecampStats = basecampData.data?.reduce(
-        (acc, record) => ({
-          totalMarketCap:
-            acc.totalMarketCap + (record.zora_creator_coin_market_cap || 0),
-          totalCreatorEarnings:
-            acc.totalCreatorEarnings + (record.total_earnings || 0),
-        }),
-        { totalMarketCap: 0, totalCreatorEarnings: 0 },
-      ) || { totalMarketCap: 0, totalCreatorEarnings: 0 };
 
       // Get ETH price for conversion
       const ethPrice = await getEthUsdcPrice();
@@ -265,9 +277,12 @@ export async function getBasecampStats(): Promise<BasecampStats> {
       return {
         totalBuilderRewards: builderStats.totalBuilderRewards,
         totalContractsDeployed: builderStats.totalContractsDeployed,
-        totalMarketCap: basecampStats.totalMarketCap,
-        totalCreatorEarnings: basecampStats.totalCreatorEarnings,
+        totalMarketCap: newMetrics.marketCapTotal,
+        totalCreatorEarnings:
+          currentData?.reduce((sum, p) => sum + (p.total_earnings || 0), 0) ||
+          0,
         calculationDate: latestDate,
+        ...newMetrics,
       };
     },
     [CACHE_KEYS.LEADERBOARD + "-basecamp-stats"],
@@ -276,6 +291,72 @@ export async function getBasecampStats(): Promise<BasecampStats> {
       tags: [CACHE_KEYS.LEADERBOARD + "-basecamp"],
     },
   )();
+}
+
+function calculateNewMetrics(
+  currentData: BasecampProfile[],
+  previousData:
+    | {
+        talent_uuid: string;
+        zora_creator_coin_address: string | null;
+        zora_creator_coin_unique_holders: number | null;
+      }[]
+    | null,
+) {
+  // Coins Launched Today: Count new zora_creator_coin_address
+  const previousCoinAddresses = new Set(
+    previousData?.map((p) => p.zora_creator_coin_address).filter(Boolean) || [],
+  );
+  const coinsLaunchedToday = currentData.filter(
+    (p) =>
+      p.zora_creator_coin_address &&
+      !previousCoinAddresses.has(p.zora_creator_coin_address),
+  ).length;
+
+  // Market Cap Today: Sum of 24h market cap changes
+  const marketCapToday = currentData.reduce(
+    (sum, p) => sum + (p.zora_creator_coin_market_cap_24h || 0),
+    0,
+  );
+
+  // Volume Today: Sum of 24h volume
+  const volumeToday = currentData.reduce(
+    (sum, p) => sum + (p.zora_creator_coin_24h_volume || 0),
+    0,
+  );
+
+  // Holders Change Today: Net change in unique holders
+  const previousHolders = new Map(
+    previousData?.map((p) => [
+      p.talent_uuid,
+      p.zora_creator_coin_unique_holders,
+    ]) || [],
+  );
+  const holdersChangeToday = currentData.reduce((sum, p) => {
+    const current = p.zora_creator_coin_unique_holders || 0;
+    const previous = previousHolders.get(p.talent_uuid) || 0;
+    return sum + (current - previous);
+  }, 0);
+
+  return {
+    coinsLaunchedToday,
+    coinsLaunchedTotal: currentData.length,
+    marketCapToday,
+    marketCapTotal: currentData.reduce(
+      (sum, p) => sum + (p.zora_creator_coin_market_cap || 0),
+      0,
+    ),
+    volumeToday,
+    volumeTotal: currentData.reduce(
+      (sum, p) => sum + (p.zora_creator_coin_total_volume || 0),
+      0,
+    ),
+    holdersChangeToday,
+    holdersTotal: currentData.reduce(
+      (sum, p) => sum + (p.zora_creator_coin_unique_holders || 0),
+      0,
+    ),
+  };
 }
 
 // Check if coins tab should be visible

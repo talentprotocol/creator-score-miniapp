@@ -24,8 +24,6 @@ export interface ServerProfileData {
   socialAccounts: SocialAccount[];
   totalEarnings: number | undefined;
   rank: number | null;
-  posts: unknown[];
-  yearlyData: { year: number; months: number[]; total: number }[];
   credentials: IssuerCredentialGroup[];
   earningsBreakdown: { totalEarnings: number; segments: unknown[] };
   collectorsBreakdown: {

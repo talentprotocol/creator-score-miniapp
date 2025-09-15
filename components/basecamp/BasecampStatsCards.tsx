@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { StatCard } from "@/components/common/StatCard";
+import { DualMetricStatCard } from "@/components/common/DualMetricStatCard";
 import { formatCompactNumber, formatCurrency } from "@/lib/utils";
 import { BasecampStats } from "@/lib/types/basecamp";
 
@@ -18,7 +18,15 @@ export function BasecampStatsCards({
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <StatCard key={i} title="Loading..." value="—" />
+          <DualMetricStatCard
+            key={i}
+            loading={true}
+            title=""
+            primaryValue=""
+            primaryLabel=""
+            secondaryValue=""
+            secondaryLabel=""
+          />
         ))}
       </div>
     );
@@ -28,7 +36,15 @@ export function BasecampStatsCards({
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <StatCard key={i} title="Error" value="—" />
+          <DualMetricStatCard
+            key={i}
+            loading={true}
+            title=""
+            primaryValue=""
+            primaryLabel=""
+            secondaryValue=""
+            secondaryLabel=""
+          />
         ))}
       </div>
     );
@@ -37,21 +53,33 @@ export function BasecampStatsCards({
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Creator Earnings"
-          value={formatCurrency(stats.totalCreatorEarnings)}
+        <DualMetricStatCard
+          title="Coin Market Cap 24h"
+          primaryValue={formatCurrency(stats.marketCapToday)}
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCurrency(stats.marketCapTotal)}`}
+          secondaryLabel=""
         />
-        <StatCard
-          title="Coins Market Cap"
-          value={formatCurrency(stats.totalMarketCap)}
+        <DualMetricStatCard
+          title="Coin Volume 24h"
+          primaryValue={formatCurrency(stats.volumeToday)}
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCurrency(stats.volumeTotal)}`}
+          secondaryLabel=""
         />
-        <StatCard
-          title="Builder Rewards"
-          value={formatCurrency(stats.totalBuilderRewards)}
+        <DualMetricStatCard
+          title="New Coins Launched"
+          primaryValue={formatCompactNumber(stats.coinsLaunchedToday)}
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCompactNumber(stats.coinsLaunchedTotal)}`}
+          secondaryLabel=""
         />
-        <StatCard
-          title="Contracts Deployed"
-          value={formatCompactNumber(stats.totalContractsDeployed)}
+        <DualMetricStatCard
+          title="New Coin Holders"
+          primaryValue={formatCompactNumber(stats.holdersChangeToday)}
+          primaryLabel=""
+          secondaryValue={`Total: ${formatCompactNumber(stats.holdersTotal)}`}
+          secondaryLabel=""
         />
       </div>
     </div>

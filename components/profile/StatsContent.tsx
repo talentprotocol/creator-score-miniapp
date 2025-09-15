@@ -69,12 +69,10 @@ export function StatsContent() {
   const { profileData } = useProfileContext();
 
   // Extract data from server-fetched profileData
-  const { posts, socialAccounts, earningsBreakdown } = profileData;
+  const { socialAccounts, earningsBreakdown } = profileData;
 
   // Type assertions for server data
   const typedSocialAccounts = socialAccounts as SocialAccount[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const typedPosts = posts as any[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const typedEarningsBreakdown = earningsBreakdown as any;
 
@@ -169,51 +167,6 @@ export function StatsContent() {
     };
   };
 
-  // Process posts breakdown by platform
-  const processPostsBreakdown = () => {
-    if (!typedPosts || typedPosts.length === 0) {
-      return {
-        totalPosts: 0,
-        segments: [],
-      };
-    }
-
-    // Group posts by platform
-    const platformCounts = new Map<string, number>();
-    typedPosts.forEach((post) => {
-      const platform = post.platform;
-      platformCounts.set(platform, (platformCounts.get(platform) || 0) + 1);
-    });
-
-    const totalPosts = typedPosts.length;
-
-    // Convert to segments format, only include platforms that have posts
-    const segments = Array.from(platformCounts.entries())
-      .map(([platform, count]) => {
-        // Map platform names to display names
-        const displayNames: Record<string, string> = {
-          paragraph: "Paragraph",
-          zora: "Zora",
-          mirror: "Mirror",
-          farcaster: "Farcaster",
-          lens: "Lens",
-        };
-
-        return {
-          name: displayNames[platform] || platform,
-          value: count,
-          percentage: (count / totalPosts) * 100,
-          url: undefined, // Could add platform URLs later if needed
-        };
-      })
-      .sort((a, b) => b.value - a.value); // Sort by count descending
-
-    return {
-      totalPosts,
-      segments,
-    };
-  };
-
   // Process collectors breakdown from server data
   const processCollectorsBreakdown = () => {
     if (!profileData.collectorsBreakdown) {
@@ -231,7 +184,6 @@ export function StatsContent() {
 
   const followersBreakdown = processFollowersBreakdown();
   const earningsBreakdownWithUrls = processEarningsBreakdown();
-  const postsBreakdown = processPostsBreakdown();
   const collectorsBreakdown = processCollectorsBreakdown();
 
   return (
@@ -259,15 +211,6 @@ export function StatsContent() {
         total={followersBreakdown.totalFollowers}
         segments={followersBreakdown.segments}
         color="pink"
-        formatValue={(value) => value.toLocaleString()}
-        loading={false}
-        error={null}
-      />
-      <SegmentedBar
-        title="Total Posts"
-        total={postsBreakdown.totalPosts}
-        segments={postsBreakdown.segments}
-        color="blue"
         formatValue={(value) => value.toLocaleString()}
         loading={false}
         error={null}

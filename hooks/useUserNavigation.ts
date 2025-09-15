@@ -3,7 +3,7 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import { User, Settings, Search, Award, Tent } from "lucide-react";
+import { User, Settings, Search, Tent } from "lucide-react";
 
 export function useUserNavigation() {
   const { context } = useMiniKit();
@@ -26,11 +26,6 @@ export function useUserNavigation() {
       href: "/basecamp",
       icon: Tent,
       label: "Basecamp",
-    },
-    {
-      href: "/badges",
-      icon: Award,
-      label: "Badges",
     },
     {
       href: "/explore",

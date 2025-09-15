@@ -6,8 +6,6 @@ import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBasecampLeaderboard } from "@/hooks/useBasecampLeaderboard";
 import { useBasecampStats } from "@/hooks/useBasecampStats";
-import { useBasecampTotals } from "@/hooks/useBasecampTotals";
-import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sdk } from "@farcaster/frame-sdk";
@@ -17,13 +15,16 @@ import { Section } from "@/components/common/Section";
 import { CreatorList } from "@/components/common/CreatorList";
 import { BasecampDataTable } from "@/components/basecamp/BasecampDataTable";
 import { BasecampStatsCards } from "@/components/basecamp/BasecampStatsCards";
-import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target } from "lucide-react";
+import { Typography } from "@/components/ui/typography";
 
-import { formatCompactNumber, formatCurrency } from "@/lib/utils";
+import {
+  formatCompactNumber,
+  formatCurrency,
+  formatPageDate,
+} from "@/lib/utils";
 import { BasecampTab } from "@/lib/types/basecamp";
 
 function BasecampContent() {
@@ -41,7 +42,6 @@ function BasecampContent() {
 
   // Data hooks
   const { stats, loading: statsLoading } = useBasecampStats();
-  const { creatorTotal, builderTotal, coinsTotal } = useBasecampTotals();
 
   const {
     profiles,
@@ -55,12 +55,6 @@ function BasecampContent() {
     showMore,
     setSorting,
   } = useBasecampLeaderboard(userTalentUuid, currentTab);
-
-  // Callout preferences
-  const {
-    permanentlyHiddenIds: permanentlyHiddenCalloutIds,
-    addPermanentlyHiddenId,
-  } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -111,9 +105,9 @@ function BasecampContent() {
 
   // Define tabs - all 3 tabs are always visible
   const tabs = [
-    { id: "coins", label: "Creator Coins", count: coinsTotal },
-    { id: "creator", label: "Creator Earnings", count: creatorTotal },
-    { id: "builder", label: "Builder Score", count: builderTotal },
+    { id: "coins", label: "Coins" },
+    { id: "creator", label: "Creators" },
+    { id: "builder", label: "Builders" },
   ];
 
   // Map data for mobile CreatorList based on current tab
@@ -123,39 +117,29 @@ function BasecampContent() {
 
     switch (currentTab) {
       case "coins":
-        // For mobile coins tab: if sorted by 24h volume, show market cap as primary
-        if (!isDesktop && sortColumn === "zora_creator_coin_24h_volume") {
-          primaryMetric = profile.zora_creator_coin_market_cap
-            ? formatCurrency(profile.zora_creator_coin_market_cap)
-            : "0";
-          secondaryMetric = profile.zora_creator_coin_24h_volume
-            ? `Volume 24h: ${formatCurrency(profile.zora_creator_coin_24h_volume)}`
-            : "Volume 24h: 0";
-        } else {
-          // Default behavior: show 24h volume as primary, market cap as secondary
-          primaryMetric = profile.zora_creator_coin_24h_volume
-            ? formatCurrency(profile.zora_creator_coin_24h_volume)
-            : "0";
-          secondaryMetric = profile.zora_creator_coin_market_cap
-            ? `Market Cap: ${formatCurrency(profile.zora_creator_coin_market_cap)}`
-            : "Market Cap: N/A";
-        }
+        // Always show Volume 24h as primary metric (right side) and Market Cap as secondary (below name)
+        primaryMetric = profile.zora_creator_coin_24h_volume
+          ? formatCurrency(profile.zora_creator_coin_24h_volume)
+          : "0";
+        secondaryMetric = profile.zora_creator_coin_market_cap
+          ? `Market Cap: ${formatCurrency(profile.zora_creator_coin_market_cap)}`
+          : "Market Cap: N/A";
         break;
       case "creator":
-        primaryMetric = profile.total_earnings
-          ? formatCurrency(profile.total_earnings)
+        primaryMetric = profile.creator_score
+          ? formatCompactNumber(profile.creator_score)
           : "0";
-        secondaryMetric = profile.creator_score
-          ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
-          : "Creator Score: N/A";
+        secondaryMetric = profile.total_earnings
+          ? `Creator Earnings: ${formatCurrency(profile.total_earnings)}`
+          : "Creator Earnings: N/A";
         break;
       case "builder":
         primaryMetric = profile.builder_score
           ? formatCompactNumber(profile.builder_score)
           : "0";
         secondaryMetric = profile.rewards_amount
-          ? `Rewards: ${formatCurrency(profile.rewards_amount)}`
-          : "Rewards: $0";
+          ? `Base Builder Rewards: ${formatCurrency(profile.rewards_amount)}`
+          : "Base Builder Rewards: $0";
         break;
       default:
         primaryMetric = "0";
@@ -180,39 +164,29 @@ function BasecampContent() {
 
       switch (currentTab) {
         case "coins":
-          // For mobile coins tab: if sorted by 24h volume, show market cap as primary
-          if (!isDesktop && sortColumn === "zora_creator_coin_24h_volume") {
-            primaryMetric = pinnedUser.zora_creator_coin_market_cap
-              ? formatCurrency(pinnedUser.zora_creator_coin_market_cap)
-              : "0";
-            secondaryMetric = pinnedUser.zora_creator_coin_24h_volume
-              ? `Volume 24h: ${formatCurrency(pinnedUser.zora_creator_coin_24h_volume)}`
-              : "Volume 24h: 0";
-          } else {
-            // Default behavior: show 24h volume as primary, market cap as secondary
-            primaryMetric = pinnedUser.zora_creator_coin_24h_volume
-              ? formatCurrency(pinnedUser.zora_creator_coin_24h_volume)
-              : "0";
-            secondaryMetric = pinnedUser.zora_creator_coin_market_cap
-              ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
-              : "Market Cap: N/A";
-          }
+          // Always show Volume 24h as primary metric (right side) and Market Cap as secondary (below name)
+          primaryMetric = pinnedUser.zora_creator_coin_24h_volume
+            ? formatCurrency(pinnedUser.zora_creator_coin_24h_volume)
+            : "0";
+          secondaryMetric = pinnedUser.zora_creator_coin_market_cap
+            ? `Market Cap: ${formatCurrency(pinnedUser.zora_creator_coin_market_cap)}`
+            : "Market Cap: N/A";
           break;
         case "creator":
-          primaryMetric = pinnedUser.total_earnings
-            ? formatCurrency(pinnedUser.total_earnings)
+          primaryMetric = pinnedUser.creator_score
+            ? formatCompactNumber(pinnedUser.creator_score)
             : "0";
-          secondaryMetric = pinnedUser.creator_score
-            ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
-            : "Creator Score: N/A";
+          secondaryMetric = pinnedUser.total_earnings
+            ? `Creator Earnings: ${formatCurrency(pinnedUser.total_earnings)}`
+            : "Creator Earnings: N/A";
           break;
         case "builder":
           primaryMetric = pinnedUser.builder_score
             ? formatCompactNumber(pinnedUser.builder_score)
             : "0";
           secondaryMetric = pinnedUser.rewards_amount
-            ? `Rewards: ${formatCurrency(pinnedUser.rewards_amount)}`
-            : "Rewards: $0";
+            ? `Base Builder Rewards: ${formatCurrency(pinnedUser.rewards_amount)}`
+            : "Base Builder Rewards: $0";
           break;
         default:
           primaryMetric = "0";
@@ -249,13 +223,23 @@ function BasecampContent() {
 
   return (
     <PageContainer className={isDesktop ? "max-w-none px-6" : undefined}>
+      {/* Page Title Section */}
+      <Section variant="header">
+        <div>
+          <Typography as="h1" size="2xl" weight="bold">
+            BaseCamp Builders & Creators
+          </Typography>
+          <Typography color="muted">{formatPageDate(new Date())}</Typography>
+        </div>
+      </Section>
+
       {/* Stats Cards */}
       <Section variant="content">
         <BasecampStatsCards stats={stats} loading={statsLoading} />
       </Section>
 
       {/* Welcome Banner */}
-      <Section variant="content">
+      {/* <Section variant="content">
         <CalloutCarousel
           permanentlyHiddenIds={permanentlyHiddenCalloutIds}
           onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
@@ -264,9 +248,9 @@ function BasecampContent() {
               id: "basecamp-welcome",
               variant: "brand-blue",
               icon: <Target className="h-4 w-4" />,
-              title: "Welcome to BaseCamp",
+              title: "Top Builders & Creators",
               description:
-                "Explore 500+ Base builders and creators. Sort by creator coins, scores, or earnings.",
+                "Explore 300+ Base builders and creators. Sort by coins, scores, or earnings.",
               permanentHideKey: "basecamp_welcome_dismissed",
               onClose: () => {
                 // Handle dismissal - persistence handled by CalloutCarousel
@@ -274,7 +258,7 @@ function BasecampContent() {
             },
           ]}
         />
-      </Section>
+      </Section> */}
 
       {/* Tabs */}
       <Section variant="full-width">
@@ -282,6 +266,7 @@ function BasecampContent() {
           tabs={tabs}
           activeTab={currentTab}
           onTabChange={handleTabChange}
+          showCounts={false}
         />
       </Section>
 
@@ -350,7 +335,7 @@ function BasecampContent() {
                 {currentTab === "coins"
                   ? "Volume 24h"
                   : currentTab === "creator"
-                    ? "Earnings"
+                    ? "Creator Score"
                     : "Builder Score"}
               </span>
             </div>

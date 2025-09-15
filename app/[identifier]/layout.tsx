@@ -1,13 +1,12 @@
-// Removed direct service import - now using API route for compliance
 import { redirect } from "next/navigation";
 import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { validateIdentifier } from "@/lib/validation";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
+import { getTalentUserService } from "@/app/services/userService";
 import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
-import { getAllPostsForTalentId } from "@/app/services/postsService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 import {
   getEthUsdcPrice,
@@ -23,10 +22,8 @@ import { dlog, dtimer } from "@/lib/debug";
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: { identifier: string };
-  searchParams?: { share?: string };
 }): Promise<Metadata> {
   // Validate identifier format to prevent injection attacks
   if (!validateIdentifier(params.identifier)) {
@@ -44,17 +41,8 @@ export async function generateMetadata({
   }
 
   try {
-    // Resolve user via API route for compliance
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
-    );
-    if (!response.ok) {
-      return {
-        title: "Creator Not Found - Creator Score",
-        description: "This creator could not be found.",
-      };
-    }
-    const user = await response.json();
+    // Resolve user directly using service function (no internal API calls)
+    const user = await getTalentUserService(params.identifier);
 
     if (!user || !user.id) {
       return {
@@ -185,11 +173,8 @@ export async function generateMetadata({
 
     const altText = `${displayName} Creator Score Card`;
 
-    // Build canonical URL with query parameters for proper social media previews
-    const canonicalUrlWithParams =
-      searchParams && Object.keys(searchParams).length > 0
-        ? `${canonicalUrl}/${canonical}?${new URLSearchParams(searchParams).toString()}`
-        : `${canonicalUrl}/${canonical}`;
+    // Build canonical URL for proper social media previews
+    const canonicalUrlWithParams = `${canonicalUrl}/${canonical}`;
 
     return {
       title,
@@ -263,21 +248,15 @@ export default async function ProfileLayout({
     return <CreatorNotFoundCard />;
   }
 
-  // Resolve user via API route for compliance
+  // Resolve user directly using service function (no internal API calls)
   const userResolutionTimer = dtimer("ProfileLayout", "user_resolution");
-  dlog("ProfileLayout", "calling_api_route", {
+  dlog("ProfileLayout", "calling_user_service", {
     identifier: params.identifier,
   });
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/talent-user?id=${params.identifier}`,
-  );
-  if (!response.ok) {
-    return <CreatorNotFoundCard />;
-  }
-  const user = await response.json();
+  const user = await getTalentUserService(params.identifier);
 
-  dlog("ProfileLayout", "api_route_result", {
+  dlog("ProfileLayout", "user_service_result", {
     identifier: params.identifier,
     user_found: !!user,
     user_id: user?.id || null,
@@ -314,26 +293,13 @@ export default async function ProfileLayout({
     params.identifier !== canonical &&
     params.identifier !== undefined
   ) {
-    // Preserve the current path when redirecting to canonical
-    const currentPath = params.identifier;
-    if (currentPath.includes("/")) {
-      const pathParts = currentPath.split("/");
-      const tabPart = pathParts[pathParts.length - 1];
-      const redirectUrl = `/${canonical}/${tabPart}`;
-      dlog("ProfileLayout", "redirecting_to_canonical_with_tab", {
-        from: currentPath,
-        to: redirectUrl,
-        tab: tabPart,
-      });
-      redirect(redirectUrl);
-    } else {
-      const redirectUrl = `/${canonical}/stats`;
-      dlog("ProfileLayout", "redirecting_to_canonical_default_tab", {
-        from: currentPath,
-        to: redirectUrl,
-      });
-      redirect(redirectUrl);
-    }
+    // Redirect to canonical identifier
+    const redirectUrl = `/${canonical}`;
+    dlog("ProfileLayout", "redirecting_to_canonical", {
+      from: params.identifier,
+      to: redirectUrl,
+    });
+    redirect(redirectUrl);
   }
 
   // 🚀 FETCH ALL PROFILE DATA HERE (server-side, once)
@@ -341,49 +307,38 @@ export default async function ProfileLayout({
   dlog("ProfileLayout", "fetch_bundle_start", { user_id: user.id });
 
   // Use Promise.allSettled to handle individual service failures gracefully
-  const [
-    creatorScoreResult,
-    socialAccountsResult,
-    credentialsResult,
-    postsResult,
-  ] = await Promise.allSettled([
-    getCreatorScoreForTalentId(user.id)().catch((error) => {
-      dlog("ProfileLayout", "creator_score_fetch_failed", {
-        user_id: user.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return {
-        score: 0,
-        level: 1,
-        levelName: "Level 1",
-        lastCalculatedAt: null,
-        calculating: false,
-      };
-    }),
-    getAccountsForTalentId(user.id)()
-      .then((data) => data.social)
-      .catch((error) => {
-        dlog("ProfileLayout", "social_accounts_fetch_failed", {
+  const [creatorScoreResult, socialAccountsResult, credentialsResult] =
+    await Promise.allSettled([
+      getCreatorScoreForTalentId(user.id)().catch((error) => {
+        dlog("ProfileLayout", "creator_score_fetch_failed", {
+          user_id: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return {
+          score: 0,
+          level: 1,
+          levelName: "Level 1",
+          lastCalculatedAt: null,
+          calculating: false,
+        };
+      }),
+      getAccountsForTalentId(user.id)()
+        .then((data) => data.social)
+        .catch((error) => {
+          dlog("ProfileLayout", "social_accounts_fetch_failed", {
+            user_id: user.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return []; // Return empty array for graceful degradation
+        }),
+      getCredentialsForTalentId(user.id)().catch((error) => {
+        dlog("ProfileLayout", "credentials_fetch_failed", {
           user_id: user.id,
           error: error instanceof Error ? error.message : String(error),
         });
         return []; // Return empty array for graceful degradation
       }),
-    getCredentialsForTalentId(user.id)().catch((error) => {
-      dlog("ProfileLayout", "credentials_fetch_failed", {
-        user_id: user.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return []; // Return empty array for graceful degradation
-    }),
-    getAllPostsForTalentId(user.id)().catch((error) => {
-      dlog("ProfileLayout", "posts_fetch_failed", {
-        user_id: user.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return []; // Return empty array for graceful degradation
-    }),
-  ]);
+    ]);
 
   // Extract successful results with fallbacks for failed services
   const creatorScoreData =
@@ -405,8 +360,6 @@ export default async function ProfileLayout({
   const credentials =
     credentialsResult.status === "fulfilled" ? credentialsResult.value : [];
 
-  const posts = postsResult.status === "fulfilled" ? postsResult.value : [];
-
   // Log any failed services for monitoring
   if (creatorScoreResult.status === "rejected") {
     dlog("ProfileLayout", "creator_score_service_failed", {
@@ -426,35 +379,6 @@ export default async function ProfileLayout({
       error: credentialsResult.reason,
     });
   }
-  if (postsResult.status === "rejected") {
-    dlog("ProfileLayout", "posts_service_failed", {
-      user_id: user.id,
-      error: postsResult.reason,
-    });
-  }
-
-  // Process posts into yearly data (same logic as hooks)
-  const yearlyDataMap = posts.reduce(
-    (acc: Record<number, number[]>, post: { onchain_created_at: string }) => {
-      const date = new Date(post.onchain_created_at);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-
-      if (!acc[year]) {
-        acc[year] = new Array(12).fill(0);
-      }
-      acc[year][month]++;
-      return acc;
-    },
-    {},
-  );
-
-  // Convert to YearlyPostData format
-  const yearlyData = Object.entries(yearlyDataMap).map(([year, months]) => ({
-    year: parseInt(year),
-    months: months as number[],
-    total: (months as number[]).reduce((sum, count) => sum + count, 0),
-  }));
 
   // Calculate total earnings using the same sophisticated logic as the original system
   const [ethPrice, polPrice] = await Promise.all([
@@ -568,7 +492,6 @@ export default async function ProfileLayout({
     calculating: creatorScoreData.calculating || false,
     social_accounts_count: socialAccounts.length,
     credentials_groups_count: credentials.length,
-    posts_count: posts.length,
     total_followers: totalFollowers,
     total_earnings: totalEarnings,
     earnings_segments_count: earningsBreakdown.segments.length,
@@ -611,8 +534,6 @@ export default async function ProfileLayout({
         calculating: creatorScoreData.calculating || false,
         socialAccounts,
         totalEarnings,
-        posts,
-        yearlyData,
         credentials,
         earningsBreakdown,
         collectorsBreakdown,

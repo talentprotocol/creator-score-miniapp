@@ -3,11 +3,7 @@ import {
   getUserPreferencesByTalentUuid,
   updateUserPreferencesAtomic,
 } from "@/app/services/userPreferencesService";
-import {
-  validateCreatorCategory,
-  validateTalentUUID,
-  getCreatorCategoryErrorMessage,
-} from "@/lib/validation";
+import { validateTalentUUID } from "@/lib/validation";
 import type {
   UserPreferencesResponse,
   UserPreferencesUpdateRequest,
@@ -52,14 +48,11 @@ export async function POST(
   try {
     const {
       talent_uuid,
-      creator_category,
       add_dismissed_id,
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
       rewards_decision,
-      primary_wallet_address,
-      how_to_earn_modal_seen,
     }: UserPreferencesUpdateRequest = await req.json();
 
     if (!talent_uuid) {
@@ -88,26 +81,13 @@ export async function POST(
       }
     }
 
-    // Allow null to clear the category, or skip validation if only updating wallet address
-    if (creator_category !== null && creator_category !== undefined) {
-      if (!validateCreatorCategory(creator_category as string)) {
-        return NextResponse.json(
-          { error: getCreatorCategoryErrorMessage(creator_category as string) },
-          { status: 400 },
-        );
-      }
-    }
-
     const result = await updateUserPreferencesAtomic({
       talent_uuid,
-      creator_category,
       add_dismissed_id,
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
       rewards_decision,
-      primary_wallet_address,
-      how_to_earn_modal_seen,
     });
 
     return NextResponse.json(result);
