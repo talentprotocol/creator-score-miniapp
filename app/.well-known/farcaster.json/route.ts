@@ -17,25 +17,15 @@ export async function GET() {
   const frameMetadata = getFrameMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.base200.com";
 
-  // Ensure environment variables are defined
-  const farcasterHeader = process.env.FARCASTER_HEADER;
-  const farcasterPayload = process.env.FARCASTER_PAYLOAD;
-  const farcasterSignature = process.env.FARCASTER_SIGNATURE;
-
-  if (!farcasterHeader || !farcasterPayload || !farcasterSignature) {
-    console.error("Missing Farcaster environment variables");
-    return Response.json(
-      { error: "Missing Farcaster account association data" },
-      { status: 500 },
-    );
-  }
+  // Signed Farcaster account association data
+  const accountAssociation = {
+    header: "eyJmaWQiOjIwNDQyLCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4NDQ1Nzc2QzU4RDZmZkI0NWQ5YjlmNkQ2ODI0NkU5ODVFMTgzMDI2NSJ9",
+    payload: "eyJkb21haW4iOiJiYXNlMjAwLmNvbSJ9",
+    signature: "MHg0MWY5ZmMxYjE0Yzg3MTBhN2I0OWQ0YThiYTIwYzRkMzk3OGM5N2NhN2Y4Y2Q5ZmY4YjM4MmM5ODZlYjU0ODEzNDE0Y2Q0YzQ4MTc0ZDU1NWRlYjg0YWE4Y2Q2OGIyYzQ0NzE2YzJhNDNjYTQ0MTUxMGI2MTQxZmE5NjFiYjIwOTFj"
+  };
 
   return Response.json({
-    accountAssociation: {
-      header: farcasterHeader,
-      payload: farcasterPayload,
-      signature: farcasterSignature,
-    },
+    accountAssociation,
     frame: withValidProperties({
       version: "1",
       name: frameMetadata.name,

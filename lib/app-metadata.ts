@@ -52,7 +52,7 @@ export const APP_METADATA = {
   primaryCategory: "social",
   tags: ["talent", "base", "reputation", "index", "basecamp"],
 
-  ogTitle: "BASE200 - Reputation-Backed Talent Index",
+  ogTitle: "BASE200 Talent Index",
   ogDescription:
     "Track and trade top talent at BaseCamp with BASE200's reputation-backed talent index.",
 };
