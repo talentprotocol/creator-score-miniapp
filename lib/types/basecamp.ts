@@ -28,6 +28,16 @@ export interface BasecampStats {
   totalMarketCap: number;
   totalCreatorEarnings: number;
   calculationDate: string;
+
+  // New dual-metric fields
+  coinsLaunchedToday: number; // New coins since last calculation
+  coinsLaunchedTotal: number; // Total coins (not null)
+  marketCapToday: number; // 24h market cap change
+  marketCapTotal: number; // Total market cap
+  volumeToday: number; // 24h volume
+  volumeTotal: number; // Total volume
+  holdersChangeToday: number; // Net holder change (can be negative)
+  holdersTotal: number; // Total unique holders
 }
 
 export type SortColumn =
