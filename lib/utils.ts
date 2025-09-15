@@ -798,6 +798,16 @@ export function formatDate(dateString: string): string {
   });
 }
 
+// Format date for page titles (e.g., "Sunday, September 14th 2025")
+export function formatPageDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
+
 // Generic compact formatter without currency symbol (e.g., 2.09M, 3.01K, 780)
 export function formatCompactNumber(amount: number): string {
   if (isNaN(amount) || !isFinite(amount)) return "—";

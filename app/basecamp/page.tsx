@@ -20,9 +20,14 @@ import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Typography } from "@/components/ui/typography";
 import { Target } from "lucide-react";
 
-import { formatCompactNumber, formatCurrency } from "@/lib/utils";
+import {
+  formatCompactNumber,
+  formatCurrency,
+  formatPageDate,
+} from "@/lib/utils";
 import { BasecampTab } from "@/lib/types/basecamp";
 
 function BasecampContent() {
@@ -227,6 +232,16 @@ function BasecampContent() {
 
   return (
     <PageContainer className={isDesktop ? "max-w-none px-6" : undefined}>
+      {/* Page Title Section */}
+      <Section variant="header">
+        <div>
+          <Typography as="h1" size="2xl" weight="bold">
+            BaseCamp Coins
+          </Typography>
+          <Typography color="muted">{formatPageDate(new Date())}</Typography>
+        </div>
+      </Section>
+
       {/* Stats Cards */}
       <Section variant="content">
         <BasecampStatsCards stats={stats} loading={statsLoading} />
