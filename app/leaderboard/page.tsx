@@ -53,23 +53,6 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
-  // Debug poet.base.eth specifically
-  const poetProfile = profiles.find((p) =>
-    p.display_name?.includes("poet.base.eth"),
-  );
-  if (poetProfile) {
-    const poetIndex = profiles.findIndex((p) => p.id === poetProfile.id);
-    console.log("=== POET.BASE.ETH DEBUG ===");
-    console.log(`Found at index [${poetIndex}]`);
-    console.log(`Display name: "${poetProfile.display_name}"`);
-    console.log(`Rank: ${poetProfile.rank}`);
-    console.log(`Score: ${poetProfile.score}`);
-    console.log(`ID: ${poetProfile.id}`);
-    console.log("Full profile:", poetProfile);
-  } else {
-    console.log("=== POET.BASE.ETH NOT FOUND IN PROFILES ===");
-  }
-
   return (
     <PageContainer>
       {/* Header section */}
@@ -79,7 +62,7 @@ function LeaderboardContent() {
           <StatCard
             title="Rewards Round #1"
             value="$2,624"
-            secondaryMetric="Distributed Sep 16th"
+            secondaryMetric="Distributed Sep 17th"
             onClick={() => router.push("/rewards")}
             icon={
               <ChevronRight className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
