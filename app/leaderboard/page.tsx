@@ -53,6 +53,16 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
+  // Debug logging for pinned user
+  console.log("=== Leaderboard Debug ===");
+  console.log("userTalentUuid:", userTalentUuid);
+  console.log("isLoggedIn:", isLoggedIn);
+  console.log("pinnedUser:", pinnedUser);
+  console.log("profilesCount:", profiles.length);
+  console.log("userInProfiles:", profiles.find(p => p.id === userTalentUuid));
+  console.log("userProfileIndex:", profiles.findIndex(p => p.id === userTalentUuid));
+  console.log("first 5 profiles:", profiles.slice(0, 5).map(p => ({ id: p.id, name: p.display_name, rank: p.rank, score: p.score })));
+
 
   return (
     <PageContainer>
