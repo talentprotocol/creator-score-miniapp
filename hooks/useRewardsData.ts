@@ -15,16 +15,21 @@ interface UseLeaderboardDataReturn {
   nextUpdate: string | null;
   refetch: (forceFresh?: boolean) => void;
   updateUserOptOutStatus: (talentUuid: string, isOptedOut: boolean) => void;
+  pinnedUser: any | null; // Add pinned user to return type
 }
 
 /**
  * CLIENT-SIDE ONLY: Fetches leaderboard data via API route (follows coding principles)
  */
-async function getLeaderboardBasic(): Promise<LeaderboardData> {
+async function getLeaderboardBasic(talentUuid?: string): Promise<LeaderboardData & { pinnedUser?: any }> {
   try {
     // Add cache-busting timestamp to prevent browser caching
     const timestamp = Date.now();
-    const response = await fetch(`/api/rewards?t=${timestamp}`, {
+    const url = talentUuid 
+      ? `/api/rewards?t=${timestamp}&talentUuid=${talentUuid}`
+      : `/api/rewards?t=${timestamp}`;
+      
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -42,13 +47,14 @@ async function getLeaderboardBasic(): Promise<LeaderboardData> {
   }
 }
 
-export function useRewardsData(): UseLeaderboardDataReturn {
+export function useRewardsData(talentUuid?: string): UseLeaderboardDataReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
+  const [pinnedUser, setPinnedUser] = useState<any | null>(null);
 
   // Filter out entries with rank > 200 only
   const filterValidEntries = useCallback(
@@ -71,7 +77,7 @@ export function useRewardsData(): UseLeaderboardDataReturn {
       setLoading(true);
       setError(null);
 
-      const data = await getLeaderboardBasic();
+      const data = await getLeaderboardBasic(talentUuid);
 
       // Filter out entries with rank > 200 only
       const filteredEntries = filterValidEntries(data.entries);
@@ -79,6 +85,7 @@ export function useRewardsData(): UseLeaderboardDataReturn {
       setEntries(filteredEntries);
       setLastUpdated(data.lastUpdated ?? null);
       setNextUpdate(data.nextUpdate ?? null);
+      setPinnedUser(data.pinnedUser ?? null);
     } catch (err) {
       console.error(`Failed to load leaderboard data:`, err);
       setError(
@@ -87,7 +94,7 @@ export function useRewardsData(): UseLeaderboardDataReturn {
     } finally {
       setLoading(false);
     }
-  }, [filterValidEntries]);
+  }, [filterValidEntries, talentUuid]);
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
@@ -134,5 +141,6 @@ export function useRewardsData(): UseLeaderboardDataReturn {
     nextUpdate,
     refetch,
     updateUserOptOutStatus,
+    pinnedUser,
   };
 }

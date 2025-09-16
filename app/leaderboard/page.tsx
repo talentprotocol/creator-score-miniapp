@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
 import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { Award } from "lucide-react";
+import { StatCard } from "@/components/common/StatCard";
+import { Award, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import * as React from "react";
@@ -66,6 +67,24 @@ function LeaderboardContent() {
     <PageContainer>
       {/* Header section */}
       <Section variant="header">
+        {/* Rewards Stat Cards */}
+        <div className="flex gap-3 mb-4">
+          <StatCard
+            title="Rewards Round #1"
+            value="$2,624"
+            secondaryMetric="September 16th"
+            onClick={() => router.push("/rewards")}
+            icon={
+              <ChevronRight className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+            }
+          />
+          <StatCard
+            title="Rewards Round #2"
+            value="$15,728"
+            secondaryMetric="Coming Soon"
+          />
+        </div>
+
         {/* Callout Carousel - visible to all users */}
         <div className="mb-4">
           <CalloutCarousel

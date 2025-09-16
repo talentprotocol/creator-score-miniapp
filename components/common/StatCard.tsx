@@ -6,10 +6,18 @@ import { ChevronDown } from "lucide-react";
 interface StatCardProps {
   title: string;
   value: React.ReactNode;
+  secondaryMetric?: string;
   onClick?: () => void;
+  icon?: React.ReactNode;
 }
 
-export function StatCard({ title, value, onClick }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  secondaryMetric,
+  onClick,
+  icon,
+}: StatCardProps) {
   return (
     <Card
       className={`flex flex-col bg-muted rounded-xl p-4 min-w-0 flex-1 border-0 shadow-none ${
@@ -22,10 +30,21 @@ export function StatCard({ title, value, onClick }: StatCardProps) {
           {title}
         </span>
         {onClick && (
-          <ChevronDown className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+          <>
+            {icon ? (
+              icon
+            ) : (
+              <ChevronDown className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+            )}
+          </>
         )}
       </div>
       <span className="text-2xl font-bold leading-tight mt-1">{value}</span>
+      {secondaryMetric && (
+        <span className="text-xs text-muted-foreground/80 mt-1">
+          {secondaryMetric}
+        </span>
+      )}
     </Card>
   );
 }

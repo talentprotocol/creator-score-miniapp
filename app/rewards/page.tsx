@@ -41,7 +41,7 @@ import { usePerkEntry } from "@/hooks/usePerkEntry";
 // Token balance not needed for read-only rewards page
 
 // Feature flag to enable/disable pinned leaderboard entry
-const ENABLE_PINNED_LEADERBOARD_ENTRY = false;
+const ENABLE_PINNED_LEADERBOARD_ENTRY = true;
 
 // Countdown function not needed for read-only rewards page
 
@@ -62,7 +62,8 @@ function RewardsContent() {
     loading: top200Loading,
     rewardsLoading,
     error: top200Error,
-  } = useRewardsData();
+    pinnedUser,
+  } = useRewardsData(userTalentUuid);
 
   // No rewards decision logic needed for rewards page - it's read-only
 
@@ -415,7 +416,45 @@ function RewardsContent() {
                   ) : undefined,
                 };
 
-                const deduped = baseItems.filter((u) => u.id !== pinnedId);
+                // Build pinned item for current user when authenticated
+                const shouldShowPinned =
+                  isLoggedIn && ENABLE_PINNED_LEADERBOARD_ENTRY && pinnedUser;
+                if (!shouldShowPinned) return baseItems;
+
+                // Use pinnedUser data from API
+                const pinnedItem: {
+                  id: string;
+                  name: string;
+                  avatarUrl?: string;
+                  rank?: number;
+                  primaryMetric?: string;
+                  primaryMetricLoading?: boolean;
+                  secondaryMetric?: string;
+                  badge?: React.ReactNode;
+                  primaryMetricVariant?:
+                    | "default"
+                    | "brand-purple"
+                    | "brand-green"
+                    | "brand-blue"
+                    | "muted";
+                  isOptedOut?: boolean;
+                } = {
+                  id: pinnedUser.id,
+                  name: pinnedUser.display_name || name || "",
+                  avatarUrl: pinnedUser.image_url || avatarUrl,
+                  rank: pinnedUser.rank,
+                  primaryMetric: creatorScore ? getUsdcRewards() : undefined,
+                  primaryMetricLoading:
+                    loadingStats ||
+                    (top200Loading && !userTop200Entry) ||
+                    false,
+                  secondaryMetric: `Creator Score: ${(
+                    userTop200Entry?.score ?? creatorScore
+                  ).toLocaleString()}`,
+                  primaryMetricVariant: "muted", // Default for rewards page
+                  isOptedOut: false, // Default for rewards page
+                };
+                const deduped = baseItems.filter((u) => u.id !== pinnedUser.id);
                 return [pinnedItem, ...deduped];
               })()}
               onItemClick={(item) => {
