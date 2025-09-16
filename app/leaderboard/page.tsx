@@ -61,6 +61,8 @@ function LeaderboardContent() {
     profilesCount: profiles.length,
     name,
     avatarUrl,
+    userInProfiles: profiles.find((p) => p.id === userTalentUuid),
+    userProfileIndex: profiles.findIndex((p) => p.id === userTalentUuid),
   });
 
   return (
@@ -68,7 +70,7 @@ function LeaderboardContent() {
       {/* Header section */}
       <Section variant="header">
         {/* Rewards Stat Cards */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-3 mb-4 bg-red-100 p-2">
           <StatCard
             title="Rewards Round #1"
             value="$2,624"
