@@ -222,7 +222,6 @@ export async function getUserProfileData(
     const profileData = await profileResponse.json();
     const profile = profileData;
 
-
     if (!profile) {
       console.log("No profile found in response");
       return null;

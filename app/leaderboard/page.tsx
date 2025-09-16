@@ -53,6 +53,15 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
+  // Debug rank numbering
+  console.log("=== Rank Debug ===");
+  console.log("First 10 profiles with ranks:", profiles.slice(0, 10).map((p, i) => ({
+    index: i,
+    name: p.display_name,
+    rank: p.rank,
+    score: p.score
+  })));
+
   return (
     <PageContainer>
       {/* Header section */}
@@ -88,9 +97,7 @@ function LeaderboardContent() {
               title: "NEW: Creator Badges",
               description: "Track your progress and earn badges.",
               href: isLoggedIn ? "/badges" : undefined,
-              onClick: !isLoggedIn
-                ? () => setLoginModalOpen(true)
-                : undefined,
+              onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
               permanentHideKey: "badges_announcement_dismissed",
               onClose: () => {
                 // Handle dismissal
