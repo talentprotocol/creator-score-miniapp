@@ -87,7 +87,6 @@ function LeaderboardContent() {
               description: "Track your progress and earn badges.",
               href: isLoggedIn ? "/badges" : undefined,
               onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
-              permanentHideKey: "badges_announcement_dismissed",
               onClose: () => {
                 // Handle dismissal
               },
@@ -96,18 +95,10 @@ function LeaderboardContent() {
 
           // Check if any items should be visible
           const visibleItems = carouselItems.filter((item) => {
-            // Check if item is permanently hidden
+            // Check if item is permanently hidden (server-side persistence)
             if (
               permanentlyHiddenCalloutIds &&
               permanentlyHiddenCalloutIds.includes(item.id)
-            ) {
-              return false;
-            }
-            // Check localStorage for permanent hide (only on client side)
-            if (
-              item.permanentHideKey &&
-              typeof window !== "undefined" &&
-              localStorage.getItem(item.permanentHideKey) === "true"
             ) {
               return false;
             }
