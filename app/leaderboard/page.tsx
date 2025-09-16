@@ -103,9 +103,10 @@ function LeaderboardContent() {
             ) {
               return false;
             }
-            // Check localStorage for permanent hide
+            // Check localStorage for permanent hide (only on client side)
             if (
               item.permanentHideKey &&
+              typeof window !== "undefined" &&
               localStorage.getItem(item.permanentHideKey) === "true"
             ) {
               return false;
