@@ -3,7 +3,7 @@
   "version": "1.5.1",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "next dev --turbo --port 4002",
     "build": "NEXT_PUBLIC_BUILD_DATE=$(date -u +%Y-%m-%d) next build",
     "start": "next start",
     "lint": "next lint",

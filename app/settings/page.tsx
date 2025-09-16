@@ -525,7 +525,7 @@ function SettingsContent() {
               title: "Account Settings",
               icon: <Settings className="h-4 w-4" />,
               content: (
-                <AccountSettingsSection />
+                <AccountSettingsSection hasPrimaryEmail={Boolean(settings?.email)} />
               ),
             },
           ]}

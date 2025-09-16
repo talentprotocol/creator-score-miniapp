@@ -172,6 +172,7 @@ export function ConnectedWalletsSection({
       <div className="space-y-3">
         {accounts.map((account) => {
           const isPrimary = account.is_primary === true;
+          const isFarcasterPrimary = isPrimary && account.imported_from === "farcaster";
           const showSetPrimaryButton =
             !isPrimary && account.imported_from === "farcaster";
           const showPrimaryLabel = isPrimary;
@@ -209,7 +210,7 @@ export function ConnectedWalletsSection({
                     disabled={true}
                     className="whitespace-nowrap cursor-default min-w-[100px]"
                   >
-                    Primary
+                    {isFarcasterPrimary ? "Farcaster Primary" : "Talent Primary"}
                   </Button>
                 ) : showSetPrimaryButton ? (
                   <Button
@@ -217,7 +218,7 @@ export function ConnectedWalletsSection({
                     className="ml-auto"
                     disabled={account.is_primary}
                   >
-                    {account.is_primary ? "Primary" : "Set Primary"}
+                    {account.is_primary ? "Farcaster Primary" : "Set Farcaster Primary"}
                   </Button>
                 ) : null}
               </div>

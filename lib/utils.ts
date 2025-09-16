@@ -587,6 +587,59 @@ export const CACHE_DURATIONS = {
   LEADERBOARD_DATA: 5 * 60 * 1000, // 5 minutes for leaderboard data
 } as const;
 
+
+// Cache data structure for localStorage
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
+
+export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) {
+      return null;
+    }
+
+    const parsed: CachedData<T> = JSON.parse(cached);
+    const age = Date.now() - parsed.timestamp;
+
+    if (age > maxAgeMs) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedData<T>(key: string, data: T): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const cacheData: CachedData<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+  } catch {
+    // Storage quota exceeded or other error, silently fail
+  }
+}
+
 export { resolveTalentUser } from "./user-resolver";
 
 /**

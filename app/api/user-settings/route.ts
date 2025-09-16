@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TalentApiClient } from "@/lib/talent-api-client";
+import { TalentApiClient, requestDeleteAccountEmailWithAuth } from "@/lib/talent-api-client";
 import { extractTalentProtocolParams } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
@@ -83,6 +83,30 @@ export async function PUT(req: NextRequest) {
     console.error("Error in user-settings API route:", error);
     return NextResponse.json(
       { error: "Failed to update user settings" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const userAuthToken = req.headers.get("x-talent-auth-token") || "";
+    const body = await req.json().catch(() => ({}));
+    const action = (body?.action || "").toString();
+
+    if (action !== "delete_account_email") {
+      return NextResponse.json(
+        { error: "Unsupported action" },
+        { status: 400 },
+      );
+    }
+
+    // Proxy to Talent API to send delete account email
+    return requestDeleteAccountEmailWithAuth(userAuthToken);
+  } catch (error) {
+    console.error("Error in user-settings POST route:", error);
+    return NextResponse.json(
+      { error: "Failed to process request" },
       { status: 500 },
     );
   }

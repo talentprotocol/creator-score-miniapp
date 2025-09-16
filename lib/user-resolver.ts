@@ -1,6 +1,5 @@
 // Shared user/account resolver logic for Talent Protocol users
 import { getPublicBaseUrl } from "./constants";
-import { getCachedData, setCachedData, CACHE_DURATIONS } from "./utils";
 import { validateTalentUUID } from "./validation";
 
 // In-flight request tracking to prevent duplicate concurrent calls

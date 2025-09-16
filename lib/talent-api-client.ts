@@ -1486,3 +1486,54 @@ export async function createUserNonceWithAuth(
     return createServerErrorResponse("Failed to create user nonce");
   }
 }
+
+// Request account deletion email (requires end-user Authorization token)
+export async function requestDeleteAccountEmailWithAuth(
+  userAuthToken: string,
+): Promise<NextResponse> {
+  const apiKeyError = validateTalentApiKey();
+  if (apiKeyError) {
+    return createServerErrorResponse(apiKeyError);
+  }
+
+  if (!userAuthToken) {
+    return createBadRequestResponse("Missing user auth token");
+  }
+
+  try {
+    const url = `${TALENT_API_BASE}/users/delete_account_email`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...createTalentApiHeaders(process.env.TALENT_API_KEY || ""),
+        Authorization: `Bearer ${userAuthToken}`,
+      },
+    });
+
+    if (resp.status === 204) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await resp.json();
+      if (!resp.ok) {
+        return NextResponse.json(data, { status: resp.status });
+      }
+      return NextResponse.json(data, { status: 200 });
+    }
+
+    const text = await resp.text();
+    if (!resp.ok) {
+      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+    }
+    return NextResponse.json({ ok: true, message: text }, { status: 200 });
+  } catch (error) {
+    logApiError(
+      "requestDeleteAccountEmail",
+      "self",
+      error instanceof Error ? error.message : String(error),
+    );
+    return createServerErrorResponse("Failed to request delete account email");
+  }
+}
