@@ -206,8 +206,6 @@ export async function getUserProfileData(
     throw new Error("Missing Talent API key");
   }
 
-  console.log("getUserProfileData called with:", talentUuid);
-
   try {
     // Get user profile
     const profileResponse = await talentApiClient.getProfile({
@@ -215,7 +213,6 @@ export async function getUserProfileData(
     });
 
     if (!profileResponse.ok) {
-      console.log("Profile response not ok:", profileResponse.status);
       return null;
     }
 
@@ -223,7 +220,6 @@ export async function getUserProfileData(
     const profile = profileData;
 
     if (!profile) {
-      console.log("No profile found in response");
       return null;
     }
 
