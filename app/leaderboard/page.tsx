@@ -59,13 +59,19 @@ function LeaderboardContent() {
   profiles.slice(0, 25).forEach((p, i) => {
     console.log(`[${i}] ${p.display_name}: rank=${p.rank}, score=${p.score}`);
   });
-  
+
   // Find crypticpoet specifically
-  const crypticpoet = profiles.find(p => p.display_name?.toLowerCase().includes('crypticpoet') || p.display_name?.toLowerCase().includes('poet'));
+  const crypticpoet = profiles.find(
+    (p) =>
+      p.display_name?.toLowerCase().includes("crypticpoet") ||
+      p.display_name?.toLowerCase().includes("poet"),
+  );
   if (crypticpoet) {
-    const index = profiles.findIndex(p => p.id === crypticpoet.id);
+    const index = profiles.findIndex((p) => p.id === crypticpoet.id);
     console.log(`=== CRYPTICPOET FOUND ===`);
-    console.log(`[${index}] ${crypticpoet.display_name}: rank=${crypticpoet.rank}, score=${crypticpoet.score}`);
+    console.log(
+      `[${index}] ${crypticpoet.display_name}: rank=${crypticpoet.rank}, score=${crypticpoet.score}`,
+    );
   } else {
     console.log("=== CRYPTICPOET NOT FOUND IN FIRST 25 ===");
   }
@@ -93,30 +99,28 @@ function LeaderboardContent() {
         </div>
 
         {/* Callout Carousel - visible to all users */}
-        <div className="bg-red-100 p-2 mb-4">
-          <CalloutCarousel
-            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-            items={[
-              // BADGES ANNOUNCEMENT (pink) – new feature announcement
-              {
-                id: "badges-announcement",
-                variant: "brand-pink",
-                icon: <Award className="h-4 w-4" />,
-                title: "NEW: Creator Badges",
-                description: "Track your progress and earn badges.",
-                href: isLoggedIn ? "/badges" : undefined,
-                onClick: !isLoggedIn
-                  ? () => setLoginModalOpen(true)
-                  : undefined,
-                permanentHideKey: "badges_announcement_dismissed",
-                onClose: () => {
-                  // Handle dismissal
-                },
+        <CalloutCarousel
+          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+          items={[
+            // BADGES ANNOUNCEMENT (pink) – new feature announcement
+            {
+              id: "badges-announcement",
+              variant: "brand-pink",
+              icon: <Award className="h-4 w-4" />,
+              title: "NEW: Creator Badges",
+              description: "Track your progress and earn badges.",
+              href: isLoggedIn ? "/badges" : undefined,
+              onClick: !isLoggedIn
+                ? () => setLoginModalOpen(true)
+                : undefined,
+              permanentHideKey: "badges_announcement_dismissed",
+              onClose: () => {
+                // Handle dismissal
               },
-            ]}
-          />
-        </div>
+            },
+          ]}
+        />
       </Section>
 
       {/* Login Modal for logged-out users */}
