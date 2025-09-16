@@ -9,11 +9,12 @@ import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export function AccountSettingsSection({ hasPrimaryEmail = false }: { hasPrimaryEmail?: boolean }) {
-  const { token } = useTalentAuthToken();
+  const { token, ensureTalentAuthToken } = useTalentAuthToken();
   const { handleLogout } = usePrivyAuth({});
   const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleDeleteClick = () => {
     setOpen(true);
@@ -23,11 +24,18 @@ export function AccountSettingsSection({ hasPrimaryEmail = false }: { hasPrimary
     if (busy) return;
     setBusy(true);
     try {
+      setError(null);
+      let t = token;
+      if (!t) {
+        t = (await ensureTalentAuthToken({ force: true })) || null;
+      }
+      if (!t) throw new Error("Wallet signature required");
+
       const resp = await fetch("/api/user-settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "x-talent-auth-token": token } : {}),
+          "x-talent-auth-token": t,
         },
         body: JSON.stringify({ action: "delete_account_email" }),
       });
@@ -49,6 +57,7 @@ export function AccountSettingsSection({ hasPrimaryEmail = false }: { hasPrimary
     } catch (e) {
       // Keep dialog open to allow retry
       // Optional: surface error in UI later
+      setError(e instanceof Error ? e.message : "Request failed");
       console.error(e);
     } finally {
       setBusy(false);
@@ -87,6 +96,11 @@ export function AccountSettingsSection({ hasPrimaryEmail = false }: { hasPrimary
             {success && (
               <DialogDescription>
                 Email sent. You will be signed out shortly. Please check your inbox to confirm the account deletion.
+              </DialogDescription>
+            )}
+            {error && (
+              <DialogDescription>
+                {error}
               </DialogDescription>
             )}
           </DialogHeader>

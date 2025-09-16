@@ -158,9 +158,13 @@ async function performAccountAction(
         };
       case "update_email":
         try {
+          const t = (await opts?.getAuthToken?.()) || null;
+          if (!t) {
+            throw new Error("Wallet signature required");
+          }
           const res = await fetch(`/api/user-settings`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "x-talent-auth-token": t },
             body: JSON.stringify({ email: String(action.data?.email || "") }),
           });
           if (!res.ok) {
