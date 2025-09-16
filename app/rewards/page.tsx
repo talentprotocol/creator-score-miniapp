@@ -63,7 +63,7 @@ function RewardsContent() {
     rewardsLoading,
     error: top200Error,
     pinnedUser,
-  } = useRewardsData(userTalentUuid);
+  } = useRewardsData(userTalentUuid ?? undefined);
 
   // No rewards decision logic needed for rewards page - it's read-only
 
