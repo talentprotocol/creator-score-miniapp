@@ -53,29 +53,6 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
-  // Debug rank numbering
-  console.log("=== Rank Debug ===");
-  console.log("First 25 profiles with ranks:");
-  profiles.slice(0, 25).forEach((p, i) => {
-    console.log(`[${i}] ${p.display_name}: rank=${p.rank}, score=${p.score}`);
-  });
-
-  // Find crypticpoet specifically
-  const crypticpoet = profiles.find(
-    (p) =>
-      p.display_name?.toLowerCase().includes("crypticpoet") ||
-      p.display_name?.toLowerCase().includes("poet"),
-  );
-  if (crypticpoet) {
-    const index = profiles.findIndex((p) => p.id === crypticpoet.id);
-    console.log(`=== CRYPTICPOET FOUND ===`);
-    console.log(
-      `[${index}] ${crypticpoet.display_name}: rank=${crypticpoet.rank}, score=${crypticpoet.score}`,
-    );
-  } else {
-    console.log("=== CRYPTICPOET NOT FOUND IN FIRST 25 ===");
-  }
-
   return (
     <PageContainer>
       {/* Header section */}
@@ -111,9 +88,7 @@ function LeaderboardContent() {
               title: "NEW: Creator Badges",
               description: "Track your progress and earn badges.",
               href: isLoggedIn ? "/badges" : undefined,
-              onClick: !isLoggedIn
-                ? () => setLoginModalOpen(true)
-                : undefined,
+              onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
               permanentHideKey: "badges_announcement_dismissed",
               onClose: () => {
                 // Handle dismissal
