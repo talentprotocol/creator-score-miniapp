@@ -175,7 +175,7 @@ function LeaderboardContent() {
               );
 
               if (userInProfiles) {
-                // User is in the current page, use their actual leaderboard data
+                // User is in the current page, use their actual leaderboard data for pinned entry
                 const pinnedItem = {
                   id: userInProfiles.id,
                   name: name || userInProfiles.display_name || "You",
@@ -187,11 +187,8 @@ function LeaderboardContent() {
                     : "Total Earnings: N/A",
                 };
 
-                // Remove user from base items and show as pinned
-                const filteredItems = baseItems.filter(
-                  (item) => item.id !== userInProfiles.id,
-                );
-                return [pinnedItem, ...filteredItems];
+                // Show pinned user at top AND keep user in their natural position (duplication)
+                return [pinnedItem, ...baseItems];
               } else {
                 // User is not in current page (rank outside range), use pinnedUser data
                 const pinnedItem = {
