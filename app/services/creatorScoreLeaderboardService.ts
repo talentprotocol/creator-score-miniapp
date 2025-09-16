@@ -226,7 +226,9 @@ export async function getUserProfileData(
       profileData, 
       profile,
       scores: profile.scores,
-      creatorScores: profile.scores?.filter((s: TalentScore) => s.slug === "creator_score")
+      creatorScores: profile.scores?.filter((s: TalentScore) => s.slug === "creator_score"),
+      rank: profile.rank,
+      rank_position: profile.rank_position
     });
 
     if (!profile) {
@@ -281,7 +283,10 @@ export async function getUserProfileData(
     console.log("Score calculation details:", {
       creatorScores,
       maxScore: creatorScores.length > 0 ? Math.max(...creatorScores) : 0,
-      finalScore: score
+      finalScore: score,
+      profileRank: profile.rank,
+      profileRankPosition: profile.rank_position,
+      finalRank: result.rank
     });
     return result;
   } catch (error) {
