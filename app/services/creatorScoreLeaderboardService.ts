@@ -222,7 +222,12 @@ export async function getUserProfileData(
     const profileData = await profileResponse.json();
     const profile = profileData;
 
-    console.log("Profile data received:", { profileData, profile });
+    console.log("Profile data received:", { 
+      profileData, 
+      profile,
+      scores: profile.scores,
+      creatorScores: profile.scores?.filter((s: TalentScore) => s.slug === "creator_score")
+    });
 
     if (!profile) {
       console.log("No profile found in response");
@@ -273,6 +278,11 @@ export async function getUserProfileData(
     };
 
     console.log("getUserProfileData returning:", result);
+    console.log("Score calculation details:", {
+      creatorScores,
+      maxScore: creatorScores.length > 0 ? Math.max(...creatorScores) : 0,
+      finalScore: score
+    });
     return result;
   } catch (error) {
     console.error(`Error fetching user profile data for ${talentUuid}:`, error);
