@@ -31,16 +31,6 @@ function LeaderboardContent() {
   const { profiles, pinnedUser, loading, error, hasMore, showMore } =
     useCreatorScoreLeaderboard(userTalentUuid);
 
-  // Debug logging for pinned user
-  console.log("Leaderboard Debug:", {
-    userTalentUuid,
-    isLoggedIn,
-    pinnedUser,
-    profilesCount: profiles.length,
-    name,
-    avatarUrl,
-  });
-
   // Use hooks for data fetching - both auth paths
   const { displayName: unifiedName, avatarUrl: unifiedAvatar } =
     useResolvedTalentProfile();
@@ -61,6 +51,16 @@ function LeaderboardContent() {
   }, []);
 
   const isLoggedIn = !!(user || unifiedName);
+
+  // Debug logging for pinned user
+  console.log("Leaderboard Debug:", {
+    userTalentUuid,
+    isLoggedIn,
+    pinnedUser,
+    profilesCount: profiles.length,
+    name,
+    avatarUrl,
+  });
 
   return (
     <PageContainer>
