@@ -57,9 +57,6 @@ export async function POST(
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
-      rewards_decision,
-      primary_wallet_address,
-      how_to_earn_modal_seen,
     }: UserPreferencesUpdateRequest = await req.json();
 
     if (!talent_uuid) {
@@ -76,19 +73,7 @@ export async function POST(
       );
     }
 
-    // Validate rewards_decision field
-    if (rewards_decision !== undefined && rewards_decision !== null) {
-      if (rewards_decision !== "opted_in" && rewards_decision !== "opted_out") {
-        return NextResponse.json(
-          {
-            error: `Invalid rewards_decision value: ${rewards_decision}. Must be "opted_in", "opted_out", or null`,
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Allow null to clear the category, or skip validation if only updating wallet address
+    // Allow null to clear the category
     if (creator_category !== null && creator_category !== undefined) {
       if (!validateCreatorCategory(creator_category as string)) {
         return NextResponse.json(
@@ -105,9 +90,6 @@ export async function POST(
       add_permanently_hidden_id,
       remove_dismissed_id,
       remove_permanently_hidden_id,
-      rewards_decision,
-      primary_wallet_address,
-      how_to_earn_modal_seen,
     });
 
     return NextResponse.json(result);

@@ -28,8 +28,7 @@ import {
 
 import { Section } from "@/components/common/Section";
 import { PageContainer } from "@/components/common/PageContainer";
-import { CalloutCarousel } from "@/components/common/CalloutCarousel";
-import { HandHeart, Award, HandCoins } from "lucide-react";
+import { HandHeart, HandCoins } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import posthog from "posthog-js";
 
@@ -38,7 +37,6 @@ import { useRouter } from "next/navigation";
 
 import { PerkModal } from "@/components/modals/PerkModal";
 import { usePerkEntry } from "@/hooks/usePerkEntry";
-import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 
 // Token balance not needed for read-only rewards page
 
@@ -97,12 +95,6 @@ function RewardsContent() {
 
   // Rewards page is read-only - no need for decision logic
 
-  // Server-persisted callout preferences
-  const {
-    permanentlyHiddenIds: permanentlyHiddenCalloutIds,
-    addPermanentlyHiddenId,
-  } = useUserCalloutPrefs(userTalentUuid ?? null);
-
   // Countdown not needed for read-only rewards page
 
   // Hide Farcaster Mini App splash screen when ready
@@ -152,77 +144,18 @@ function RewardsContent() {
             rank={userTop200Entry?.rank}
             onInfoClick={undefined}
             talentUuid={userTalentUuid}
+            rewardsDecision={
+              userTop200Entry?.isOptedOut
+                ? "opted_out"
+                : userTop200Entry?.isOptedIn
+                  ? "opted_in"
+                  : null
+            }
             onOptOutBadgeClick={() =>
               router.push("/settings?section=pay-it-forward")
             }
           />
         )}
-
-        {/* Callout Carousel (below MyRewards) - visible to all users */}
-        <div className="mt-4 mb-2">
-          <CalloutCarousel
-            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-            items={(() => {
-              const items = [] as Array<{
-                id: string;
-                variant:
-                  | "brand-purple"
-                  | "brand-green"
-                  | "brand-blue"
-                  | "brand-pink"
-                  | "muted";
-                icon?: React.ReactNode;
-                title: React.ReactNode;
-                description?: React.ReactNode;
-                href?: string;
-                external?: boolean;
-                onClick?: () => void;
-                permanentHideKey?: string;
-                onClose?: () => void;
-              }>;
-
-              // BADGES ANNOUNCEMENT (pink) – new feature announcement, first priority
-              items.push({
-                id: "badges-announcement",
-                variant: "brand-pink",
-                icon: <Award className="h-4 w-4" />,
-                title: "NEW: Creator Badges",
-                description: "Track your progress and earn badges.",
-                href: isLoggedIn ? "/badges" : undefined,
-                onClick: !isLoggedIn
-                  ? () => setLoginModalOpen(true)
-                  : undefined,
-                permanentHideKey: "badges_announcement_dismissed",
-                onClose: () => {
-                  // Handle dismissal - this triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                },
-              });
-
-              // OPTOUT REWARDS (green) – globally controlled via CALLOUT_FLAGS
-              items.push({
-                id: "optout",
-                variant: "brand-green",
-                icon: <HandHeart className="h-4 w-4" />,
-                title: "Pay It Forward",
-                description: "Give your rewards, keep your rank.",
-                href: isLoggedIn
-                  ? "/settings?section=pay-it-forward"
-                  : undefined,
-                onClick: !isLoggedIn
-                  ? () => setLoginModalOpen(true)
-                  : undefined,
-                permanentHideKey: "optout_callout_hidden",
-                onClose: () => {
-                  // This triggers CalloutCarousel's handleDismiss which handles server-side persistence
-                  // The actual dismissal logic is handled by CalloutCarousel, not here
-                },
-              });
-
-              return items;
-            })()}
-          />
-        </div>
 
         {/* Simplified Stat Cards */}
         <div className="grid grid-cols-2 gap-4 mt-4">

@@ -206,6 +206,8 @@ export async function getUserProfileData(
     throw new Error("Missing Talent API key");
   }
 
+  console.log("getUserProfileData called with:", talentUuid);
+
   try {
     // Get user profile
     const profileResponse = await talentApiClient.getProfile({
@@ -213,13 +215,17 @@ export async function getUserProfileData(
     });
 
     if (!profileResponse.ok) {
+      console.log("Profile response not ok:", profileResponse.status);
       return null;
     }
 
     const profileData = await profileResponse.json();
     const profile = profileData.profile;
 
+    console.log("Profile data received:", { profileData, profile });
+
     if (!profile) {
+      console.log("No profile found in response");
       return null;
     }
 
@@ -256,7 +262,7 @@ export async function getUserProfileData(
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
 
-    return {
+    const result = {
       id: profile.id,
       display_name: profile.display_name,
       image_url: profile.image_url,
@@ -264,6 +270,9 @@ export async function getUserProfileData(
       rank: profile.rank, // Use rank from profile if available
       total_earnings: totalEarnings,
     };
+
+    console.log("getUserProfileData returning:", result);
+    return result;
   } catch (error) {
     console.error(`Error fetching user profile data for ${talentUuid}:`, error);
     return null;
