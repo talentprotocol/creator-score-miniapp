@@ -5,7 +5,6 @@ import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import {
   User,
-  Trophy,
   Settings,
   Search,
   Award,
@@ -33,11 +32,6 @@ export function useUserNavigation() {
       href: "/leaderboard",
       icon: TrendingUp,
       label: "Leaderboard",
-    },
-    {
-      href: "/rewards",
-      icon: Trophy,
-      label: "Rewards",
     },
     {
       href: "/badges",

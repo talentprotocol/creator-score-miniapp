@@ -59,21 +59,36 @@ function LeaderboardContent() {
   console.log("isLoggedIn:", isLoggedIn);
   console.log("pinnedUser:", pinnedUser);
   console.log("profilesCount:", profiles.length);
-  console.log("userInProfiles:", profiles.find(p => p.id === userTalentUuid));
-  console.log("userProfileIndex:", profiles.findIndex(p => p.id === userTalentUuid));
-  console.log("first 5 profiles:", profiles.slice(0, 5).map(p => ({ id: p.id, name: p.display_name, rank: p.rank, score: p.score })));
-
+  console.log(
+    "userInProfiles:",
+    profiles.find((p) => p.id === userTalentUuid),
+  );
+  console.log(
+    "userProfileIndex:",
+    profiles.findIndex((p) => p.id === userTalentUuid),
+  );
+  console.log(
+    "first 5 profiles:",
+    profiles
+      .slice(0, 5)
+      .map((p) => ({
+        id: p.id,
+        name: p.display_name,
+        rank: p.rank,
+        score: p.score,
+      })),
+  );
 
   return (
     <PageContainer>
       {/* Header section */}
       <Section variant="header">
         {/* Rewards Stat Cards */}
-         <div className="flex gap-3 mb-4">
+        <div className="flex gap-3 mb-4">
           <StatCard
             title="Rewards Round #1"
             value="$2,624"
-            secondaryMetric="September 16th"
+            secondaryMetric="Distributed Sep 16th"
             onClick={() => router.push("/rewards")}
             icon={
               <ChevronRight className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
@@ -187,8 +202,10 @@ function LeaderboardContent() {
               };
 
               // Check if user is already in the base items
-              const userInBaseItems = baseItems.find(item => item.id === pinnedUser.id);
-              
+              const userInBaseItems = baseItems.find(
+                (item) => item.id === pinnedUser.id,
+              );
+
               if (userInBaseItems) {
                 // User is in the current page, show pinned version and remove from base
                 const filteredItems = baseItems.filter(

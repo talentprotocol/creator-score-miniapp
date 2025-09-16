@@ -237,9 +237,8 @@ export async function getUserProfileData(
       rank: profileData.rank,
       hasRankPosition: profileData.rank_position !== undefined,
       rankPosition: profileData.rank_position,
-      profileKeys: Object.keys(profileData)
+      profileKeys: Object.keys(profileData),
     });
-
 
     if (!profile) {
       console.log("No profile found in response");
@@ -274,23 +273,23 @@ export async function getUserProfileData(
     // Extract Creator Score from scores array (same logic as search hook)
     // Note: The profile data structure from getProfile is different from search results
     let creatorScores: number[] = [];
-    
+
     if (Array.isArray(profile.scores)) {
       creatorScores = profile.scores
         .filter((s: TalentScore) => s.slug === "creator_score")
         .map((s: TalentScore) => s.points ?? 0);
     }
-    
+
     // Fallback: check if there's a direct creator_score field
     if (creatorScores.length === 0 && profile.creator_score !== undefined) {
       creatorScores = [profile.creator_score];
     }
-    
+
     // Fallback: check if there's a score field
     if (creatorScores.length === 0 && profile.score !== undefined) {
       creatorScores = [profile.score];
     }
-    
+
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
 
     const result = {
