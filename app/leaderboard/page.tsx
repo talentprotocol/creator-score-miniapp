@@ -53,31 +53,6 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
-  // Debug logging for pinned user
-  console.log("=== Leaderboard Debug ===");
-  console.log("userTalentUuid:", userTalentUuid);
-  console.log("isLoggedIn:", isLoggedIn);
-  console.log("pinnedUser:", pinnedUser);
-  console.log("profilesCount:", profiles.length);
-  console.log(
-    "userInProfiles:",
-    profiles.find((p) => p.id === userTalentUuid),
-  );
-  console.log(
-    "userProfileIndex:",
-    profiles.findIndex((p) => p.id === userTalentUuid),
-  );
-  console.log(
-    "first 5 profiles:",
-    profiles
-      .slice(0, 5)
-      .map((p) => ({
-        id: p.id,
-        name: p.display_name,
-        rank: p.rank,
-        score: p.score,
-      })),
-  );
 
   return (
     <PageContainer>
@@ -190,30 +165,39 @@ function LeaderboardContent() {
 
             // Add pinned user at the top if logged in and available
             if (isLoggedIn && pinnedUser) {
-              const pinnedItem = {
-                id: pinnedUser.id,
-                name: name || pinnedUser.display_name || "You",
-                avatarUrl: avatarUrl || pinnedUser.image_url,
-                rank: pinnedUser.rank,
-                primaryMetric: formatCompactNumber(pinnedUser.score),
-                secondaryMetric: pinnedUser.total_earnings
-                  ? `Total Earnings: ${formatCurrency(pinnedUser.total_earnings)}`
-                  : "Total Earnings: N/A",
-              };
+              // Use the user's data from the main leaderboard results instead of pinnedUser
+              const userInProfiles = profiles.find(p => p.id === userTalentUuid);
+              
+              if (userInProfiles) {
+                // User is in the current page, use their actual leaderboard data
+                const pinnedItem = {
+                  id: userInProfiles.id,
+                  name: name || userInProfiles.display_name || "You",
+                  avatarUrl: avatarUrl || userInProfiles.image_url,
+                  rank: userInProfiles.rank,
+                  primaryMetric: formatCompactNumber(userInProfiles.score),
+                  secondaryMetric: userInProfiles.total_earnings
+                    ? `Total Earnings: ${formatCurrency(userInProfiles.total_earnings)}`
+                    : "Total Earnings: N/A",
+                };
 
-              // Check if user is already in the base items
-              const userInBaseItems = baseItems.find(
-                (item) => item.id === pinnedUser.id,
-              );
-
-              if (userInBaseItems) {
-                // User is in the current page, show pinned version and remove from base
+                // Remove user from base items and show as pinned
                 const filteredItems = baseItems.filter(
-                  (item) => item.id !== pinnedUser.id,
+                  (item) => item.id !== userInProfiles.id,
                 );
                 return [pinnedItem, ...filteredItems];
               } else {
-                // User is not in current page (rank outside range), show only pinned version
+                // User is not in current page (rank outside range), use pinnedUser data
+                const pinnedItem = {
+                  id: pinnedUser.id,
+                  name: name || pinnedUser.display_name || "You",
+                  avatarUrl: avatarUrl || pinnedUser.image_url,
+                  rank: pinnedUser.rank,
+                  primaryMetric: formatCompactNumber(pinnedUser.score),
+                  secondaryMetric: pinnedUser.total_earnings
+                    ? `Total Earnings: ${formatCurrency(pinnedUser.total_earnings)}`
+                    : "Total Earnings: N/A",
+                };
                 return [pinnedItem, ...baseItems];
               }
             }

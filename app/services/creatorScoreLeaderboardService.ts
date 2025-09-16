@@ -222,23 +222,6 @@ export async function getUserProfileData(
     const profileData = await profileResponse.json();
     const profile = profileData;
 
-    console.log("=== getUserProfileData DEBUG ===");
-    console.log("TalentUuid:", talentUuid);
-    console.log("Profile response status:", profileResponse.status);
-    console.log("Profile data structure:", {
-      hasScores: Array.isArray(profileData.scores),
-      scoresLength: profileData.scores?.length || 0,
-      scores: profileData.scores,
-      hasCreatorScore: profileData.creator_score !== undefined,
-      creatorScore: profileData.creator_score,
-      hasScore: profileData.score !== undefined,
-      score: profileData.score,
-      hasRank: profileData.rank !== undefined,
-      rank: profileData.rank,
-      hasRankPosition: profileData.rank_position !== undefined,
-      rankPosition: profileData.rank_position,
-      profileKeys: Object.keys(profileData),
-    });
 
     if (!profile) {
       console.log("No profile found in response");
@@ -301,10 +284,6 @@ export async function getUserProfileData(
       total_earnings: totalEarnings,
     };
 
-    console.log("=== Final Result ===");
-    console.log("Final score:", score);
-    console.log("Final rank:", result.rank);
-    console.log("Final result:", result);
     return result;
   } catch (error) {
     console.error(`Error fetching user profile data for ${talentUuid}:`, error);
