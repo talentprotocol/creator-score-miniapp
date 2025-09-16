@@ -220,7 +220,7 @@ export async function getUserProfileData(
     }
 
     const profileData = await profileResponse.json();
-    const profile = profileData.profile;
+    const profile = profileData;
 
     console.log("Profile data received:", { profileData, profile });
 
@@ -255,6 +255,7 @@ export async function getUserProfileData(
     }
 
     // Extract Creator Score from scores array (same logic as search hook)
+    // Note: The profile data structure from getProfile is different from search results
     const creatorScores = Array.isArray(profile.scores)
       ? profile.scores
           .filter((s: TalentScore) => s.slug === "creator_score")
