@@ -53,6 +53,23 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
+  // Debug poet.base.eth specifically
+  const poetProfile = profiles.find((p) =>
+    p.display_name?.includes("poet.base.eth"),
+  );
+  if (poetProfile) {
+    const poetIndex = profiles.findIndex((p) => p.id === poetProfile.id);
+    console.log("=== POET.BASE.ETH DEBUG ===");
+    console.log(`Found at index [${poetIndex}]`);
+    console.log(`Display name: "${poetProfile.display_name}"`);
+    console.log(`Rank: ${poetProfile.rank}`);
+    console.log(`Score: ${poetProfile.score}`);
+    console.log(`ID: ${poetProfile.id}`);
+    console.log("Full profile:", poetProfile);
+  } else {
+    console.log("=== POET.BASE.ETH NOT FOUND IN PROFILES ===");
+  }
+
   return (
     <PageContainer>
       {/* Header section */}
@@ -97,11 +114,17 @@ function LeaderboardContent() {
           // Check if any items should be visible
           const visibleItems = carouselItems.filter((item) => {
             // Check if item is permanently hidden
-            if (permanentlyHiddenCalloutIds && permanentlyHiddenCalloutIds.includes(item.id)) {
+            if (
+              permanentlyHiddenCalloutIds &&
+              permanentlyHiddenCalloutIds.includes(item.id)
+            ) {
               return false;
             }
             // Check localStorage for permanent hide
-            if (item.permanentHideKey && localStorage.getItem(item.permanentHideKey) === "true") {
+            if (
+              item.permanentHideKey &&
+              localStorage.getItem(item.permanentHideKey) === "true"
+            ) {
               return false;
             }
             return true;
