@@ -342,7 +342,10 @@ function RewardsContent() {
                   isLoggedIn && ENABLE_PINNED_LEADERBOARD_ENTRY && pinnedUser;
                 if (!shouldShowPinned) return baseItems;
 
-                // Use pinnedUser data from API
+                // Find user in the main leaderboard to get their opted-in/out status
+                const userInLeaderboard = baseItems.find((item) => item.id === pinnedUser.id);
+
+                // Use pinnedUser data from API with opted-in/out status from leaderboard
                 const pinnedItem: {
                   id: string;
                   name: string;
@@ -372,11 +375,13 @@ function RewardsContent() {
                   secondaryMetric: `Creator Score: ${(
                     userTop200Entry?.score ?? creatorScore
                   ).toLocaleString()}`,
-                  primaryMetricVariant: "muted", // Default for rewards page
-                  isOptedOut: false, // Default for rewards page
+                  primaryMetricVariant: userInLeaderboard?.primaryMetricVariant || "muted",
+                  isOptedOut: userInLeaderboard?.isOptedOut || false,
+                  badge: userInLeaderboard?.badge,
                 };
-                const deduped = baseItems.filter((u) => u.id !== pinnedUser.id);
-                return [pinnedItem, ...deduped];
+
+                // Show pinned user at top AND keep user in their natural position (duplication)
+                return [pinnedItem, ...baseItems];
               })()}
               onItemClick={(item) => {
                 // Navigate to profile page
