@@ -55,12 +55,10 @@ function LeaderboardContent() {
 
   // Debug rank numbering
   console.log("=== Rank Debug ===");
-  console.log("First 10 profiles with ranks:", profiles.slice(0, 10).map((p, i) => ({
-    index: i,
-    name: p.display_name,
-    rank: p.rank,
-    score: p.score
-  })));
+  console.log("First 10 profiles with ranks:");
+  profiles.slice(0, 10).forEach((p, i) => {
+    console.log(`[${i}] ${p.display_name}: rank=${p.rank}, score=${p.score}`);
+  });
 
   return (
     <PageContainer>

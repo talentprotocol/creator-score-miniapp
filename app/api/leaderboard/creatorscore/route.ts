@@ -33,12 +33,10 @@ export async function GET(req: NextRequest) {
 
     // Debug: Log first 5 profiles with their ranks
     console.log("=== API Leaderboard Debug ===");
-    console.log("First 5 profiles:", leaderboardData.profiles.slice(0, 5).map((p, i) => ({
-      index: i,
-      name: p.display_name,
-      rank: p.rank,
-      score: p.score
-    })));
+    console.log("First 5 profiles:");
+    leaderboardData.profiles.slice(0, 5).forEach((p, i) => {
+      console.log(`[${i}] ${p.display_name}: rank=${p.rank}, score=${p.score}`);
+    });
 
     // Get pinned user data if talentUuid is provided
     let pinnedUser = null;
