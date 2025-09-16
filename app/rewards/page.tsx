@@ -366,7 +366,7 @@ function RewardsContent() {
                   id: pinnedUser.id,
                   name: pinnedUser.display_name || name || "",
                   avatarUrl: pinnedUser.image_url || avatarUrl,
-                  rank: pinnedUser.rank,
+                  rank: userInLeaderboard?.rank, // Use rank from rewards leaderboard, not profile API
                   primaryMetric: creatorScore ? getUsdcRewards() : undefined,
                   primaryMetricLoading:
                     loadingStats ||
