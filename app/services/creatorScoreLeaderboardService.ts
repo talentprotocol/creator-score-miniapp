@@ -222,14 +222,6 @@ export async function getUserProfileData(
     const profileData = await profileResponse.json();
     const profile = profileData;
 
-    console.log("Profile data received:", { 
-      profileData, 
-      profile,
-      scores: profile.scores,
-      creatorScores: profile.scores?.filter((s: TalentScore) => s.slug === "creator_score"),
-      rank: profile.rank,
-      rank_position: profile.rank_position
-    });
 
     if (!profile) {
       console.log("No profile found in response");
@@ -263,11 +255,24 @@ export async function getUserProfileData(
 
     // Extract Creator Score from scores array (same logic as search hook)
     // Note: The profile data structure from getProfile is different from search results
-    const creatorScores = Array.isArray(profile.scores)
-      ? profile.scores
-          .filter((s: TalentScore) => s.slug === "creator_score")
-          .map((s: TalentScore) => s.points ?? 0)
-      : [];
+    let creatorScores: number[] = [];
+    
+    if (Array.isArray(profile.scores)) {
+      creatorScores = profile.scores
+        .filter((s: TalentScore) => s.slug === "creator_score")
+        .map((s: TalentScore) => s.points ?? 0);
+    }
+    
+    // Fallback: check if there's a direct creator_score field
+    if (creatorScores.length === 0 && profile.creator_score !== undefined) {
+      creatorScores = [profile.creator_score];
+    }
+    
+    // Fallback: check if there's a score field
+    if (creatorScores.length === 0 && profile.score !== undefined) {
+      creatorScores = [profile.score];
+    }
+    
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
 
     const result = {
@@ -275,19 +280,10 @@ export async function getUserProfileData(
       display_name: profile.display_name,
       image_url: profile.image_url,
       score: score,
-      rank: profile.rank, // Use rank from profile if available
+      rank: profile.rank || profile.rank_position || null, // Use rank from profile if available, fallback to rank_position
       total_earnings: totalEarnings,
     };
 
-    console.log("getUserProfileData returning:", result);
-    console.log("Score calculation details:", {
-      creatorScores,
-      maxScore: creatorScores.length > 0 ? Math.max(...creatorScores) : 0,
-      finalScore: score,
-      profileRank: profile.rank,
-      profileRankPosition: profile.rank_position,
-      finalRank: result.rank
-    });
     return result;
   } catch (error) {
     console.error(`Error fetching user profile data for ${talentUuid}:`, error);

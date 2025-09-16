@@ -53,24 +53,13 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
-  // Debug logging for pinned user
-  console.log("Leaderboard Debug:", {
-    userTalentUuid,
-    isLoggedIn,
-    pinnedUser,
-    profilesCount: profiles.length,
-    name,
-    avatarUrl,
-    userInProfiles: profiles.find((p) => p.id === userTalentUuid),
-    userProfileIndex: profiles.findIndex((p) => p.id === userTalentUuid),
-  });
 
   return (
     <PageContainer>
       {/* Header section */}
       <Section variant="header">
         {/* Rewards Stat Cards */}
-        <div className="flex gap-3 mb-4 bg-red-100 p-2">
+         <div className="flex gap-3 mb-4">
           <StatCard
             title="Rewards Round #1"
             value="$2,624"
@@ -187,11 +176,19 @@ function LeaderboardContent() {
                   : "Total Earnings: N/A",
               };
 
-              // Remove from base items if already present to avoid duplication
-              const filteredItems = baseItems.filter(
-                (item) => item.id !== pinnedUser.id,
-              );
-              return [pinnedItem, ...filteredItems];
+              // Check if user is already in the base items
+              const userInBaseItems = baseItems.find(item => item.id === pinnedUser.id);
+              
+              if (userInBaseItems) {
+                // User is in the current page, show pinned version and remove from base
+                const filteredItems = baseItems.filter(
+                  (item) => item.id !== pinnedUser.id,
+                );
+                return [pinnedItem, ...filteredItems];
+              } else {
+                // User is not in current page (rank outside range), show only pinned version
+                return [pinnedItem, ...baseItems];
+              }
             }
 
             return baseItems;

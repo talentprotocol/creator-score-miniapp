@@ -18,9 +18,10 @@ export function StatCard({
   onClick,
   icon,
 }: StatCardProps) {
+  console.log("StatCard rendering:", { title, value, secondaryMetric });
   return (
     <Card
-      className={`flex flex-col bg-muted rounded-xl p-4 min-w-0 flex-1 border-0 shadow-none ${
+      className={`flex flex-col bg-muted rounded-xl p-4 min-w-0 flex-1 border-2 border-blue-500 shadow-none ${
         onClick ? "cursor-pointer hover:bg-muted/80 transition-colors" : ""
       }`}
       onClick={onClick}
