@@ -53,7 +53,6 @@ function LeaderboardContent() {
 
   const isLoggedIn = !!(user || unifiedName);
 
-
   return (
     <PageContainer>
       {/* Header section */}
@@ -77,30 +76,28 @@ function LeaderboardContent() {
         </div>
 
         {/* Callout Carousel - visible to all users */}
-        <div className="mb-4">
-          <CalloutCarousel
-            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-            items={[
-              // BADGES ANNOUNCEMENT (pink) – new feature announcement
-              {
-                id: "badges-announcement",
-                variant: "brand-pink",
-                icon: <Award className="h-4 w-4" />,
-                title: "NEW: Creator Badges",
-                description: "Track your progress and earn badges.",
-                href: isLoggedIn ? "/badges" : undefined,
-                onClick: !isLoggedIn
-                  ? () => setLoginModalOpen(true)
-                  : undefined,
-                permanentHideKey: "badges_announcement_dismissed",
-                onClose: () => {
-                  // Handle dismissal
-                },
+        <CalloutCarousel
+          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+          items={[
+            // BADGES ANNOUNCEMENT (pink) – new feature announcement
+            {
+              id: "badges-announcement",
+              variant: "brand-pink",
+              icon: <Award className="h-4 w-4" />,
+              title: "NEW: Creator Badges",
+              description: "Track your progress and earn badges.",
+              href: isLoggedIn ? "/badges" : undefined,
+              onClick: !isLoggedIn
+                ? () => setLoginModalOpen(true)
+                : undefined,
+              permanentHideKey: "badges_announcement_dismissed",
+              onClose: () => {
+                // Handle dismissal
               },
-            ]}
-          />
-        </div>
+            },
+          ]}
+        />
       </Section>
 
       {/* Login Modal for logged-out users */}
@@ -166,8 +163,10 @@ function LeaderboardContent() {
             // Add pinned user at the top if logged in and available
             if (isLoggedIn && pinnedUser) {
               // Use the user's data from the main leaderboard results instead of pinnedUser
-              const userInProfiles = profiles.find(p => p.id === userTalentUuid);
-              
+              const userInProfiles = profiles.find(
+                (p) => p.id === userTalentUuid,
+              );
+
               if (userInProfiles) {
                 // User is in the current page, use their actual leaderboard data
                 const pinnedItem = {
