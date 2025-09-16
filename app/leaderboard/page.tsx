@@ -65,7 +65,7 @@ function LeaderboardContent() {
       {/* Header section */}
       <Section variant="header">
         {/* Rewards Stat Cards */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-3">
           <StatCard
             title="Rewards Round #1"
             value="$2,624"
@@ -83,26 +83,28 @@ function LeaderboardContent() {
         </div>
 
         {/* Callout Carousel - visible to all users */}
-        <CalloutCarousel
-          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-          items={[
-            // BADGES ANNOUNCEMENT (pink) – new feature announcement
-            {
-              id: "badges-announcement",
-              variant: "brand-pink",
-              icon: <Award className="h-4 w-4" />,
-              title: "NEW: Creator Badges",
-              description: "Track your progress and earn badges.",
-              href: isLoggedIn ? "/badges" : undefined,
-              onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
-              permanentHideKey: "badges_announcement_dismissed",
-              onClose: () => {
-                // Handle dismissal
+        <div className="bg-red-100 p-2 mb-4">
+          <CalloutCarousel
+            permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+            onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+            items={[
+              // BADGES ANNOUNCEMENT (pink) – new feature announcement
+              {
+                id: "badges-announcement",
+                variant: "brand-pink",
+                icon: <Award className="h-4 w-4" />,
+                title: "NEW: Creator Badges",
+                description: "Track your progress and earn badges.",
+                href: isLoggedIn ? "/badges" : undefined,
+                onClick: !isLoggedIn ? () => setLoginModalOpen(true) : undefined,
+                permanentHideKey: "badges_announcement_dismissed",
+                onClose: () => {
+                  // Handle dismissal
+                },
               },
-            },
-          ]}
-        />
+            ]}
+          />
+        </div>
       </Section>
 
       {/* Login Modal for logged-out users */}
