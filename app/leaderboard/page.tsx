@@ -75,15 +75,13 @@ function LeaderboardContent() {
           />
         </div>
 
-        {/* Callout Carousel - visible to all users */}
-        <CalloutCarousel
-          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-          items={[
+        {/* Callout Carousel - only render if not hidden */}
+        {(() => {
+          const carouselItems = [
             // BADGES ANNOUNCEMENT (pink) – new feature announcement
             {
               id: "badges-announcement",
-              variant: "brand-pink",
+              variant: "brand-pink" as const,
               icon: <Award className="h-4 w-4" />,
               title: "NEW: Creator Badges",
               description: "Track your progress and earn badges.",
@@ -94,8 +92,36 @@ function LeaderboardContent() {
                 // Handle dismissal
               },
             },
-          ]}
-        />
+          ];
+
+          // Check if any items should be visible
+          const visibleItems = carouselItems.filter((item) => {
+            // Check if item is permanently hidden
+            if (permanentlyHiddenCalloutIds && permanentlyHiddenCalloutIds.includes(item.id)) {
+              return false;
+            }
+            // Check localStorage for permanent hide
+            if (item.permanentHideKey && localStorage.getItem(item.permanentHideKey) === "true") {
+              return false;
+            }
+            return true;
+          });
+
+          // Only render if there are visible items
+          if (visibleItems.length === 0) {
+            return null;
+          }
+
+          return (
+            <div className="mt-4">
+              <CalloutCarousel
+                permanentlyHiddenIds={permanentlyHiddenCalloutIds}
+                onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
+                items={carouselItems}
+              />
+            </div>
+          );
+        })()}
       </Section>
 
       {/* Login Modal for logged-out users */}
