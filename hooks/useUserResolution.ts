@@ -57,7 +57,7 @@ export function useFidToTalentUuid() {
       if (talentId) {
         setTalentUuid(talentId);
 
-        // For Privy users, fetch handle from talent-socials API
+        // For Privy users, fetch handle from accounts API
         await fetchUserHandle(talentId);
 
         setLoading(false);
@@ -119,7 +119,7 @@ export function useFidToTalentUuid() {
     }
 
     /**
-     * Fetch user's Farcaster handle from talent-socials API
+     * Fetch user's Farcaster handle from accounts API
      */
     async function fetchUserHandle(uuid: string) {
       // Check cache first
@@ -130,23 +130,24 @@ export function useFidToTalentUuid() {
       }
 
       try {
-        const response = await fetch(`/api/talent-socials?uuid=${uuid}`);
+        const response = await fetch(`/api/accounts?id=${uuid}`);
         if (response.ok) {
           const data = await response.json();
 
           // Extract Farcaster handle from the response
-          // The API returns social accounts, we need to find the Farcaster one
-          const farcasterAccount = data.socials?.find(
-            (social: any) => social.platform === "farcaster",
+          // The accounts API returns social accounts in data.social array
+          const farcasterAccount = data.social?.find(
+            (social: any) => social.source === "farcaster",
           );
 
-          const userHandle = farcasterAccount?.username || null;
+          // The handle field already includes the @ prefix for farcaster
+          const userHandle = farcasterAccount?.handle || null;
 
           // Cache the result
           userHandleCache.set(uuid, userHandle);
           setHandle(userHandle);
         } else {
-          console.warn("Failed to fetch user handle from talent-socials API");
+          console.warn("Failed to fetch user handle from accounts API");
           setHandle(null);
         }
       } catch (err) {

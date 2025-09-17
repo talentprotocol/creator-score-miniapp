@@ -15,14 +15,21 @@ interface UseLeaderboardDataReturn {
   nextUpdate: string | null;
   refetch: (forceFresh?: boolean) => void;
   updateUserOptOutStatus: (talentUuid: string, isOptedOut: boolean) => void;
+  pinnedUser: any | null; // Add pinned user to return type
 }
 
 /**
  * CLIENT-SIDE ONLY: Fetches leaderboard data via API route (follows coding principles)
  */
-async function getLeaderboardBasic(): Promise<LeaderboardData> {
+async function getLeaderboardBasic(talentUuid?: string): Promise<LeaderboardData & { pinnedUser?: any }> {
   try {
-    const response = await fetch(`/api/leaderboard/basic`, {
+    // Add cache-busting timestamp to prevent browser caching
+    const timestamp = Date.now();
+    const url = talentUuid 
+      ? `/api/rewards?t=${timestamp}&talentUuid=${talentUuid}`
+      : `/api/rewards?t=${timestamp}`;
+      
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -35,18 +42,19 @@ async function getLeaderboardBasic(): Promise<LeaderboardData> {
 
     return await response.json();
   } catch (error) {
-    console.error("[useScoreLeaderboardData] Client-side fetch failed:", error);
+    console.error("[useLeaderboardOptimized] Client-side fetch failed:", error);
     throw error;
   }
 }
 
-export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
+export function useRewardsData(talentUuid?: string): UseLeaderboardDataReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = useState<string | null>(null);
+  const [pinnedUser, setPinnedUser] = useState<any | null>(null);
 
   // Filter out entries with rank > 200 only
   const filterValidEntries = useCallback(
@@ -69,7 +77,7 @@ export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
       setLoading(true);
       setError(null);
 
-      const data = await getLeaderboardBasic();
+      const data = await getLeaderboardBasic(talentUuid);
 
       // Filter out entries with rank > 200 only
       const filteredEntries = filterValidEntries(data.entries);
@@ -77,6 +85,7 @@ export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
       setEntries(filteredEntries);
       setLastUpdated(data.lastUpdated ?? null);
       setNextUpdate(data.nextUpdate ?? null);
+      setPinnedUser(data.pinnedUser ?? null);
     } catch (err) {
       console.error(`Failed to load leaderboard data:`, err);
       setError(
@@ -85,10 +94,11 @@ export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
     } finally {
       setLoading(false);
     }
-  }, [filterValidEntries]);
+  }, [filterValidEntries, talentUuid]);
 
   const refetch = useCallback(
     (forceFresh?: boolean) => {
+      // Always force fresh data when refetching
       loadBasicData();
     },
     [loadBasicData],
@@ -110,9 +120,16 @@ export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
     [],
   );
 
-  // Load basic data on mount
+  // Load basic data on mount and refresh every 30 seconds to ensure fresh data
   useEffect(() => {
     loadBasicData();
+
+    // Set up interval to refresh data every 30 seconds
+    const interval = setInterval(() => {
+      loadBasicData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, [loadBasicData]);
 
   return {
@@ -124,5 +141,6 @@ export function useScoreLeaderboardData(): UseLeaderboardDataReturn {
     nextUpdate,
     refetch,
     updateUserOptOutStatus,
+    pinnedUser,
   };
 }

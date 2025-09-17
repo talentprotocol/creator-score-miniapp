@@ -1,52 +1,48 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { Typography } from "@/components/ui/typography";
-import { HandHeart, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
-import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
+import { useRewardsData } from "@/hooks/useRewardsData";
 
-import { CheckCircle, AlertCircle } from "lucide-react";
-import { ConfettiButton } from "@/components/ui/confetti";
+import { CheckCircle } from "lucide-react";
 import { ShareModal } from "@/components/modals/ShareModal";
 import { ShareContentGenerators } from "@/lib/sharing";
 
 import { usePostHog } from "posthog-js/react";
-import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
 
 /**
- * PayItForwardSection Component
+ * PayItForwardSection Component (Read-Only)
  *
- * Provides the user interface for creators to opt out of receiving rewards.
- * The opted-out rewards are redistributed proportionally to other eligible creators.
+ * Displays read-only information about a user's Pay It Forward decision.
+ * Only shown if the user has opted out of receiving rewards.
  *
  * Features:
- * - Shows current reward amount (crossed out if already opted out)
- * - Requires explicit confirmation to prevent accidental opt-outs
- * - Provides visual feedback with success/error states
- * - Updates leaderboard data immediately after successful opt-out
- * - Integrates with PostHog analytics for user behavior tracking
- * - Confetti celebration upon successful opt-out
+ * - Shows reward amount that was donated (crossed out)
+ * - Displays confirmation badge
  * - Social sharing capabilities for Farcaster and Twitter
+ * - No interaction - purely informational
  */
 export function PayItForwardSection() {
-  // State management for opt-out flow
-  const [isOptingOut, setIsOptingOut] = useState(false);
-  const [hasConfirmed, setHasConfirmed] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [showShare, setShowShare] = useState(false);
+  // State management for display and sharing only
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [confettiActive, setConfettiActive] = useState(false);
 
   // User context and data hooks
   const { talentUuid, handle } = useFidToTalentUuid();
-  const {
-    entries: top200Entries,
-    refetch,
-    updateUserOptOutStatus,
-  } = useLeaderboardData();
+  const { entries: leaderboardEntries } = useRewardsData(); // Get leaderboard data with opt-out status
 
   const posthog = usePostHog();
+
+  // Find user's entry in leaderboard data to get opt-out status and reward amount
+  const userEntry = React.useMemo(() => {
+    if (!talentUuid || !leaderboardEntries.length) return null;
+    return leaderboardEntries.find(
+      (entry) => String(entry.talent_protocol_id) === String(talentUuid),
+    );
+  }, [talentUuid, leaderboardEntries]);
+
+  const isOptedOut = userEntry?.isOptedOut || false;
+  const rewardAmount = userEntry?.baseReward || 0;
 
   // Simple fetch for fname from talent-user API (same as profile layout)
   const [fname, setFname] = useState<string | null>(null);
@@ -64,124 +60,13 @@ export function PayItForwardSection() {
   // Get the handle from fname first, then from the hook
   const userHandle = fname || handle || talentUuid || "creator";
 
-  // Find current user's leaderboard entry
-  const userTop200Entry = top200Entries.find(
-    (entry) => entry.talent_protocol_id === talentUuid,
-  );
+  // Format the reward amount that was donated
+  const currentRewards =
+    rewardAmount >= 1
+      ? `$${rewardAmount.toFixed(0)}`
+      : `$${rewardAmount.toFixed(2)}`;
 
-  // Use rewards decision status
-  const {
-    data: { rewardsDecision },
-  } = useUserRewardsDecision(talentUuid);
-  const isAlreadyOptedOut = rewardsDecision === "opted_out";
-  const hasPaidForward = success || isAlreadyOptedOut;
-
-  // Show share button for already opted out users (from previous sessions) or after confetti completes
-  const shouldShowShare = (isAlreadyOptedOut && !success) || showShare;
-
-  // Calculate current rewards for display
-  const currentRewards = userTop200Entry
-    ? (userTop200Entry.boostedReward || 0) >= 1
-      ? `$${(userTop200Entry.boostedReward || 0).toFixed(0)}`
-      : `$${(userTop200Entry.boostedReward || 0).toFixed(2)}`
-    : "$0";
-
-  // If already opted out (from previous session), ensure the opt-out callout is hidden
-  // This is now handled server-side during opt-out. No client effect needed.
-
-  // Start confetti when success is freshly achieved (not for already opted out users)
-  useEffect(() => {
-    if (success) {
-      // Only show confetti for fresh opt-outs, not for users who were already opted out
-      setConfettiActive(true);
-    }
-  }, [success]);
-
-  // Handle confetti completion - show share button after confetti finishes
-  const handleConfettiComplete = useCallback(() => {
-    setConfettiActive(false);
-    setShowShare(true);
-  }, []);
-
-  /**
-   * Handles the opt-out submission process
-   * - Validates user confirmation
-   * - Submits opt-out request to API
-   * - Updates local state and cache
-   * - Triggers confetti celebration
-   */
-  const handleOptOut = async () => {
-    if (!hasConfirmed || !talentUuid) return;
-
-    setIsOptingOut(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/user-preferences/optout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          talent_uuid: talentUuid,
-          decision: "opted_out",
-          confirm_decision: true,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setSuccess(true);
-        try {
-          console.log(
-            "[OptOut] Success. Instant UI update + scheduled force-fresh refetch",
-          );
-          // Only update cache if user is in top 200 (has leaderboard entry)
-          if (userTop200Entry) {
-            updateUserOptOutStatus(talentUuid, true);
-          }
-          // Schedule a force-fresh refetch to clear local cache and repopulate from server
-          setTimeout(() => {
-            refetch(true);
-          }, 100);
-        } catch {}
-      } else {
-        const errorMessage = result.error || "Failed to pay it forward";
-        setError(errorMessage);
-        console.error("Opt-out failed:", errorMessage);
-      }
-    } catch (error) {
-      const errorMessage = "Operation error. Please try again.";
-      setError(errorMessage);
-      console.error("Error opting out:", error);
-    } finally {
-      setIsOptingOut(false);
-    }
-  };
-
-  // Reset states when checkbox changes
-  const handleCheckboxChange = (checked: boolean) => {
-    if (success) return; // Don't allow changes after successful opt-out
-    setHasConfirmed(checked);
-    setError(null);
-  };
-
-  /**
-   * Handles opening the share stats modal
-   * - Tracks analytics event
-   * - Opens modal for platform selection
-   */
-  const handleShareStats = async () => {
-    // Track pay it forward share click (preserve existing analytics)
-    posthog?.capture("pay_it_forward_share_clicked", {
-      talent_uuid: talentUuid,
-      current_rewards: currentRewards,
-    });
-
-    // Always show modal for sharing
-    setIsShareModalOpen(true);
-  };
-
-  // Prepare sharing data for the new sharing system
+  // Prepare sharing data for the new sharing system (before early returns to avoid hooks rule violations)
   const shareContext = React.useMemo(
     () => ({
       talentUUID: talentUuid || "",
@@ -208,91 +93,66 @@ export function PayItForwardSection() {
     [talentUuid, currentRewards],
   );
 
+  // Early return if not opted out
+  if (!isOptedOut) {
+    return null; // Only show this section if user opted out
+  }
+
+  // Read-only component - no action handlers needed
+
+  /**
+   * Handles opening the share stats modal
+   * - Tracks analytics event
+   * - Opens modal for platform selection
+   */
+  const handleShareStats = async () => {
+    // Track pay it forward share click (preserve existing analytics)
+    posthog?.capture("pay_it_forward_share_clicked", {
+      talent_uuid: talentUuid,
+      current_rewards: currentRewards,
+    });
+
+    // Always show modal for sharing
+    setIsShareModalOpen(true);
+  };
+
   return (
     <div className="relative space-y-4">
       <div className="rounded-lg border bg-white p-4">
         <div className="space-y-4">
-          {/* Description: Explains what the feature does and its benefits */}
+          {/* Description: Shows what was done */}
           <Typography size="base" className="text-foreground">
-            Donate your rewards to the remaining top creators, keep your
-            leaderboard position and earn a special onchain badge.
+            You donated your rewards to other creators and earned a special
+            onchain badge.
           </Typography>
 
-          {/* Current Rewards Display: Shows user's potential rewards amount */}
+          {/* Reward Amount Display: Shows donated amount (crossed out) */}
           <div className="flex items-center gap-1.5">
-            <Typography size="base">Expected Reward Amount:</Typography>
+            <Typography size="base">Donated Amount:</Typography>
             <Typography
               size="xl"
               weight="medium"
-              className={`${hasPaidForward ? "text-brand-green line-through" : "text-foreground"}`}
+              className="text-brand-green line-through"
             >
               {currentRewards}
             </Typography>
           </div>
 
-          {/* Confirmation Checkbox: User must acknowledge understanding before proceeding */}
-          {!hasPaidForward ? (
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="confirm-optout"
-                checked={hasConfirmed}
-                onChange={(e) => handleCheckboxChange(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <label
-                htmlFor="confirm-optout"
-                className="text-xs text-muted-foreground"
-              >
-                I understand that donating is irreversible.
-              </label>
-            </div>
-          ) : null}
+          {/* Success Status Display */}
+          <div className="flex w-full items-center justify-center gap-3 rounded-xl px-6 py-4 bg-brand-green text-white">
+            <CheckCircle className="h-4 w-4" />
+            <span>Successfully Paid Forward!</span>
+          </div>
 
-          {/* Action Button: Main CTA that processes the opt-out request or shares */}
-          {shouldShowShare ? (
-            <ButtonFullWidth
-              icon={<Share2 className="h-4 w-4" />}
-              variant="brand-green"
-              onClick={handleShareStats}
-              align="center"
-            >
-              Share Your Good Deed
-            </ButtonFullWidth>
-          ) : hasPaidForward ? (
-            <ConfettiButton
-              variant="default"
-              className="w-full h-auto rounded-xl px-6 py-4 bg-brand-green text-white"
-              disabled={confettiActive}
-              autoFire={confettiActive}
-              onConfettiComplete={handleConfettiComplete}
-            >
-              <div className="flex w-full items-center justify-center gap-3">
-                <CheckCircle className="h-4 w-4" />
-                <span>Successfully Paid Forward!</span>
-              </div>
-            </ConfettiButton>
-          ) : (
-            <ButtonFullWidth
-              icon={
-                error ? (
-                  <AlertCircle className="h-4 w-4" />
-                ) : (
-                  <HandHeart className="h-4 w-4" />
-                )
-              }
-              variant={error ? "destructive" : "brand-green"}
-              onClick={handleOptOut}
-              disabled={!hasConfirmed || isOptingOut}
-              align="center"
-            >
-              {isOptingOut
-                ? "Processing..."
-                : error
-                  ? "Failed: Please Try Again"
-                  : "Confirm and Pay It Forward"}
-            </ButtonFullWidth>
-          )}
+          {/* Share Button */}
+          <ButtonFullWidth
+            icon={<Share2 className="h-4 w-4" />}
+            variant="brand-green"
+            onClick={handleShareStats}
+            align="center"
+          >
+            Share Your Good Deed
+          </ButtonFullWidth>
         </div>
       </div>
 
