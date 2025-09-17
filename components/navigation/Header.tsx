@@ -20,6 +20,29 @@ function HeaderInner() {
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
   const [redirectPath, setRedirectPath] = React.useState<string>("/profile");
   const { talentId } = usePrivyAuth({});
+  const [hasToken, setHasToken] = React.useState<boolean>(false);
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        setHasToken(!!localStorage.getItem("tpAuthToken"));
+        const handleUpdate = (e: Event) => {
+          const detail = (e as CustomEvent).detail || {};
+          setHasToken(!!detail.token);
+        };
+        const handleStorage = (e: StorageEvent) => {
+          if (e.key === "tpAuthToken" || e.key === "tpAuthExpiresAt") {
+            setHasToken(!!localStorage.getItem("tpAuthToken"));
+          }
+        };
+        window.addEventListener("tpAuthTokenUpdated", handleUpdate as EventListener);
+        window.addEventListener("storage", handleStorage);
+        return () => {
+          window.removeEventListener("tpAuthTokenUpdated", handleUpdate as EventListener);
+          window.removeEventListener("storage", handleStorage);
+        };
+      }
+    } catch {}
+  }, []);
 
   const handleTitleClick = () => {
     router.push("/leaderboard");
@@ -33,6 +56,7 @@ function HeaderInner() {
     if (
       !talentUuid &&
       !talentId &&
+      !hasToken &&
       (item.label === "Profile" ||
         item.label === "Settings" ||
         item.label === "Badges")

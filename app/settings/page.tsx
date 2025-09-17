@@ -106,6 +106,8 @@ function SettingsContent() {
         if (typeof window !== "undefined") {
           localStorage.setItem("tpAuthToken", inboundToken);
           if (inboundExp) localStorage.setItem("tpAuthExpiresAt", String(inboundExp));
+          console.log("[Settings] inboundToken", inboundToken);
+          console.log("[Settings] inboundExp", inboundExp);
           window.dispatchEvent(new CustomEvent("tpAuthTokenUpdated", { detail: { token: inboundToken, expiresAt: inboundExp } }));
           sessionStorage.setItem("tpAuthJustIssued", "1");
         }
@@ -166,12 +168,14 @@ function SettingsContent() {
     );
   }, [humanityCredentials]);
 
-  // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
+  // Show FarcasterAccessModal only when there's no user context AND no Talent auth token
   useEffect(() => {
-    if (!loadingUserResolution && !talentUuid) {
+    if (!loadingUserResolution && !talentUuid && !tpToken) {
       setShowAuthModal(true);
+    } else {
+      setShowAuthModal(false);
     }
-  }, [loadingUserResolution, talentUuid]);
+  }, [loadingUserResolution, talentUuid, tpToken]);
 
   // Ensure token on mount for authenticated users OR when inside Farcaster mini app
   useEffect(() => {
@@ -253,19 +257,17 @@ function SettingsContent() {
                   </span>
                 </ButtonFullWidth>
               </div>
-              {authenticated && (
-                <div className="flex gap-2 mt-2">
-                  <ButtonFullWidth
-                    variant="muted"
-                    icon={<LogOut className="h-4 w-4" />}
-                    align="left"
-                    onClick={handleLogout}
-                    showRightIcon={false}
-                  >
-                    <span className="font-medium">Log Out</span>
-                  </ButtonFullWidth>
-                </div>
-              )}
+              <div className="flex gap-2 mt-2">
+                <ButtonFullWidth
+                  variant="muted"
+                  icon={<LogOut className="h-4 w-4" />}
+                  align="left"
+                  onClick={handleLogout}
+                  showRightIcon={false}
+                >
+                  <span className="font-medium">Log Out</span>
+                </ButtonFullWidth>
+              </div>
             </div>
           </div>
         </Section>
@@ -293,7 +295,7 @@ function SettingsContent() {
     );
   }
 
-  // Show FarcasterAccessModal for unauthenticated users
+  // Show FarcasterAccessModal for unauthenticated users (but not when a valid token exists)
   if (!talentUuid) {
     return (
       <>
@@ -314,11 +316,13 @@ function SettingsContent() {
             </div>
           </Section>
         </PageContainer>
-        <FarcasterAccessModal
-          open={showAuthModal}
-          onOpenChange={setShowAuthModal}
-          redirectPath="/settings"
-        />
+        {!tpToken ? (
+          <FarcasterAccessModal
+            open={showAuthModal}
+            onOpenChange={setShowAuthModal}
+            redirectPath="/settings"
+          />
+        ) : null}
       </>
     );
   }
@@ -575,29 +579,27 @@ function SettingsContent() {
             </div>
           </div>
         ) : (
-          authenticated && (
-            <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
-              <ButtonFullWidth
-                variant="muted"
-                icon={<LogOut className="h-4 w-4" />}
-                align="left"
-                onClick={handleLogoutClick}
-                showRightIcon={false}
-              >
-                <span className="font-medium">
-                  Log Out
-                  {shortAddress ? (
-                    <>
-                      {" — "}
-                      <span className="text-muted-foreground">{shortAddress}</span>
-                    </>
-                  ) : (
-                    ""
-                  )}
-                </span>
-              </ButtonFullWidth>
-            </div>
-          )
+          <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
+            <ButtonFullWidth
+              variant="muted"
+              icon={<LogOut className="h-4 w-4" />}
+              align="left"
+              onClick={handleLogoutClick}
+              showRightIcon={false}
+            >
+              <span className="font-medium">
+                Log Out
+                {shortAddress ? (
+                  <>
+                    {" — "}
+                    <span className="text-muted-foreground">{shortAddress}</span>
+                  </>
+                ) : (
+                  ""
+                )}
+              </span>
+            </ButtonFullWidth>
+          </div>
         )}
 
         {/* Footer */}

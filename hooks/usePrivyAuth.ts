@@ -100,7 +100,18 @@ export const usePrivyAuth = ({
       try {
         if (typeof window !== "undefined") sessionStorage.removeItem(CONNECT_WALLET_BLOCK_KEY);
       } catch {}
-      void ensureTalentAuthToken();
+      void ensureTalentAuthToken({ force: true });
+      setTimeout(() => {
+        try {
+          if (typeof window !== "undefined") {
+            const hasToken = !!localStorage.getItem("tpAuthToken");
+            const rejected = sessionStorage.getItem("tpAuthRejected") === "1";
+            if (!hasToken && !rejected) {
+              void ensureTalentAuthToken({ force: true });
+            }
+          }
+        } catch {}
+      }, 1000);
     },
     onError: () => {
       try {
@@ -115,6 +126,25 @@ export const usePrivyAuth = ({
       if (onLoginComplete) {
         onLoginComplete();
       }
+      // Immediately attempt SIWE after login completes
+      try {
+        autoRequestedRef.current = false;
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("tpAuthAutoTriggered", "1");
+        }
+        void ensureTalentAuthToken({ force: true });
+        setTimeout(() => {
+          try {
+            if (typeof window !== "undefined") {
+              const hasToken = !!localStorage.getItem("tpAuthToken");
+              const rejected = sessionStorage.getItem("tpAuthRejected") === "1";
+              if (!hasToken && !rejected) {
+                void ensureTalentAuthToken({ force: true });
+              }
+            }
+          } catch {}
+        }, 1000);
+      } catch {}
     },
   });
 
@@ -124,7 +154,6 @@ export const usePrivyAuth = ({
   // Auto-request Talent Protocol auth token after Privy login, once a wallet is present
   useEffect(() => {
     if (!authenticated) return;
-    if (!walletsReady) return;
     if (autoRequestedRef.current) return;
     // If user has rejected signature earlier, don't auto ensure/connect
     const userRejected = (() => {
@@ -150,8 +179,13 @@ export const usePrivyAuth = ({
 
     const primaryAddress = (wallets && wallets[0]?.address) || privyUser?.wallet?.address;
     if (primaryAddress) {
+      // Prevent repeated auto triggers if a login-complete already fired one
+      const alreadyAuto = (() => {
+        try { if (typeof window !== "undefined") return sessionStorage.getItem("tpAuthAutoTriggered") === "1"; } catch {}
+        return false;
+      })();
       autoRequestedRef.current = true;
-      void ensureTalentAuthToken();
+      if (!alreadyAuto) void ensureTalentAuthToken({ force: true });
       return;
     }
 
@@ -161,7 +195,7 @@ export const usePrivyAuth = ({
       try { if (typeof window !== "undefined") sessionStorage.setItem(CONNECT_WALLET_ATTEMPTED_KEY, "1"); } catch {}
       connectWallet({ walletChainType: "ethereum-only" });
     } catch {}
-  }, [authenticated, walletsReady, wallets && wallets[0]?.address, privyUser?.wallet?.address, ensureTalentAuthToken, connectWallet]);
+  }, [authenticated, wallets && wallets[0]?.address, privyUser?.wallet?.address, ensureTalentAuthToken, connectWallet]);
 
   const handleLogin = () => {
     if (typeof window !== "undefined") {
@@ -191,6 +225,7 @@ export const usePrivyAuth = ({
       setGlobalTalentUserId(null);
       router.push("/leaderboard");
     } catch (error) {
+      // Keep error for logout issues
       console.error("Error during logout:", error);
     }
   };
@@ -205,6 +240,7 @@ export const usePrivyAuth = ({
       }
       setGlobalTalentUserId(data.id);
     } catch (error) {
+      // Keep error for user data fetch issues
       console.error("Error fetching user data:", error);
       // Fallback to wallet address
       if (typeof window !== "undefined") {

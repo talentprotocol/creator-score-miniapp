@@ -552,6 +552,90 @@ export class TalentApiClient {
     }
   }
 
+  /**
+   * Get current user's profile using end-user Authorization token only
+   */
+  async getMyProfile(): Promise<NextResponse> {
+    const methodTimer = dtimer("TalentAPI", "getMyProfile");
+
+    const apiKeyError = this.validateApiKey();
+    if (apiKeyError) {
+      methodTimer.end();
+      return createServerErrorResponse(apiKeyError);
+    }
+
+    if (!this.userAuthToken) {
+      methodTimer.end();
+      return createBadRequestResponse("Missing user auth token");
+    }
+
+    try {
+      const urlParams = new URLSearchParams();
+      // No id or account_source — rely solely on Authorization token
+      const data = await this.makeRequest("/profile", urlParams);
+
+      if (!data || !data.profile) {
+        methodTimer.end();
+        return createNotFoundResponse("User not found");
+      }
+
+      const profile = data.profile;
+      const accounts = Array.isArray(profile.accounts) ? profile.accounts : [];
+
+      const farcasterAccount = accounts.find(
+        (acc: { source: string; username?: string }) =>
+          acc.source === "farcaster" && acc.username,
+      );
+      const fid = farcasterAccount ? Number(farcasterAccount.identifier) : null;
+
+      const walletAccount = accounts.find(
+        (acc: { identifier: string; source: string }) =>
+          acc.source === "wallet" &&
+          acc.identifier &&
+          acc.identifier.startsWith("0x"),
+      );
+      const wallet = walletAccount
+        ? walletAccount.identifier
+        : profile.user?.main_wallet || null;
+
+      const githubAccount = accounts.find(
+        (acc: { username?: string; source: string }) =>
+          acc.source === "github" && acc.username,
+      );
+
+      const fname = farcasterAccount?.username || null;
+      const github = githubAccount ? githubAccount.username : null;
+      const talentUuid: string | null = profile.id || null;
+      const rank = profile.rank_position || null;
+
+      const result = {
+        id: talentUuid,
+        fid,
+        wallet,
+        github,
+        fname,
+        rank,
+        display_name: profile.display_name || profile.name || null,
+        image_url: profile.image_url || null,
+        main_wallet_address: profile.main_wallet_address || null,
+        farcaster_primary_wallet_address:
+          profile.farcaster_primary_wallet_address || null,
+        ...profile,
+      };
+
+      methodTimer.end();
+      return NextResponse.json(result, { status: 200 });
+    } catch (error) {
+      logApiError(
+        "getMyProfile",
+        "self",
+        error instanceof Error ? error.message : String(error),
+      );
+      methodTimer.end();
+      return createServerErrorResponse("Failed to fetch current user profile");
+    }
+  }
+
   async getPosts(params: TalentProtocolParams): Promise<NextResponse> {
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {

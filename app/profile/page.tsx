@@ -7,11 +7,15 @@ import { useEffect } from "react";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { PageContainer } from "@/components/common/PageContainer";
 import { Section } from "@/components/common/Section";
+import { useFidToTalentUuid } from "@/hooks/useUserResolution";
+import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 
 export default function ProfilePage() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const { talentId } = usePrivyAuth({});
+  const { talentUuid } = useFidToTalentUuid();
+  const { token: tpToken } = useTalentAuthToken();
   const router = useRouter();
 
   useEffect(() => {
@@ -22,12 +26,18 @@ export default function ProfilePage() {
         router.push(`/${canonical}`);
         return;
       }
-    } else if (talentId) {
+    }
+    if (talentUuid) {
+      router.push(`/${talentUuid}`);
+      return;
+    }
+    if (talentId) {
       router.push(`/${talentId}`);
+      return;
     } else {
       router.push("/leaderboard");
     }
-  }, [user, router, talentId]);
+  }, [user, router, talentId, talentUuid, tpToken]);
 
   return (
     <PageContainer>

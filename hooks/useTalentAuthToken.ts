@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { usePrivy, useSignMessage, useWallets } from "@privy-io/react-auth";
 import { isFarcasterMiniApp, getFarcasterEthereumProvider, signMessageInMiniApp } from "@/lib/client/miniapp";
 import { SiweMessage } from "sign-in-with-ethereum/dist/siwe";
+import { getAddress } from "viem";
 
 type EnsureOptions = {
   enabled?: boolean;
@@ -95,6 +96,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       setLoading(true);
       setError(null);
       setStage("idle");
+      
 
       // If user previously rejected, avoid auto-prompt loops unless forced
       if (typeof window !== "undefined") {
@@ -114,6 +116,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       }
 
       const { token: existing, expiresAt: existingExp } = readFromStorage();
+      
       if (existing && !isExpiringSoon(existingExp)) {
         setToken(existing);
         setExpiresAt(existingExp);
@@ -136,13 +139,15 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
 
       requestingRef.current = true;
 
-      // 1) Get nonce - requires wallet address (and optional chain_id)
+			// 1) Get nonce - requires wallet address (and optional chain_id)
       setStage("nonce");
+      
       // Select EIP-1193 provider based on environment
       let provider: any = undefined;
       let providerSource: "farcaster" | "privy" | "injected" | "unknown" = "unknown";
       if (typeof window !== "undefined") {
         const isMiniApp = (await isFarcasterMiniApp(150)) === true;
+        
         try {
           if (isMiniApp) {
             const farcasterProvider = await getFarcasterEthereumProvider();
@@ -152,14 +157,23 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
             }
           }
         } catch {}
-        // Outside Farcaster mini app, we prefer Privy SDK signing; provider is optional.
-        if (!provider && !isMiniApp) {
-          if (!walletsReady) {
-            // Wait for wallets to settle before proceeding outside Farcaster
-            setStage("rejected");
-            setError("Wallets not ready yet. Please try again.");
-            return null;
-          }
+				// Outside Farcaster mini app, we prefer Privy SDK signing; provider is optional.
+				if (!provider && !isMiniApp) {
+					// If we already have a Privy wallet address, we can proceed without waiting on walletsReady
+					const hasPrivyAddress = Boolean((wallets && wallets[0]?.address) || privyUser?.wallet?.address);
+					if (!hasPrivyAddress) {
+						// Gracefully wait up to 3s for wallets/provider to be ready
+						const wait = async (ms: number) => await new Promise((r) => setTimeout(r, ms));
+						let readyWaited = 0;
+            
+						while (!walletsReady && readyWaited < 3000) {
+							await wait(150);
+							readyWaited += 150;
+						}
+						if (!walletsReady) {
+              
+						}
+					}
           try {
             const privyProvider = (window as any)?.privy?.getEthereumProvider
               ? await (window as any).privy.getEthereumProvider()
@@ -180,6 +194,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       }
 
       // For non-Farcaster flows, provider is optional because we can sign via Privy SDK.
+      
 
       let address: string | undefined;
       if (provider && providerSource === "farcaster") {
@@ -190,12 +205,6 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
           }
           address = accounts?.[0];
         } catch (err: any) {
-          console.error("[useTalentAuthToken] eth_accounts/eth_requestAccounts failed", {
-            providerSource,
-            code: err?.code ?? err?.data?.code,
-            message: err?.message || String(err),
-            raw: err,
-          });
           const code = err?.code ?? err?.data?.code;
           if (code === -32002) {
             setStage("rejected");
@@ -208,15 +217,49 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
           setError(code ? `Wallet error (${code}): ${msg}` : msg);
           return null;
         }
+      } else if (provider && typeof provider.request === "function") {
+        // Try to get address from injected/privy provider without prompting
+        try {
+          const accounts = (await provider.request({ method: "eth_accounts" })) as string[] | undefined;
+          address = accounts?.[0] || address;
+        } catch {}
+        // Fallback to Privy SDK wallet list
+        if (!address) {
+          address = (wallets && wallets[0]?.address) || privyUser?.wallet?.address || address;
+        }
       } else {
         // Outside Farcaster, prefer Privy SDK wallet list
         address = (wallets && wallets[0]?.address) || privyUser?.wallet?.address || address;
       }
+      // If no provider was found (due to wallets not being ready), we can still proceed using Privy SDK signing path below
       if (!address) {
-        setStage("rejected");
-        setError("No wallet account found. Please connect a wallet and try again.");
-        return null;
-      }
+        // Wait briefly for wallet address to populate; also poll provider.eth_accounts when available
+				const wait = async (ms: number) => await new Promise((r) => setTimeout(r, ms));
+				let waited = 0;
+        
+				while (!address && waited < 2000) {
+          let maybe = (wallets && wallets[0]?.address) || privyUser?.wallet?.address;
+          if (!maybe && provider && typeof provider.request === "function") {
+            try {
+              const accs = (await provider.request({ method: "eth_accounts" })) as string[] | undefined;
+              maybe = accs?.[0] || maybe;
+            } catch {}
+          }
+					if (maybe) {
+						address = maybe;
+						break;
+					}
+					await wait(150);
+					waited += 150;
+				}
+				if (!address) {
+					setStage("rejected");
+					setError("No wallet account found. Please connect a wallet and try again.");
+          
+					return null;
+				}
+			}
+      
 
       let chainId = 1;
       try {
@@ -233,25 +276,53 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
           }
         }
       } catch {}
+      
 
+      
       const nonceResp = await fetch("/api/talent-auth/create-nonce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, chain_id: chainId }),
       });
-      if (!nonceResp.ok) throw new Error("Failed to get nonce");
+      if (!nonceResp.ok) {
+        throw new Error("Failed to get nonce");
+      }
       const nonceData = await nonceResp.json();
-      const nonce: string = nonceData?.nonce;
-      if (!nonce) throw new Error("Missing nonce from API");
+      let nonce: string | undefined = nonceData?.nonce;
+      
+      if (!nonce) {
+        // Retry once after a brief delay in case of race conditions
+        await new Promise((r) => setTimeout(r, 250));
+        
+        const retry = await fetch("/api/talent-auth/create-nonce", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address, chain_id: chainId }),
+        });
+        if (!retry.ok) {
+          throw new Error("Failed to get nonce");
+        }
+        const retryData = await retry.json();
+        const retryNonce: string = retryData?.nonce;
+        if (!retryNonce) throw new Error("Missing nonce from API");
+        nonce = retryNonce;
+      }
 
       // 2) Build SIWE message
       let message = "";
       try {
         const domain = (typeof window !== "undefined" && window.location.host) || "creator-score.app";
         const uri = (typeof window !== "undefined" && window.location.origin) || "https://creator-score.app";
+        // Normalize to checksum address for SIWE
+        let checksumAddress = address;
+        try {
+          if (address && address.startsWith("0x") && address.length === 42) {
+            checksumAddress = getAddress(address as `0x${string}`);
+          }
+        } catch {}
         const siwe = new SiweMessage({
           domain,
-          address,
+          address: checksumAddress,
           statement: "Sign in with Talent Protocol.",
           uri,
           version: "1",
@@ -268,6 +339,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       // 4) Sign message
       let signature: string | undefined;
       setStage("sign");
+      
       try {
         // Prefer Mini App SDK wallet signing when present to avoid CORS
         if (providerSource === "farcaster") {
@@ -276,28 +348,48 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
             signature = miniSig;
           }
         }
-        // Outside Farcaster, request signature via Privy SDK first; fallback to provider if available
         if (!signature && providerSource !== "farcaster") {
-          try {
-            const signingAddress = wallets && wallets.length > 0 ? wallets[0]?.address || address : address;
-            const res = await signMessage({ message }, { address: signingAddress });
-            signature = res?.signature;
-          } catch (sdkErr) {
-            // Fallback to provider.personal_sign if available
-            if (provider && typeof provider.request === "function") {
-              const hexMessage = convertUtf8ToHex(message);
-              try {
-                signature = await provider.request({ method: "personal_sign", params: [hexMessage, address] });
-              } catch (innerErr: any) {
+          const hasPrivyWallet = Boolean(
+            (wallets && wallets.find((w) => (w.address || "").toLowerCase() === (address || "").toLowerCase())) ||
+              (privyUser?.wallet?.address || "").toLowerCase() === (address || "").toLowerCase(),
+          );
+          // Strategy: If the signing address belongs to a Privy wallet, use Privy SDK; otherwise use injected provider
+          if (hasPrivyWallet) {
+            try {
+              
+              const res = await signMessage({ message }, { address });
+              signature = res?.signature;
+            } catch (sdkErr) {
+              
+              if (provider && typeof provider.request === "function") {
+                const hexMessage = convertUtf8ToHex(message);
                 try {
-                  signature = await provider.request({ method: "personal_sign", params: [address, hexMessage] });
-                } catch {
-                  signature = await provider.request({ method: "personal_sign", params: [message, address] });
+                  signature = await provider.request({ method: "personal_sign", params: [hexMessage, address] });
+                } catch (innerErr: any) {
+                  try {
+                    signature = await provider.request({ method: "personal_sign", params: [address, hexMessage] });
+                  } catch {
+                    signature = await provider.request({ method: "personal_sign", params: [message, address] });
+                  }
                 }
+              } else {
+                throw sdkErr;
               }
-            } else {
-              throw sdkErr;
             }
+          } else if (provider && typeof provider.request === "function") {
+            
+            const hexMessage = convertUtf8ToHex(message);
+            try {
+              signature = await provider.request({ method: "personal_sign", params: [hexMessage, address] });
+            } catch (innerErr: any) {
+              try {
+                signature = await provider.request({ method: "personal_sign", params: [address, hexMessage] });
+              } catch {
+                signature = await provider.request({ method: "personal_sign", params: [message, address] });
+              }
+            }
+          } else {
+            
           }
         }
       } catch (err: any) {
@@ -315,12 +407,6 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
           setError("Signature was cancelled");
           return null;
         }
-        console.error("[useTalentAuthToken] personal_sign failed", {
-          providerSource,
-          code,
-          message: err?.message || String(err),
-          raw: err,
-        });
         throw err;
       }
       if (!signature) {
@@ -337,6 +423,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
 
       // 5) Exchange for auth token
       setStage("exchange");
+      
       const tokenResp = await fetch("/api/talent-auth/create-auth-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -358,6 +445,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       saveToStorage(newToken, newExp);
       setToken(newToken);
       setExpiresAt(newExp ?? null);
+      
 
       // Mark that auth was just issued so clients bypass local caches once
       try {
@@ -367,7 +455,6 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       } catch {}
       return newToken;
       } catch (e) {
-      console.error("[useTalentAuthToken] ensureTalentAuthToken failed", e);
       setError(e instanceof Error ? e.message : String(e));
       return null;
       } finally {
@@ -396,6 +483,36 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
     setToken(t);
     setExpiresAt(exp);
 
+    // If we have a token but no stored talentUserId, attempt to derive it
+    try {
+      if (typeof window !== "undefined" && t) {
+        const hasTalentId = !!localStorage.getItem("talentUserId");
+        if (!hasTalentId) {
+          // Preferred: fetch current user via Talent API using our server route, then store id
+          (async () => {
+            try {
+              const resp = await fetch("/api/talent-auth/me", {
+                method: "GET",
+                headers: { "x-talent-auth-token": t },
+              });
+              if (resp.ok) {
+                const data = await resp.json();
+                const uuid = data?.id as string | undefined;
+                if (uuid && typeof uuid === "string") {
+                  localStorage.setItem("talentUserId", uuid);
+                  try {
+                    window.dispatchEvent(
+                      new CustomEvent("talentUserIdUpdated", { detail: { talentUserId: uuid } }),
+                    );
+                  } catch {}
+                }
+              }
+            } catch {}
+          })();
+        }
+      }
+    } catch {}
+
     function handleCustomUpdate(e: Event) {
       const detail = (e as CustomEvent).detail || {};
       setToken(detail.token ?? null);
@@ -413,12 +530,17 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
     if (typeof window !== "undefined") {
       window.addEventListener("tpAuthTokenUpdated", handleCustomUpdate as EventListener);
       window.addEventListener("storage", handleStorage);
+      // Also listen for cross-hook talent id updates
+      window.addEventListener("talentUserIdUpdated", () => {
+        // No state to set here; just ensures listeners exist if needed later
+      });
     }
 
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("tpAuthTokenUpdated", handleCustomUpdate as EventListener);
         window.removeEventListener("storage", handleStorage);
+        window.removeEventListener("talentUserIdUpdated", () => {});
       }
     };
   }, [readFromStorage]);
