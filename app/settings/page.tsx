@@ -7,7 +7,6 @@ import { Callout } from "@/components/common/Callout";
 import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
-import { PayItForwardSection } from "@/components/settings/PayItForwardSection";
 import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
 import { ConnectedEmailsSection } from "@/components/settings/ConnectedEmailsSection";
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
@@ -24,7 +23,6 @@ import {
   Settings,
   CheckCircle,
   XCircle,
-  HandHeart,
   Coins,
   Loader2,
   Mail,
@@ -501,12 +499,6 @@ function SettingsContent() {
                   expanded={openSections?.includes("connected-emails") || false}
                 />
               ),
-            },
-            {
-              id: "pay-it-forward",
-              title: "Pay It Forward",
-              icon: <HandHeart className="h-4 w-4" />,
-              content: <PayItForwardSection />,
             },
             {
               id: "proof-of-humanity",
