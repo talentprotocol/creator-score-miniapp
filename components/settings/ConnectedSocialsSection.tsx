@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GitBranch, X } from "lucide-react";
+import { GitBranch, Linkedin, X } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { AccountManagementModal } from "@/components/modals/AccountManagementModal";
@@ -126,13 +126,15 @@ export function ConnectedSocialsSection({
   };
 
   const getConnectedAccount = (source: string) => {
+    console.log("accounts", accounts);
     return accounts.find((account) => account.source === source);
   };
 
   return (
     <div className="space-y-3">
       {socialPlatforms.map((platform) => {
-        const connectedAccount = getConnectedAccount(platform.source);
+        const mappedSource = platform.source === "x_twitter" ? "twitter" : platform.source;
+        const connectedAccount = getConnectedAccount(mappedSource);
 
         return (
           <div
@@ -145,7 +147,6 @@ export function ConnectedSocialsSection({
                 <div className="font-medium text-sm">{platform.name}</div>
                 {connectedAccount && (
                   <div className="text-xs text-muted-foreground">
-                    @
                     {connectedAccount.username ||
                       connectedAccount.handle ||
                       "Unknown"}

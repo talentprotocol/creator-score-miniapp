@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { usePrivy, useSignMessage, useWallets } from "@privy-io/react-auth";
 import { isFarcasterMiniApp, getFarcasterEthereumProvider, signMessageInMiniApp } from "@/lib/client/miniapp";
+import { SiweMessage } from "sign-in-with-ethereum/dist/siwe";
 
 type EnsureOptions = {
   enabled?: boolean;
@@ -243,8 +244,26 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       const nonce: string = nonceData?.nonce;
       if (!nonce) throw new Error("Missing nonce from API");
 
-      // 2) Build message
-      const message = `Sign in with Talent Protocol\nnonce: ${nonce}`;
+      // 2) Build SIWE message
+      let message = "";
+      try {
+        const domain = (typeof window !== "undefined" && window.location.host) || "creator-score.app";
+        const uri = (typeof window !== "undefined" && window.location.origin) || "https://creator-score.app";
+        const siwe = new SiweMessage({
+          domain,
+          address,
+          statement: "Sign in with Talent Protocol.",
+          uri,
+          version: "1",
+          chainId,
+          nonce,
+        });
+        message = siwe.prepareMessage();
+      } catch (e) {
+        setStage("rejected");
+        setError("Failed to construct SIWE message");
+        return null;
+      }
 
       // 4) Sign message
       let signature: string | undefined;
@@ -321,7 +340,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       const tokenResp = await fetch("/api/talent-auth/create-auth-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address, signature, chain_id: chainId }),
+        body: JSON.stringify({ address, chain_id: chainId, signature, siwe_message: message }),
       });
       if (!tokenResp.ok) {
         try {

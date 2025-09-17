@@ -115,5 +115,6 @@ Request body example:
 
 ## Pending Tasks
 
-9. Allow users to connect twitter, tiktok and instagram using Privy
+9. Replace Talent API signature with a siwe signature. The Talent API endpoint is the same but we should pass 3 different params. siwe: true, signature: <the_signed_message>, and the message that was signed. We should keep getting the nonce.
+10. Allow users to connect twitter, tiktok and instagram using Privy
 

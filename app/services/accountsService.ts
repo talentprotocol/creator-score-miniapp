@@ -62,7 +62,7 @@ function mapSocialAccount(social: TalentSocialAccount): SocialAccount {
 
   // Add @ prefix for farcaster and twitter
   if (
-    (src === "farcaster" || src === "twitter") &&
+    (src === "farcaster" || src === "x_twitter") &&
     handle &&
     typeof handle === "string" &&
     !handle.startsWith("@")

@@ -14,7 +14,7 @@ import { NextResponse } from "next/server";
 import { dlog, dtimer } from "./debug";
 
 // API endpoints
-const TALENT_API_BASE = "https://api.talentprotocol.com";
+const TALENT_API_BASE = process.env.NEXT_PUBLIC_TALENT_API_BASE?.trim() || "https://api.talentprotocol.com";
 
 export interface TalentApiClientOptions {
   apiKey?: string;
@@ -1404,15 +1404,17 @@ export async function disconnectEmailAccountWithAuth(
   }
 }
 
-export async function createTalentAuthToken(params: {
-  address: string;
-  signature: string;
-  chain_id: number;
-}): Promise<NextResponse> {
+export async function createTalentAuthToken(
+  params:
+    | { address: string; signature: string; chain_id: number }
+    | { address: string; signature: string; chain_id: number; siwe_message: string },
+): Promise<NextResponse> {
   const apiKeyError = validateTalentApiKey();
   if (apiKeyError) {
     return createServerErrorResponse(apiKeyError);
   }
+
+  console.log("createTalentAuthToken params", Object.keys(params));
 
   try {
     const resp = await fetch(`${TALENT_API_BASE}/auth/create_auth_token`, {
@@ -1423,6 +1425,8 @@ export async function createTalentAuthToken(params: {
       },
       body: JSON.stringify(params),
     });
+
+    console.log("createTalentAuthToken resp status", resp.status);
 
     if (!validateJsonResponse(resp)) {
       throw new Error("Invalid response format from Talent API");
@@ -1435,9 +1439,10 @@ export async function createTalentAuthToken(params: {
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
+    const identifier = "address" in params ? params.address : "unknown";
     logApiError(
       "create_auth_token",
-      params.address,
+      identifier,
       error instanceof Error ? error.message : String(error),
     );
     return createServerErrorResponse("Failed to create auth token");
