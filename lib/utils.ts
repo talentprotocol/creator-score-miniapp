@@ -575,6 +575,71 @@ export function msToSeconds(ms: number): number {
   return Math.floor(ms / 1000);
 }
 
+// Cache duration constants
+export const CACHE_DURATIONS = {
+  PROFILE_DATA: 5 * 60 * 1000, // 5 minutes
+  SOCIAL_ACCOUNTS: 60 * 60 * 1000, // 1 hour
+  POSTS_DATA: 30 * 60 * 1000, // 30 minutes
+  CREDENTIALS_DATA: 30 * 60 * 1000, // 30 minutes
+  SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
+  EXPENSIVE_COMPUTATION: 30 * 60 * 1000, // 30 minutes for expensive computations
+  ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours
+  LEADERBOARD_DATA: 5 * 60 * 1000, // 5 minutes for leaderboard data
+} as const;
+
+
+// Cache data structure for localStorage
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
+
+export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) {
+      return null;
+    }
+
+    const parsed: CachedData<T> = JSON.parse(cached);
+    const age = Date.now() - parsed.timestamp;
+
+    if (age > maxAgeMs) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedData<T>(key: string, data: T): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const cacheData: CachedData<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+  } catch {
+    // Storage quota exceeded or other error, silently fail
+  }
+}
+
 export { resolveTalentUser } from "./user-resolver";
 
 /**
@@ -648,6 +713,33 @@ export async function detectClient(
   // Default to browser environment
   return "browser";
 }
+
+/**
+ * Lightweight sync check for Farcaster Mini App environment.
+ * Uses window flag and falls back to frame SDK context if available.
+ */
+export function isFarcasterMiniAppSync(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    // Primary: Farcaster clients expose a window flag when running as mini app
+    if ((window as unknown as { __FC_MINIAPP__?: boolean }).__FC_MINIAPP__) {
+      return true;
+    }
+    // Heuristic: Warpcast/Farcaster user agents in embedded webviews
+    const ua = (navigator && navigator.userAgent) || "";
+    if (/Warpcast|Farcaster/i.test(ua)) {
+      return true;
+    }
+  } catch {}
+
+  return false;
+}
+
+/**
+ * Robust async detection using official Farcaster Mini App SDK.
+ * Falls back gracefully when SDK isn't available.
+ */
+// Moved async mini app detection to client-only module to keep imports at top-level
 
 /**
  * Open external URL with environment detection

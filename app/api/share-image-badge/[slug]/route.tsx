@@ -1,6 +1,7 @@
 import React from "react";
 import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
+import { getPublicBaseUrl } from "@/lib/constants";
 
 export async function GET(
   req: NextRequest,
@@ -39,8 +40,8 @@ export async function GET(
       );
     }
 
-    // Use NEXT_PUBLIC_URL for asset loading (fonts, images)
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+    // Use normalized public base URL for asset loading (fonts, images)
+    const baseUrl = getPublicBaseUrl() || "https://creatorscore.app";
 
     // Load fonts (reusing existing pattern)
     const [cyRegular, cyBold, cyExtraBold] = await Promise.all([

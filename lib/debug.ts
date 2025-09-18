@@ -5,6 +5,7 @@ export function dlog(
   message: string,
   meta?: Record<string, unknown>,
 ): void {
+  return;
   const timestamp = new Date().toISOString();
   const logData = {
     timestamp,

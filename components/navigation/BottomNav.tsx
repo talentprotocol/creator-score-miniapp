@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
@@ -10,15 +9,44 @@ import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 
 export function BottomNav() {
   const [mounted, setMounted] = React.useState(false);
-  const pathname = usePathname();
+  const [pathname, setPathname] = React.useState<string>("");
   const { navItems, talentUuid } = useUserNavigation();
   const [showModal, setShowModal] = React.useState(false);
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
   const [redirectPath, setRedirectPath] = React.useState<string>("/profile");
   const { talentId } = usePrivyAuth({});
+  const [hasToken, setHasToken] = React.useState<boolean>(false);
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        setHasToken(!!localStorage.getItem("tpAuthToken"));
+        const handleUpdate = (e: Event) => {
+          const detail = (e as CustomEvent).detail || {};
+          setHasToken(!!detail.token);
+        };
+        const handleStorage = (e: StorageEvent) => {
+          if (e.key === "tpAuthToken" || e.key === "tpAuthExpiresAt") {
+            setHasToken(!!localStorage.getItem("tpAuthToken"));
+          }
+        };
+        window.addEventListener("tpAuthTokenUpdated", handleUpdate as EventListener);
+        window.addEventListener("storage", handleStorage);
+        return () => {
+          window.removeEventListener("tpAuthTokenUpdated", handleUpdate as EventListener);
+          window.removeEventListener("storage", handleStorage);
+        };
+      }
+    } catch {}
+  }, []);
 
   React.useEffect(() => {
     setMounted(true);
+    try {
+      const p = (typeof window !== "undefined" ? window.location.pathname : "") || "";
+      setPathname(p);
+    } catch {
+      setPathname("");
+    }
   }, []);
 
   const handleNavClick = (item: (typeof navItems)[0], e: React.MouseEvent) => {
@@ -28,6 +56,7 @@ export function BottomNav() {
     if (
       !talentUuid &&
       !talentId &&
+      !hasToken &&
       (item.label === "Profile" || item.label === "Badges")
     ) {
       e.preventDefault();
@@ -40,8 +69,13 @@ export function BottomNav() {
 
   // Reset clicked state after navigation
   React.useEffect(() => {
+    if (!mounted) return;
     setClickedIcon(null);
-  }, [pathname]);
+    try {
+      const p = (typeof window !== "undefined" ? window.location.pathname : "") || "";
+      setPathname(p);
+    } catch {}
+  }, [mounted]);
 
   // Prevent hydration mismatch by not rendering pathname-dependent content until mounted
   if (!mounted) {
