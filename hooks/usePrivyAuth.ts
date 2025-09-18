@@ -255,6 +255,16 @@ export const usePrivyAuth = ({
   useEffect(() => {
     // Clear state when not authenticated
     if (!authenticated) {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("talentUserId");
+          try {
+            window.dispatchEvent(
+              new CustomEvent("talentUserIdUpdated", { detail: { talentUserId: null } }),
+            );
+          } catch {}
+        }
+      } catch {}
       setGlobalTalentUserId(null);
       return;
     }
