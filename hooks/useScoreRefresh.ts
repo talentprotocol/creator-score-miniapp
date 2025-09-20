@@ -90,10 +90,16 @@ export function useScoreRefresh(
           setTimeout(async () => {
             try {
               await onSuccess();
+              // Reset refreshing state after successful refetch
+              setIsRefreshing(false);
             } catch (error) {
               console.error("Error during score refetch:", error);
+              setIsRefreshing(false);
             }
           }, 1000);
+        } else {
+          // If no onSuccess callback, reset refreshing state immediately
+          setIsRefreshing(false);
         }
       } else {
         const errorMessage = result.error || "Failed to trigger calculation";
