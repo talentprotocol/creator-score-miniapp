@@ -8,6 +8,12 @@ interface TalentScore {
   points?: number;
 }
 
+// Type for earnings data point from Talent API
+interface EarningsDataPoint {
+  readable_value?: string;
+  value?: number;
+}
+
 export interface CreatorProfile {
   id: string;
   display_name?: string;
@@ -115,11 +121,21 @@ export async function getCreatorScoreLeaderboard(
               let totalEarnings: number | undefined;
               if (earningsResponse.ok) {
                 const earningsData = await earningsResponse.json();
-                // Extract readable_value from the data_points array
-                const dataPoint = earningsData.data_points?.[0];
-                totalEarnings = dataPoint?.readable_value
-                  ? parseFloat(dataPoint.readable_value)
-                  : undefined;
+                // Sum all readable_value from the data_points array (user can have earnings from multiple accounts)
+                const dataPoints = earningsData.data_points || [];
+                totalEarnings = dataPoints.reduce(
+                  (sum: number, dataPoint: EarningsDataPoint) => {
+                    const value = dataPoint?.readable_value
+                      ? parseFloat(dataPoint.readable_value)
+                      : 0;
+                    return sum + (isNaN(value) ? 0 : value);
+                  },
+                  0,
+                );
+                // Set to undefined if no valid data points found
+                if (totalEarnings === 0 && dataPoints.length === 0) {
+                  totalEarnings = undefined;
+                }
               }
 
               // Extract Creator Score from scores array (same logic as search hook)
@@ -238,11 +254,21 @@ export async function getUserProfileData(
 
       if (earningsResponse.ok) {
         const earningsData = await earningsResponse.json();
-        // Extract readable_value from the data_points array
-        const dataPoint = earningsData.data_points?.[0];
-        totalEarnings = dataPoint?.readable_value
-          ? parseFloat(dataPoint.readable_value)
-          : undefined;
+        // Sum all readable_value from the data_points array (user can have earnings from multiple accounts)
+        const dataPoints = earningsData.data_points || [];
+        totalEarnings = dataPoints.reduce(
+          (sum: number, dataPoint: EarningsDataPoint) => {
+            const value = dataPoint?.readable_value
+              ? parseFloat(dataPoint.readable_value)
+              : 0;
+            return sum + (isNaN(value) ? 0 : value);
+          },
+          0,
+        );
+        // Set to undefined if no valid data points found
+        if (totalEarnings === 0 && dataPoints.length === 0) {
+          totalEarnings = undefined;
+        }
       }
     } catch (error) {
       console.error(`Error fetching earnings for user ${talentUuid}:`, error);

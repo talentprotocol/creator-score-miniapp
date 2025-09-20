@@ -267,10 +267,7 @@ function SettingsContent() {
               title: "Account Settings",
               icon: <Settings className="h-4 w-4" />,
               content: (
-                <AccountSettingsSection
-                  settings={settings}
-                  onAction={performAction}
-                />
+                <AccountSettingsSection />
               ),
             },
           ]}
