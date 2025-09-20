@@ -5,9 +5,7 @@ import "@coinbase/onchainkit/styles.css";
 import { Providers } from "./providers";
 import { Header } from "@/components/navigation/Header";
 import { BottomNav } from "@/components/navigation/BottomNav";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { SwipeWrapper } from "@/components/common/SwipeWrapper";
-// import { HowToEarnModalHandler } from "@/components/common/HowToEarnModalHandler";
 import {
   getPageMetadata,
   getFrameMetadata,
@@ -15,6 +13,7 @@ import {
 } from "@/lib/app-metadata";
 import localFont from "next/font/local";
 import { GeistSans } from "geist/font/sans";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -108,7 +107,6 @@ export default function RootLayout({
                 </main>
               </SwipeWrapper>
               <BottomNav />
-              {/* <HowToEarnModalHandler /> */}
             </ErrorBoundary>
           </Providers>
         </div>

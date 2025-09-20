@@ -3,7 +3,6 @@ import { BOOST_CONFIG, PROJECT_ACCOUNTS_TO_EXCLUDE } from "@/lib/constants";
 import { unstable_cache } from "next/cache";
 import { CACHE_KEYS, CACHE_DURATION_1_HOUR } from "@/lib/cache-keys";
 import { LeaderboardSnapshotService } from "./leaderboardSnapshotService";
-import { supabase } from "@/lib/supabase-client";
 
 type Profile = {
   id: string;
@@ -107,38 +106,31 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
     (profile) => !PROJECT_ACCOUNTS_TO_EXCLUDE.includes(profile.id),
   );
 
-  // Fetch opt-out status for all users (for display styling)
-  let optedOutUserIds: string[] = [];
-  let optedInUserIds: string[] = [];
-  let undecidedUserIds: string[] = [];
+  // Fetch opt-out status from leaderboard_snapshots (single source of truth)
+  let snapshotMap = new Map<
+    string,
+    { opt_out: boolean | null; rewards_amount: number; rank: number }
+  >();
   try {
-    const { data, error } = await supabase
-      .from("user_preferences")
-      .select("talent_uuid, rewards_decision");
-
-    if (error) {
-      console.error("Error fetching user preferences:", error);
-      optedOutUserIds = [];
-      optedInUserIds = [];
-      undecidedUserIds = [];
-    } else {
-      optedOutUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_out")
-          .map((row) => row.talent_uuid) ?? [];
-      optedInUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === "opted_in")
-          .map((row) => row.talent_uuid) ?? [];
-      undecidedUserIds =
-        data
-          ?.filter((row) => row.rewards_decision === null)
-          .map((row) => row.talent_uuid) ?? [];
+    const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
+    if (snapshotExists) {
+      const snapshots = await LeaderboardSnapshotService.getSnapshot();
+      if (snapshots && snapshots.length > 0) {
+        snapshotMap = new Map(
+          snapshots.map((snapshot) => [
+            snapshot.talent_uuid,
+            {
+              opt_out: snapshot.opt_out,
+              rewards_amount: snapshot.rewards_amount,
+              rank: snapshot.rank,
+            },
+          ]),
+        );
+      }
     }
-  } catch {
-    optedOutUserIds = [];
-    optedInUserIds = [];
-    undecidedUserIds = [];
+  } catch (error) {
+    console.error("Error fetching leaderboard snapshots:", error);
+    snapshotMap = new Map();
   }
 
   // Map to basic entries with opt-out status (boost logic removed for now)
@@ -149,14 +141,14 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
           .map((s) => s.points ?? 0)
       : [];
     const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
-    const isOptedOut = optedOutUserIds.includes(profile.id);
-    const isOptedIn = optedInUserIds.includes(profile.id);
-    // Users with rewards_decision = null OR without a record in user_preferences are considered "undecided"
-    const isUndecided =
-      undecidedUserIds.includes(profile.id) ||
-      (!optedOutUserIds.includes(profile.id) &&
-        !optedInUserIds.includes(profile.id) &&
-        !undecidedUserIds.includes(profile.id));
+
+    // Get snapshot data for this profile
+    const snapshot = snapshotMap.get(profile.id);
+
+    // Use opt_out status from snapshot data
+    const isOptedOut = snapshot?.opt_out === true;
+    const isOptedIn = snapshot?.opt_out === false;
+    const isUndecided = snapshot?.opt_out === null; // NULL means no decision made
 
     return {
       name: profile.display_name || profile.name || "Unknown",
@@ -168,103 +160,11 @@ export async function getTop200LeaderboardEntries(): Promise<LeaderboardResponse
       isOptedOut,
       isOptedIn,
       isUndecided,
-      baseReward: 0, // Will be set from snapshot
-      boostedReward: 0, // Will be set from snapshot
-      rank: 0, // Will be set from snapshot
+      baseReward: snapshot?.rewards_amount || 0,
+      boostedReward: snapshot?.rewards_amount || 0,
+      rank: snapshot?.rank || -1, // Use snapshot rank, -1 if not found
     };
   });
-
-  // Apply snapshot data if available
-  try {
-    const snapshotExists = await LeaderboardSnapshotService.snapshotExists();
-    if (snapshotExists) {
-      console.log(
-        "[ScoreLeaderboardService] Using snapshot data for rank/rewards",
-      );
-
-      const snapshots = await LeaderboardSnapshotService.getSnapshot();
-      if (snapshots && snapshots.length > 0) {
-        // Create a map for quick lookup
-        const snapshotMap = new Map(
-          snapshots.map((snapshot) => [snapshot.talent_uuid, snapshot]),
-        );
-
-        // Debug: Log first few snapshots and their UUIDs
-        console.log(
-          "[ScoreLeaderboardService] First 3 snapshots:",
-          snapshots
-            .slice(0, 3)
-            .map((s) => ({ talent_uuid: s.talent_uuid, rank: s.rank })),
-        );
-        console.log(
-          "[ScoreLeaderboardService] Snapshot map keys (first 5):",
-          Array.from(snapshotMap.keys()).slice(0, 5),
-        );
-
-        // Replace rank and rewards_amount with snapshot data
-        let matchedCount = 0;
-        let unmatchedCount = 0;
-        mapped.forEach((entry) => {
-          const snapshot = snapshotMap.get(entry.talent_protocol_id);
-          if (snapshot) {
-            entry.rank = snapshot.rank;
-            entry.baseReward = snapshot.rewards_amount;
-            entry.boostedReward = snapshot.rewards_amount;
-            matchedCount++;
-          } else {
-            // Debug: Log unmatched entries
-            if (unmatchedCount < 5) {
-              console.log("[ScoreLeaderboardService] Unmatched entry:", {
-                talent_protocol_id: entry.talent_protocol_id,
-                talent_protocol_id_type: typeof entry.talent_protocol_id,
-                talent_protocol_id_length: entry.talent_protocol_id?.length,
-                name: entry.name,
-                hasSnapshot: snapshotMap.has(entry.talent_protocol_id),
-                // Check if it exists with different UUID formats
-                hasSnapshotWithDashes: snapshotMap.has(
-                  entry.talent_protocol_id?.replace(/-/g, ""),
-                ),
-                hasSnapshotWithoutDashes: snapshotMap.has(
-                  entry.talent_protocol_id?.replace(
-                    /(.{8})(.{4})(.{4})(.{4})(.{12})/,
-                    "$1-$2-$3-$4-$5",
-                  ),
-                ),
-              });
-            }
-            unmatchedCount++;
-            // Show "-" instead of 0 when snapshot data not available
-            entry.rank = -1; // Use -1 to indicate "no rank available"
-            entry.baseReward = 0;
-            entry.boostedReward = 0;
-          }
-        });
-
-        console.log(
-          `[ScoreLeaderboardService] Updated ${matchedCount} entries with snapshot data, ${unmatchedCount} unmatched`,
-        );
-      }
-    } else {
-      console.log("[ScoreLeaderboardService] No snapshot exists, showing N/A");
-      // Set all entries to N/A when no snapshot exists
-      mapped.forEach((entry) => {
-        entry.rank = -1; // Use -1 to indicate "no rank available"
-        entry.baseReward = 0;
-        entry.boostedReward = 0;
-      });
-    }
-  } catch (error) {
-    console.error(
-      "[ScoreLeaderboardService] Error applying snapshot data:",
-      error,
-    );
-    // Set all entries to N/A on error
-    mapped.forEach((entry) => {
-      entry.rank = -1; // Use -1 to indicate "no rank available"
-      entry.baseReward = 0;
-      entry.boostedReward = 0;
-    });
-  }
 
   return {
     entries: mapped,

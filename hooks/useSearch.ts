@@ -120,95 +120,10 @@ async function searchProfiles({
   }
 }
 
-/**
- * Get top creators by Creator Score (used for initial page load)
- */
-async function getTopCreators({
-  page = 1,
-  perPage = 10,
-}: {
-  page?: number;
-  perPage?: number;
-} = {}): Promise<{
-  results: SearchResult[];
-  hasMore: boolean;
-  totalCount: number;
-}> {
-  try {
-    const response = await fetch(
-      `/api/leaderboard/basic?page=${page}&per_page=${perPage}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      let errorMessage = "Failed to fetch top creators";
-
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = response.statusText || errorMessage;
-      }
-
-      // Provide user-friendly error messages
-      if (response.status >= 500) {
-        throw new Error(
-          "Leaderboard service is temporarily unavailable. Please try again later",
-        );
-      } else if (response.status === 429) {
-        throw new Error(
-          "Too many requests. Please wait a moment and try again",
-        );
-      } else {
-        throw new Error(errorMessage);
-      }
-    }
-
-    const json = await response.json();
-
-    // Handle cases where API returns success but with error field
-    if (json.error) {
-      throw new Error(json.error);
-    }
-
-    // Transform leaderboard entries to SearchResult format
-    const results: SearchResult[] = (json.entries || []).map(
-      (entry: {
-        talent_protocol_id?: string;
-        id: string;
-        name: string;
-        pfp?: string;
-        score: number;
-      }) => ({
-        id: entry.talent_protocol_id || entry.id,
-        name: entry.name,
-        avatarUrl: entry.pfp,
-        score: entry.score,
-      }),
-    );
-
-    return {
-      results,
-      hasMore: results.length === perPage, // If we got full page, assume more exist
-      totalCount: json.totalCreators || results.length,
-    };
-  } catch (error) {
-    // Re-throw with preserved error message for UI handling
-    throw error instanceof Error
-      ? error
-      : new Error("An unexpected error occurred while loading top creators");
-  }
-}
-
 export function useSearch(loadSearch: boolean) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(true); // Start with loading for initial top creators
+  const [loading, setLoading] = useState(false); // Start with no loading - show empty state
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -329,71 +244,17 @@ export function useSearch(loadSearch: boolean) {
   );
 
   const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
+    if (loading || !hasMore || !query.trim()) return;
 
     const nextPage = page + 1;
-
-    if (query.trim()) {
-      // Load more search results
-      await performSearch(query, nextPage, true);
-    } else {
-      // Load more top creators
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getTopCreators({ page: nextPage, perPage: 10 });
-        setResults((prev) => [...prev, ...data.results]);
-        setHasMore(data.hasMore);
-        setTotalCount(data.totalCount);
-        setPage(nextPage);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load more creators",
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
+    await performSearch(query, nextPage, true);
   }, [loading, hasMore, query, page, performSearch]);
 
   const retry = useCallback(async () => {
     if (query.trim()) {
       await performSearch(query, 1, false, true);
-    } else {
-      await loadTopCreators(true);
     }
   }, [query, performSearch]);
-
-  const loadTopCreators = useCallback(async (isRetry: boolean = false) => {
-    try {
-      setLoading(true);
-      if (!isRetry) {
-        setError(null);
-        setRetryCount(0);
-      }
-
-      const data = await getTopCreators({ page: 1, perPage: 10 });
-      setResults(data.results);
-      setHasMore(data.hasMore);
-      setTotalCount(data.totalCount);
-      setPage(1);
-      setError(null);
-      setRetryCount(0);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load top creators";
-      setError(errorMessage);
-      setResults([]);
-      setHasMore(false);
-      setTotalCount(0);
-
-      if (isRetry) {
-        setRetryCount((prev) => prev + 1);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const clearSearch = useCallback(() => {
     setQuery("");
@@ -409,13 +270,6 @@ export function useSearch(loadSearch: boolean) {
       clearTimeout(debounceTimer.current);
     }
   }, []);
-
-  // Load top creators on mount
-  useEffect(() => {
-    if (loadSearch) {
-      loadTopCreators();
-    }
-  }, [loadSearch]); // Only run once on mount
 
   // Cleanup debounce timer on unmount
   useEffect(() => {

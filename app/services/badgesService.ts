@@ -19,9 +19,8 @@ import {
 import {
   calculateTotalRewards,
   getEthUsdcPrice,
-  parseFormattedNumber,
+  calculateTotalCollectors,
 } from "@/lib/utils";
-import { getCollectorCountCredentials } from "@/lib/total-earnings-config";
 
 import type {
   BadgeState,
@@ -294,14 +293,14 @@ async function computePayItForwardBadges(
   const content = getBadgeContent("paid-forward");
   if (!content) return [];
 
-  // Check if user has opted out of rewards (Pay It Forward action)
-  const { data: prefs } = await supabase
-    .from("user_preferences")
-    .select("rewards_decision")
+  // Check if user has opted out of rewards (Pay It Forward action) from leaderboard_snapshots
+  const { data: snapshot } = await supabase
+    .from("leaderboard_snapshots")
+    .select("opt_out, rewards_amount")
     .eq("talent_uuid", talentUuid)
     .single();
 
-  const isOptedOut = prefs?.rewards_decision === "opted_out";
+  const isOptedOut = snapshot?.opt_out === true;
 
   if (!isOptedOut) {
     // User hasn't opted out, so they should get a locked badge (level 0)
@@ -320,33 +319,15 @@ async function computePayItForwardBadges(
     return [badge];
   }
 
-  // User has opted out - get rewards amount from leaderboard snapshot
-  try {
-    const { data: snapshot } = await supabase
-      .from("leaderboard_snapshots")
-      .select("rewards_amount")
-      .eq("talent_uuid", talentUuid)
-      .single();
+  // User has opted out - use rewards amount from the snapshot data already fetched
+  const donationAmount = snapshot?.rewards_amount || 0;
 
-    // Use snapshot rewards amount (the amount they're donating by opting out)
-    const donationAmount = snapshot?.rewards_amount || 0;
-
-    const badge = createDynamicBadge(
-      content,
-      donationAmount,
-      content.levelThresholds,
-    );
-    return [badge];
-  } catch (error) {
-    console.error(
-      "[computePayItForwardBadges] Error fetching snapshot rewards:",
-      error,
-    );
-
-    // Fallback: if snapshot query fails, show 0 donation
-    const badge = createDynamicBadge(content, 0, content.levelThresholds);
-    return [badge];
-  }
+  const badge = createDynamicBadge(
+    content,
+    donationAmount,
+    content.levelThresholds,
+  );
+  return [badge];
 }
 
 async function computeTotalCollectorsBadges(
@@ -357,21 +338,8 @@ async function computeTotalCollectorsBadges(
 
   if (!content) return [];
 
-  // Get collector credential slugs from configuration
-  const collectorCredentialSlugs = getCollectorCountCredentials();
-
-  // Sum collectors from all specified credentials
-  let totalCollectors = 0;
-  for (const group of credentials) {
-    for (const point of group.points) {
-      if (point.slug && collectorCredentialSlugs.includes(point.slug)) {
-        const value = parseFormattedNumber(
-          point.readable_value?.toString() ?? "0",
-        );
-        totalCollectors += value;
-      }
-    }
-  }
+  // Use shared utility for consistent collector calculation
+  const { totalCollectors } = calculateTotalCollectors(credentials);
 
   const badge = createDynamicBadge(
     content,

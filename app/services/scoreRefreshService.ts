@@ -1,4 +1,4 @@
-import { BOOST_CONFIG } from "@/lib/constants";
+import { BOOST_CONFIG, getPublicBaseUrl } from "@/lib/constants";
 import { getDataPointsSum } from "./dataPointsService";
 import type { TokenBalanceData } from "@/lib/types";
 
@@ -40,8 +40,8 @@ export async function triggerScoreCalculation(
       // Client-side: use relative path to ensure we call our own API routes
       baseUrl = "";
     } else {
-      // Server-side: prioritize NEXT_PUBLIC_URL over VERCEL_URL for consistent behavior
-      baseUrl = process.env.NEXT_PUBLIC_URL || "";
+      // Server-side: build absolute URL with protocol
+      baseUrl = getPublicBaseUrl();
     }
 
     const requestBody = {

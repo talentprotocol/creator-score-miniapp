@@ -154,9 +154,9 @@ export function formatNumberSmart(num: number): string {
       // 1-digit B: always show 2 decimals
       return `${billions.toFixed(2)}B`;
     } else {
-      // 2+ digit B: show max 1 decimal
+      // 2+ digit B: always show max 1 decimal
       const rounded = Math.round(billions * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}B`;
+      return `${rounded.toFixed(1)}B`;
     }
   }
 
@@ -167,9 +167,9 @@ export function formatNumberSmart(num: number): string {
       // 1-digit M: always show 2 decimals
       return `${millions.toFixed(2)}M`;
     } else {
-      // 2+ digit M: show max 1 decimal
+      // 2+ digit M: always show max 1 decimal
       const rounded = Math.round(millions * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+      return `${rounded.toFixed(1)}M`;
     }
   }
 
@@ -180,9 +180,9 @@ export function formatNumberSmart(num: number): string {
       // 1-digit K: always show 2 decimals
       return `${thousands.toFixed(2)}K`;
     } else {
-      // 2+ digit K: show max 1 decimal
+      // 2+ digit K: always show max 1 decimal
       const rounded = Math.round(thousands * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      return `${rounded.toFixed(1)}K`;
     }
   }
 
@@ -280,8 +280,123 @@ export async function calculateTotalRewards(
   return total;
 }
 
+import {
+  getCollectorCountCredentials,
+  getPlatformDisplayName,
+} from "@/lib/total-earnings-config";
+
 export function formatRewardValue(num: number): string {
   return formatNumberWithSuffix(num);
+}
+
+/**
+ * Calculate total collectors from credentials with proper business logic
+ * Handles double-counting prevention and Zora credential combination
+ */
+export function calculateTotalCollectors(
+  credentials: Array<{
+    points: Array<{
+      slug?: string;
+      readable_value: string | null;
+    }>;
+  }>,
+): {
+  totalCollectors: number;
+  platformCounts: Map<string, number>;
+} {
+  // Get collector credential slugs from configuration
+  const collectorCredentialSlugs = getCollectorCountCredentials();
+
+  // First pass: collect raw data by slug for business logic
+  const rawCollectorData = new Map<string, number>();
+
+  credentials.forEach((credentialGroup) => {
+    credentialGroup.points.forEach((point) => {
+      if (!collectorCredentialSlugs.includes(point.slug || "")) {
+        return;
+      }
+      if (!point.readable_value) return;
+
+      // Parse collector count value
+      const cleanValue = point.readable_value;
+      let value: number;
+      const numericValue = cleanValue.replace(/[^0-9.KM-]+/g, "");
+
+      if (numericValue.includes("K")) {
+        value = parseFloat(numericValue.replace("K", "")) * 1000;
+      } else if (numericValue.includes("M")) {
+        value = parseFloat(numericValue.replace("M", "")) * 1000000;
+      } else {
+        value = parseFloat(numericValue);
+      }
+
+      if (isNaN(value)) return;
+
+      // Store raw data by slug
+      rawCollectorData.set(point.slug || "", value);
+    });
+  });
+
+  // Business logic: adjust for double-counting using slugs
+  const mirrorCollectors =
+    rawCollectorData.get("mirror_unique_collectors") || 0;
+  const paragraphCollectors =
+    rawCollectorData.get("paragraph_unique_collectors") || 0;
+  const openseaCollectors =
+    rawCollectorData.get("opensea_nft_total_owners") || 0;
+
+  // Calculate adjusted NFTs count (subtract both Mirror and Paragraph to avoid double-counting)
+  const adjustedOpenseaCollectors = Math.max(
+    0,
+    openseaCollectors - mirrorCollectors - paragraphCollectors,
+  );
+
+  // Combine Zora credentials into single value
+  const zoraUniqueHolders = rawCollectorData.get("zora_unique_holders") || 0;
+  const zoraCreatorCoinHolders =
+    rawCollectorData.get("zora_creator_coin_unique_holders") || 0;
+  const combinedZoraHolders = zoraUniqueHolders + zoraCreatorCoinHolders;
+
+  // Second pass: populate UI-friendly map with adjusted values
+  const platformCollectorCounts = new Map<string, number>();
+
+  rawCollectorData.forEach((value, slug) => {
+    const platformName = getPlatformDisplayName(slug);
+
+    if (slug === "opensea_nft_total_owners") {
+      // Use adjusted value for NFTs (OpenSea minus Mirror minus Paragraph collectors)
+      platformCollectorCounts.set(platformName, adjustedOpenseaCollectors);
+    } else if (slug === "mirror_unique_collectors") {
+      // Include Mirror collectors separately
+      platformCollectorCounts.set(platformName, value);
+    } else if (slug === "paragraph_unique_collectors") {
+      // Include Paragraph collectors separately
+      platformCollectorCounts.set(platformName, value);
+    } else if (
+      slug === "zora_unique_holders" ||
+      slug === "zora_creator_coin_unique_holders"
+    ) {
+      // Only process Zora once (when we encounter the first Zora credential)
+      if (slug === "zora_unique_holders") {
+        platformCollectorCounts.set("Zora", combinedZoraHolders);
+      }
+      // Skip the second Zora credential to avoid duplication
+    } else {
+      // Use original value for other platforms
+      platformCollectorCounts.set(platformName, value);
+    }
+  });
+
+  // Calculate total collectors (now without double-counting)
+  const totalCollectors = Array.from(platformCollectorCounts.values()).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+
+  return {
+    totalCollectors,
+    platformCounts: platformCollectorCounts,
+  };
 }
 
 export function truncateAddress(addr: string): string {
@@ -357,7 +472,7 @@ export function formatReadableValue(
         return `$${billions.toFixed(2)}B`;
       } else {
         const rounded = Math.round(billions * 10) / 10;
-        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}B`;
+        return `$${rounded.toFixed(1)}B`;
       }
     }
     if (num >= 1_000_000) {
@@ -366,7 +481,7 @@ export function formatReadableValue(
         return `$${millions.toFixed(2)}M`;
       } else {
         const rounded = Math.round(millions * 10) / 10;
-        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}M`;
+        return `$${rounded.toFixed(1)}M`;
       }
     }
     if (num >= 10_000) {
@@ -375,7 +490,7 @@ export function formatReadableValue(
         return `$${thousands.toFixed(2)}K`;
       } else {
         const rounded = Math.round(thousands * 10) / 10;
-        return `$${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+        return `$${rounded.toFixed(1)}K`;
       }
     }
     return Number.isInteger(num) ? `$${num.toFixed(0)}` : `$${num.toFixed(1)}`;
@@ -402,7 +517,7 @@ export function formatReadableValue(
         return `${thousands.toFixed(2)}K`;
       } else {
         const rounded = Math.round(thousands * 10) / 10;
-        return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+        return `${rounded.toFixed(1)}K`;
       }
     }
     return Math.round(num).toString();
@@ -416,7 +531,7 @@ export function formatReadableValue(
         return `${thousands.toFixed(2)}K`;
       } else {
         const rounded = Math.round(thousands * 10) / 10;
-        return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+        return `${rounded.toFixed(1)}K`;
       }
     }
     return num >= 1 ? num.toFixed(2) : num.toFixed(3);
@@ -429,7 +544,7 @@ export function formatReadableValue(
       return `${thousands.toFixed(2)}K`;
     } else {
       const rounded = Math.round(thousands * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      return `${rounded.toFixed(1)}K`;
     }
   }
   // For small generic numbers, trim excessive precision
@@ -458,6 +573,71 @@ export function createCachedFunction<TArgs extends readonly unknown[], TReturn>(
 // Helper to convert milliseconds to seconds for unstable_cache
 export function msToSeconds(ms: number): number {
   return Math.floor(ms / 1000);
+}
+
+// Cache duration constants
+export const CACHE_DURATIONS = {
+  PROFILE_DATA: 5 * 60 * 1000, // 5 minutes
+  SOCIAL_ACCOUNTS: 60 * 60 * 1000, // 1 hour
+  POSTS_DATA: 30 * 60 * 1000, // 30 minutes
+  CREDENTIALS_DATA: 30 * 60 * 1000, // 30 minutes
+  SCORE_BREAKDOWN: 30 * 60 * 1000, // 30 minutes (until profile updates)
+  EXPENSIVE_COMPUTATION: 30 * 60 * 1000, // 30 minutes for expensive computations
+  ETH_PRICE: 24 * 60 * 60 * 1000, // 24 hours
+  LEADERBOARD_DATA: 5 * 60 * 1000, // 5 minutes for leaderboard data
+} as const;
+
+
+// Cache data structure for localStorage
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
+
+export function getCachedData<T>(key: string, maxAgeMs: number): T | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) {
+      return null;
+    }
+
+    const parsed: CachedData<T> = JSON.parse(cached);
+    const age = Date.now() - parsed.timestamp;
+
+    if (age > maxAgeMs) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedData<T>(key: string, data: T): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const cacheData: CachedData<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+
+    // Ensure consistent cache key format
+    const cacheKey = key.startsWith("cache:") ? key : `cache:${key}`;
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+  } catch {
+    // Storage quota exceeded or other error, silently fail
+  }
 }
 
 export { resolveTalentUser } from "./user-resolver";
@@ -533,6 +713,33 @@ export async function detectClient(
   // Default to browser environment
   return "browser";
 }
+
+/**
+ * Lightweight sync check for Farcaster Mini App environment.
+ * Uses window flag and falls back to frame SDK context if available.
+ */
+export function isFarcasterMiniAppSync(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    // Primary: Farcaster clients expose a window flag when running as mini app
+    if ((window as unknown as { __FC_MINIAPP__?: boolean }).__FC_MINIAPP__) {
+      return true;
+    }
+    // Heuristic: Warpcast/Farcaster user agents in embedded webviews
+    const ua = (navigator && navigator.userAgent) || "";
+    if (/Warpcast|Farcaster/i.test(ua)) {
+      return true;
+    }
+  } catch {}
+
+  return false;
+}
+
+/**
+ * Robust async detection using official Farcaster Mini App SDK.
+ * Falls back gracefully when SDK isn't available.
+ */
+// Moved async mini app detection to client-only module to keep imports at top-level
 
 /**
  * Open external URL with environment detection
@@ -668,7 +875,7 @@ export function formatWithK(value: number): string {
       return `${thousands.toFixed(2)}K`;
     } else {
       const rounded = Math.round(thousands * 10) / 10;
-      return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}K`;
+      return `${rounded.toFixed(1)}K`;
     }
   }
   return value.toString();

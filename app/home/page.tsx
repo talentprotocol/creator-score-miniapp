@@ -4,7 +4,7 @@ import * as React from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useResolvedTalentProfile } from "@/hooks/useResolvedTalentProfile";
-import { useLeaderboardData } from "@/hooks/useLeaderboardOptimized";
+import { useRewardsData } from "@/hooks/useRewardsData";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { CreatorScoreCard, RewardsBoostsCard } from "@/components/home";
@@ -19,8 +19,7 @@ export default function HomePage() {
   const { talentUuid } = useFidToTalentUuid();
   const { creatorScore, loading: scoreLoading } = useResolvedTalentProfile();
 
-  const { entries: topCreators, loading: creatorsLoading } =
-    useLeaderboardData();
+  const { entries: topCreators, loading: creatorsLoading } = useRewardsData();
 
   return (
     <PageContainer>

@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { PfpBorder } from "@/components/ui/pfp-border";
 import { cn } from "@/lib/utils";
 import posthog from "posthog-js";
-import { useUserRewardsDecision } from "@/hooks/useUserRewardsDecision";
+// useUserRewardsDecision hook was deleted - using static behavior for rewards page
 
 interface MyRewardsProps {
   rewards: string;
@@ -18,6 +18,7 @@ interface MyRewardsProps {
   onInfoClick?: () => void;
   onOptOutBadgeClick: () => void;
   talentUuid?: string | null;
+  rewardsDecision?: "opted_in" | "opted_out" | null;
 }
 
 export function MyRewards({
@@ -29,15 +30,10 @@ export function MyRewards({
   rank,
   onInfoClick,
   onOptOutBadgeClick,
-  talentUuid,
+  rewardsDecision,
 }: MyRewardsProps) {
   const isTop200 =
     rank !== undefined && (rank === -1 || (rank > 0 && rank <= 200));
-
-  // Get rewards decision status
-  const {
-    data: { rewardsDecision },
-  } = useUserRewardsDecision(talentUuid || null);
 
   return (
     <div className="w-full bg-brand-purple-light rounded-lg">

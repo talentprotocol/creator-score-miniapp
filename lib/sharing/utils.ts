@@ -115,6 +115,8 @@ export function sanitizeFilename(filename: string): string {
  * @param baseUrl - Base URL for relative paths
  * @returns Full image URL
  */
+import { getPublicBaseUrl } from "@/lib/constants";
+
 export function resolveImageUrl(imageUrl: string, baseUrl?: string): string {
   // If already absolute, return as-is
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
@@ -129,8 +131,8 @@ export function resolveImageUrl(imageUrl: string, baseUrl?: string): string {
     if (typeof window !== "undefined") {
       base = window.location.origin;
     } else {
-      // Server-side: prioritize NEXT_PUBLIC_URL over VERCEL_URL for consistent behavior
-      base = process.env.NEXT_PUBLIC_URL || "https://creatorscore.app";
+      // Server-side: use normalized public base URL
+      base = getPublicBaseUrl() || "https://creatorscore.app";
     }
   }
 

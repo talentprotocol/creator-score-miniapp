@@ -5,6 +5,8 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { resolveFidToTalentUuid } from "@/lib/user-resolver";
 import { usePrivyAuth } from "./usePrivyAuth";
+import { useTalentAuthToken } from "./useTalentAuthToken";
+import { getFarcasterEthereumProvider } from "@/lib/client/miniapp";
 
 // Session-level cache for user resolution to avoid repeated API calls
 // Maps user identifiers (fid, wallet, etc.) to Talent Protocol UUID
@@ -34,6 +36,7 @@ export function useFidToTalentUuid() {
 
   // Check if user already has a talentId from Privy authentication
   const { talentId, ready: privyReady } = usePrivyAuth({});
+  const { token: tpToken } = useTalentAuthToken();
 
   // State for the resolved talent UUID, loading state, and any errors
   const [talentUuid, setTalentUuid] = useState<string | null>(null);
@@ -47,25 +50,106 @@ export function useFidToTalentUuid() {
      * Priority order: Wait for Privy readiness → talentId from Privy > cached result > API resolution via fid
      */
     async function resolveUserTalentUuid() {
-      // Always wait for Privy SDK to be ready before deciding auth state
+      // Wait for Privy only if we don't already have a token or stored id
       if (!privyReady) {
-        setLoading(true);
-        return;
+        const storedId = (typeof window !== "undefined" && localStorage.getItem("talentUserId")) || null;
+        if (!tpToken && !storedId) {
+          setLoading(true);
+          return;
+        }
       }
 
       // Case 1: User already has a talentId from Privy auth (highest priority)
       if (talentId) {
         setTalentUuid(talentId);
 
-        // For Privy users, fetch handle from talent-socials API
+        // For Privy users, fetch handle from accounts API
         await fetchUserHandle(talentId);
 
         setLoading(false);
         return;
       }
 
-      // Case 2: No Farcaster ID available, can't resolve via this method
+      // Case 1b: If we have a valid Talent auth token, try to decode UUID from it (JWT payload)
+      if (tpToken) {
+        try {
+          const parts = tpToken.split(".");
+          if (parts.length === 3) {
+            const base64url = parts[1];
+            const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/") + "==".slice(0, (4 - (base64url.length % 4)) % 4);
+            const json = typeof window !== "undefined" ? atob(base64) : Buffer.from(base64, "base64").toString("utf8");
+            const payload = JSON.parse(json || "{}");
+            const maybeId: string | null =
+              (payload?.user && (payload.user.id || payload.user.uuid)) ||
+              payload?.user_id ||
+              payload?.uuid ||
+              payload?.sub ||
+              payload?.id ||
+              null;
+            const isUuid = typeof maybeId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(maybeId);
+            if (isUuid) {
+              setTalentUuid(maybeId);
+              try {
+                if (typeof window !== "undefined") localStorage.setItem("talentUserId", maybeId);
+              } catch {}
+              await fetchUserHandle(maybeId);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {}
+
+        // Fallback: derive UUID via wallet address using available providers
+        try {
+          let address: string | null = null;
+          // Try Farcaster provider first
+          try {
+            const fcProvider = await getFarcasterEthereumProvider();
+            if (fcProvider && typeof fcProvider.request === "function") {
+              const accounts = (await fcProvider.request({ method: "eth_accounts" })) as string[] | undefined;
+              address = accounts?.[0] || null;
+            }
+          } catch {}
+          // Try injected provider
+          if (!address && typeof window !== "undefined") {
+            const injected = (window as any).ethereum;
+            if (injected && typeof injected.request === "function") {
+              try {
+                const accounts = (await injected.request({ method: "eth_accounts" })) as string[] | undefined;
+                address = accounts?.[0] || null;
+              } catch {}
+            }
+          }
+          if (address) {
+            const resp = await fetch(`/api/talent-user?id=${address}`);
+            if (resp.ok) {
+              const data = await resp.json();
+              const uuid = data?.id as string | undefined;
+              if (uuid) {
+                setTalentUuid(uuid);
+                try { if (typeof window !== "undefined") localStorage.setItem("talentUserId", uuid); } catch {}
+                await fetchUserHandle(uuid);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      // Case 2: If no Privy ID and no Farcaster fid, fall back to stored talentUserId (from wallet login)
       if (!user?.fid) {
+        try {
+          if (typeof window !== "undefined") {
+            const stored = localStorage.getItem("talentUserId");
+            if (stored && stored.trim()) {
+              setTalentUuid(stored);
+              await fetchUserHandle(stored);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {}
         setTalentUuid(null);
         setLoading(false);
         return;
@@ -119,7 +203,7 @@ export function useFidToTalentUuid() {
     }
 
     /**
-     * Fetch user's Farcaster handle from talent-socials API
+     * Fetch user's Farcaster handle from accounts API
      */
     async function fetchUserHandle(uuid: string) {
       // Check cache first
@@ -130,23 +214,24 @@ export function useFidToTalentUuid() {
       }
 
       try {
-        const response = await fetch(`/api/talent-socials?uuid=${uuid}`);
+        const response = await fetch(`/api/accounts?id=${uuid}`);
         if (response.ok) {
           const data = await response.json();
 
           // Extract Farcaster handle from the response
-          // The API returns social accounts, we need to find the Farcaster one
-          const farcasterAccount = data.socials?.find(
-            (social: any) => social.platform === "farcaster",
+          // The accounts API returns social accounts in data.social array
+          const farcasterAccount = data.social?.find(
+            (social: any) => social.source === "farcaster",
           );
 
-          const userHandle = farcasterAccount?.username || null;
+          // The handle field already includes the @ prefix for farcaster
+          const userHandle = farcasterAccount?.handle || null;
 
           // Cache the result
           userHandleCache.set(uuid, userHandle);
           setHandle(userHandle);
         } else {
-          console.warn("Failed to fetch user handle from talent-socials API");
+          console.warn("Failed to fetch user handle from accounts API");
           setHandle(null);
         }
       } catch (err) {

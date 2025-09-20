@@ -62,7 +62,7 @@ function mapSocialAccount(social: TalentSocialAccount): SocialAccount {
 
   // Add @ prefix for farcaster and twitter
   if (
-    (src === "farcaster" || src === "twitter") &&
+    (src === "farcaster" || src === "x_twitter") &&
     handle &&
     typeof handle === "string" &&
     !handle.startsWith("@")
@@ -148,13 +148,12 @@ async function getAccountsForTalentIdInternal(
 
     // Primary wallet info will be included in the response
 
-    // Process social accounts - use socials endpoint data directly (has follower counts)
     const socialAccounts: SocialAccount[] = socialsData?.socials
       ? socialsData.socials
           .filter((s) => {
             const src = s.source;
-            // Only exclude linkedin and duplicate ethereum accounts
-            return src !== "linkedin" && src !== "ethereum";
+            // Only exclude ethereum accounts
+            return src !== "ethereum";
           })
           .map(mapSocialAccount)
       : [];
@@ -204,7 +203,7 @@ export function getAccountsForTalentId(talentId: string | number) {
         `${CACHE_KEYS.CONNECTED_ACCOUNTS}-${talentId}`,
         CACHE_KEYS.CONNECTED_ACCOUNTS,
       ],
-      revalidate: CACHE_DURATION_5_MINUTES,
+      revalidate: 1, // Align with client-side cache duration
     },
   );
 }

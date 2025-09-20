@@ -20,7 +20,7 @@ export interface CreatorItem {
     | "brand-green"
     | "brand-blue"
     | "muted"; // New prop for styling variants
-  isOptedOut?: boolean; // New prop for opt-out styling
+  isOptedOut?: boolean; // For strikethrough formatting on rewards page
 }
 
 interface CreatorListProps {
@@ -131,7 +131,6 @@ export function CreatorList({
                               "text-brand-blue",
                             item.primaryMetricVariant === "muted" &&
                               "text-muted-foreground",
-                            // Add strikethrough for opted-out users
                             item.isOptedOut && "line-through",
                           )}
                         >

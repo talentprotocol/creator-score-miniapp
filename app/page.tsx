@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { getPublicBaseUrl } from "@/lib/constants";
 import {
   getPageMetadata,
   getFrameMetadata,
@@ -8,7 +9,7 @@ import {
 export async function generateMetadata(): Promise<Metadata> {
   const pageMetadata = getPageMetadata();
   const frameMetadata = getFrameMetadata();
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://www.creatorscore.app";
+  const baseUrl = getPublicBaseUrl() || "https://www.creatorscore.app";
 
   return {
     title: pageMetadata.title,
