@@ -53,12 +53,6 @@ export function useScoreRefresh(
     }
 
     try {
-      clearUserCredentialsCache(talentUUID);
-    } catch (error) {
-      console.error("Failed to clear user credentials cache:", error);
-    }
-
-    try {
       setIsRefreshing(true);
       // Clear any existing messages
       setError(null);
@@ -66,6 +60,8 @@ export function useScoreRefresh(
       hasCalledSuccessRef.current = false;
 
       // Clear user's credential cache before triggering refresh
+      clearUserCredentialsCache(talentUUID);
+
       // Also clear badge caches (same as badges page)
       try {
         await fetch("/api/badges/refresh", {
@@ -81,7 +77,9 @@ export function useScoreRefresh(
         console.error("Failed to clear badge caches:", error);
         // Don't fail the entire operation if badge cache clearing fails
       }
+
       const result = await triggerScoreCalculation(talentUUID);
+
       if (result.success) {
         setSuccessMessage("Calculation enqueued");
         // Call onSuccess callback to trigger score refetch
