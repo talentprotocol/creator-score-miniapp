@@ -95,6 +95,9 @@ export default function BadgesPage() {
     // Call original refresh score (now includes badge cache clearing)
     await originalRefreshScore();
 
+    // Immediately set cooldown to 60 minutes (1 hour) since we just refreshed
+    setCooldownMinutes(60);
+
     // Refetch badges data to get updated lastCalculatedAt
     await refetch();
   };
