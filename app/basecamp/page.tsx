@@ -17,11 +17,9 @@ import { Section } from "@/components/common/Section";
 import { CreatorList } from "@/components/common/CreatorList";
 import { BasecampDataTable } from "@/components/basecamp/BasecampDataTable";
 import { BasecampStatsCards } from "@/components/basecamp/BasecampStatsCards";
-import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target } from "lucide-react";
 
 import { formatCompactNumber, formatCurrency } from "@/lib/utils";
 import { BasecampTab } from "@/lib/types/basecamp";
@@ -58,8 +56,8 @@ function BasecampContent() {
 
   // Callout preferences
   const {
-    permanentlyHiddenIds: permanentlyHiddenCalloutIds,
-    addPermanentlyHiddenId,
+    permanentlyHiddenIds: _permanentlyHiddenCalloutIds,
+    addPermanentlyHiddenId: _addPermanentlyHiddenId,
   } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Hide Farcaster Mini App splash screen when ready
