@@ -274,9 +274,4 @@ export const BOOST_CONFIG = {
 export const CALLOUT_FLAGS = {
   // Disable badges-announcement callout (kept in codebase but disabled)
   "badges-announcement": false,
-  // Disabled orphaned callouts (no longer in codebase)
-  optout: false,
-  boost: false,
-  perk_screen_studio: false,
-  "basecamp-welcome": false,
 } as const;

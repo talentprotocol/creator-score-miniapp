@@ -7,7 +7,6 @@ import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBasecampLeaderboard } from "@/hooks/useBasecampLeaderboard";
 import { useBasecampStats } from "@/hooks/useBasecampStats";
 import { useBasecampTotals } from "@/hooks/useBasecampTotals";
-import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sdk } from "@farcaster/frame-sdk";
@@ -53,12 +52,6 @@ function BasecampContent() {
     showMore,
     setSorting,
   } = useBasecampLeaderboard(userTalentUuid, currentTab);
-
-  // Callout preferences
-  const {
-    permanentlyHiddenIds: _permanentlyHiddenCalloutIds,
-    addPermanentlyHiddenId: _addPermanentlyHiddenId,
-  } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
