@@ -19,7 +19,7 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Prioritize talentUuid to avoid FID/username collisions
+    // ONLY use Talent UUIDs for navigation to avoid FID/username collisions
     if (talentUuid) {
       router.push(`/${talentUuid}`);
       return;
@@ -28,14 +28,7 @@ export default function ProfilePage() {
       router.push(`/${talentId}`);
       return;
     }
-    if (user) {
-      // Fallback to username only if no Talent UUID is available
-      const canonical = user.username;
-      if (canonical) {
-        router.push(`/${canonical}`);
-        return;
-      }
-    }
+    // If no Talent UUID is available, redirect to leaderboard instead of using usernames
     router.push("/leaderboard");
   }, [user, router, talentId, talentUuid, tpToken]);
 

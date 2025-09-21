@@ -155,7 +155,29 @@ export function useFidToTalentUuid() {
         return;
       }
 
-      // Case 3: Check session cache for previously resolved results
+      // Case 3: Use Farcaster username directly (not FID)
+      if (user.username) {
+        try {
+          const resp = await fetch(`/api/talent-user?id=${user.username}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            const uuid = data?.id as string | undefined;
+            if (uuid) {
+              setTalentUuid(uuid);
+              // Cache the result
+              userResolutionCache.set(user.fid, uuid);
+              try { if (typeof window !== "undefined") localStorage.setItem("talentUserId", uuid); } catch {}
+              await fetchUserHandle(uuid);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("[useFidToTalentUuid] Error resolving username:", error);
+        }
+      }
+
+      // Case 4: Check session cache for previously resolved results (fallback)
       if (userResolutionCache.has(user.fid)) {
         const cachedUuid = userResolutionCache.get(user.fid) || null;
         setTalentUuid(cachedUuid);
@@ -169,7 +191,7 @@ export function useFidToTalentUuid() {
         return;
       }
 
-      // Case 4: Need to resolve via API - set loading state
+      // Case 5: Need to resolve via API - set loading state
       setLoading(true);
       setError(null);
 

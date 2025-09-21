@@ -20,8 +20,16 @@ const inFlightTalentUserRequests = new Map<
 
 export function getAccountSource(id: string): "wallet" | "farcaster" | null {
   if (id.startsWith("0x") && id.length === 42) return "wallet";
+  
+  // Check if it's a pure numeric string (FID) - these should NOT be treated as usernames
+  if (/^\d+$/.test(id)) {
+    // This is a FID, not a username - return null to use talent_protocol_id instead
+    return null;
+  }
+  
   // Farcaster usernames: 1-32 chars, lowercase, alphanumeric, may include . or -
   if (/^[a-z0-9][a-z0-9\-\.]{0,31}$/.test(id)) return "farcaster";
+  
   // UUID or unknown: return null to omit account_source
   return null;
 }
