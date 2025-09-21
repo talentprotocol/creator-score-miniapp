@@ -55,7 +55,9 @@ export async function generateMetadata({
     }
 
     // Determine canonical identifier
-    const canonical = user.fname || user.wallet || user.id;
+    // Use UUID for numeric usernames to avoid FID collision, otherwise use username
+    const isNumericUsername = user.fname ? /^\d+$/.test(user.fname) : false;
+    const canonical = isNumericUsername ? user.id : (user.fname || user.wallet || user.id);
 
     // Fetch basic data for metadata with graceful fallbacks
     const [creatorScoreResult, socialAccountsResult, credentialsResult] =
@@ -306,14 +308,10 @@ export default async function ProfileLayout({
     will_redirect: canonical !== params.identifier,
   });
 
-  // Don't redirect if the identifier is a Talent UUID (already canonical)
-  const isTalentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.identifier);
-  
   if (
     canonical &&
     params.identifier !== canonical &&
-    params.identifier !== undefined &&
-    !isTalentUuid
+    params.identifier !== undefined
   ) {
     // Preserve the current path when redirecting to canonical
     const currentPath = params.identifier;

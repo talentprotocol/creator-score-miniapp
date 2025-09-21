@@ -125,17 +125,19 @@ function BasecampContent() {
         primaryMetric = profile.total_earnings
           ? formatCurrency(profile.total_earnings)
           : "0";
-        secondaryMetric = profile.creator_score
-          ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
-          : "Creator Score: N/A";
+        secondaryMetric =
+          profile.creator_score !== null && profile.creator_score !== undefined
+            ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
+            : "Creator Score: N/A";
         break;
       case "builder":
         primaryMetric = profile.rewards_amount
           ? formatCurrency(profile.rewards_amount)
           : "0";
-        secondaryMetric = profile.builder_score
-          ? `Builder Score: ${formatCompactNumber(profile.builder_score)}`
-          : "Builder Score: N/A";
+        secondaryMetric =
+          profile.builder_score !== null && profile.builder_score !== undefined
+            ? `Builder Score: ${formatCompactNumber(profile.builder_score)}`
+            : "Builder Score: N/A";
         break;
       default:
         primaryMetric = "0";
@@ -171,17 +173,21 @@ function BasecampContent() {
           primaryMetric = pinnedUser.total_earnings
             ? formatCurrency(pinnedUser.total_earnings)
             : "0";
-          secondaryMetric = pinnedUser.creator_score
-            ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
-            : "Creator Score: N/A";
+          secondaryMetric =
+            pinnedUser.creator_score !== null &&
+            pinnedUser.creator_score !== undefined
+              ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
+              : "Creator Score: N/A";
           break;
         case "builder":
           primaryMetric = pinnedUser.rewards_amount
             ? formatCurrency(pinnedUser.rewards_amount)
             : "0";
-          secondaryMetric = pinnedUser.builder_score
-            ? `Builder Score: ${formatCompactNumber(pinnedUser.builder_score)}`
-            : "Builder Score: N/A";
+          secondaryMetric =
+            pinnedUser.builder_score !== null &&
+            pinnedUser.builder_score !== undefined
+              ? `Builder Score: ${formatCompactNumber(pinnedUser.builder_score)}`
+              : "Builder Score: N/A";
           break;
         default:
           primaryMetric = "0";
