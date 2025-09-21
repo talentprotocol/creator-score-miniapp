@@ -157,8 +157,8 @@ export function useFidToTalentUuid() {
         } catch {}
       }
 
-      // Case 2: If no Privy ID and no Farcaster username, fall back to stored talentUserId (from wallet login)
-      if (!user?.username) {
+      // Case 2: If no Privy ID and no Farcaster fid, fall back to stored talentUserId (from wallet login)
+      if (!user?.fid) {
         try {
           if (typeof window !== "undefined") {
             const stored = localStorage.getItem("talentUserId");
@@ -175,17 +175,17 @@ export function useFidToTalentUuid() {
         return;
       }
 
-      // Case 3: Use Farcaster username directly (not FID)
-      if (user.username) {
+      // Case 3: Use Farcaster FID to resolve to Talent UUID (internal use only)
+      if (user.fid) {
         try {
-          const resp = await fetch(`/api/talent-user?id=${user.username}`);
+          const resp = await fetch(`/api/talent-user?id=${user.fid}`);
           if (resp.ok) {
             const data = await resp.json();
             const uuid = data?.id as string | undefined;
             if (uuid) {
               setTalentUuid(uuid);
-              // Cache the result using username as key (not FID)
-              userResolutionCache.set(user.username, uuid);
+              // Cache the result using FID as key
+              userResolutionCache.set(user.fid.toString(), uuid);
               try {
                 if (typeof window !== "undefined")
                   localStorage.setItem("talentUserId", uuid);
@@ -197,15 +197,15 @@ export function useFidToTalentUuid() {
           }
         } catch (error) {
           console.error(
-            "[useFidToTalentUuid] Error resolving username:",
+            "[useFidToTalentUuid] Error resolving FID:",
             error,
           );
         }
       }
 
       // Case 4: Check session cache for previously resolved results (fallback)
-      if (user.username && userResolutionCache.has(user.username)) {
-        const cachedUuid = userResolutionCache.get(user.username) || null;
+      if (user.fid && userResolutionCache.has(user.fid.toString())) {
+        const cachedUuid = userResolutionCache.get(user.fid.toString()) || null;
         setTalentUuid(cachedUuid);
 
         // If we have a cached UUID, also fetch the handle
