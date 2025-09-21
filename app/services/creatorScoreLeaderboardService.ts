@@ -274,27 +274,29 @@ export async function getUserProfileData(
       console.error(`Error fetching earnings for user ${talentUuid}:`, error);
     }
 
-    // Extract Creator Score from scores array (same logic as search hook)
-    // Note: The profile data structure from getProfile is different from search results
-    let creatorScores: number[] = [];
+    // Get Creator Score from the score endpoint (profile endpoint doesn't return scores)
+    let score = 0;
+    try {
+      const scoreResponse = await fetch(
+        `https://api.talentprotocol.com/score?id=${talentUuid}&scorer_slug=creator_score`,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-API-KEY": apiKey,
+          },
+        },
+      );
 
-    if (Array.isArray(profile.scores)) {
-      creatorScores = profile.scores
-        .filter((s: TalentScore) => s.slug === "creator_score")
-        .map((s: TalentScore) => s.points ?? 0);
+      if (scoreResponse.ok) {
+        const scoreData = await scoreResponse.json();
+        score = scoreData.score?.points ?? 0;
+      }
+    } catch (error) {
+      console.error(
+        `Error fetching creator score for user ${talentUuid}:`,
+        error,
+      );
     }
-
-    // Fallback: check if there's a direct creator_score field
-    if (creatorScores.length === 0 && profile.creator_score !== undefined) {
-      creatorScores = [profile.creator_score];
-    }
-
-    // Fallback: check if there's a score field
-    if (creatorScores.length === 0 && profile.score !== undefined) {
-      creatorScores = [profile.score];
-    }
-
-    const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
 
     const result = {
       id: profile.id,

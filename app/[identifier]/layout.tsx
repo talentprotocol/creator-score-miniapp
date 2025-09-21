@@ -58,6 +58,16 @@ export async function generateMetadata({
     // Use UUID for numeric usernames to avoid FID collision, otherwise use username
     const isNumericUsername = user.fname ? /^\d+$/.test(user.fname) : false;
     const canonical = isNumericUsername ? user.id : (user.fname || user.wallet || user.id);
+    
+    console.log("DEBUG CANONICAL:", {
+      identifier: params.identifier,
+      user_fname: user.fname,
+      user_id: user.id,
+      isNumericUsername,
+      canonical,
+      willRedirect: canonical !== params.identifier,
+      identifierParts: params.identifier.split('/')
+    });
 
     // Fetch basic data for metadata with graceful fallbacks
     const [creatorScoreResult, socialAccountsResult, credentialsResult] =
