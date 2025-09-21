@@ -54,12 +54,8 @@ export async function generateMetadata({
       };
     }
 
-    // Determine canonical identifier
-    // Use UUID for numeric usernames to avoid FID collision, otherwise use username
-    const isNumericUsername = user.fname ? /^\d+$/.test(user.fname) : false;
-    const canonical = isNumericUsername
-      ? user.id
-      : user.fname || user.wallet || user.id;
+    // Determine canonical identifier for metadata
+    const canonical = user.fname || user.wallet || user.id;
 
     // Fetch basic data for metadata with graceful fallbacks
     const [creatorScoreResult, socialAccountsResult, credentialsResult] =
@@ -298,21 +294,30 @@ export default async function ProfileLayout({
     return <CreatorNotFoundCard />;
   }
 
-  // Determine canonical human-readable identifier: Farcaster, Wallet, else UUID
-  const canonical = user.fname || user.wallet || user.id;
-  const rank = user.rank as number | null;
+  // Determine canonical identifier
+  // Use UUID for numeric usernames to avoid FID collision, otherwise use username
+  const isNumericUsername = user.fname ? /^\d+$/.test(user.fname) : false;
+  const canonical = isNumericUsername
+    ? user.id
+    : user.fname || user.wallet || user.id;
+
+  // Extract the base identifier from the path (remove /stats, /badges, etc.)
+  const baseIdentifier = params.identifier.split('/')[0];
 
   dlog("ProfileLayout", "user_resolved", {
     identifier: params.identifier,
+    baseIdentifier,
     canonical,
     user_id: user.id,
-    rank,
-    will_redirect: canonical !== params.identifier,
+    rank: user.rank,
+    will_redirect: baseIdentifier !== canonical,
   });
 
+  const rank = user.rank as number | null;
+  
   if (
     canonical &&
-    params.identifier !== canonical &&
+    baseIdentifier !== canonical &&
     params.identifier !== undefined
   ) {
     // Preserve the current path when redirecting to canonical
