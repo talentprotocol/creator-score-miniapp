@@ -302,7 +302,7 @@ export default async function ProfileLayout({
     : user.fname || user.wallet || user.id;
 
   // Extract the base identifier from the path (remove /stats, /badges, etc.)
-  const baseIdentifier = params.identifier.split('/')[0];
+  const baseIdentifier = params.identifier.split("/")[0];
 
   dlog("ProfileLayout", "user_resolved", {
     identifier: params.identifier,
@@ -314,7 +314,7 @@ export default async function ProfileLayout({
   });
 
   const rank = user.rank as number | null;
-  
+
   if (
     canonical &&
     baseIdentifier !== canonical &&
