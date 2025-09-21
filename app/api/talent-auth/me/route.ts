@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TalentApiClient } from "@/lib/talent-api-client";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
