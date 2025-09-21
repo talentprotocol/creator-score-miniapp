@@ -306,10 +306,14 @@ export default async function ProfileLayout({
     will_redirect: canonical !== params.identifier,
   });
 
+  // Don't redirect if the identifier is a Talent UUID (already canonical)
+  const isTalentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.identifier);
+  
   if (
     canonical &&
     params.identifier !== canonical &&
-    params.identifier !== undefined
+    params.identifier !== undefined &&
+    !isTalentUuid
   ) {
     // Preserve the current path when redirecting to canonical
     const currentPath = params.identifier;
