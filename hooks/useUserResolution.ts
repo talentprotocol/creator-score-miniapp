@@ -52,7 +52,10 @@ export function useFidToTalentUuid() {
     async function resolveUserTalentUuid() {
       // Wait for Privy only if we don't already have a token or stored id
       if (!privyReady) {
-        const storedId = (typeof window !== "undefined" && localStorage.getItem("talentUserId")) || null;
+        const storedId =
+          (typeof window !== "undefined" &&
+            localStorage.getItem("talentUserId")) ||
+          null;
         if (!tpToken && !storedId) {
           setLoading(true);
           return;
@@ -76,8 +79,13 @@ export function useFidToTalentUuid() {
           const parts = tpToken.split(".");
           if (parts.length === 3) {
             const base64url = parts[1];
-            const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/") + "==".slice(0, (4 - (base64url.length % 4)) % 4);
-            const json = typeof window !== "undefined" ? atob(base64) : Buffer.from(base64, "base64").toString("utf8");
+            const base64 =
+              base64url.replace(/-/g, "+").replace(/_/g, "/") +
+              "==".slice(0, (4 - (base64url.length % 4)) % 4);
+            const json =
+              typeof window !== "undefined"
+                ? atob(base64)
+                : Buffer.from(base64, "base64").toString("utf8");
             const payload = JSON.parse(json || "{}");
             const maybeId: string | null =
               (payload?.user && (payload.user.id || payload.user.uuid)) ||
@@ -86,11 +94,16 @@ export function useFidToTalentUuid() {
               payload?.sub ||
               payload?.id ||
               null;
-            const isUuid = typeof maybeId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(maybeId);
+            const isUuid =
+              typeof maybeId === "string" &&
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                maybeId,
+              );
             if (isUuid) {
               setTalentUuid(maybeId);
               try {
-                if (typeof window !== "undefined") localStorage.setItem("talentUserId", maybeId);
+                if (typeof window !== "undefined")
+                  localStorage.setItem("talentUserId", maybeId);
               } catch {}
               await fetchUserHandle(maybeId);
               setLoading(false);
@@ -106,7 +119,9 @@ export function useFidToTalentUuid() {
           try {
             const fcProvider = await getFarcasterEthereumProvider();
             if (fcProvider && typeof fcProvider.request === "function") {
-              const accounts = (await fcProvider.request({ method: "eth_accounts" })) as string[] | undefined;
+              const accounts = (await fcProvider.request({
+                method: "eth_accounts",
+              })) as string[] | undefined;
               address = accounts?.[0] || null;
             }
           } catch {}
@@ -115,7 +130,9 @@ export function useFidToTalentUuid() {
             const injected = (window as any).ethereum;
             if (injected && typeof injected.request === "function") {
               try {
-                const accounts = (await injected.request({ method: "eth_accounts" })) as string[] | undefined;
+                const accounts = (await injected.request({
+                  method: "eth_accounts",
+                })) as string[] | undefined;
                 address = accounts?.[0] || null;
               } catch {}
             }
@@ -127,7 +144,10 @@ export function useFidToTalentUuid() {
               const uuid = data?.id as string | undefined;
               if (uuid) {
                 setTalentUuid(uuid);
-                try { if (typeof window !== "undefined") localStorage.setItem("talentUserId", uuid); } catch {}
+                try {
+                  if (typeof window !== "undefined")
+                    localStorage.setItem("talentUserId", uuid);
+                } catch {}
                 await fetchUserHandle(uuid);
                 setLoading(false);
                 return;
@@ -166,14 +186,20 @@ export function useFidToTalentUuid() {
               setTalentUuid(uuid);
               // Cache the result
               userResolutionCache.set(user.fid, uuid);
-              try { if (typeof window !== "undefined") localStorage.setItem("talentUserId", uuid); } catch {}
+              try {
+                if (typeof window !== "undefined")
+                  localStorage.setItem("talentUserId", uuid);
+              } catch {}
               await fetchUserHandle(uuid);
               setLoading(false);
               return;
             }
           }
         } catch (error) {
-          console.error("[useFidToTalentUuid] Error resolving username:", error);
+          console.error(
+            "[useFidToTalentUuid] Error resolving username:",
+            error,
+          );
         }
       }
 
