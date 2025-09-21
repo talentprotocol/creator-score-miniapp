@@ -19,14 +19,7 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      // If user exists, redirect to their profile
-      const canonical = user.username;
-      if (canonical) {
-        router.push(`/${canonical}`);
-        return;
-      }
-    }
+    // Prioritize talentUuid to avoid FID/username collisions
     if (talentUuid) {
       router.push(`/${talentUuid}`);
       return;
@@ -34,9 +27,16 @@ export default function ProfilePage() {
     if (talentId) {
       router.push(`/${talentId}`);
       return;
-    } else {
-      router.push("/leaderboard");
     }
+    if (user) {
+      // Fallback to username only if no Talent UUID is available
+      const canonical = user.username;
+      if (canonical) {
+        router.push(`/${canonical}`);
+        return;
+      }
+    }
+    router.push("/leaderboard");
   }, [user, router, talentId, talentUuid, tpToken]);
 
   return (

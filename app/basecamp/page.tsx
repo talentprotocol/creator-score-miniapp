@@ -232,28 +232,6 @@ function BasecampContent() {
         <BasecampStatsCards stats={stats} loading={statsLoading} />
       </Section>
 
-      {/* Welcome Banner */}
-      <Section variant="content">
-        <CalloutCarousel
-          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-          items={[
-            {
-              id: "basecamp-welcome",
-              variant: "brand-blue",
-              icon: <Target className="h-4 w-4" />,
-              title: "Welcome to BaseCamp",
-              description:
-                "Explore 500+ Base builders and creators. Sort by creator coins, scores, or earnings.",
-              permanentHideKey: "basecamp_welcome_dismissed",
-              onClose: () => {
-                // Handle dismissal - persistence handled by CalloutCarousel
-              },
-            },
-          ]}
-        />
-      </Section>
-
       {/* Tabs */}
       <Section variant="full-width">
         <TabNavigation

@@ -272,10 +272,11 @@ export const BOOST_CONFIG = {
 
 // Global per-callout flags (applied across all carousels)
 export const CALLOUT_FLAGS = {
-  // Enable Opt-out callout
-  optout: true,
-  // Keep Boost callout enabled
-  boost: true,
-  // Keep Perk callout enabled
-  perk_screen_studio: true,
+  // Disable badges-announcement callout (kept in codebase but disabled)
+  "badges-announcement": false,
+  // Disabled orphaned callouts (no longer in codebase)
+  optout: false,
+  boost: false,
+  perk_screen_studio: false,
+  "basecamp-welcome": false,
 } as const;
