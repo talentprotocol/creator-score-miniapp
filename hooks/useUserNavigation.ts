@@ -11,8 +11,8 @@ export function useUserNavigation() {
   const { talentUuid } = useFidToTalentUuid();
 
   // Determine canonical identifier for navigation
-  // ONLY use Talent UUIDs to avoid FID/username collisions
-  const canonical = talentUuid;
+  // Priority: Farcaster username > Talent UUID (no FIDs to avoid collisions)
+  const canonical = user?.username || talentUuid;
 
   // Store both possible profile paths for active state check
   const profilePaths = [

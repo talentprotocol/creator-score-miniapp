@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import { triggerScoreCalculation } from "@/app/services/scoreRefreshService";
-import { clearUserCredentialsCache } from "@/lib/cache-keys";
 import posthog from "posthog-js";
 
 interface UseScoreRefreshResult {
@@ -59,10 +58,7 @@ export function useScoreRefresh(
       setSuccessMessage(null);
       hasCalledSuccessRef.current = false;
 
-      // Clear user's credential cache before triggering refresh
-      clearUserCredentialsCache(talentUUID);
-
-      // Also clear badge caches (same as badges page)
+      // Clear badge caches (includes credential cache clearing)
       try {
         await fetch("/api/badges/refresh", {
           method: "POST",
@@ -70,7 +66,7 @@ export function useScoreRefresh(
           body: JSON.stringify({
             talentUUID: talentUUID,
             badgeSlug: "all",
-            cacheKeys: ["USER_BADGES", "USER_CREATOR_SCORE"],
+            cacheKeys: ["USER_BADGES", "USER_CREATOR_SCORE", "CREDENTIALS"],
           }),
         });
       } catch (error) {

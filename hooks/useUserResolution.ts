@@ -10,7 +10,7 @@ import { getFarcasterEthereumProvider } from "@/lib/client/miniapp";
 
 // Session-level cache for user resolution to avoid repeated API calls
 // Maps user identifiers (fid, wallet, etc.) to Talent Protocol UUID
-const userResolutionCache = new Map<number, string | null>();
+const userResolutionCache = new Map<string, string | null>();
 
 // Cache for user handles to avoid repeated API calls
 const userHandleCache = new Map<string, string | null>();
@@ -157,8 +157,8 @@ export function useFidToTalentUuid() {
         } catch {}
       }
 
-      // Case 2: If no Privy ID and no Farcaster fid, fall back to stored talentUserId (from wallet login)
-      if (!user?.fid) {
+      // Case 2: If no Privy ID and no Farcaster username, fall back to stored talentUserId (from wallet login)
+      if (!user?.username) {
         try {
           if (typeof window !== "undefined") {
             const stored = localStorage.getItem("talentUserId");
@@ -184,8 +184,8 @@ export function useFidToTalentUuid() {
             const uuid = data?.id as string | undefined;
             if (uuid) {
               setTalentUuid(uuid);
-              // Cache the result
-              userResolutionCache.set(user.fid, uuid);
+              // Cache the result using username as key (not FID)
+              userResolutionCache.set(user.username, uuid);
               try {
                 if (typeof window !== "undefined")
                   localStorage.setItem("talentUserId", uuid);
@@ -204,8 +204,8 @@ export function useFidToTalentUuid() {
       }
 
       // Case 4: Check session cache for previously resolved results (fallback)
-      if (userResolutionCache.has(user.fid)) {
-        const cachedUuid = userResolutionCache.get(user.fid) || null;
+      if (user.username && userResolutionCache.has(user.username)) {
+        const cachedUuid = userResolutionCache.get(user.username) || null;
         setTalentUuid(cachedUuid);
 
         // If we have a cached UUID, also fetch the handle
@@ -217,37 +217,10 @@ export function useFidToTalentUuid() {
         return;
       }
 
-      // Case 5: Need to resolve via API - set loading state
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Call the external resolver to convert fid to Talent Protocol UUID
-        // Note: The underlying API can actually resolve from multiple identifier types
-        const uuid = await resolveFidToTalentUuid(user.fid);
-
-        // Cache the successful result for future use
-        userResolutionCache.set(user.fid, uuid);
-
-        setTalentUuid(uuid);
-
-        // If we got a UUID, fetch the handle
-        if (uuid) {
-          await fetchUserHandle(uuid);
-        }
-      } catch (err) {
-        console.error("Error resolving user talent UUID:", err);
-
-        // Set error state and clear any previous UUID
-        setError(err instanceof Error ? err.message : "Failed to resolve user");
-        setTalentUuid(null);
-
-        // Cache null result to prevent repeated failed API calls for the same fid
-        userResolutionCache.set(user.fid, null);
-      } finally {
-        // Always clear loading state, regardless of success/failure
-        setLoading(false);
-      }
+      // Case 5: No username available - cannot resolve
+      setTalentUuid(null);
+      setLoading(false);
+      return;
     }
 
     /**

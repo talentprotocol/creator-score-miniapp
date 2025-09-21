@@ -19,7 +19,11 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // ONLY use Talent UUIDs for navigation to avoid FID/username collisions
+    // Use Farcaster username as primary identifier, Talent UUID as fallback
+    if (user?.username) {
+      router.push(`/${user.username}`);
+      return;
+    }
     if (talentUuid) {
       router.push(`/${talentUuid}`);
       return;
@@ -28,7 +32,6 @@ export default function ProfilePage() {
       router.push(`/${talentId}`);
       return;
     }
-    // If no Talent UUID is available, redirect to leaderboard instead of using usernames
     router.push("/leaderboard");
   }, [user, router, talentId, talentUuid, tpToken]);
 
