@@ -14,7 +14,9 @@ import { NextResponse } from "next/server";
 import { dlog, dtimer } from "./debug";
 
 // API endpoints
-const TALENT_API_BASE = process.env.NEXT_PUBLIC_TALENT_API_BASE?.trim() || "https://api.talentprotocol.com";
+const TALENT_API_BASE =
+  process.env.NEXT_PUBLIC_TALENT_API_BASE?.trim() ||
+  "https://api.talentprotocol.com";
 
 export interface TalentApiClientOptions {
   apiKey?: string;
@@ -70,7 +72,8 @@ export class TalentApiClient {
     const headers = createTalentApiHeaders(this.apiKey);
     if (this.userAuthToken) {
       // Pass through user auth token when available
-      (headers as Record<string, string>)["Authorization"] = `Bearer ${this.userAuthToken}`;
+      (headers as Record<string, string>)["Authorization"] =
+        `Bearer ${this.userAuthToken}`;
     }
     return headers;
   }
@@ -135,16 +138,16 @@ export class TalentApiClient {
           endpoint,
           status: response.status,
           statusText: response.statusText,
-          error_message: (data && typeof (data as { error?: unknown }).error === "string"
-            ? (data as { error?: string }).error
-            : "No error message"),
+          error_message:
+            data && typeof (data as { error?: unknown }).error === "string"
+              ? (data as { error?: string }).error
+              : "No error message",
           data_keys: data ? Object.keys(data) : [],
         });
         const msg =
           (data && typeof (data as { error?: unknown }).error === "string"
             ? (data as { error?: string }).error
-            : undefined) ||
-          `HTTP ${response.status}: ${response.statusText}`;
+            : undefined) || `HTTP ${response.status}: ${response.statusText}`;
         throw new Error(msg);
       }
 
@@ -155,7 +158,8 @@ export class TalentApiClient {
         has_profile: !!(data as Record<string, unknown> | null)?.profile,
         has_scores: !!(data as Record<string, unknown> | null)?.scores,
         has_socials: !!(data as Record<string, unknown> | null)?.socials,
-        has_credentials: !!(data as Record<string, unknown> | null)?.credentials,
+        has_credentials: !!(data as Record<string, unknown> | null)
+          ?.credentials,
         has_posts: !!(data as Record<string, unknown> | null)?.posts,
       });
 
@@ -413,7 +417,6 @@ export class TalentApiClient {
     dlog("TalentAPI", "getProfile_start", {
       params: {
         id: params.id,
-        username: params.username,
         talent_protocol_id: params.talent_protocol_id,
         account_source: params.account_source,
       },
@@ -1007,7 +1010,9 @@ export class TalentApiClient {
   /**
    * Disconnect social account (requires end-user Authorization token)
    */
-  async disconnectAccount(platform: "github" | "twitter" | "linkedin"): Promise<NextResponse> {
+  async disconnectAccount(
+    platform: "github" | "twitter" | "linkedin",
+  ): Promise<NextResponse> {
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {
       return createServerErrorResponse(apiKeyError);
@@ -1298,7 +1303,9 @@ export async function resendEmailVerificationWithAuth(
         Authorization: `Bearer ${userAuthToken}`,
         "Content-Type": "application/json",
       },
-      body: redirectToUrl ? JSON.stringify({ redirect_to_url: redirectToUrl }) : undefined,
+      body: redirectToUrl
+        ? JSON.stringify({ redirect_to_url: redirectToUrl })
+        : undefined,
     });
 
     // Some APIs return 204 No Content on success
@@ -1318,7 +1325,10 @@ export async function resendEmailVerificationWithAuth(
     // Fallback for non-JSON responses
     const text = await resp.text();
     if (!resp.ok) {
-      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+      return NextResponse.json(
+        { error: text || "Request failed" },
+        { status: resp.status },
+      );
     }
     return NextResponse.json({ ok: true, message: text }, { status: 200 });
   } catch (error) {
@@ -1359,7 +1369,9 @@ export async function createEmailAccountWithAuth(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(
-        redirectToUrl ? { email: emailAddress, redirect_to_url: redirectToUrl } : { email: emailAddress },
+        redirectToUrl
+          ? { email: emailAddress, redirect_to_url: redirectToUrl }
+          : { email: emailAddress },
       ),
     });
 
@@ -1375,7 +1387,10 @@ export async function createEmailAccountWithAuth(
     // Fallback for non-JSON responses
     const text = await resp.text();
     if (!resp.ok) {
-      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+      return NextResponse.json(
+        { error: text || "Request failed" },
+        { status: resp.status },
+      );
     }
     return NextResponse.json({ ok: true, message: text }, { status: 200 });
   } catch (error) {
@@ -1430,7 +1445,10 @@ export async function makePrimaryEmailAccountWithAuth(
 
     const text = await resp.text();
     if (!resp.ok) {
-      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+      return NextResponse.json(
+        { error: text || "Request failed" },
+        { status: resp.status },
+      );
     }
     return NextResponse.json({ ok: true, message: text }, { status: 200 });
   } catch (error) {
@@ -1485,7 +1503,10 @@ export async function disconnectEmailAccountWithAuth(
 
     const text = await resp.text();
     if (!resp.ok) {
-      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+      return NextResponse.json(
+        { error: text || "Request failed" },
+        { status: resp.status },
+      );
     }
     return NextResponse.json({ ok: true, message: text }, { status: 200 });
   } catch (error) {
@@ -1501,7 +1522,12 @@ export async function disconnectEmailAccountWithAuth(
 export async function createTalentAuthToken(
   params:
     | { address: string; signature: string; chain_id: number }
-    | { address: string; signature: string; chain_id: number; siwe_message: string },
+    | {
+        address: string;
+        signature: string;
+        chain_id: number;
+        siwe_message: string;
+      },
 ): Promise<NextResponse> {
   const apiKeyError = validateTalentApiKey();
   if (apiKeyError) {
@@ -1624,7 +1650,10 @@ export async function requestDeleteAccountEmailWithAuth(
 
     const text = await resp.text();
     if (!resp.ok) {
-      return NextResponse.json({ error: text || "Request failed" }, { status: resp.status });
+      return NextResponse.json(
+        { error: text || "Request failed" },
+        { status: resp.status },
+      );
     }
     return NextResponse.json({ ok: true, message: text }, { status: 200 });
   } catch (error) {
