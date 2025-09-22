@@ -413,6 +413,7 @@ export class TalentApiClient {
     dlog("TalentAPI", "getProfile_start", {
       params: {
         id: params.id,
+        username: params.username,
         talent_protocol_id: params.talent_protocol_id,
         account_source: params.account_source,
       },
@@ -425,7 +426,7 @@ export class TalentApiClient {
       return createServerErrorResponse(apiKeyError);
     }
 
-    if (!params.id && !params.talent_protocol_id) {
+    if (!params.id && !params.talent_protocol_id && !params.username) {
       dlog("TalentAPI", "getProfile_no_identifier", { params });
       methodTimer.end();
       return createBadRequestResponse("No identifier provided");
@@ -434,12 +435,21 @@ export class TalentApiClient {
     try {
       const urlParams = new URLSearchParams();
 
-      // Handle talent_protocol_id (UUID) vs id (account lookup)
+      // Handle talent_protocol_id (UUID) vs username vs id (account lookup)
       if (params.talent_protocol_id) {
         urlParams.append("id", params.talent_protocol_id.toLowerCase());
         dlog("TalentAPI", "getProfile_uuid_lookup", {
           talent_protocol_id: params.talent_protocol_id,
           normalized_id: params.talent_protocol_id.toLowerCase(),
+        });
+      } else if (params.username) {
+        urlParams.append("username", params.username);
+        if (params.account_source) {
+          urlParams.append("account_source", params.account_source);
+        }
+        dlog("TalentAPI", "getProfile_username_lookup", {
+          username: params.username,
+          account_source: params.account_source,
         });
       } else {
         urlParams.append("id", params.id!.toLowerCase());
