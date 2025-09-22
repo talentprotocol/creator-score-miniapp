@@ -1,6 +1,5 @@
-// Removed direct service import - now using API route for compliance
 import { redirect } from "next/navigation";
-import { RESERVED_WORDS, getPublicBaseUrl } from "@/lib/constants";
+import { RESERVED_WORDS } from "@/lib/constants";
 import { CreatorNotFoundCard } from "@/components/common/CreatorNotFoundCard";
 import { validateIdentifier } from "@/lib/validation";
 import { ProfileLayoutContent } from "./ProfileLayoutContent";
@@ -8,6 +7,7 @@ import { getCreatorScoreForTalentId } from "@/app/services/scoresService";
 import { getAccountsForTalentId } from "@/app/services/accountsService";
 import { getCredentialsForTalentId } from "@/app/services/credentialsService";
 import { getAllPostsForTalentId } from "@/app/services/postsService";
+import { getTalentUserService } from "@/app/services/userService";
 import { isEarningsCredential } from "@/lib/total-earnings-config";
 import {
   getEthUsdcPrice,
@@ -44,16 +44,8 @@ export async function generateMetadata({
   }
 
   try {
-    // Resolve user via API route for compliance
-    const base = getPublicBaseUrl();
-    const response = await fetch(`${base}/api/talent-user?id=${params.identifier}`);
-    if (!response.ok) {
-      return {
-        title: "Creator Not Found - Creator Score",
-        description: "This creator could not be found.",
-      };
-    }
-    const user = await response.json();
+    // Resolve user via direct service call (Server Component pattern)
+    const user = await getTalentUserService(params.identifier);
 
     if (!user || !user.id) {
       return {
@@ -62,7 +54,7 @@ export async function generateMetadata({
       };
     }
 
-    // Determine canonical identifier
+    // Determine canonical identifier for metadata
     const canonical = user.fname || user.wallet || user.id;
 
     // Fetch basic data for metadata with graceful fallbacks
@@ -274,20 +266,15 @@ export default async function ProfileLayout({
     return <CreatorNotFoundCard />;
   }
 
-  // Resolve user via API route for compliance
+  // Resolve user via direct service call (Server Component pattern)
   const userResolutionTimer = dtimer("ProfileLayout", "user_resolution");
-  dlog("ProfileLayout", "calling_api_route", {
+  dlog("ProfileLayout", "calling_service_directly", {
     identifier: params.identifier,
   });
 
-  const base2 = getPublicBaseUrl();
-  const response = await fetch(`${base2}/api/talent-user?id=${encodeURIComponent(params.identifier)}`);
-  if (!response.ok) {
-    return <CreatorNotFoundCard />;
-  }
-  const user = await response.json();
+  const user = await getTalentUserService(params.identifier);
 
-  dlog("ProfileLayout", "api_route_result", {
+  dlog("ProfileLayout", "service_result", {
     identifier: params.identifier,
     user_found: !!user,
     user_id: user?.id || null,
@@ -307,21 +294,30 @@ export default async function ProfileLayout({
     return <CreatorNotFoundCard />;
   }
 
-  // Determine canonical human-readable identifier: Farcaster, Wallet, else UUID
-  const canonical = user.fname || user.wallet || user.id;
-  const rank = user.rank as number | null;
+  // Determine canonical identifier
+  // Use UUID for numeric usernames to avoid FID collision, otherwise use username
+  const isNumericUsername = user.fname ? /^\d+$/.test(user.fname) : false;
+  const canonical = isNumericUsername
+    ? user.id
+    : user.fname || user.wallet || user.id;
+
+  // Extract the base identifier from the path (remove /stats, /badges, etc.)
+  const baseIdentifier = params.identifier.split("/")[0];
 
   dlog("ProfileLayout", "user_resolved", {
     identifier: params.identifier,
+    baseIdentifier,
     canonical,
     user_id: user.id,
-    rank,
-    will_redirect: canonical !== params.identifier,
+    rank: user.rank,
+    will_redirect: baseIdentifier !== canonical,
   });
+
+  const rank = user.rank as number | null;
 
   if (
     canonical &&
-    params.identifier !== canonical &&
+    baseIdentifier !== canonical &&
     params.identifier !== undefined
   ) {
     // Preserve the current path when redirecting to canonical

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBasecampLeaderboard } from "@/app/services/basecampLeaderboardService";
 import { SortColumn, SortOrder, BasecampTab } from "@/lib/types/basecamp";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

@@ -7,7 +7,6 @@ import { useFidToTalentUuid } from "@/hooks/useUserResolution";
 import { useBasecampLeaderboard } from "@/hooks/useBasecampLeaderboard";
 import { useBasecampStats } from "@/hooks/useBasecampStats";
 import { useBasecampTotals } from "@/hooks/useBasecampTotals";
-import { useUserCalloutPrefs } from "@/hooks/useUserCalloutPrefs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sdk } from "@farcaster/frame-sdk";
@@ -17,11 +16,9 @@ import { Section } from "@/components/common/Section";
 import { CreatorList } from "@/components/common/CreatorList";
 import { BasecampDataTable } from "@/components/basecamp/BasecampDataTable";
 import { BasecampStatsCards } from "@/components/basecamp/BasecampStatsCards";
-import { CalloutCarousel } from "@/components/common/CalloutCarousel";
 import { TabNavigation } from "@/components/common/tabs-navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target } from "lucide-react";
 
 import { formatCompactNumber, formatCurrency } from "@/lib/utils";
 import { BasecampTab } from "@/lib/types/basecamp";
@@ -55,12 +52,6 @@ function BasecampContent() {
     showMore,
     setSorting,
   } = useBasecampLeaderboard(userTalentUuid, currentTab);
-
-  // Callout preferences
-  const {
-    permanentlyHiddenIds: permanentlyHiddenCalloutIds,
-    addPermanentlyHiddenId,
-  } = useUserCalloutPrefs(userTalentUuid ?? null);
 
   // Hide Farcaster Mini App splash screen when ready
   useEffect(() => {
@@ -134,17 +125,19 @@ function BasecampContent() {
         primaryMetric = profile.total_earnings
           ? formatCurrency(profile.total_earnings)
           : "0";
-        secondaryMetric = profile.creator_score
-          ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
-          : "Creator Score: N/A";
+        secondaryMetric =
+          profile.creator_score !== null && profile.creator_score !== undefined
+            ? `Creator Score: ${formatCompactNumber(profile.creator_score)}`
+            : "Creator Score: N/A";
         break;
       case "builder":
         primaryMetric = profile.rewards_amount
           ? formatCurrency(profile.rewards_amount)
           : "0";
-        secondaryMetric = profile.builder_score
-          ? `Builder Score: ${formatCompactNumber(profile.builder_score)}`
-          : "Builder Score: N/A";
+        secondaryMetric =
+          profile.builder_score !== null && profile.builder_score !== undefined
+            ? `Builder Score: ${formatCompactNumber(profile.builder_score)}`
+            : "Builder Score: N/A";
         break;
       default:
         primaryMetric = "0";
@@ -180,17 +173,21 @@ function BasecampContent() {
           primaryMetric = pinnedUser.total_earnings
             ? formatCurrency(pinnedUser.total_earnings)
             : "0";
-          secondaryMetric = pinnedUser.creator_score
-            ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
-            : "Creator Score: N/A";
+          secondaryMetric =
+            pinnedUser.creator_score !== null &&
+            pinnedUser.creator_score !== undefined
+              ? `Creator Score: ${formatCompactNumber(pinnedUser.creator_score)}`
+              : "Creator Score: N/A";
           break;
         case "builder":
           primaryMetric = pinnedUser.rewards_amount
             ? formatCurrency(pinnedUser.rewards_amount)
             : "0";
-          secondaryMetric = pinnedUser.builder_score
-            ? `Builder Score: ${formatCompactNumber(pinnedUser.builder_score)}`
-            : "Builder Score: N/A";
+          secondaryMetric =
+            pinnedUser.builder_score !== null &&
+            pinnedUser.builder_score !== undefined
+              ? `Builder Score: ${formatCompactNumber(pinnedUser.builder_score)}`
+              : "Builder Score: N/A";
           break;
         default:
           primaryMetric = "0";
@@ -230,28 +227,6 @@ function BasecampContent() {
       {/* Stats Cards */}
       <Section variant="content">
         <BasecampStatsCards stats={stats} loading={statsLoading} />
-      </Section>
-
-      {/* Welcome Banner */}
-      <Section variant="content">
-        <CalloutCarousel
-          permanentlyHiddenIds={permanentlyHiddenCalloutIds}
-          onPersistPermanentHide={(id) => addPermanentlyHiddenId(id)}
-          items={[
-            {
-              id: "basecamp-welcome",
-              variant: "brand-blue",
-              icon: <Target className="h-4 w-4" />,
-              title: "Welcome to BaseCamp",
-              description:
-                "Explore 500+ Base builders and creators. Sort by creator coins, scores, or earnings.",
-              permanentHideKey: "basecamp_welcome_dismissed",
-              onClose: () => {
-                // Handle dismissal - persistence handled by CalloutCarousel
-              },
-            },
-          ]}
-        />
       </Section>
 
       {/* Tabs */}

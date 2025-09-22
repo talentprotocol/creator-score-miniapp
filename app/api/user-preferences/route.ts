@@ -53,9 +53,7 @@ export async function POST(
     const {
       talent_uuid,
       creator_category,
-      add_dismissed_id,
       add_permanently_hidden_id,
-      remove_dismissed_id,
       remove_permanently_hidden_id,
     }: UserPreferencesUpdateRequest = await req.json();
 
@@ -86,9 +84,7 @@ export async function POST(
     const result = await updateUserPreferencesAtomic({
       talent_uuid,
       creator_category,
-      add_dismissed_id,
       add_permanently_hidden_id,
-      remove_dismissed_id,
       remove_permanently_hidden_id,
     });
 

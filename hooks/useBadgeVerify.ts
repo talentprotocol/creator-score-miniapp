@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import posthog from "posthog-js";
 import type { BadgeState } from "@/lib/types/badges";
-import { clearUserCredentialsCache } from "@/lib/cache-keys";
 
 interface UseBadgeVerifyResult {
   isVerifying: boolean;
@@ -188,10 +187,7 @@ export function useBadgeVerify(
         throw new Error("Failed to trigger score calculation");
       }
 
-      // Step 2: Clear badge-specific caches
-      // First, clear credential cache to ensure fresh data for badge calculations
-      clearUserCredentialsCache(talentUUID);
-
+      // Step 2: Clear badge-specific caches (server-side only)
       const cacheKeys = getBadgeCacheKeys(badge.badgeSlug);
       await fetch("/api/badges/refresh", {
         method: "POST",

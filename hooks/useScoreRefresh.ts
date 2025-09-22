@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import { triggerScoreCalculation } from "@/app/services/scoreRefreshService";
-import { clearUserCredentialsCache } from "@/lib/cache-keys";
 import posthog from "posthog-js";
 
 interface UseScoreRefreshResult {
@@ -53,20 +52,13 @@ export function useScoreRefresh(
     }
 
     try {
-      clearUserCredentialsCache(talentUUID);
-    } catch (error) {
-      console.error("Failed to clear user credentials cache:", error);
-    }
-
-    try {
       setIsRefreshing(true);
       // Clear any existing messages
       setError(null);
       setSuccessMessage(null);
       hasCalledSuccessRef.current = false;
 
-      // Clear user's credential cache before triggering refresh
-      // Also clear badge caches (same as badges page)
+      // Clear badge caches (includes credential cache clearing)
       try {
         await fetch("/api/badges/refresh", {
           method: "POST",
@@ -74,14 +66,16 @@ export function useScoreRefresh(
           body: JSON.stringify({
             talentUUID: talentUUID,
             badgeSlug: "all",
-            cacheKeys: ["USER_BADGES", "USER_CREATOR_SCORE"],
+            cacheKeys: ["USER_BADGES", "USER_CREATOR_SCORE", "CREDENTIALS"],
           }),
         });
       } catch (error) {
         console.error("Failed to clear badge caches:", error);
         // Don't fail the entire operation if badge cache clearing fails
       }
+
       const result = await triggerScoreCalculation(talentUUID);
+
       if (result.success) {
         setSuccessMessage("Calculation enqueued");
         // Call onSuccess callback to trigger score refetch
@@ -92,10 +86,16 @@ export function useScoreRefresh(
           setTimeout(async () => {
             try {
               await onSuccess();
+              // Reset refreshing state after successful refetch
+              setIsRefreshing(false);
             } catch (error) {
               console.error("Error during score refetch:", error);
+              setIsRefreshing(false);
             }
           }, 1000);
+        } else {
+          // If no onSuccess callback, reset refreshing state immediately
+          setIsRefreshing(false);
         }
       } else {
         const errorMessage = result.error || "Failed to trigger calculation";

@@ -6,7 +6,6 @@ import {
 
 function emptyCalloutPrefs() {
   return {
-    dismissedIds: [],
     permanentlyHiddenIds: [],
   };
 }
@@ -24,7 +23,6 @@ export async function getUserPreferencesByTalentUuid(
 
   const callout_prefs =
     (data?.callout_prefs as {
-      dismissedIds?: string[];
       permanentlyHiddenIds?: string[];
     } | null) ?? emptyCalloutPrefs();
 
@@ -33,7 +31,6 @@ export async function getUserPreferencesByTalentUuid(
       (data?.creator_category as UserPreferencesResponse["creator_category"]) ??
       null,
     callout_prefs: {
-      dismissedIds: callout_prefs.dismissedIds ?? [],
       permanentlyHiddenIds: callout_prefs.permanentlyHiddenIds ?? [],
     },
     updated_at: data?.updated_at ?? undefined,
@@ -51,23 +48,17 @@ export async function updateUserPreferencesAtomic(
   const next = {
     creator_category: req.creator_category ?? current.creator_category ?? null,
     callout_prefs: {
-      dismissedIds: new Set(current.callout_prefs.dismissedIds),
       permanentlyHiddenIds: new Set(current.callout_prefs.permanentlyHiddenIds),
     },
   } as {
     creator_category: UserPreferencesResponse["creator_category"];
     callout_prefs: {
-      dismissedIds: Set<string>;
       permanentlyHiddenIds: Set<string>;
     };
   };
 
-  if (req.add_dismissed_id)
-    next.callout_prefs.dismissedIds.add(req.add_dismissed_id);
   if (req.add_permanently_hidden_id)
     next.callout_prefs.permanentlyHiddenIds.add(req.add_permanently_hidden_id);
-  if (req.remove_dismissed_id)
-    next.callout_prefs.dismissedIds.delete(req.remove_dismissed_id);
   if (req.remove_permanently_hidden_id)
     next.callout_prefs.permanentlyHiddenIds.delete(
       req.remove_permanently_hidden_id,
@@ -77,7 +68,6 @@ export async function updateUserPreferencesAtomic(
     talent_uuid,
     creator_category: next.creator_category,
     callout_prefs: {
-      dismissedIds: Array.from(next.callout_prefs.dismissedIds),
       permanentlyHiddenIds: Array.from(next.callout_prefs.permanentlyHiddenIds),
     },
     updated_at: new Date().toISOString(),
@@ -94,17 +84,9 @@ export async function updateUserPreferencesAtomic(
   return {
     creator_category: data.creator_category,
     callout_prefs: {
-      dismissedIds:
-        (
-          data.callout_prefs as {
-            dismissedIds?: string[];
-            permanentlyHiddenIds?: string[];
-          }
-        ).dismissedIds ?? [],
       permanentlyHiddenIds:
         (
           data.callout_prefs as {
-            dismissedIds?: string[];
             permanentlyHiddenIds?: string[];
           }
         ).permanentlyHiddenIds ?? [],

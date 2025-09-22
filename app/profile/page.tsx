@@ -19,13 +19,10 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      // If user exists, redirect to their profile
-      const canonical = user.username;
-      if (canonical) {
-        router.push(`/${canonical}`);
-        return;
-      }
+    // Use Farcaster username as primary identifier, Talent UUID as fallback
+    if (user?.username) {
+      router.push(`/${user.username}`);
+      return;
     }
     if (talentUuid) {
       router.push(`/${talentUuid}`);
@@ -34,9 +31,8 @@ export default function ProfilePage() {
     if (talentId) {
       router.push(`/${talentId}`);
       return;
-    } else {
-      router.push("/leaderboard");
     }
+    router.push("/leaderboard");
   }, [user, router, talentId, talentUuid, tpToken]);
 
   return (

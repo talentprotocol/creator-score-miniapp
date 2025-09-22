@@ -287,7 +287,8 @@ export function BasecampDataTable({
       case "creator_score":
         return (
           <span className="text-sm font-medium">
-            {profile.creator_score
+            {profile.creator_score !== null &&
+            profile.creator_score !== undefined
               ? formatCompactNumber(profile.creator_score)
               : "—"}
           </span>
@@ -296,7 +297,8 @@ export function BasecampDataTable({
       case "builder_score":
         return (
           <span className="text-sm font-medium">
-            {profile.builder_score
+            {profile.builder_score !== null &&
+            profile.builder_score !== undefined
               ? formatCompactNumber(profile.builder_score)
               : "—"}
           </span>

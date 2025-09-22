@@ -8,6 +8,12 @@ interface TalentScore {
   points?: number;
 }
 
+// Type for earnings data point from Talent API
+interface EarningsDataPoint {
+  readable_value?: string;
+  value?: number;
+}
+
 export interface CreatorProfile {
   id: string;
   display_name?: string;
@@ -115,11 +121,21 @@ export async function getCreatorScoreLeaderboard(
               let totalEarnings: number | undefined;
               if (earningsResponse.ok) {
                 const earningsData = await earningsResponse.json();
-                // Extract readable_value from the data_points array
-                const dataPoint = earningsData.data_points?.[0];
-                totalEarnings = dataPoint?.readable_value
-                  ? parseFloat(dataPoint.readable_value)
-                  : undefined;
+                // Sum all readable_value from the data_points array (user can have earnings from multiple accounts)
+                const dataPoints = earningsData.data_points || [];
+                totalEarnings = dataPoints.reduce(
+                  (sum: number, dataPoint: EarningsDataPoint) => {
+                    const value = dataPoint?.readable_value
+                      ? parseFloat(dataPoint.readable_value)
+                      : 0;
+                    return sum + (isNaN(value) ? 0 : value);
+                  },
+                  0,
+                );
+                // Set to undefined if no valid data points found
+                if (totalEarnings === 0 && dataPoints.length === 0) {
+                  totalEarnings = undefined;
+                }
               }
 
               // Extract Creator Score from scores array (same logic as search hook)
@@ -238,37 +254,49 @@ export async function getUserProfileData(
 
       if (earningsResponse.ok) {
         const earningsData = await earningsResponse.json();
-        // Extract readable_value from the data_points array
-        const dataPoint = earningsData.data_points?.[0];
-        totalEarnings = dataPoint?.readable_value
-          ? parseFloat(dataPoint.readable_value)
-          : undefined;
+        // Sum all readable_value from the data_points array (user can have earnings from multiple accounts)
+        const dataPoints = earningsData.data_points || [];
+        totalEarnings = dataPoints.reduce(
+          (sum: number, dataPoint: EarningsDataPoint) => {
+            const value = dataPoint?.readable_value
+              ? parseFloat(dataPoint.readable_value)
+              : 0;
+            return sum + (isNaN(value) ? 0 : value);
+          },
+          0,
+        );
+        // Set to undefined if no valid data points found
+        if (totalEarnings === 0 && dataPoints.length === 0) {
+          totalEarnings = undefined;
+        }
       }
     } catch (error) {
       console.error(`Error fetching earnings for user ${talentUuid}:`, error);
     }
 
-    // Extract Creator Score from scores array (same logic as search hook)
-    // Note: The profile data structure from getProfile is different from search results
-    let creatorScores: number[] = [];
+    // Get Creator Score from the score endpoint (profile endpoint doesn't return scores)
+    let score = 0;
+    try {
+      const scoreResponse = await fetch(
+        `https://api.talentprotocol.com/score?id=${talentUuid}&scorer_slug=creator_score`,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-API-KEY": apiKey,
+          },
+        },
+      );
 
-    if (Array.isArray(profile.scores)) {
-      creatorScores = profile.scores
-        .filter((s: TalentScore) => s.slug === "creator_score")
-        .map((s: TalentScore) => s.points ?? 0);
+      if (scoreResponse.ok) {
+        const scoreData = await scoreResponse.json();
+        score = scoreData.score?.points ?? 0;
+      }
+    } catch (error) {
+      console.error(
+        `Error fetching creator score for user ${talentUuid}:`,
+        error,
+      );
     }
-
-    // Fallback: check if there's a direct creator_score field
-    if (creatorScores.length === 0 && profile.creator_score !== undefined) {
-      creatorScores = [profile.creator_score];
-    }
-
-    // Fallback: check if there's a score field
-    if (creatorScores.length === 0 && profile.score !== undefined) {
-      creatorScores = [profile.score];
-    }
-
-    const score = creatorScores.length > 0 ? Math.max(...creatorScores) : 0;
 
     const result = {
       id: profile.id,

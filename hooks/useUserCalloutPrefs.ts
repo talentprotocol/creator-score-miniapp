@@ -1,7 +1,6 @@
 import * as React from "react";
 
 type CalloutPrefs = {
-  dismissedIds: string[];
   permanentlyHiddenIds: string[];
 };
 
@@ -27,7 +26,6 @@ export function useUserCalloutPrefs(talentUuid: string | null | undefined) {
       if (!res.ok) throw new Error(`Failed to load prefs: ${res.status}`);
       const json = await res.json();
       const prefs: CalloutPrefs = json.callout_prefs ?? {
-        dismissedIds: [],
         permanentlyHiddenIds: [],
       };
       setState({ data: prefs, loading: false, error: null });
@@ -40,29 +38,6 @@ export function useUserCalloutPrefs(talentUuid: string | null | undefined) {
     if (!talentUuid) return;
     refresh();
   }, [talentUuid, refresh]);
-
-  const addDismissedId = React.useCallback(
-    async (id: string) => {
-      if (!talentUuid) return;
-      try {
-        const res = await fetch(`/api/user-preferences`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            talent_uuid: talentUuid,
-            creator_category: null,
-            add_dismissed_id: id,
-          }),
-        });
-        if (!res.ok)
-          throw new Error(`Failed to persist dismissed id: ${res.status}`);
-        await refresh();
-      } catch (e) {
-        console.error(e);
-      }
-    },
-    [talentUuid, refresh],
-  );
 
   const addPermanentlyHiddenId = React.useCallback(
     async (id: string) => {
@@ -90,12 +65,10 @@ export function useUserCalloutPrefs(talentUuid: string | null | undefined) {
   );
 
   return {
-    dismissedIds: state.data?.dismissedIds ?? [],
     permanentlyHiddenIds: state.data?.permanentlyHiddenIds ?? [],
     loading: state.loading,
     error: state.error,
     refresh,
-    addDismissedId,
     addPermanentlyHiddenId,
   };
 }

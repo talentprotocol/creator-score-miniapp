@@ -52,9 +52,7 @@ export async function resolveFidToTalentUuid(
   return requestPromise;
 }
 
-async function performFidRequest(
-  fid: number,
-): Promise<string | null> {
+async function performFidRequest(fid: number): Promise<string | null> {
   let baseUrl = "";
   if (typeof window === "undefined") {
     baseUrl = getPublicBaseUrl();

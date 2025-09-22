@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTop200LeaderboardEntries } from "@/app/services/leaderboardService";
 import { getUserProfileData } from "@/app/services/creatorScoreLeaderboardService";
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
