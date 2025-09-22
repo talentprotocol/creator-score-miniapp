@@ -42,13 +42,18 @@ export async function getTalentUserService(identifier: string): Promise<{
           account_source === null
             ? { talent_protocol_id: identifier }
             : account_source === "farcaster"
-            ? { username: identifier, account_source }
-            : { id: identifier, account_source };
+              ? { username: identifier, account_source }
+              : { id: identifier, account_source };
 
         dlog("UserService", "getProfile_params", {
           identifier,
           account_source,
-          param_kind: account_source === null ? "talent_protocol_id" : account_source === "farcaster" ? "username" : "id",
+          param_kind:
+            account_source === null
+              ? "talent_protocol_id"
+              : account_source === "farcaster"
+                ? "username"
+                : "id",
           derived_params: params,
           params_username: params.username,
           params_id: params.id,
