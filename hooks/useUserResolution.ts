@@ -175,10 +175,14 @@ export function useFidToTalentUuid() {
         return;
       }
 
-      // Case 3: Use Farcaster FID to resolve to Talent UUID (internal use only)
+      // Case 3: Use Farcaster username when available; otherwise FID to resolve to Talent UUID
       if (user.fid) {
         try {
-          const resp = await fetch(`/api/talent-user?id=${user.fid}`);
+          const resp = await fetch(
+            user.username
+              ? `/api/talent-user?username=${encodeURIComponent(user.username)}`
+              : `/api/talent-user?id=${encodeURIComponent(user.fid.toString())}`,
+          );
           if (resp.ok) {
             const data = await resp.json();
             const uuid = data?.id as string | undefined;

@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   const routeTimer = dtimer("API", "talent-user-get");
   const { searchParams } = req.nextUrl;
   const id = searchParams.get("id");
+  const username = searchParams.get("username");
 
   dlog("API", "talent-user-get", {
     id,
@@ -14,15 +15,17 @@ export async function GET(req: NextRequest) {
     headers_user_agent: req.headers.get("user-agent") || null,
   });
 
-  if (!id) {
+  if (!id && !username) {
     dlog("API", "talent-user-get-missing-id");
     routeTimer.end();
-    return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    return NextResponse.json({ error: "Missing id or username" }, { status: 400 });
   }
 
   try {
-    dlog("API", "talent-user-get-calling-service", { id });
-    const user = await getTalentUserService(id);
+    dlog("API", "talent-user-get-calling-service", { id, username });
+    const user = username
+      ? await getTalentUserService(username, { username: true, account_source: "farcaster" })
+      : await getTalentUserService(id!);
 
     if (!user) {
       dlog("API", "talent-user-get-user-not-found", { id });
