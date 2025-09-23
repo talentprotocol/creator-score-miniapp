@@ -23,6 +23,7 @@ export function validateNeynarApiKey(): string | null {
 export interface TalentProtocolParams {
   talent_protocol_id?: string | null;
   id?: string | null;
+  username?: string | null;
   address?: string | null;
   fid?: string | null;
   account_source?: string | null;

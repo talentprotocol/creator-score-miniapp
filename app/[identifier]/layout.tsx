@@ -55,6 +55,7 @@ export async function generateMetadata({
     }
 
     // Determine canonical identifier for metadata
+    // Always use Farcaster username as canonical (no special cases needed with username parameter)
     const canonical = user.fname || user.wallet || user.id;
 
     // Fetch basic data for metadata with graceful fallbacks
@@ -295,11 +296,8 @@ export default async function ProfileLayout({
   }
 
   // Determine canonical identifier
-  // Use UUID for numeric usernames to avoid FID collision, otherwise use username
-  const isNumericUsername = user.fname ? /^\d+$/.test(user.fname) : false;
-  const canonical = isNumericUsername
-    ? user.id
-    : user.fname || user.wallet || user.id;
+  // Always use Farcaster username as canonical (no special cases needed with username parameter)
+  const canonical = user.fname || user.wallet || user.id;
 
   // Extract the base identifier from the path (remove /stats, /badges, etc.)
   const baseIdentifier = params.identifier.split("/")[0];
