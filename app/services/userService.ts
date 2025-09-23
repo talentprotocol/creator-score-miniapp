@@ -8,7 +8,10 @@ import { dlog, dtimer } from "@/lib/debug";
  * Direct service function for resolving Talent Protocol users
  * Used by server components - no HTTP requests to own API routes
  */
-export async function getTalentUserService(identifier: string): Promise<{
+export async function getTalentUserService(
+  identifier: string,
+  options?: { username?: boolean; account_source?: "farcaster" | "wallet" },
+): Promise<{
   id: string;
   fid: number | null;
   wallet: string | null;
@@ -37,6 +40,109 @@ export async function getTalentUserService(identifier: string): Promise<{
       const cacheTimer = dtimer("UserService", "cache_fetch");
 
       try {
+        // If explicitly provided as username, prefer that path
+        const explicitAccountSource = options?.account_source;
+        if (options?.username) {
+          const params = {
+            username: identifier,
+            account_source: explicitAccountSource || "farcaster",
+          } as const;
+
+          dlog("UserService", "getProfile_params", {
+            identifier,
+            account_source: params.account_source,
+            param_kind: "username",
+            derived_params: params,
+            params_username: params.username,
+            params_id: undefined,
+            params_account_source: params.account_source,
+          });
+
+          const response = await talentApiClient.getProfile(params);
+
+          dlog("UserService", "getProfile_response", {
+            identifier,
+            response_ok: response.ok,
+            response_status: response.status,
+            response_statusText: response.statusText,
+          });
+
+          // Log the raw response body to understand what Talent API is returning
+          if (!response.ok) {
+            const responseText = await response.text();
+            dlog("UserService", "getProfile_error_response_body", {
+              identifier,
+              status: response.status,
+              response_body: responseText,
+            });
+          }
+
+          if (!response.ok) {
+            dlog("UserService", "getProfile_non_ok_response", {
+              identifier,
+              status: response.status,
+              statusText: response.statusText,
+            });
+            cacheTimer.end();
+            return null;
+          }
+
+          const user = await response.json();
+
+          dlog("UserService", "getProfile_user_data", {
+            identifier,
+            has_user: !!user,
+            user_id: user?.id || null,
+            user_fid: user?.fid || null,
+            user_wallet: user?.wallet || null,
+            user_fname: user?.fname || null,
+            user_github: user?.github || null,
+            has_required_fields: !!(
+              user &&
+              (user.fid || user.wallet || user.github || user.id)
+            ),
+          });
+
+          // Log the full response to understand what Talent API returns
+          dlog("UserService", "getProfile_full_response", {
+            identifier,
+            response_data: user,
+            response_keys: user ? Object.keys(user) : [],
+          });
+
+          if (user && (user.fid || user.wallet || user.github || user.id)) {
+            const result = {
+              id: user.id || null,
+              fid: user.fid ?? null,
+              wallet: user.wallet ?? null,
+              github: user.github ?? null,
+              fname: user.fname ?? null,
+              display_name: user.display_name ?? null,
+              image_url: user.image_url ?? null,
+              ...user,
+            };
+
+            dlog("UserService", "getProfile_success", {
+              identifier,
+              result_id: result.id,
+              result_fname: result.fname,
+              result_wallet: result.wallet,
+            });
+
+            cacheTimer.end();
+            return result;
+          }
+
+          dlog("UserService", "getProfile_no_valid_user_data", {
+            identifier,
+            user_exists: !!user,
+            user_keys: user ? Object.keys(user) : [],
+          });
+
+          cacheTimer.end();
+          return null;
+        }
+
         const account_source = getAccountSource(identifier);
         const params =
           account_source === null
