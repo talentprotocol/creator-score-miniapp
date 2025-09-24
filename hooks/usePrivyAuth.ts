@@ -253,19 +253,23 @@ export const usePrivyAuth = ({
   }, []);
 
   useEffect(() => {
-    // Clear state when not authenticated
+    // Clear state when not authenticated with Privy – but do NOT remove cached talentUserId
+    // if a valid Talent Protocol auth token exists (browser-only auth path)
     if (!authenticated) {
       try {
         if (typeof window !== "undefined") {
-          localStorage.removeItem("talentUserId");
-          try {
-            window.dispatchEvent(
-              new CustomEvent("talentUserIdUpdated", { detail: { talentUserId: null } }),
-            );
-          } catch {}
+          const hasTpToken = !!localStorage.getItem("tpAuthToken");
+          if (!hasTpToken) {
+            localStorage.removeItem("talentUserId");
+            try {
+              window.dispatchEvent(
+                new CustomEvent("talentUserIdUpdated", { detail: { talentUserId: null } }),
+              );
+            } catch {}
+            setGlobalTalentUserId(null);
+          }
         }
       } catch {}
-      setGlobalTalentUserId(null);
       return;
     }
 

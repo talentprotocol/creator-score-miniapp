@@ -38,11 +38,13 @@ import {
 } from "@/lib/talent-swap";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import { useTalentAuthPresence } from "@/hooks/useTalentAuthPresence";
+import { useTalentUuid } from "@/hooks/useTalentUuid";
 
 // Separate component that uses search params
 function SettingsContent() {
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
+  const { talentUuid: storedTalentUuid } = useTalentUuid();
   const posthog = usePostHog();
   const searchParams = useSearchParams();
 
@@ -55,6 +57,9 @@ function SettingsContent() {
   const [showAuthModal, setShowAuthModal] = React.useState(false);
   const { hasToken } = useTalentAuthPresence();
 
+  // Prefer resolved UUID from Farcaster/Privy; fall back to the stored UUID from token-based /me
+  const effectiveTalentUuid = talentUuid || storedTalentUuid || undefined;
+
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
 
@@ -65,7 +70,7 @@ function SettingsContent() {
     loading,
     error,
     performAction,
-  } = useConnectedAccounts(talentUuid || undefined);
+  } = useConnectedAccounts(effectiveTalentUuid);
 
   // Check if any humanity credentials are verified (must be before early returns)
   const hasVerifiedHumanityCredentials = React.useMemo(() => {
@@ -76,13 +81,13 @@ function SettingsContent() {
 
   // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
   useEffect(() => {
-    if (!loadingUserResolution && !talentUuid && !hasToken) {
+    if (!loadingUserResolution && !effectiveTalentUuid && !hasToken) {
       setShowAuthModal(true);
     }
-  }, [loadingUserResolution, talentUuid, hasToken]);
+  }, [loadingUserResolution, effectiveTalentUuid, hasToken]);
 
   // Show loading while resolving user
-  if (loadingUserResolution) {
+  if (loadingUserResolution && !storedTalentUuid) {
     return (
       <PageContainer>
         <Section variant="content">
@@ -97,7 +102,7 @@ function SettingsContent() {
   }
 
   // Show FarcasterAccessModal for unauthenticated users
-  if (!talentUuid && !hasToken) {
+  if (!effectiveTalentUuid && !hasToken) {
     return (
       <>
         <PageContainer>
@@ -121,6 +126,7 @@ function SettingsContent() {
     );
   }
 
+  // Prevent indefinite loading: if we have an auth token and still missing data, show a softer skeleton for a short time, then proceed with empty fallbacks
   if (loading || !accounts || !settings || humanityCredentials === null) {
     return (
       <PageContainer>

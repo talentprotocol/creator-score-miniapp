@@ -3,23 +3,28 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { getUserContext } from "@/lib/user-context";
 import { useFidToTalentUuid } from "@/hooks/useUserResolution";
+import { useTalentUuid } from "@/hooks/useTalentUuid";
 import { User, Settings, Search, Award, TrendingUp } from "lucide-react";
 
 export function useUserNavigation() {
   const { context } = useMiniKit();
   const user = getUserContext(context);
   const { talentUuid } = useFidToTalentUuid();
+  const { talentUuid: storedTalentUuid } = useTalentUuid();
 
   // Determine canonical identifier for navigation
   // Priority: Farcaster username > Talent UUID (no FIDs to avoid collisions)
-  const canonical = user?.username || talentUuid;
+  const canonical = user?.username || talentUuid || storedTalentUuid || undefined;
 
   // Store both possible profile paths for active state check
-  const profilePaths = [
-    canonical ? `/${canonical}` : "/profile",
-    user?.username ? `/${user.username}` : null,
-    talentUuid ? `/${talentUuid}` : null,
-  ].filter(Boolean) as string[];
+  const profilePaths = (
+    [
+      canonical ? `/${canonical}` : "/profile",
+      user?.username ? `/${user.username}` : null,
+      talentUuid ? `/${talentUuid}` : null,
+      storedTalentUuid ? `/${storedTalentUuid}` : null,
+    ].filter(Boolean) as string[]
+  );
 
   const navItems = [
     {

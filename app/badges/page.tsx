@@ -23,6 +23,7 @@ import { getAllBadgeSections } from "@/lib/badge-content";
 import { calculateCooldownMinutes } from "@/lib/cooldown-utils";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import { useTalentAuthPresence } from "@/hooks/useTalentAuthPresence";
+import { useTalentUuid } from "@/hooks/useTalentUuid";
 
 /**
  * BADGES PAGE
@@ -47,14 +48,18 @@ export default function BadgesPage() {
     loading: userLoading,
     handle: userHandle,
   } = useFidToTalentUuid();
+  const { talentUuid: storedTalentUuid } = useTalentUuid();
 
   // Only fetch badges when we have a valid UUID
+  // Prefer resolved UUID; fall back to stored UUID from token-based /me
+  const effectiveTalentUuid = talentUuid || storedTalentUuid || undefined;
+
   const {
     data: badgesData,
     loading: badgesLoading,
     error,
     refetch,
-  } = useBadges(talentUuid || undefined);
+  } = useBadges(effectiveTalentUuid || undefined);
 
   // API-based cooldown tracking using lastCalculatedAt
   const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null);
@@ -81,7 +86,7 @@ export default function BadgesPage() {
     isRefreshing,
     error: refreshError,
     refreshScore: originalRefreshScore,
-  } = useScoreRefresh(talentUuid || "", undefined); // No auto-refetch callback
+  } = useScoreRefresh(effectiveTalentUuid || "", undefined); // No auto-refetch callback
 
   // Enhanced refresh that uses shared score refresh logic
   const refreshBadges = async () => {
@@ -114,10 +119,10 @@ export default function BadgesPage() {
   const { hasToken } = useTalentAuthPresence();
 
   useEffect(() => {
-    if (!userLoading && !talentUuid && !hasToken) {
+    if (!userLoading && !effectiveTalentUuid && !hasToken) {
       setShowAuthModal(true);
     }
-  }, [userLoading, talentUuid, hasToken]);
+  }, [userLoading, effectiveTalentUuid, hasToken]);
 
   /** Handle badge card clicks to open detailed modal */
   const handleBadgeClick = (badge: BadgeState) => {
@@ -151,23 +156,25 @@ export default function BadgesPage() {
   };
 
   /** Filter sections based on selection (only when using sections) */
-  const filteredSections = badgesData?.sections
-    ? badgesData.sections.filter((section) =>
-        selectedSections.includes(section.id),
-      )
+  type SectionSummary = { id: string; title: string; badges: BadgeState[] };
+  const rawSections: SectionSummary[] = Array.isArray(badgesData?.sections)
+    ? (badgesData!.sections as SectionSummary[])
     : [];
+  const filteredSections = rawSections.filter((section) => selectedSections.includes(section.id));
 
   /** Determine if we're using sections or flat layout */
-  const usingSections = badgesData?.sections && badgesData.sections.length > 0;
-  const allBadges = badgesData?.badges || [];
+  const usingSections = Array.isArray(badgesData?.sections) && (badgesData?.sections?.length ?? 0) > 0;
+  const allBadges: BadgeState[] = Array.isArray(badgesData?.badges)
+    ? (badgesData!.badges as BadgeState[])
+    : [];
 
   // Show loading while resolving user
-  if (userLoading) {
+  if (userLoading && !storedTalentUuid) {
     return <BadgesPageLoadingState />;
   }
 
   // Show FarcasterAccessModal for unauthenticated users
-  if (!talentUuid && !hasToken) {
+  if (!effectiveTalentUuid && !hasToken) {
     return (
       <>
         <PageContainer>
@@ -191,8 +198,8 @@ export default function BadgesPage() {
   }
 
   if (
-    !badgesData ||
-    (!badgesData.sections?.length && !badgesData.badges?.length)
+    effectiveTalentUuid &&
+    (!badgesData || (!badgesData.sections?.length && !badgesData.badges?.length))
   ) {
     return <ErrorState error="No badge data available" retry={refetch} />;
   }
@@ -207,7 +214,7 @@ export default function BadgesPage() {
               Badges
             </Typography>
             <Typography color="muted">
-              {badgesData.summary?.completionPct ?? 0}% completed
+              {badgesData?.summary?.completionPct ?? 0}% completed
             </Typography>
           </div>
           <div className="flex items-center gap-2">
@@ -330,9 +337,9 @@ export default function BadgesPage() {
       <BadgeModal
         badge={selectedBadge}
         onClose={handleCloseModal}
-        talentUUID={talentUuid || undefined}
-        handle={userHandle || talentUuid || undefined}
-        profileOwnerTalentUUID={talentUuid || undefined}
+        talentUUID={effectiveTalentUuid || undefined}
+        handle={userHandle || effectiveTalentUuid || undefined}
+        profileOwnerTalentUUID={effectiveTalentUuid || undefined}
         onBadgeRefetch={refetch}
       />
 
