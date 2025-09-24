@@ -8,6 +8,7 @@ import { PostHogProvider } from "@/components/PostHogProvider";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { AddMiniAppOnLoad } from "@/components/common/AddMiniAppOnLoad";
 import { TalentAuthFetchInterceptor } from "@/components/common/TalentAuthFetchInterceptor";
+import { AuthTokenUrlHandler } from "@/components/common/AuthTokenUrlHandler";
 
 export function Providers(props: { children: ReactNode }) {
   const miniKitConfig = getMiniKitConfig();
@@ -43,6 +44,7 @@ export function Providers(props: { children: ReactNode }) {
           }}
         >
           <AddMiniAppOnLoad />
+          <AuthTokenUrlHandler />
           <TalentAuthFetchInterceptor />
           {props.children}
         </MiniKitProvider>

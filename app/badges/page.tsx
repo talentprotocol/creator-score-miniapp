@@ -22,6 +22,7 @@ import { Settings2, RotateCcw, Loader2 } from "lucide-react";
 import { getAllBadgeSections } from "@/lib/badge-content";
 import { calculateCooldownMinutes } from "@/lib/cooldown-utils";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
+import { useTalentAuthPresence } from "@/hooks/useTalentAuthPresence";
 
 /**
  * BADGES PAGE
@@ -110,12 +111,13 @@ export default function BadgesPage() {
 
   // Show FarcasterAccessModal for unauthenticated users
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const { hasToken } = useTalentAuthPresence();
 
   useEffect(() => {
-    if (!userLoading && !talentUuid) {
+    if (!userLoading && !talentUuid && !hasToken) {
       setShowAuthModal(true);
     }
-  }, [userLoading, talentUuid]);
+  }, [userLoading, talentUuid, hasToken]);
 
   /** Handle badge card clicks to open detailed modal */
   const handleBadgeClick = (badge: BadgeState) => {
@@ -165,7 +167,7 @@ export default function BadgesPage() {
   }
 
   // Show FarcasterAccessModal for unauthenticated users
-  if (!talentUuid) {
+  if (!talentUuid && !hasToken) {
     return (
       <>
         <PageContainer>

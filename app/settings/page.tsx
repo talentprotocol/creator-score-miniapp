@@ -30,17 +30,17 @@ import {
 import { openExternalUrl } from "@/lib/utils";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
 import { usePostHog } from "posthog-js/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   handleGetTalent,
   DEFAULT_TALENT_SWAP_URL,
   SwapResult,
 } from "@/lib/talent-swap";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
+import { useTalentAuthPresence } from "@/hooks/useTalentAuthPresence";
 
 // Separate component that uses search params
 function SettingsContent() {
-  const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
   const posthog = usePostHog();
@@ -53,53 +53,7 @@ function SettingsContent() {
 
   // Modal state for unauthenticated users
   const [showAuthModal, setShowAuthModal] = React.useState(false);
-
-  // One-time handler for incoming auth_token links (from mini app -> browser)
-  const handledAuthRef = React.useRef(false);
-  useEffect(() => {
-    if (handledAuthRef.current) return;
-    try {
-      const token = searchParams?.get("auth_token");
-      const expStr =
-        searchParams?.get("auth_token_expires_at") || searchParams?.get("expires_at");
-      if (!token) return;
-      handledAuthRef.current = true;
-
-      (async () => {
-        try {
-          const resp = await fetch("/api/talent-auth/me", {
-            method: "GET",
-            headers: { "x-talent-auth-token": token },
-          });
-          if (!resp.ok) return;
-          // Store token and optional expiry
-          try {
-            localStorage.setItem("tpAuthToken", token);
-            if (expStr) localStorage.setItem("tpAuthExpiresAt", String(Number(expStr)));
-            // Notify listeners
-            try {
-              window.dispatchEvent(
-                new CustomEvent("tpAuthTokenUpdated", {
-                  detail: { token, expiresAt: expStr ? Number(expStr) : null },
-                }),
-              );
-            } catch {}
-          } catch {}
-
-          // Clean sensitive params from URL without full reload
-          try {
-            const url = new URL(window.location.href);
-            url.searchParams.delete("auth_token");
-            url.searchParams.delete("auth_token_expires_at");
-            url.searchParams.delete("expires_at");
-            const newSearch = url.searchParams.toString();
-            const newHref = url.pathname + (newSearch ? `?${newSearch}` : "") + url.hash;
-            router.replace(newHref, { scroll: false });
-          } catch {}
-        } catch {}
-      })();
-    } catch {}
-  }, [router, searchParams]);
+  const { hasToken } = useTalentAuthPresence();
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
@@ -122,10 +76,10 @@ function SettingsContent() {
 
   // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
   useEffect(() => {
-    if (!loadingUserResolution && !talentUuid) {
+    if (!loadingUserResolution && !talentUuid && !hasToken) {
       setShowAuthModal(true);
     }
-  }, [loadingUserResolution, talentUuid]);
+  }, [loadingUserResolution, talentUuid, hasToken]);
 
   // Show loading while resolving user
   if (loadingUserResolution) {
@@ -143,7 +97,7 @@ function SettingsContent() {
   }
 
   // Show FarcasterAccessModal for unauthenticated users
-  if (!talentUuid) {
+  if (!talentUuid && !hasToken) {
     return (
       <>
         <PageContainer>

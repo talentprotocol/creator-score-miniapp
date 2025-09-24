@@ -10,6 +10,7 @@ import { useUserNavigation } from "@/hooks/useUserNavigation";
 import { useBackButton } from "@/hooks/useBackButton";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useTalentAuthPresence } from "@/hooks/useTalentAuthPresence";
 
 function HeaderInner() {
   const pathname = usePathname();
@@ -20,29 +21,7 @@ function HeaderInner() {
   const [clickedIcon, setClickedIcon] = React.useState<string | null>(null);
   const [redirectPath, setRedirectPath] = React.useState<string>("/profile");
   const { talentId } = usePrivyAuth({});
-  const [hasToken, setHasToken] = React.useState<boolean>(false);
-  React.useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        setHasToken(!!localStorage.getItem("tpAuthToken"));
-        const handleUpdate = (e: Event) => {
-          const detail = (e as CustomEvent).detail || {};
-          setHasToken(!!detail.token);
-        };
-        const handleStorage = (e: StorageEvent) => {
-          if (e.key === "tpAuthToken" || e.key === "tpAuthExpiresAt") {
-            setHasToken(!!localStorage.getItem("tpAuthToken"));
-          }
-        };
-        window.addEventListener("tpAuthTokenUpdated", handleUpdate as EventListener);
-        window.addEventListener("storage", handleStorage);
-        return () => {
-          window.removeEventListener("tpAuthTokenUpdated", handleUpdate as EventListener);
-          window.removeEventListener("storage", handleStorage);
-        };
-      }
-    } catch {}
-  }, []);
+  const { hasToken } = useTalentAuthPresence();
 
   const handleTitleClick = () => {
     router.push("/leaderboard");
