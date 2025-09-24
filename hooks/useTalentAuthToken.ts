@@ -12,6 +12,8 @@ type EnsureOptions = {
 
 // Global in-flight promise to dedupe concurrent ensure calls across components
 let globalEnsurePromise: Promise<string | null> | null = null;
+// Global guard to prevent repeated /me fetches across multiple mounts
+let globalMeFetchInFlight = false;
 
 export function useTalentAuthToken(options: EnsureOptions = {}) {
   const { enabled = true } = options;
@@ -487,9 +489,14 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
     try {
       if (typeof window !== "undefined" && t) {
         const hasTalentId = !!localStorage.getItem("talentUserId");
-        if (!hasTalentId) {
+        const meFetched = sessionStorage.getItem("tpMeFetched") === "1";
+        const meInProgress = sessionStorage.getItem("tpMeInProgress") === "1";
+        if (!hasTalentId && !meFetched && !meInProgress && !globalMeFetchInFlight) {
+          sessionStorage.setItem("tpMeInProgress", "1");
+          globalMeFetchInFlight = true;
           // Preferred: fetch current user via Talent API using our server route, then store id
           (async () => {
+            let stored = false;
             try {
               const resp = await fetch("/api/talent-auth/me", {
                 method: "GET",
@@ -500,6 +507,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
                 const uuid = data?.id as string | undefined;
                 if (uuid && typeof uuid === "string") {
                   localStorage.setItem("talentUserId", uuid);
+                  stored = true;
                   try {
                     window.dispatchEvent(
                       new CustomEvent("talentUserIdUpdated", { detail: { talentUserId: uuid } }),
@@ -508,6 +516,12 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
                 }
               }
             } catch {}
+            finally {
+              // Only mark fetched when we successfully stored a UUID, so retries remain possible otherwise
+              try { if (stored) sessionStorage.setItem("tpMeFetched", "1"); } catch {}
+              try { sessionStorage.removeItem("tpMeInProgress"); } catch {}
+              globalMeFetchInFlight = false;
+            }
           })();
         }
       }

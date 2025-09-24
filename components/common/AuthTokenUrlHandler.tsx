@@ -39,6 +39,19 @@ export function AuthTokenUrlHandler() {
                   }),
                 );
               } catch {}
+              // Also cache the user's Talent UUID immediately for downstream flows
+              try {
+                const data = await resp.json();
+                const uuid = (data && data.id) ? String(data.id) : undefined;
+                if (uuid && uuid.trim()) {
+                  localStorage.setItem("talentUserId", uuid);
+                  try {
+                    window.dispatchEvent(
+                      new CustomEvent("talentUserIdUpdated", { detail: { talentUserId: uuid } }),
+                    );
+                  } catch {}
+                }
+              } catch {}
             } catch {}
           }
         } catch {}
