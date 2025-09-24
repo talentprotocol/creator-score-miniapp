@@ -37,6 +37,7 @@ import {
   SwapResult,
 } from "@/lib/talent-swap";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
+import { useTalentAuthPresence } from "@/hooks/useTalentAuthPresence";
 
 // Separate component that uses search params
 function SettingsContent() {
@@ -52,6 +53,7 @@ function SettingsContent() {
 
   // Modal state for unauthenticated users
   const [showAuthModal, setShowAuthModal] = React.useState(false);
+  const { hasToken } = useTalentAuthPresence();
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
@@ -74,10 +76,10 @@ function SettingsContent() {
 
   // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
   useEffect(() => {
-    if (!loadingUserResolution && !talentUuid) {
+    if (!loadingUserResolution && !talentUuid && !hasToken) {
       setShowAuthModal(true);
     }
-  }, [loadingUserResolution, talentUuid]);
+  }, [loadingUserResolution, talentUuid, hasToken]);
 
   // Show loading while resolving user
   if (loadingUserResolution) {
@@ -95,7 +97,7 @@ function SettingsContent() {
   }
 
   // Show FarcasterAccessModal for unauthenticated users
-  if (!talentUuid) {
+  if (!talentUuid && !hasToken) {
     return (
       <>
         <PageContainer>
