@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const client = new TalentApiClient({ userAuthToken });
 
     const body = await req.json();
-    const { address, signature, chain_id } = body || {};
+    const { address, signature, chain_id, siwe_message } = body || {};
 
     if (!address || !signature || !chain_id) {
       return NextResponse.json(
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const resp = await client.connectWalletAccount({ address, signature, chain_id });
+    const resp = await client.connectWalletAccount({ address, signature, chain_id, siwe_message });
 
     // Revalidate connected accounts cache best-effort
     try {

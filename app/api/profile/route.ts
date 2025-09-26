@@ -4,6 +4,7 @@ import { extractTalentProtocolParams } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
+  const userAuthToken = req.headers.get("x-talent-auth-token") || undefined;
   // Accept `uuid` alias and normalize to `talent_protocol_id`
   const uuid = searchParams.get("uuid");
   if (uuid) {
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const client = new TalentApiClient();
+  const client = new TalentApiClient({ userAuthToken });
   const resp = await client.getProfile(params);
   if (!resp.ok) {
     const text = await resp.text();

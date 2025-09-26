@@ -768,13 +768,14 @@ export class TalentApiClient {
           ...this.createHeaders(),
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ profile: data }),
       });
 
       if (!validateJsonResponse(resp)) {
         throw new Error("Invalid response format from Talent API");
       }
       const respData = await resp.json();
+
       if (!resp.ok) {
         // Pass through upstream status and message when possible
         return NextResponse.json(respData, { status: resp.status });
@@ -878,6 +879,7 @@ export class TalentApiClient {
     address: string;
     signature: string;
     chain_id: number;
+    siwe_message: string;
   }): Promise<NextResponse> {
     const apiKeyError = this.validateApiKey();
     if (apiKeyError) {
@@ -1534,8 +1536,6 @@ export async function createTalentAuthToken(
     return createServerErrorResponse(apiKeyError);
   }
 
-  console.log("createTalentAuthToken params", Object.keys(params));
-
   try {
     const resp = await fetch(`${TALENT_API_BASE}/auth/create_auth_token`, {
       method: "POST",
@@ -1546,7 +1546,6 @@ export async function createTalentAuthToken(
       body: JSON.stringify(params),
     });
 
-    console.log("createTalentAuthToken resp status", resp.status);
 
     if (!validateJsonResponse(resp)) {
       throw new Error("Invalid response format from Talent API");
