@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { usePrivy, useSignMessage, useWallets } from "@privy-io/react-auth";
 import { isFarcasterMiniApp, getFarcasterEthereumProvider, signMessageInMiniApp } from "@/lib/client/miniapp";
-import { SiweMessage } from "sign-in-with-ethereum/dist/siwe";
+import { SiweMessage } from "siwe";
 import { getAddress } from "viem";
 
 type EnsureOptions = {

@@ -7,8 +7,8 @@ import { Callout } from "@/components/common/Callout";
 import { useConnectedAccounts } from "@/hooks/useConnectedAccounts";
 import { ConnectedSocialsSection } from "@/components/settings/ConnectedSocialsSection";
 import { ConnectedWalletsSection } from "@/components/settings/ConnectedWalletsSection";
-import { PayItForwardSection } from "@/components/settings/PayItForwardSection";
 import { AccountSettingsSection } from "@/components/settings/AccountSettingsSection";
+import { ConnectedEmailsSection } from "@/components/settings/ConnectedEmailsSection";
 import { ProofOfHumanitySection } from "@/components/settings/ProofOfHumanitySection";
 import { ButtonFullWidth } from "@/components/ui/button-full-width";
 import { getVersionDisplay } from "@/lib/version";
@@ -23,30 +23,62 @@ import {
   Settings,
   CheckCircle,
   XCircle,
-  HandHeart,
   Coins,
   Loader2,
+  Mail,
+  User,
 } from "lucide-react";
+import { ProfileSettingsSection } from "@/components/settings/ProfileSettingsSection";
 import { openExternalUrl } from "@/lib/utils";
+import { isFarcasterMiniApp, getFarcasterEthereumProvider } from "@/lib/client/miniapp";
 import { usePrivyAuth } from "@/hooks/usePrivyAuth";
+import { useWallets, usePrivy } from "@privy-io/react-auth";
+import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import { usePostHog } from "posthog-js/react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { CACHE_KEYS } from "@/lib/cache-keys";
 import {
   handleGetTalent,
   DEFAULT_TALENT_SWAP_URL,
   SwapResult,
 } from "@/lib/talent-swap";
 import { FarcasterAccessModal } from "@/components/modals/FarcasterAccessModal";
-import { useTalentAuthPresence } from "@/hooks/useTalentAuthPresence";
-import { useTalentUuid } from "@/hooks/useTalentUuid";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Separate component that uses search params
 function SettingsContent() {
+  const router = useRouter();
   const { handleLogout, authenticated } = usePrivyAuth({});
+  const { user: privyUser } = usePrivy();
   const { talentUuid, loading: loadingUserResolution } = useFidToTalentUuid();
-  const { talentUuid: storedTalentUuid } = useTalentUuid();
   const posthog = usePostHog();
+  const { wallets, ready: walletsReady } = useWallets();
   const searchParams = useSearchParams();
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const { token: tpToken, loading: tpLoading, stage: tpStage, error: tpError, ensureTalentAuthToken } = useTalentAuthToken();
+  const [isMiniApp, setIsMiniApp] = React.useState(false);
+  const [miniWalletAddress, setMiniWalletAddress] = React.useState<string | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const val = await isFarcasterMiniApp(150);
+      if (mounted) setIsMiniApp(val);
+      if (val) {
+        try {
+          const provider = await getFarcasterEthereumProvider();
+          if (provider && typeof provider.request === "function") {
+            const accounts = (await provider.request({ method: "eth_accounts" })) as string[] | undefined;
+            if (mounted) setMiniWalletAddress(accounts?.[0] || null);
+          }
+        } catch {}
+      } else {
+        if (mounted) setMiniWalletAddress(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Talent swap state
   const [swapResult, setSwapResult] = React.useState<SwapResult>({
@@ -55,13 +87,69 @@ function SettingsContent() {
 
   // Modal state for unauthenticated users
   const [showAuthModal, setShowAuthModal] = React.useState(false);
-  const { hasToken } = useTalentAuthPresence();
-
-  // Prefer resolved UUID from Farcaster/Privy; fall back to the stored UUID from token-based /me
-  const effectiveTalentUuid = talentUuid || storedTalentUuid || undefined;
 
   // Check if we should auto-expand a specific section
   const autoExpandSection = searchParams?.get("section");
+
+  // Handle inbound auth_token/expires_at and success_message query params
+  React.useEffect(() => {
+    const anyParams = !!searchParams?.toString();
+    const msg = searchParams?.get("success_message");
+    if (msg) setSuccessMessage(msg);
+
+    const inboundToken = searchParams?.get("auth_token");
+    const inboundExpRaw = searchParams?.get("expires_at");
+    const inboundExp = inboundExpRaw ? Number(inboundExpRaw) : null;
+
+    if (inboundToken) {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("tpAuthToken", inboundToken);
+          if (inboundExp) localStorage.setItem("tpAuthExpiresAt", String(inboundExp));
+          console.log("[Settings] inboundToken", inboundToken);
+          console.log("[Settings] inboundExp", inboundExp);
+          window.dispatchEvent(new CustomEvent("tpAuthTokenUpdated", { detail: { token: inboundToken, expiresAt: inboundExp } }));
+          sessionStorage.setItem("tpAuthJustIssued", "1");
+        }
+      } catch {}
+    }
+
+    // Strip ALL query params on load for a clean URL
+    if (anyParams) {
+      try {
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          router.replace(url.pathname);
+        }
+      } catch {}
+    }
+  }, [searchParams, router]);
+
+  // If redirected after successful connection, bypass client caches and refetch fresh data
+  // (placed after hooks that define refetch)
+
+  const dismissSuccessMessage = React.useCallback(() => {
+    setSuccessMessage(null);
+    try {
+      if (typeof window === "undefined") return;
+      const url = new URL(window.location.href);
+      router.replace(url.pathname);
+    } catch {}
+  }, [router]);
+
+  // Auto-dismiss success message after 5 seconds
+  React.useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => {
+      dismissSuccessMessage();
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [successMessage, dismissSuccessMessage]);
+
+  // Track open accordion sections (must be declared before any early returns)
+  const [openSections, setOpenSections] = React.useState<string[]>(
+    autoExpandSection ? [autoExpandSection] : [],
+  );
 
   const {
     accounts,
@@ -70,7 +158,8 @@ function SettingsContent() {
     loading,
     error,
     performAction,
-  } = useConnectedAccounts(effectiveTalentUuid);
+    refetch,
+  } = useConnectedAccounts(talentUuid || undefined);
 
   // Check if any humanity credentials are verified (must be before early returns)
   const hasVerifiedHumanityCredentials = React.useMemo(() => {
@@ -79,18 +168,123 @@ function SettingsContent() {
     );
   }, [humanityCredentials]);
 
-  // Show FarcasterAccessModal for unauthenticated users (following Badges page pattern)
+  // Show FarcasterAccessModal only when there's no user context AND no Talent auth token
   useEffect(() => {
-    if (!loadingUserResolution && !effectiveTalentUuid && !hasToken) {
+    if (!loadingUserResolution && !talentUuid && !tpToken) {
       setShowAuthModal(true);
+    } else {
+      setShowAuthModal(false);
     }
-  }, [loadingUserResolution, effectiveTalentUuid, hasToken]);
+  }, [loadingUserResolution, talentUuid, tpToken]);
 
-  // Show loading while resolving user
-  if (loadingUserResolution && !storedTalentUuid) {
+  // Ensure token on mount for authenticated users OR when inside Farcaster mini app
+  useEffect(() => {
+    if (!authenticated && !isMiniApp) return;
+    void ensureTalentAuthToken();
+  }, [authenticated, isMiniApp, ensureTalentAuthToken]);
+
+  // After token is available, refetch settings to get email (requires auth)
+  const lastRefreshedTokenRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!authenticated) return;
+    if (!tpToken) return;
+    if (lastRefreshedTokenRef.current === tpToken) return;
+    lastRefreshedTokenRef.current = tpToken;
+    void refetch();
+  }, [authenticated, tpToken, refetch]);
+
+  // If redirected after successful connection, bypass client caches and refetch fresh data
+  React.useEffect(() => {
+    if (!successMessage || !talentUuid) return;
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("tpAuthJustIssued", "1");
+        const keys = [
+          `${CACHE_KEYS.CONNECTED_ACCOUNTS}_${talentUuid}`,
+          `${CACHE_KEYS.USER_SETTINGS}_${talentUuid}`,
+          `${CACHE_KEYS.HUMANITY_CREDENTIALS}_${talentUuid}`,
+          `${CACHE_KEYS.PROFILE_SOCIAL_ACCOUNTS}_${talentUuid}`,
+          `${CACHE_KEYS.PROFILE_WALLET_ACCOUNTS}_${talentUuid}`,
+        ];
+        keys.forEach((k) => {
+          localStorage.removeItem(k);
+          localStorage.removeItem(`cache:${k}`);
+        });
+      }
+    } catch {}
+    void refetch();
+  }, [successMessage, talentUuid, refetch]);
+
+  // Block settings until we have a Talent Protocol auth token
+  if ((authenticated || isMiniApp) && (tpLoading || !tpToken)) {
     return (
       <PageContainer>
         <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
+          <div className="space-y-3">
+            <h1 className="text-lg font-semibold">Wallet signature required</h1>
+            <p className="text-sm text-muted-foreground">
+              {tpStage === "nonce" && "Preparing secure sign-in..."}
+              {tpStage === "sign" && "Waiting for wallet signature..."}
+              {tpStage === "exchange" && "Signing complete. Finalizing authentication..."}
+              {tpStage === "rejected" && "You cancelled the request. To manage your settings, please sign the message with your wallet."}
+              {(tpStage === "idle" || !tpStage) &&
+                "Waiting for wallet signature before accessing your settings."}
+            </p>
+            {tpError && (
+              <p className="text-xs text-red-500 mt-1">{tpError}</p>
+            )}
+            <div className="mt-2">
+              <div className="flex gap-2">
+                <ButtonFullWidth
+                  variant="muted"
+                  icon={<Loader2 className="h-4 w-4" />}
+                  align="left"
+                  onClick={() => void ensureTalentAuthToken({ force: true })}
+                  showRightIcon={false}
+                  disabled={tpLoading}
+                >
+                  <span className="font-medium">
+                    {tpLoading
+                      ? tpStage === "exchange"
+                        ? "Finalizing..."
+                        : "Awaiting Signature..."
+                      : "Sign Again"}
+                  </span>
+                </ButtonFullWidth>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <ButtonFullWidth
+                  variant="muted"
+                  icon={<LogOut className="h-4 w-4" />}
+                  align="left"
+                  onClick={handleLogout}
+                  showRightIcon={false}
+                >
+                  <span className="font-medium">Log Out</span>
+                </ButtonFullWidth>
+              </div>
+            </div>
+          </div>
+        </Section>
+      </PageContainer>
+    );
+  }
+
+  // Show loading while resolving user
+  if (loadingUserResolution) {
+    return (
+      <PageContainer>
+        <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
@@ -101,12 +295,17 @@ function SettingsContent() {
     );
   }
 
-  // Show FarcasterAccessModal for unauthenticated users
-  if (!effectiveTalentUuid && !hasToken) {
+  // Show FarcasterAccessModal for unauthenticated users (but not when a valid token exists)
+  if (!talentUuid) {
     return (
       <>
         <PageContainer>
           <Section variant="content">
+            {successMessage && (
+              <div className="mb-3">
+                <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+              </div>
+            )}
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div
@@ -117,20 +316,26 @@ function SettingsContent() {
             </div>
           </Section>
         </PageContainer>
-        <FarcasterAccessModal
-          open={showAuthModal}
-          onOpenChange={setShowAuthModal}
-          redirectPath="/settings"
-        />
+        {!tpToken ? (
+          <FarcasterAccessModal
+            open={showAuthModal}
+            onOpenChange={setShowAuthModal}
+            redirectPath="/settings"
+          />
+        ) : null}
       </>
     );
   }
 
-  // Prevent indefinite loading: if we have an auth token and still missing data, show a softer skeleton for a short time, then proceed with empty fallbacks
   if (loading || !accounts || !settings || humanityCredentials === null) {
     return (
       <PageContainer>
         <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
@@ -145,6 +350,11 @@ function SettingsContent() {
     return (
       <PageContainer>
         <Section variant="content">
+          {successMessage && (
+            <div className="mb-3">
+              <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+            </div>
+          )}
           <Callout>
             <strong>Error loading settings:</strong> {error}
           </Callout>
@@ -173,6 +383,18 @@ function SettingsContent() {
     });
     handleLogout();
   };
+
+  // Display-friendly wallet address (first 5, last 5)
+  const formatShortAddress = (addr: string | null | undefined): string | null => {
+    if (!addr || typeof addr !== "string") return null;
+    const trimmed = addr.trim();
+    if (trimmed.length <= 10) return trimmed;
+    return `${trimmed.slice(0, 5)}…${trimmed.slice(-5)}`;
+  };
+  const primaryAddress = (walletsReady && wallets && wallets[0]?.address)
+    ? wallets[0].address
+    : (privyUser?.wallet?.address || null);
+  const shortAddress = formatShortAddress(primaryAddress);
 
   // Handle talent swap click
   const handleTalentSwapClick = async () => {
@@ -225,10 +447,19 @@ function SettingsContent() {
 
       {/* Content section */}
       <Section variant="content">
+        {successMessage && (
+          <div className="mb-3">
+            <Callout variant="brand-green" title={successMessage} onClose={dismissSuccessMessage} />
+          </div>
+        )}
+        {/** Track which sections are open to enable lazy-loading behavior */}
         <SectionAccordion
           type="multiple"
           variant="gray"
           defaultExpanded={autoExpandSection ? [autoExpandSection] : []}
+          onExpandedChange={(openIds) => {
+            setOpenSections(openIds);
+          }}
           sections={[
             {
               id: "connected-socials",
@@ -253,10 +484,25 @@ function SettingsContent() {
               ),
             },
             {
-              id: "pay-it-forward",
-              title: "Pay It Forward",
-              icon: <HandHeart className="h-4 w-4" />,
-              content: <PayItForwardSection />,
+              id: "profile",
+              title: "Profile",
+              icon: <User className="h-4 w-4" />,
+              content: (
+                <ProfileSettingsSection
+                  talentUuid={talentUuid}
+                  initialProfile={undefined}
+                />
+              ),
+            },
+            {
+              id: "connected-emails",
+              title: "Connected Emails",
+              icon: <Mail className="h-4 w-4" />,
+              content: (
+                <ConnectedEmailsSection
+                  expanded={openSections?.includes("connected-emails") || false}
+                />
+              ),
             },
             {
               id: "proof-of-humanity",
@@ -275,7 +521,7 @@ function SettingsContent() {
               title: "Account Settings",
               icon: <Settings className="h-4 w-4" />,
               content: (
-                <AccountSettingsSection />
+                <AccountSettingsSection hasPrimaryEmail={Boolean(settings?.email)} />
               ),
             },
           ]}
@@ -324,7 +570,15 @@ function SettingsContent() {
         </div>
 
         {/* Log Out - with extra spacing above */}
-        {authenticated && (
+        {isMiniApp ? (
+          <div className="bg-muted rounded-xl border-0 shadow-none mt-2 p-3 text-sm">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              <span className="font-medium">Connected wallet — </span>
+              <span className="text-muted-foreground">{formatShortAddress(miniWalletAddress) || "—"}</span>
+            </div>
+          </div>
+        ) : (
           <div className="bg-muted rounded-xl border-0 shadow-none mt-2">
             <ButtonFullWidth
               variant="muted"
@@ -333,7 +587,17 @@ function SettingsContent() {
               onClick={handleLogoutClick}
               showRightIcon={false}
             >
-              <span className="font-medium">Log Out</span>
+              <span className="font-medium">
+                Log Out
+                {shortAddress ? (
+                  <>
+                    {" — "}
+                    <span className="text-muted-foreground">{shortAddress}</span>
+                  </>
+                ) : (
+                  ""
+                )}
+              </span>
             </ButtonFullWidth>
           </div>
         )}
@@ -374,7 +638,7 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<div>Loading settings...</div>}>
+    <Suspense fallback={<Skeleton className="h-16 w-full" />}>
       <SettingsContent />
     </Suspense>
   );

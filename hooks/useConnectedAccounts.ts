@@ -9,6 +9,8 @@ import { getCachedData, setCachedData, CACHE_DURATIONS } from "@/lib/utils";
 import { CACHE_KEYS } from "@/lib/cache-keys";
 import { useTalentAuthToken } from "@/hooks/useTalentAuthToken";
 import type { Eip1193Provider } from "@/lib/client/miniapp";
+import { SiweMessage } from "siwe";
+import { getAddress } from "viem";
 
 /**
  * CLIENT-SIDE ONLY: Fetches connected accounts via API routes (follows coding principles)
@@ -453,11 +455,28 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
             if (!nr.ok) throw new Error(await parseErrorResponse(nr));
             const nonce = (await nr.json())?.nonce as string | undefined;
             if (!nonce) throw new Error("Missing nonce");
-            const message = `Connect with Talent Protocol\nnonce: ${nonce}`;
+
+            let checksumAddress = address;
+            try {
+              if (address && address.startsWith("0x") && address.length === 42) {
+                checksumAddress = getAddress(address as `0x${string}`);
+              }
+            } catch {}
+
+            const message = new SiweMessage({
+              domain: window.location.host,
+              address: checksumAddress,
+              statement: "Sign in with Talent Protocol.",
+              uri: window.location.origin,
+              version: "1",
+              chainId: chain_id,
+              nonce
+            });
+            const messageString = message.prepareMessage();
 
             let signature: string;
             try {
-              signature = await signWithProvider(provider, message, address);
+              signature = await signWithProvider(provider, messageString, address);
             } catch (sigErr: any) {
               // User rejected signature; do not re-prompt automatically
               const msg = String(sigErr?.message || "").toLowerCase();
@@ -470,10 +489,10 @@ export function useConnectedAccounts(talentUUID: string | undefined) {
             }
 
             const doConnect = (userToken: string) =>
-              fetch(`/api/connected-accounts`, {
+              fetch(`/api/accounts`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "x-talent-auth-token": userToken },
-                body: JSON.stringify({ address, signature, chain_id }),
+                body: JSON.stringify({ address, signature, chain_id, siwe_message: messageString }),
               });
 
             let resp = await doConnect(token!);
