@@ -17,6 +17,7 @@
     "@farcaster/frame-sdk": "^0.0.35",
     "@farcaster/miniapp-sdk": "^0.1.8",
     "@neynar/nodejs-sdk": "^2.44.0",
+    "@next/third-parties": "^15.4.2",
     "@privy-io/react-auth": "^2.20.0",
     "@privy-io/server-auth": "^1.28.8",
     "@radix-ui/react-accordion": "^1.2.11",

@@ -9,6 +9,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { AddMiniAppOnLoad } from "@/components/common/AddMiniAppOnLoad";
 import { TalentAuthFetchInterceptor } from "@/components/common/TalentAuthFetchInterceptor";
 import { AuthTokenUrlHandler } from "@/components/common/AuthTokenUrlHandler";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export function Providers(props: { children: ReactNode }) {
   const miniKitConfig = getMiniKitConfig();
@@ -49,6 +50,7 @@ export function Providers(props: { children: ReactNode }) {
           {props.children}
         </MiniKitProvider>
       </PrivyProvider>
+      <GoogleAnalytics gaId="G-39823STXKX" />
     </PostHogProvider>
   );
 }
