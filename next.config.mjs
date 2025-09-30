@@ -64,7 +64,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value: `
-              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://vercel.live;
+              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://vercel.live https://www.googletagmanager.com https://www.google-analytics.com;
               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://use.typekit.net https://p.typekit.net;
               style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://use.typekit.net https://p.typekit.net;
               font-src 'self' https://fonts.gstatic.com https://use.typekit.net https://p.typekit.net;
@@ -73,8 +73,8 @@ const nextConfig = {
               form-action 'self';
               frame-ancestors 'self' https://www.creatorscore.app https://creatorscore.app https://warpcast.com https://*.warpcast.com https://farcaster.xyz https://*.farcaster.xyz;
               child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org;
-              frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com;
-              connect-src 'self' https://www.creatorscore.app https://creatorscore.app https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://*.walletconnect.com https://pulse.walletconnect.org https://api.web3modal.org https://warpcast.com https://client.warpcast.com https://api.coinbase.com https://vercel.live;
+              frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://www.googletagmanager.com;
+              connect-src 'self' https://www.creatorscore.app https://creatorscore.app https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://*.walletconnect.com https://pulse.walletconnect.org https://api.web3modal.org https://warpcast.com https://client.warpcast.com https://api.coinbase.com https://vercel.live https://www.google-analytics.com https://www.googletagmanager.com;
               worker-src 'self';
               manifest-src 'self'
             `
