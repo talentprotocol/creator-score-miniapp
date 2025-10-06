@@ -147,8 +147,10 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       // Select EIP-1193 provider based on environment
       let provider: any = undefined;
       let providerSource: "farcaster" | "privy" | "injected" | "unknown" = "unknown";
+      let inMiniApp = false;
       if (typeof window !== "undefined") {
         const isMiniApp = (await isFarcasterMiniApp(150)) === true;
+        inMiniApp = isMiniApp;
         
         try {
           if (isMiniApp) {
@@ -343,14 +345,33 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
       setStage("sign");
       
       try {
+        // In Farcaster Mini App, always attempt SDK signing first even if provider isn't detected
+        if (inMiniApp && !signature && providerSource !== "farcaster") {
+          const miniSigPre = await signMessageInMiniApp(message);
+          if (miniSigPre) {
+            signature = miniSigPre;
+          }
+        }
         // Prefer Mini App SDK wallet signing when present to avoid CORS
         if (providerSource === "farcaster") {
           const miniSig = await signMessageInMiniApp(message);
           if (miniSig) {
             signature = miniSig;
+          } else if (provider && typeof provider.request === "function") {
+            // Fallback: use Farcaster EIP-1193 provider to request signature
+            const hexMessage = convertUtf8ToHex(message);
+            try {
+              signature = await provider.request({ method: "personal_sign", params: [hexMessage, address] });
+            } catch (innerErr: any) {
+              try {
+                signature = await provider.request({ method: "personal_sign", params: [address, hexMessage] });
+              } catch {
+                signature = await provider.request({ method: "personal_sign", params: [message, address] });
+              }
+            }
           }
         }
-        if (!signature && providerSource !== "farcaster") {
+        if (!signature && providerSource !== "farcaster" && !inMiniApp) {
           const hasPrivyWallet = Boolean(
             (wallets && wallets.find((w) => (w.address || "").toLowerCase() === (address || "").toLowerCase())) ||
               (privyUser?.wallet?.address || "").toLowerCase() === (address || "").toLowerCase(),
@@ -407,6 +428,7 @@ export function useTalentAuthToken(options: EnsureOptions = {}) {
           } catch {}
           setStage("rejected");
           setError("Signature was cancelled");
+          console.error("Signature was cancelled", err);
           return null;
         }
         throw err;
