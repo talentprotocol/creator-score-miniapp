@@ -91,6 +91,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${cyFont.variable}`}>
       <head>
+        <meta
+          name="talentapp:project_verification"
+          content="12b46f59dbb47b9ab8e48444a6f34ec4d74cfd227a0120f5a4776afe8d26d85e933f1a7a62e10528e90cf9ce19ff0c4b96942fe95fd08cd925e60997ec199030"
+        />
         <link rel="stylesheet" href="https://use.typekit.net/wip1dbu.css" />
       </head>
       <body className="min-h-full bg-white flex flex-col">
