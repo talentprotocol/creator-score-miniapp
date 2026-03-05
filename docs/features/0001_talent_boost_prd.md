@@ -17,7 +17,7 @@ Add a 10% reward boost for creators holding 1000+ TALENT tokens, displayed throu
 - **Eligibility**: Creators with 1000+ TALENT tokens receive 10% reward boost
 - **Boost Amount**: Fixed 10% regardless of token quantity above threshold
 - **Pool Source**: Boosts are redistributed from the existing rewards pool using weighted scoring (Creator Score × 1.10 for token holders)
-- **Update Frequency**: Boost status updates when load the /leaderboard page
+- **Update Frequency**: Boost status updates when loading the /leaderboard page
 - **Immediate Effect**: Boost lost instantly if holdings drop below 1000 tokens
 
 ### Data Integration
